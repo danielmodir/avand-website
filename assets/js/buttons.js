@@ -7,21 +7,27 @@
   document.addEventListener('DOMContentLoaded', function () {
     var webBtn = document.querySelector('[data-cta="webapp"]');
     if (webBtn) {
+      var webLabel = webBtn.querySelector('.btn-label');
       var webReady = !!cfg.webApp.ready;
-      webBtn.textContent = webReady ? webBtn.dataset.labelReady : webBtn.dataset.labelPreview;
+      var webText = webReady ? webBtn.dataset.labelReady : webBtn.dataset.labelPreview;
+      if (webLabel) { webLabel.textContent = webText; } else { webBtn.textContent = webText; }
       webBtn.href = webReady ? (cfg.webApp.appUrl || webBtn.dataset.urlPreview) : webBtn.dataset.urlPreview;
     }
 
     var dlBtn = document.querySelector('[data-cta="download"]');
     if (dlBtn) {
+      var dlLabel = dlBtn.querySelector('.btn-label');
       var dlReady = !!cfg.download.ready;
+      var setDlText = function (text) {
+        if (dlLabel) { dlLabel.textContent = text; } else { dlBtn.textContent = text; }
+      };
       if (dlReady) {
-        dlBtn.textContent = dlBtn.dataset.labelReady;
+        setDlText(dlBtn.dataset.labelReady);
         dlBtn.href = dlBtn.dataset.urlReady;
         dlBtn.removeAttribute('aria-disabled');
         dlBtn.classList.remove('btn-disabled');
       } else {
-        dlBtn.textContent = dlBtn.dataset.labelComingsoon;
+        setDlText(dlBtn.dataset.labelComingsoon);
         dlBtn.setAttribute('aria-disabled', 'true');
         dlBtn.classList.add('btn-disabled');
         dlBtn.removeAttribute('href');

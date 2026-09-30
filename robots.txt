@@ -1,9 +1,9 @@
 User-agent: *
 Allow: /
-Disallow: /demo/
-Disallow: /fa/privacy/
-Disallow: /en/privacy/
-Disallow: /fa/terms/
-Disallow: /en/terms/
+
+# /demo/, /privacy/ and /terms/ pages carry their own <meta name="robots"
+# content="noindex"> instead of being Disallow'd here. Disallowing them
+# too would stop crawlers from ever fetching the page to see that tag,
+# which can leave a bare URL indexed with no snippet — see DEPLOY.md.
 
 Sitemap: https://avand.ir/sitemap.xml

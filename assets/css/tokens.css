@@ -34,6 +34,16 @@
   --color-warning: #9C6B05;
   --color-warning-bg: #FBF3DE;
 
+  /* Accessible button pair: --color-primary itself (#3282B8) fails WCAG
+     AA at button text sizes against both white text (~4.2:1) and against
+     --color-bg (~3.9:1) — see SPEC.md §11. --color-accent is a per-theme
+     shade of the same brand blue picked to clear 4.5:1 in both directions;
+     --color-on-accent is whichever of white/dark reads best on it. Used
+     only by .btn-primary / .btn-outline / .card-icon, not by --color-primary
+     itself (still the brand color for links etc). */
+  --color-accent: #1F5C86;
+  --color-on-accent: #FFFFFF;
+
   --shadow-sm: 0 1px 3px rgba(18, 36, 46, 0.10);
   --shadow-md: 0 8px 24px rgba(18, 36, 46, 0.14);
 
@@ -91,6 +101,9 @@
     --color-warning: #D9B65C;
     --color-warning-bg: rgba(217, 182, 92, 0.16);
 
+    --color-accent: #4E9CD6;
+    --color-on-accent: #1B262C;
+
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
   }
@@ -111,6 +124,9 @@
   --color-error-bg: rgba(224, 133, 120, 0.16);
   --color-warning: #D9B65C;
   --color-warning-bg: rgba(217, 182, 92, 0.16);
+
+  --color-accent: #4E9CD6;
+  --color-on-accent: #1B262C;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
