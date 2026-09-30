@@ -38,18 +38,85 @@
     padding-top:34px; box-sizing:border-box;
   }
   .device{
-    width:390px; height:844px; max-height:100vh; background:var(--bg);
+    width:390px; height:844px; max-height:calc(100vh - 34px); background:var(--bg);
     position:relative; overflow:hidden; border-radius:36px;
     box-shadow:0 0 0 10px #000, 0 20px 60px rgba(0,0,0,0.6);
   }
-  @media (max-width:420px){ .device{width:100vw; height:100vh; border-radius:0; box-shadow:none;} body{background:var(--bg);} }
+  /* max-height (not height) leaves room for the fixed notice bar + body's
+     padding-top above, so body never needs to grow past 100vh — the web
+     app itself must never cause outer/page-level scroll. */
+  @media (max-width:420px){ .device{width:100vw; height:calc(100vh - 34px); border-radius:0; box-shadow:none;} body{background:var(--bg);} }
 
-  /* ===== pager (Calendar | Home | Menu) ===== */
-  .pager-wrap{ position:absolute; inset:0; overflow:hidden; touch-action:pan-y; }
-  .pager{ position:absolute; inset:0; display:flex; width:300%; height:100%; transition:transform .32s cubic-bezier(.4,0,.2,1); }
-  .page{ width:33.3333%; height:100%; overflow-y:auto; padding:22px 18px 92px 18px; scrollbar-width:none; touch-action:pan-y; }
+  /* ===== app body =====
+     Below 960px, #page-home is the only visible page — Calendar is
+     merged into it via .home-cal-widget (see below) and Menu is a
+     hamburger-triggered overlay instead of a swiped page. At 960px+ the
+     desktop media query turns this into a two-column grid showing
+     #page-calendar and #page-home side by side (see there). */
+  .pager-wrap{ position:absolute; inset:0; overflow:hidden; }
+  .pager{ position:absolute; inset:0; }
+  .page{ width:100%; height:100%; overflow-y:auto; padding:22px 18px 100px 18px; scrollbar-width:none; }
   .page::-webkit-scrollbar{display:none;}
   .page.no-scroll{ overflow-y:hidden; }
+  #page-calendar{ display:none; }
+  #page-menu{ display:none; }
+  .device.show-menu #page-menu{
+    display:block; position:absolute; inset:0; z-index:70; background:var(--card);
+    overflow-y:auto; padding:22px 18px 40px 18px;
+  }
+  .menu-overlay{ display:none; }
+
+  /* ===== hamburger (mobile menu entry point) ===== */
+  .hamburger-btn{
+    position:absolute; top:16px; right:16px; z-index:50; width:38px; height:38px;
+    border-radius:12px; background:var(--card); border:1px solid var(--border);
+    color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .hamburger-btn svg{ width:18px; height:18px; }
+  .device.lang-fa .hamburger-btn{ right:auto; left:16px; }
+
+  /* ===== floating add button (replaces the old hold-to-open bottom nav) ===== */
+  .fab-add{
+    position:absolute; bottom:24px; right:20px; z-index:50; width:54px; height:54px;
+    border-radius:50%; background:var(--primary); color:#fff; border:none;
+    box-shadow:0 6px 18px rgba(78,156,214,0.45); display:flex; align-items:center;
+    justify-content:center; cursor:pointer; transition:transform .2s ease;
+  }
+  .fab-add svg{ width:22px; height:22px; transition:transform .2s ease; }
+  .fab-add.active svg{ transform:rotate(45deg); }
+  .fab-menu{
+    position:absolute; bottom:88px; right:20px; z-index:50; display:flex;
+    flex-direction:column; align-items:stretch; gap:8px; opacity:0; pointer-events:none;
+    transform:translateY(10px); transition:opacity .2s ease, transform .2s ease;
+  }
+  .fab-menu.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  .fab-menu .nav-add-item{ width:auto; white-space:nowrap; background:var(--card); }
+  .fab-menu.labels-hidden .nav-add-item{ justify-content:center; width:44px; padding:11px; }
+  .fab-menu.labels-hidden .nav-add-item span{ display:none; }
+
+  /* ===== merged calendar+home widget (mobile only) =====
+     Collapsed = this week as a 7-day strip. Expanded = full month grid,
+     like Samsung Calendar. Drag the handle (or tap it) to switch; picking
+     a date in the expanded grid also collapses back to the strip. */
+  .home-cal-widget{ margin:-4px -2px 16px -2px; }
+  .home-cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .home-cal-label{ font-size:15px; font-weight:700; }
+  .home-week-strip{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .home-cal-widget .month-grid{ margin-top:4px; }
+  .home-cal-handle{ display:flex; justify-content:center; padding:8px 0 2px 0; cursor:grab; touch-action:none; }
+  .home-cal-handle span{ width:36px; height:4px; border-radius:999px; background:var(--border); }
+
+  /* ===== menu panel close (shared mobile overlay / desktop side panel) ===== */
+  .menu-panel-close{
+    position:absolute; top:14px; right:14px; z-index:2; width:34px; height:34px;
+    border-radius:50%; background:var(--bg-soft); color:var(--text-muted); border:none;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .menu-panel-close svg{ width:14px; height:14px; }
+  .device.lang-fa .menu-panel-close{ right:auto; left:14px; }
+
+  /* ===== desktop-only right-edge menu rail (hidden on mobile) ===== */
+  .menu-rail{ display:none; }
 
   .app-header{ margin-bottom:18px; }
   .app-header h1{ font-size:24px; margin:0 0 2px 0; font-weight:700; letter-spacing:-0.3px; }
@@ -321,29 +388,37 @@
   .auth-footer{ margin-top:auto; text-align:center; font-size:12px; color:var(--text-muted); }
 
   /* ===== Desktop layout (>=960px): calendar + home side by side =====
-     Below 960px this file is untouched — same phone frame, same swiped
-     pages, same gestures. At 960px+ the phone chrome drops, Calendar and
-     Home render as permanent columns (both already fully rendered by
-     render() every time — only the mobile transform ever hid them), and
-     Menu becomes a slide-in side panel instead of a third swiped page. */
+     Below 960px, #page-home is the single merged Calendar+Home page (see
+     .home-cal-widget), Menu opens from the hamburger as a full-screen
+     overlay, and Add is a floating button. At 960px+ the phone chrome
+     drops, #page-calendar reappears as its own column next to #page-home,
+     Menu becomes a right-edge icon rail + slide-in panel, and Add stays a
+     floating button. Both breakpoints render everything into the DOM on
+     every render() call — only CSS decides what's visible where. */
   @media (min-width: 960px){
+    /* The whole app shell is viewport-locked here too (no outer scroll) —
+       each column scrolls internally, same principle as the phone frame. */
     body{ align-items:flex-start; padding-top:34px; }
     .device{
-      width:100%; max-width:1200px; height:auto; min-height:calc(100vh - 34px);
-      max-height:none; border-radius:0; box-shadow:none; overflow:visible;
+      width:100%; max-width:1200px; height:calc(100vh - 34px); max-height:none;
+      border-radius:0; box-shadow:none; overflow:hidden;
     }
-    .pager-wrap{ position:static; overflow:visible; touch-action:auto; }
+    .pager-wrap{ position:static; overflow:visible; touch-action:auto; height:100%; }
     .pager{
       position:static; display:grid; grid-template-columns:minmax(320px,380px) 1fr;
-      align-items:start; gap:24px; width:100%; height:auto;
+      align-items:start; gap:24px; width:100%; height:100%;
       transform:none !important; transition:none;
-      padding:28px 32px 150px 32px;
+      padding:28px 32px 28px 32px;
     }
-    .page{ width:auto; height:auto; overflow:visible; padding:0; touch-action:auto; }
+    .page{ width:auto; height:100%; overflow-y:auto; padding:0; touch-action:auto; }
+    #page-calendar{ display:block; }
     #page-menu{ display:none; }
+    /* Desktop shows the full #page-calendar column instead of this
+       compact widget inside #page-home. */
+    .home-cal-widget{ display:none; }
 
     .device.show-menu #page-menu{
-      display:block; position:fixed; top:0; bottom:0; right:0; z-index:70;
+      display:block; position:fixed; top:0; bottom:0; left:auto; right:0; z-index:70;
       width:420px; max-width:90vw; height:100vh; overflow-y:auto;
       background:var(--card); box-shadow:var(--shadow); padding:28px 24px;
     }
@@ -367,7 +442,22 @@
     }
     .day-sheet.show{ transform:translate(-50%,0); }
 
-    .bottom-nav-wrap{ left:50%; right:auto; transform:translateX(-50%); width:220px; }
+    /* Bottom nav is mobile-only; desktop uses the hamburger's replacement
+       (a right-edge icon rail, see .menu-rail) plus the floating add button. */
+    .hamburger-btn{ display:none; }
+    .menu-rail{
+      display:flex; flex-direction:column; align-items:center; gap:10px;
+      position:fixed; top:50%; right:0; transform:translateY(-50%); z-index:40;
+      background:var(--nav-bg); padding:16px 10px; border-radius:20px 0 0 20px;
+      box-shadow:var(--shadow);
+    }
+    .menu-rail button{
+      width:42px; height:42px; border-radius:50%; border:none; background:none;
+      color:var(--nav-icon); display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:color .2s ease, background .2s ease;
+    }
+    .menu-rail button svg{ width:18px; height:18px; }
+    .menu-rail button:hover{ background:rgba(255,255,255,0.06); color:var(--primary); }
 
     .auth-screen{
       position:fixed; inset:auto; top:50%; left:50%;
@@ -407,34 +497,51 @@
   <div class="add-popup" id="add-popup"></div>
 
   <!-- Desktop-only (>=960px): dims the page behind the Menu side panel.
-       Hidden on phone widths, where Menu is one of the three swiped pages. -->
+       On mobile the panel covers the whole screen itself, so no dimmer
+       is needed there — this stays hidden below 960px. -->
   <div class="menu-overlay" id="menu-overlay" data-action="close-menu-overlay"></div>
 
-  <div class="bottom-nav-wrap">
-    <div class="bottom-nav" id="bottom-nav">
-      <div class="nav-layer show" id="nav-layer-main">
-        <button class="nav-btn" id="nav-calendar" data-action="go-calendar">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 8h14v10H5V10z"/></svg>
-        </button>
-        <button class="nav-btn logo" id="nav-home" data-action="go-home"><span>A</span></button>
-        <button class="nav-btn" id="nav-menu" data-action="go-menu">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-        </button>
-        <div class="nav-slider" id="nav-slider"></div>
-      </div>
-      <div class="nav-layer" id="nav-layer-add">
-        <div class="nav-add-item" data-action="open-popup" data-type="task">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"/></svg><span id="nav-add-task-label">New Task</span>
-        </div>
-        <div class="nav-add-item" data-action="open-popup" data-type="habit">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2c1 3-1.5 4-1.5 6.5A2.5 2.5 0 0 0 14.5 11c1.4 0 2.5-1.1 2.5-2.5 2.5 2 3 5 3 6.5A7 7 0 0 1 6 15c0-3.5 2-5 3-6 .3 1 1 2 2 2 1.5 0 1-2 1-3.5C12 5.5 12.5 3.5 13.5 2z"/></svg><span id="nav-add-habit-label">New Habit</span>
-        </div>
-        <div class="nav-add-item" data-action="open-popup" data-type="event">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 8h14v10H5V10z"/></svg><span id="nav-add-event-label">New Event</span>
-        </div>
-      </div>
+  <!-- Mobile-only: opens the Menu overlay. Swaps sides by language via
+       the .lang-fa class (applyLanguageDom toggles it on #device). -->
+  <button class="hamburger-btn" id="hamburger-btn" data-action="open-menu" aria-label="Menu">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+  </button>
+
+  <!-- Desktop-only: menu items as a right-edge icon rail instead of a
+       nav page. Add is deliberately NOT in this rail (stays a separate
+       floating button below) per the "add stays separate" decision. -->
+  <div class="menu-rail" id="menu-rail">
+    <button type="button" data-action="open-menu" data-sub="profile" title="Profile">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    </button>
+    <button type="button" data-action="open-menu" data-sub="share" title="Share">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.1a3 3 0 0 0-2.1.9l-6.2-3.6c.06-.26.1-.53.1-.8s-.04-.54-.1-.8l6.1-3.56c.6.55 1.38.86 2.2.86a3 3 0 1 0-3-3c0 .27.04.53.1.79L8.9 10.4A3 3 0 1 0 7 16c.83 0 1.6-.32 2.2-.86l6.2 3.62c-.06.24-.1.5-.1.74a2.9 2.9 0 1 0 2.9-3.4z"/></svg>
+    </button>
+    <button type="button" data-action="open-menu" data-sub="about" title="About">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+    </button>
+    <button type="button" data-action="open-menu" data-sub="settings" title="Settings">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+    </button>
+  </div>
+
+  <!-- Add Task/Habit/Event. Replaces the old "hold the bottom-nav logo"
+       gesture — now a plain tap on a floating button, same on both
+       breakpoints (kept separate from the menu rail, per decision). -->
+  <div class="fab-menu" id="fab-menu">
+    <div class="nav-add-item" data-action="open-popup" data-type="task">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"/></svg><span id="nav-add-task-label">New Task</span>
+    </div>
+    <div class="nav-add-item" data-action="open-popup" data-type="habit">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2c1 3-1.5 4-1.5 6.5A2.5 2.5 0 0 0 14.5 11c1.4 0 2.5-1.1 2.5-2.5 2.5 2 3 5 3 6.5A7 7 0 0 1 6 15c0-3.5 2-5 3-6 .3 1 1 2 2 2 1.5 0 1-2 1-3.5C12 5.5 12.5 3.5 13.5 2z"/></svg><span id="nav-add-habit-label">New Habit</span>
+    </div>
+    <div class="nav-add-item" data-action="open-popup" data-type="event">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 8h14v10H5V10z"/></svg><span id="nav-add-event-label">New Event</span>
     </div>
   </div>
+  <button class="fab-add" id="fab-add" data-action="toggle-add-menu" aria-label="Add">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
+  </button>
 </div>
 
 <script>
@@ -694,20 +801,21 @@ function t(key){ return (STRINGS[lang()] || STRINGS.en)[key] || key; }
 function applyLanguageDom(){
   document.documentElement.setAttribute('lang', lang()==='fa' ? 'fa' : 'en');
   document.body.style.fontFamily = lang()==='fa' ? "'Vazirmatn','Inter',system-ui,Tahoma,sans-serif" : "'Inter','Vazirmatn',system-ui,sans-serif";
+  document.getElementById('device').classList.toggle('lang-fa', lang()==='fa');
 }
 
 const today = new Date(); today.setHours(0,0,0,0);
 
 /* ============ STATE ============ */
-const PAGES = ['calendar','home','menu'];
 const state = {
-  page: 'home',
   calMode: 'month',       // month | week
   calCursor: new Date(today),
   selectedDate: new Date(today),
   daySheetOpen: false,
   daySheetDate: new Date(today),
-  navExpanded: false,
+  navExpanded: false,   // true while the FAB's Task/Habit/Event mini-menu is open
+  menuPanelOpen: false, // true while the Menu overlay/side-panel is open
+  homeCalExpanded: false, // mobile merged widget: false = week strip, true = month grid
   popupOpen: false,
   popupType: null,
   monthDropdownOpen: false,
@@ -798,11 +906,10 @@ function render(){
   renderAuth();
   document.getElementById('page-calendar').innerHTML = renderCalendar();
   document.getElementById('page-home').innerHTML = renderHome();
-  document.getElementById('page-menu').innerHTML = renderMenu();
+  document.getElementById('page-menu').innerHTML =
+    `<button class="menu-panel-close" data-action="close-menu-overlay" aria-label="Close">${ICONS.close}</button>` + renderMenu();
   document.getElementById('page-calendar').classList.toggle('no-scroll', state.calMode === 'month');
-
-  const index = PAGES.indexOf(state.page);
-  document.getElementById('pager').style.transform = `translateX(-${index * (100/3)}%)`;
+  document.getElementById('device').classList.toggle('show-menu', state.menuPanelOpen);
 
   updateNav();
   renderDaySheet();
@@ -810,6 +917,7 @@ function render(){
   attachSwipeToDelete(document.getElementById('page-home'));
   attachSwipeToDelete(document.getElementById('page-calendar'));
   attachHomeHeaderSwipe();
+  attachHomeCalDrag();
   wireMenuInteractivity();
 }
 
@@ -819,8 +927,48 @@ function renderHome(){
   const {tasks, habits, events} = itemsForDate(d);
   const isToday = sameDay(d, today);
   return `
+    ${renderHomeCalWidget()}
     <div class="app-header" id="home-header"><h1>${isToday ? t('today') : weekdayFull(d.getDay())}</h1><p>${dayLabel(d)}</p></div>
     ${renderItemSections(tasks, habits, events, d)}
+  `;
+}
+
+/* ============ MERGED CALENDAR WIDGET (mobile only — see
+   .home-cal-widget{display:none} in the >=960px block, where the full
+   #page-calendar column is used instead) ============
+   Collapsed: this week as a 7-day strip. Expanded: full month grid.
+   Toggle via the handle (tap or drag) — see attachHomeCalDrag(). Picking
+   a date in the expanded grid also collapses back to the strip. */
+function renderHomeCalWidget(){
+  const d = state.homeDate;
+  const expanded = state.homeCalExpanded;
+  const disp = displayMonthYear(d);
+  const weekStart = startOfWeek(d);
+  const weekDays = Array.from({length:7}, (_,i) => addDays(weekStart, i));
+  const cell = (day) => {
+    const inMonth = cellInCurrentMonth(day, d);
+    const {tasks, events} = itemsForDate(day);
+    const hasAny = tasks.length || events.length;
+    const isToday = sameDay(day, today);
+    const isSelected = sameDay(day, d);
+    return `<div class="day-cell ${expanded && !inMonth ? 'other-month' : ''} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-home-day" data-date="${dateKey(day)}">
+      <span>${displayDayNum(day)}</span>
+      <div class="day-dots">${hasAny?'<span></span>':''}</div>
+    </div>`;
+  };
+  return `
+    <div class="home-cal-widget" id="home-cal-widget">
+      <div class="home-cal-head">
+        <button type="button" class="icon-btn" data-action="home-cal-prev">${ICONS.chevronLeft}</button>
+        <span class="home-cal-label">${disp.monthLabel} ${disp.yearLabel}</span>
+        <button type="button" class="icon-btn" data-action="home-cal-next">${ICONS.chevronRight}</button>
+      </div>
+      <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
+      ${expanded
+        ? `<div class="month-grid">${monthMatrix(d).map(cell).join('')}</div>`
+        : `<div class="home-week-strip">${weekDays.map(cell).join('')}</div>`}
+      <div class="home-cal-handle" id="home-cal-handle"><span></span></div>
+    </div>
   `;
 }
 function taskRow(t){
@@ -1179,10 +1327,11 @@ function renderCalendar(){
 }
 function renderDaySheet(){
   const sheet = document.getElementById('day-sheet');
-  /* On phones, calendar is one of three swiped pages, so the sheet only
-     makes sense while that page is active. At >=960px calendar is always
-     visible alongside home, so daySheetOpen alone should be enough. */
-  const show = state.daySheetOpen && (state.page === 'calendar' || window.innerWidth >= 960);
+  /* Mobile no longer has a separate Calendar page to peek from — the
+     merged widget's own month grid updates state.homeDate directly (see
+     'pick-home-day'), so the day-sheet modal is desktop-only now, for
+     the standalone #page-calendar column. */
+  const show = state.daySheetOpen && window.innerWidth >= 960;
   sheet.classList.toggle('show', show);
   if(!show) return;
   const d = state.daySheetDate;
@@ -1192,84 +1341,21 @@ function renderDaySheet(){
   attachSwipeToDelete(document.getElementById('day-sheet-body'));
 }
 
-/* ============ BOTTOM NAV (static markup — only classes/position update, never rebuilt) ============ */
+/* ============ FAB + MENU (static markup — only classes update, never rebuilt) ============ */
 function updateNav(){
-  document.getElementById('nav-calendar').classList.toggle('active', state.page==='calendar');
-  document.getElementById('nav-home').classList.toggle('active', state.page==='home');
-  document.getElementById('nav-menu').classList.toggle('active', state.page==='menu');
-  document.getElementById('bottom-nav').classList.toggle('expanded', state.navExpanded);
-  document.getElementById('device').classList.toggle('show-menu', state.page === 'menu');
-  document.getElementById('nav-layer-main').classList.toggle('show', !state.navExpanded);
-  document.getElementById('nav-layer-add').classList.toggle('show', state.navExpanded);
-  document.getElementById('nav-layer-add').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
-  document.getElementById('nav-add-task-label').textContent = t('newTask');
-  document.getElementById('nav-add-habit-label').textContent = t('newHabit');
-  document.getElementById('nav-add-event-label').textContent = t('newEvent');
-  positionSlider();
-}
-function positionSlider(){
-  const slider = document.getElementById('nav-slider');
-  const mainLayer = document.getElementById('nav-layer-main');
-  const targetId = state.page === 'calendar' ? 'nav-calendar' : state.page === 'menu' ? 'nav-menu' : 'nav-home';
-  const target = document.getElementById(targetId);
-  if(!slider || !mainLayer || !target) return;
-  const layerRect = mainLayer.getBoundingClientRect();
-  const btnRect = target.getBoundingClientRect();
-  slider.style.left = `${btnRect.left - layerRect.left + btnRect.width/2}px`;
+  document.getElementById('fab-add').classList.toggle('active', state.navExpanded);
+  document.getElementById('fab-menu').classList.toggle('show', state.navExpanded);
+  document.getElementById('fab-menu').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
 }
 
-function goPage(page){
-  state.page = page;
-  state.navExpanded = false;
-  render();
-}
-
-function initNavInteractions(){
-  const homeBtn = document.getElementById('nav-home');
-  let homeTimer = null; let homeLongPressed = false;
-  homeBtn.addEventListener('pointerdown', () => {
-    homeLongPressed = false;
-    homeBtn.classList.add('pressing');
-    homeTimer = setTimeout(() => {
-      homeLongPressed = true;
-      homeBtn.classList.remove('pressing');
-      state.navExpanded = true;
-      render();
-    }, 420);
+function initFabAndMenuInteractions(){
+  document.getElementById('fab-add').addEventListener('click', () => {
+    state.navExpanded = !state.navExpanded;
+    render();
   });
-  homeBtn.addEventListener('pointerup', () => {
-    homeBtn.classList.remove('pressing');
-    clearTimeout(homeTimer);
-    if(!homeLongPressed){
-      if(state.navExpanded){ state.navExpanded = false; render(); }
-      else { state.homeDate = new Date(today); goPage('home'); }
-    }
-  });
-  homeBtn.addEventListener('pointerleave', () => { clearTimeout(homeTimer); homeBtn.classList.remove('pressing'); });
-
-  const calBtn = document.getElementById('nav-calendar');
-  let calTimer = null; let calLongPressed = false;
-  calBtn.addEventListener('pointerdown', () => {
-    calLongPressed = false;
-    calTimer = setTimeout(() => {
-      calLongPressed = true;
-      state.calCursor = new Date(today);
-      state.selectedDate = new Date(today);
-      state.daySheetOpen = false;
-      goPage('calendar');
-    }, 420);
-  });
-  calBtn.addEventListener('pointerup', () => {
-    clearTimeout(calTimer);
-    if(!calLongPressed) goPage('calendar');
-  });
-  calBtn.addEventListener('pointerleave', () => clearTimeout(calTimer));
-
-  document.getElementById('nav-menu').addEventListener('click', () => { state.menuSubView = null; goPage('menu'); });
-
-  // tap outside the nav collapses the expanded add-menu
+  // tap outside the fab-menu collapses it
   document.getElementById('device').addEventListener('pointerdown', (e) => {
-    if(state.navExpanded && !e.target.closest('#bottom-nav')){
+    if(state.navExpanded && !e.target.closest('#fab-add, #fab-menu')){
       state.navExpanded = false; render();
     }
   });
@@ -1655,7 +1741,21 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
   if(action === 'close-popup'){ closePopup(); return; }
-  if(action === 'close-menu-overlay'){ goPage('home'); return; }
+  if(action === 'open-menu'){ state.menuSubView = el.dataset.sub || null; state.menuPanelOpen = true; render(); return; }
+  if(action === 'close-menu-overlay'){ state.menuPanelOpen = false; render(); return; }
+  if(action === 'pick-home-day'){
+    state.homeDate = new Date(el.dataset.date);
+    if(state.homeCalExpanded) state.homeCalExpanded = false;
+    render(); return;
+  }
+  if(action === 'home-cal-prev'){
+    state.homeDate = state.homeCalExpanded ? stepMonth(state.homeDate, -1) : addDays(state.homeDate, -7);
+    render(); return;
+  }
+  if(action === 'home-cal-next'){
+    state.homeDate = state.homeCalExpanded ? stepMonth(state.homeDate, 1) : addDays(state.homeDate, 7);
+    render(); return;
+  }
   if(action === 'submit-popup'){ submitPopup(); return; }
   if(action === 'open-subview'){ state.popupSubView = el.dataset.sub; if(el.dataset.sub==='calendar'){ miniCalCursor = new Date(formDraft.date); } renderPopupBody(); return; }
   if(action === 'close-subview'){ state.popupSubView = null; renderPopupBody(); return; }
@@ -1879,30 +1979,24 @@ function attachSwipeToDelete(container){
     el.addEventListener('pointerdown', e => e.stopPropagation());
   });
 }
-(function(){
-  const wrap = document.getElementById('pager-wrap');
-  let startX = null, startY = null, blocked = false, activePointers = 0;
-  wrap.addEventListener('pointerdown', (e) => {
-    if(window.innerWidth >= 960){ startX = null; return; } /* two-column desktop layout: no page-swipe */
-    activePointers++;
-    if(activePointers > 1){ startX = null; return; }
-    blocked = state.popupOpen || state.daySheetOpen || state.navExpanded || state.monthDropdownOpen || state.yearDropdownOpen;
-    startX = e.clientX; startY = e.clientY;
+function attachHomeCalDrag(){
+  const handle = document.getElementById('home-cal-handle');
+  if(!handle) return;
+  let startY = null, moved = false;
+  handle.addEventListener('pointerdown', e => { startY = e.clientY; moved = false; e.stopPropagation(); });
+  handle.addEventListener('pointermove', e => {
+    if(startY === null) return;
+    if(Math.abs(e.clientY - startY) > 8) moved = true;
   });
-  wrap.addEventListener('pointerup', (e) => {
-    activePointers = Math.max(0, activePointers - 1);
-    if(window.innerWidth >= 960 || blocked || startX === null){ startX = null; return; }
-    const dx = e.clientX - startX;
+  handle.addEventListener('pointerup', e => {
+    if(startY === null) return;
     const dy = e.clientY - startY;
-    if(Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4){
-      const idx = PAGES.indexOf(state.page);
-      if(dx < 0 && idx < PAGES.length - 1){ state.page = PAGES[idx+1]; render(); }
-      else if(dx > 0 && idx > 0){ state.page = PAGES[idx-1]; render(); }
-    }
-    startX = null;
+    if(moved && Math.abs(dy) > 24) state.homeCalExpanded = dy > 0;
+    else if(!moved) state.homeCalExpanded = !state.homeCalExpanded;
+    startY = null;
+    render();
   });
-  wrap.addEventListener('pointercancel', () => { activePointers = Math.max(0, activePointers - 1); startX = null; });
-})();
+}
 
 function attachDaySheetDrag(){
   const sheet = document.getElementById('day-sheet');
@@ -1926,7 +2020,7 @@ function attachDaySheetDrag(){
       if(dy > 70){
         state.homeDate = new Date(state.daySheetDate);
         state.daySheetOpen = false;
-        goPage('home');
+        render();
       }
     };
     el.addEventListener('pointerup', end);
@@ -1935,7 +2029,7 @@ function attachDaySheetDrag(){
 }
 
 /* ============ INIT ============ */
-initNavInteractions();
+initFabAndMenuInteractions();
 attachDaySheetDrag();
 render();
 </script>
