@@ -31,21 +31,21 @@
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
-    background:#05080a;
+    background:var(--bg);
     font-family:'Inter',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
     display:flex; align-items:center; justify-content:center;
     min-height:100vh; color:var(--text);
     padding-top:34px; box-sizing:border-box;
   }
+  /* Full-bleed at every width — no phone-bezel chrome, no visible frame
+     around the app, matching body background so there's no seam even
+     when centered under the desktop max-width below. Height leaves room
+     for the fixed notice bar + body's padding-top so the page itself
+     never needs to scroll past 100vh. */
   .device{
-    width:390px; height:844px; max-height:calc(100vh - 34px); background:var(--bg);
-    position:relative; overflow:hidden; border-radius:36px;
-    box-shadow:0 0 0 10px #000, 0 20px 60px rgba(0,0,0,0.6);
+    width:100%; height:calc(100vh - 34px); background:var(--bg);
+    position:relative; overflow:hidden; border-radius:0; box-shadow:none;
   }
-  /* max-height (not height) leaves room for the fixed notice bar + body's
-     padding-top above, so body never needs to grow past 100vh — the web
-     app itself must never cause outer/page-level scroll. */
-  @media (max-width:420px){ .device{width:100vw; height:calc(100vh - 34px); border-radius:0; box-shadow:none;} body{background:var(--bg);} }
 
   /* ===== app body =====
      Below 960px, #page-home is the only visible page — Calendar is
@@ -55,7 +55,11 @@
      #page-calendar and #page-home side by side (see there). */
   .pager-wrap{ position:absolute; inset:0; overflow:hidden; }
   .pager{ position:absolute; inset:0; }
-  .page{ width:100%; height:100%; overflow-y:auto; padding:22px 18px 100px 18px; scrollbar-width:none; }
+  /* Horizontal padding grows with viewport (capped) instead of letting
+     cards stretch edge-to-edge on tablet-width screens, while the
+     scrollable box itself stays full-width (so touch-scroll works
+     right up to the screen edge). */
+  .page{ width:100%; height:100%; overflow-y:auto; padding:22px max(18px, calc((100% - 640px)/2)) 100px; scrollbar-width:none; }
   .page::-webkit-scrollbar{display:none;}
   .page.no-scroll{ overflow-y:hidden; }
   #page-calendar{ display:none; }
@@ -128,6 +132,7 @@
 
   /* ===== desktop-only right-edge menu rail (hidden on mobile) ===== */
   .menu-rail{ display:none; }
+  .corner-placeholder-btn{ display:none; }
 
   .app-header{ margin-bottom:18px; }
   .app-header h1{ font-size:24px; margin:0 0 2px 0; font-weight:700; letter-spacing:-0.3px; }
@@ -261,6 +266,20 @@
   .toggle-pair{ display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; }
   .toggle-pair button{ flex:1; border:none; background:transparent; padding:9px 4px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit; }
   .toggle-pair button.active{ background:var(--primary); color:#fff; }
+  .settings-select{
+    background:var(--bg-soft); color:var(--text); border:1px solid var(--border);
+    border-radius:10px; padding:8px 10px; font-size:13px; font-family:inherit; cursor:pointer;
+  }
+  .app-toast{
+    position:absolute; left:50%; bottom:24px; transform:translate(-50%,20px); z-index:90;
+    background:var(--card); color:var(--text); border:1px solid var(--border);
+    padding:10px 16px; border-radius:12px; font-size:13px; box-shadow:var(--shadow);
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+    max-width:80%; text-align:center;
+  }
+  .app-toast.show{ opacity:1; transform:translate(-50%,0); }
+  .device{ transition:opacity .16s ease; }
+  .device.lang-fading{ opacity:0; }
   .hidden{ display:none !important; }
   .weekday-picker{ display:flex; gap:5px; justify-content:space-between; }
   .weekday-picker button{ width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--bg-soft); color:var(--text-muted); font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; }
@@ -384,7 +403,10 @@
 
   /* ===== auth screen ===== */
   .btn-primary{ background:var(--primary); color:#fff; }
-  .auth-screen{ position:absolute; inset:0; background:var(--bg); z-index:80; display:flex; flex-direction:column; padding:50px 26px 30px 26px; opacity:1; transition:opacity .25s ease; }
+  .auth-screen{
+    position:absolute; inset:0; background:var(--bg); z-index:80; display:flex; flex-direction:column;
+    padding:50px max(26px, calc((100% - 440px)/2)) 30px; opacity:1; transition:opacity .25s ease;
+  }
   .auth-screen.hidden{ opacity:0; pointer-events:none; }
   .auth-logo{ width:64px; height:64px; border-radius:20px; background:var(--primary); color:#fff; font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto; }
   .auth-title{ text-align:center; font-size:20px; font-weight:800; }
@@ -432,15 +454,27 @@
        guard that forces state.calMode='month' at this width). */
     .cal-mode-tabs{ display:none; }
 
-    .device.show-menu #page-menu{
+    /* Always rendered (not display:none) so open/close is a slide
+       transition, not a sudden pop — same technique as the mobile
+       hamburger overlay. Feels like it extends out from the rail.
+       Desktop's panel always slides from the right regardless of
+       language (unlike the mobile hamburger, which flips sides) — the
+       .lang-fa override here reclaims that from the base rule, which
+       has higher specificity because it carries two classes. */
+    #page-menu{
       display:block; position:fixed; top:0; bottom:0; left:auto; right:0; z-index:70;
       width:420px; max-width:90vw; height:100vh; overflow-y:auto;
       background:var(--card); box-shadow:var(--shadow); padding:28px 24px;
+      transform:translateX(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+      pointer-events:none;
     }
-    .menu-overlay{ display:none; }
-    .device.show-menu .menu-overlay{
+    .device.lang-fa #page-menu{ transform:translateX(100%); }
+    .device.show-menu #page-menu{ transform:translateX(0); pointer-events:auto; }
+    .menu-overlay{
       display:block; position:fixed; inset:0; z-index:65; background:var(--overlay);
+      opacity:0; pointer-events:none; transition:opacity .32s ease;
     }
+    .device.show-menu .menu-overlay{ opacity:1; pointer-events:auto; }
 
     .popup-overlay{ position:fixed; }
     .add-popup{
@@ -473,6 +507,17 @@
     }
     .menu-rail button svg{ width:18px; height:18px; }
     .menu-rail button:hover{ background:rgba(255,255,255,0.06); color:var(--primary); }
+
+    /* Independent of the rail (own element, own future) — docked to the
+       same screen edge, stacked just above the FAB with a small gap. */
+    .corner-placeholder-btn{
+      display:flex; align-items:center; justify-content:center;
+      position:fixed; right:20px; bottom:90px; z-index:41;
+      width:48px; height:48px; border-radius:14px;
+      background:var(--nav-bg); color:var(--nav-icon); border:none;
+      box-shadow:var(--shadow); cursor:not-allowed; opacity:.6;
+    }
+    .corner-placeholder-btn svg{ width:20px; height:20px; }
 
     .auth-screen{
       position:fixed; inset:auto; top:50%; left:50%;
@@ -557,6 +602,14 @@
   <button class="fab-add" id="fab-add" data-action="toggle-add-menu" aria-label="Add">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
   </button>
+
+  <!-- Desktop-only: independent placeholder, not part of the menu rail.
+       No behavior yet — reserved for a feature to be designed later
+       (see SPEC.md). Kept as its own element/class so its position or
+       purpose can change without touching the rail or the FAB. -->
+  <button class="corner-placeholder-btn" id="corner-placeholder-btn" aria-label="More" disabled>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>
+  </button>
 </div>
 
 <script>
@@ -589,13 +642,15 @@ const pad = n => String(n).padStart(2, '0');
 const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const sameDay = (a,b) => dateKey(a) === dateKey(b);
 const addDays = (d,n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+const WEEKDAY_INDEX = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
+function weekStartIndex(){ return WEEKDAY_INDEX[state.settings.weekStartDay] ?? 6; }
 function weekdayOrder(){
-  const start = state.settings.weekStartDay === 'saturday' ? 6 : 1;
+  const start = weekStartIndex();
   return Array.from({length:7}, (_,i) => (start+i)%7);
 }
 function startOfWeek(d){
   const r = new Date(d);
-  const startIdx = state.settings.weekStartDay === 'saturday' ? 6 : 1;
+  const startIdx = weekStartIndex();
   const offset = (r.getDay() - startIdx + 7) % 7;
   r.setDate(r.getDate()-offset);
   r.setHours(0,0,0,0);
@@ -751,7 +806,8 @@ const STRINGS = {
     language:'Language', languageSub:'App display language',
     notifications:'Notifications', notificationsSub:'Task, habit, and event reminders',
     weekStartsOn:'Week starts on', weekStartsSub:'Changes the calendar grid order',
-    calendarSystem:'Calendar system', calendarSystemSub:'Gregorian or Jalali (Persian) dates', gregorian:'Gregorian', jalali:'Jalali',
+    calendarSystem:'Calendar system', calendarSystemSub:'Gregorian or Jalali (Persian) dates', gregorian:'Gregorian', jalali:'Jalali', hijri:'Hijri',
+    hijriComingSoon:'Hijri calendar support is coming soon',
     showLabels:'Show labels', showLabelsSub:'Text under New Task / Habit / Event',
     sun:'Sun', mon:'Mon',
     profile:'Profile', name:'Name', email:'Email', tasksDone:'Tasks done', checkins:'Check-ins', logout:'Log out',
@@ -787,7 +843,8 @@ const STRINGS = {
     language:'زبان', languageSub:'زبان نمایش برنامه',
     notifications:'نوتیفیکیشن‌ها', notificationsSub:'یادآوری کار، عادت و رویداد',
     weekStartsOn:'شروع هفته از', weekStartsSub:'ترتیب جدول تقویم رو عوض می‌کنه',
-    calendarSystem:'نوع تقویم', calendarSystemSub:'میلادی یا شمسی', gregorian:'میلادی', jalali:'شمسی',
+    calendarSystem:'نوع تقویم', calendarSystemSub:'میلادی یا شمسی', gregorian:'میلادی', jalali:'شمسی', hijri:'قمری',
+    hijriComingSoon:'پشتیبانی از تقویم قمری به‌زودی اضافه می‌شه',
     showLabels:'نمایش برچسب', showLabelsSub:'متن زیر افزودن کار/عادت/رویداد',
     sun:'یک', mon:'دو',
     profile:'پروفایل', name:'نام', email:'ایمیل', tasksDone:'کار انجام‌شده', checkins:'چک‌این', logout:'خروج از حساب',
@@ -844,7 +901,7 @@ const state = {
   authScreen: true,
   authTab: 'login',
   profile: { name: 'Daniel', email: 'daniel@example.com' },
-  settings: { notifications: true, weekStartDay: 'monday', showAddMenuLabels: true, language: 'en', calendarSystem: 'gregorian' },
+  settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali' },
   tasks: [],
   habits: [],
   events: []
@@ -1237,21 +1294,22 @@ function renderGeneralSettings(){
   `;
 }
 function renderCalendarSettings(){
+  const weekdayLabels = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
   return `
     ${subHeader(t('calendarSettings'))}
     <div class="settings-row">
       <div><div class="lbl">${t('calendarSystem')}</div><div class="sub">${t('calendarSystemSub')}</div></div>
-      <div class="toggle-pair" style="width:150px;">
+      <div class="toggle-pair" style="width:220px;">
         <button type="button" data-action="set-calendar-system" data-val="gregorian" class="${!isJalali()?'active':''}">${t('gregorian')}</button>
         <button type="button" data-action="set-calendar-system" data-val="jalali" class="${isJalali()?'active':''}">${t('jalali')}</button>
+        <button type="button" data-action="hijri-coming-soon">${t('hijri')}</button>
       </div>
     </div>
     <div class="settings-row">
       <div><div class="lbl">${t('weekStartsOn')}</div><div class="sub">${t('weekStartsSub')}</div></div>
-      <div class="toggle-pair" style="width:130px;">
-        <button type="button" data-action="set-week-start" data-val="monday" class="${state.settings.weekStartDay==='monday'?'active':''}">${weekdayShort(1)}</button>
-        <button type="button" data-action="set-week-start" data-val="saturday" class="${state.settings.weekStartDay==='saturday'?'active':''}">${weekdayShort(6)}</button>
-      </div>
+      <select class="settings-select" id="week-start-select">
+        ${weekdayLabels.map((key,i) => `<option value="${key}" ${state.settings.weekStartDay===key?'selected':''}>${weekdayFull(i)}</option>`).join('')}
+      </select>
     </div>
   `;
 }
@@ -1267,6 +1325,22 @@ function renderAvandMenuSettings(){
 function wireMenuInteractivity(){
   document.getElementById('profile-name')?.addEventListener('input', e => { state.profile.name = e.target.value; });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; });
+  document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; render(); });
+}
+
+let toastTimer = null;
+function showToast(msg){
+  let el = document.getElementById('app-toast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'app-toast';
+    el.className = 'app-toast';
+    document.getElementById('device').appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
 /* ============ CALENDAR ============ */
@@ -1854,8 +1928,20 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'menu-back'){ state.menuSubView = MENU_PARENT[state.menuSubView] || null; render(); return; }
   if(action === 'toggle-setting'){ state.settings[el.dataset.key] = !state.settings[el.dataset.key]; render(); return; }
   if(action === 'set-week-start'){ state.settings.weekStartDay = el.dataset.val; render(); return; }
+  if(action === 'hijri-coming-soon'){ showToast(t('hijriComingSoon')); return; }
   if(action === 'set-calendar-system'){ state.settings.calendarSystem = el.dataset.val; state.monthDropdownOpen=false; state.yearDropdownOpen=false; render(); return; }
-  if(action === 'set-language'){ state.settings.language = el.dataset.val; render(); return; }
+  if(action === 'set-language'){
+    /* A brief fade instead of text flipping instantly under the user's
+       cursor — the whole app dims out, swaps language, fades back in. */
+    const device = document.getElementById('device');
+    device.classList.add('lang-fading');
+    setTimeout(() => {
+      state.settings.language = el.dataset.val;
+      render();
+      requestAnimationFrame(() => device.classList.remove('lang-fading'));
+    }, 160);
+    return;
+  }
   if(action === 'share-copy'){
     try{ navigator.clipboard.writeText('https://avand.app'); }catch(err){}
     const fb = document.getElementById('share-feedback');
