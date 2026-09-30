@@ -35,15 +35,14 @@
     font-family:'Inter',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
     display:flex; align-items:center; justify-content:center;
     min-height:100vh; color:var(--text);
-    padding-top:34px; box-sizing:border-box;
+    box-sizing:border-box;
   }
   /* Full-bleed at every width — no phone-bezel chrome, no visible frame
      around the app, matching body background so there's no seam even
-     when centered under the desktop max-width below. Height leaves room
-     for the fixed notice bar + body's padding-top so the page itself
-     never needs to scroll past 100vh. */
+     when centered under the desktop max-width below. Exactly 100vh so
+     the page itself never needs to scroll. */
   .device{
-    width:100%; height:calc(100vh - 34px); background:var(--bg);
+    width:100%; height:100vh; background:var(--bg);
     position:relative; overflow:hidden; border-radius:0; box-shadow:none;
   }
 
@@ -494,9 +493,9 @@
   @media (min-width: 960px){
     /* The whole app shell is viewport-locked here too (no outer scroll) —
        each column scrolls internally, same principle as the phone frame. */
-    body{ align-items:flex-start; padding-top:34px; }
+    body{ align-items:flex-start; }
     .device{
-      width:100%; max-width:1200px; height:calc(100vh - 34px); max-height:none;
+      width:100%; max-width:1200px; height:100vh; max-height:none;
       border-radius:0; box-shadow:none; overflow:hidden;
     }
     .pager-wrap{ position:static; overflow:visible; touch-action:auto; height:100%; }
@@ -515,13 +514,11 @@
     /* Desktop's #page-calendar column is Monthly-only (see render()'s
        guard that forces state.calMode='month' at this width). */
     .cal-mode-tabs{ display:none; }
-    /* Desktop columns don't need generic section titles ("Calendar" /
-       "Today") — the calendar's own month/year label already says what
-       it is, and Home's date line is enough on its own. */
+    /* Desktop's #page-calendar column doesn't need a generic "Calendar"
+       title — the month/year label already says what it is. (Home's own
+       header was removed entirely, both breakpoints — see Dashboard
+       cleanup in SPEC.md.) */
     #page-calendar .app-header{ display:none; }
-    #home-header h1{ display:none; }
-    #home-header p{ font-size:18px; font-weight:700; color:var(--text); }
-    #home-header{ margin-bottom:14px; }
 
     /* Always rendered (not display:none) so open/close is a slide
        transition, not a sudden pop — same technique as the mobile
@@ -590,17 +587,6 @@
     .menu-rail button svg{ width:18px; height:18px; }
     .menu-rail button:hover{ background:rgba(255,255,255,0.06); color:var(--primary); }
 
-    /* Independent of the rail (own element, own future) — same cluster
-       column so it keeps a fixed small gap below the rail regardless of
-       the rail's own height, nowhere near the FAB/Add cluster. */
-    .corner-placeholder-btn{
-      display:flex; align-items:center; justify-content:center;
-      width:40px; height:40px; border-radius:14px 0 0 14px;
-      background:var(--nav-bg); color:var(--nav-icon); border:none;
-      box-shadow:var(--shadow); cursor:not-allowed; opacity:.55;
-    }
-    .corner-placeholder-btn svg{ width:18px; height:18px; }
-
     .auth-screen{
       position:fixed; inset:auto; top:50%; left:50%;
       transform:translate(-50%,-50%);
@@ -611,9 +597,6 @@
 </style>
 </head>
 <body>
-<div style="position:fixed; top:0; left:0; right:0; z-index:9999; background:#9C6B05; color:#FFF7E0; text-align:center; font:600 12px/1.5 sans-serif; padding:6px 10px;">
-  Design preview — nothing you enter here is saved · پیش‌نمایش طراحی — داده‌ها ذخیره نمی‌شوند
-</div>
 <div class="device" id="device">
 
   <div class="auth-screen" id="auth-screen"></div>
@@ -671,11 +654,6 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
       </button>
     </div>
-    <!-- No behavior yet — reserved for a feature to be designed later
-         (see SPEC.md §11.6). -->
-    <button class="corner-placeholder-btn" id="corner-placeholder-btn" aria-label="More" disabled>
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>
-    </button>
   </div>
 
   <!-- Add Task/Habit/Event. Replaces the old "hold the bottom-nav logo"
@@ -1068,6 +1046,11 @@ function render(){
      an earlier narrower viewport. */
   if(window.innerWidth >= 960 && state.calMode !== 'month') state.calMode = 'month';
   document.getElementById('page-calendar').innerHTML = renderCalendar();
+  /* Calendar-only RTL: real layout mirroring (day order, controls,
+     alignment), not just text direction — scoped to the calendar
+     specifically per spec, while the rest of the app stays LTR-always
+     (see SPEC.md for why that's still true everywhere else). */
+  document.getElementById('page-calendar').setAttribute('dir', lang()==='fa' ? 'rtl' : 'ltr');
   document.getElementById('page-home').innerHTML = renderHome();
   document.getElementById('page-menu').innerHTML =
     `<button class="menu-panel-close" data-action="close-menu-overlay" aria-label="Close">${ICONS.close}</button>` +
@@ -1092,10 +1075,8 @@ function render(){
 function renderHome(){
   const d = state.homeDate;
   const {tasks, habits, events} = itemsForDate(d);
-  const isToday = sameDay(d, today);
   return `
     ${renderHomeCalWidget()}
-    <div class="app-header" id="home-header"><h1>${isToday ? t('today') : weekdayFull(d.getDay())}</h1><p>${dayLabel(d)}</p></div>
     ${renderDayStatsCard(tasks, habits, events, d)}
     ${renderItemSections(tasks, habits, events, d)}
   `;
@@ -1186,7 +1167,7 @@ function renderHomeCalWidget(){
       ${years.map(y => `<div class="cal-dropdown-item ${(isJalali()?y===disp.jy:y===d.getFullYear())?'active':''}" data-action="home-pick-year" data-year="${y}">${y}</div>`).join('')}
     </div>` : '';
   return `
-    <div class="home-cal-widget" id="home-cal-widget">
+    <div class="home-cal-widget" id="home-cal-widget" dir="${lang()==='fa'?'rtl':'ltr'}">
       <div class="cal-topbar home-cal-topbar">
         <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
         <span class="cal-label" id="home-cal-year-label">${disp.yearLabel}</span>
@@ -1245,14 +1226,19 @@ function eventCard(e){
 }
 
 /* ============ SHARED COLLAPSIBLE SECTIONS ============ */
+/* Empty sections render nothing at all now (not even a title + "no X"
+   hint) — an empty Dashboard should look clean, not like three
+   placeholders stacked on top of each other. */
 function renderEventsSection(events){
+  if(!events.length) return '';
   const sorted = sortEvents(events);
   return `
     <div class="section-title">${t('events')} <span class="count">${events.length}</span></div>
-    ${events.length ? `<div class="events-scroll">${sorted.map(e=>eventCard(e)).join('')}</div>` : `<div class="empty-hint">${t('noEvents')}</div>`}
+    <div class="events-scroll">${sorted.map(e=>eventCard(e)).join('')}</div>
   `;
 }
 function renderTasksSection(tasks){
+  if(!tasks.length) return '';
   const sorted = [...tasks].sort((a,b) => (b.pinned - a.pinned) || (a.done - b.done));
   const limit = 3;
   const expanded = state.sectionExpanded.tasks;
@@ -1262,10 +1248,11 @@ function renderTasksSection(tasks){
     <div class="section-title">${t('tasks')} <span class="count">${tasks.length}</span>
       ${hasMore ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="tasks">${ICONS.chevronDown}</button>` : ''}
     </div>
-    ${tasks.length ? visible.map(t=>taskRow(t)).join('') : `<div class="empty-hint">${t('noTasks')}</div>`}
+    ${visible.map(t=>taskRow(t)).join('')}
   `;
 }
 function renderHabitsSection(habits, date){
+  if(!habits.length) return '';
   const limit = 2;
   const expanded = state.sectionExpanded.habits;
   const visible = expanded ? habits : habits.slice(0, limit);
@@ -1274,7 +1261,7 @@ function renderHabitsSection(habits, date){
     <div class="section-title">${t('habits')} <span class="count">${habits.length}</span>
       ${hasMore ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="habits">${ICONS.chevronDown}</button>` : ''}
     </div>
-    ${habits.length ? visible.map(h=>habitRow(h,date)).join('') : `<div class="empty-hint">${t('noHabits')}</div>`}
+    ${visible.map(h=>habitRow(h,date)).join('')}
   `;
 }
 function renderItemSections(tasks, habits, events, date){
@@ -1686,10 +1673,10 @@ function initHomeScrollExpand(){
     const atBottom = st + el.clientHeight >= el.scrollHeight - 4;
     const nearTop = st <= 20;
     if(st > homeScrollLast && atBottom && !state.homeCalExpanded){
-      state.homeCalExpanded = true; render();
-      el.scrollTop = st; // render() rebuilds the list and resets scroll to 0
+      setHomeCalExpanded(true);
+      el.scrollTop = st; // widget got taller; keep the visual scroll position
     } else if(st < homeScrollLast && nearTop && state.homeCalExpanded){
-      state.homeCalExpanded = false; render();
+      setHomeCalExpanded(false);
       el.scrollTop = 0;
     }
     homeScrollLast = el.scrollTop;
@@ -2373,12 +2360,11 @@ function attachHomeCalDrag(){
       startY = null;
       return;
     } else if(moved && Math.abs(dy) > 24){
-      state.homeCalExpanded = dy > 0;
+      setHomeCalExpanded(dy > 0);
     } else if(!moved && isHandle){
-      state.homeCalExpanded = !state.homeCalExpanded;
+      setHomeCalExpanded(!state.homeCalExpanded);
     }
     startY = null;
-    render();
   }
 
   if(handle){
@@ -2419,6 +2405,23 @@ function slideHomeCalDate(dir, updateFn){
       s2.style.opacity = '1';
     });
   }, 150);
+}
+
+/* Expanding/collapsing the widget never changes which date is selected,
+   so it never needed to re-render the stat card or agenda list — doing
+   so from a HIGH-FREQUENCY trigger like scroll caused a real bug (the
+   ring chart visibly resetting/"spinning" and cards replaying their
+   entrance animation on every scroll tick, since a full render()
+   recreates those DOM nodes from scratch). This updates ONLY the
+   calendar widget itself. */
+function setHomeCalExpanded(expanded){
+  state.homeCalExpanded = expanded;
+  const widget = document.getElementById('home-cal-widget');
+  if(!widget){ render(); return; }
+  widget.outerHTML = renderHomeCalWidget();
+  attachHomeCalendarGestures();
+  attachHomeCalDrag();
+  positionHomeCalGrid();
 }
 
 /* Sizes/positions the merged widget's month grid so only the row

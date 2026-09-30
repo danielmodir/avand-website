@@ -19,14 +19,22 @@ Read the relevant doc before any big change.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.
   Never hardcode colors anywhere else.
 - Brand is a placeholder (logo "آ" in a circle). Keep it swappable in one place.
-- /demo/ holds the HTML prototype. It must be labeled as a preview (data is not saved),
-  have noindex, and make no external requests. Never describe it as the finished product.
+- /demo/ holds the HTML prototype. It must have noindex and make no external requests.
+  Status: the visible "this is a preview" banner was removed by explicit product decision
+  (SPEC.md §11.9) — noindex still applies, and the marketing site (outside /demo/) must
+  still never describe it as the finished product.
 - Domains: .ir is canonical; .com redirects to it (settled during deployment).
 
 ## Product claims
-- Only advertise MVP features: Task, Habit, Event, Calendar, reminders
-  (see docs/avand_phase2_v1.md and docs/avand_mvp-scope-amendments_v1.md).
-- Do NOT advertise Reports/Charts, AI, Challenge, Journal, Tool Store or Social.
+- The marketing site (index.html, /en/, /fa/ — everything outside /demo/) only
+  advertises MVP features: Task, Habit, Event, Calendar, reminders (see
+  docs/avand_phase2_v1.md and docs/avand_mvp-scope-amendments_v1.md). Do NOT
+  advertise Reports/Charts, AI, Challenge, Journal, Tool Store or Social there.
+- /demo/ itself is an exception by explicit, conscious decision (SPEC.md §11.9):
+  it now also includes Social (Friends/Connections) and a Tool Store-style
+  Feature Center, deliberately going beyond the docs' original MVP scope for
+  demo/prototyping purposes. That expansion is /demo/-only — it does not change
+  what the marketing site is allowed to claim.
 - Do not name competitors in copy. Do not invent numbers, testimonials or user counts.
 - If something is not in /docs, ask me instead of guessing.
 
