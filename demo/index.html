@@ -59,11 +59,16 @@
   .page::-webkit-scrollbar{display:none;}
   .page.no-scroll{ overflow-y:hidden; }
   #page-calendar{ display:none; }
-  #page-menu{ display:none; }
-  .device.show-menu #page-menu{
+  /* Always in the layout (not display:none) so the slide-in/out can be a
+     transform transition instead of an instant display swap. */
+  #page-menu{
     display:block; position:absolute; inset:0; z-index:70; background:var(--card);
     overflow-y:auto; padding:22px 18px 40px 18px;
+    transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+    pointer-events:none;
   }
+  .device.lang-fa #page-menu{ transform:translateX(-100%); }
+  .device.show-menu #page-menu{ transform:translateX(0); pointer-events:auto; }
   .menu-overlay{ display:none; }
 
   /* ===== hamburger (mobile menu entry point) ===== */
@@ -80,7 +85,7 @@
     position:absolute; bottom:24px; right:20px; z-index:50; width:54px; height:54px;
     border-radius:50%; background:var(--primary); color:#fff; border:none;
     box-shadow:0 6px 18px rgba(78,156,214,0.45); display:flex; align-items:center;
-    justify-content:center; cursor:pointer; transition:transform .2s ease;
+    justify-content:center; cursor:pointer; transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
   }
   .fab-add svg{ width:22px; height:22px; transition:transform .2s ease; }
   .fab-add.active svg{ transform:rotate(45deg); }
@@ -90,6 +95,10 @@
     transform:translateY(10px); transition:opacity .2s ease, transform .2s ease;
   }
   .fab-menu.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  /* Mobile-only: auto-hides after 5s idle, reappears on scroll (see
+     scheduleFabHide()). Desktop never gets this class. */
+  .fab-add.hidden-fab{ transform:translateY(120px); opacity:0; pointer-events:none; }
+  .fab-menu.hidden-fab{ opacity:0; pointer-events:none; transform:translateY(120px); }
   .fab-menu .nav-add-item{ width:auto; white-space:nowrap; background:var(--card); }
   .fab-menu.labels-hidden .nav-add-item{ justify-content:center; width:44px; padding:11px; }
   .fab-menu.labels-hidden .nav-add-item span{ display:none; }
@@ -98,11 +107,13 @@
      Collapsed = this week as a 7-day strip. Expanded = full month grid,
      like Samsung Calendar. Drag the handle (or tap it) to switch; picking
      a date in the expanded grid also collapses back to the strip. */
-  .home-cal-widget{ margin:-4px -2px 16px -2px; }
-  .home-cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-  .home-cal-label{ font-size:15px; font-weight:700; }
-  .home-week-strip{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
-  .home-cal-widget .month-grid{ margin-top:4px; }
+  .home-cal-widget{
+    position:sticky; top:0; z-index:5; background:var(--bg);
+    margin:-4px -2px 16px -2px; padding:4px 2px 0 2px;
+  }
+  .home-cal-topbar{ margin-bottom:10px; }
+  .home-cal-grid-clip{ overflow:hidden; transition:height .28s cubic-bezier(.4,0,.2,1); }
+  #home-cal-grid{ transition:transform .28s cubic-bezier(.4,0,.2,1); }
   .home-cal-handle{ display:flex; justify-content:center; padding:8px 0 2px 0; cursor:grab; touch-action:none; }
   .home-cal-handle span{ width:36px; height:4px; border-radius:999px; background:var(--border); }
 
@@ -144,11 +155,11 @@
   .btn-outline{ background:transparent; color:var(--primary); border:1.5px solid var(--primary); width:100%; }
 
   /* calendar */
-  .cal-topbar{ position:relative; display:flex; align-items:baseline; justify-content:center; gap:2px; margin-bottom:18px; padding:6px 0; }
+  .cal-topbar{ position:relative; display:flex; align-items:baseline; justify-content:center; gap:10px; margin-bottom:18px; padding:6px 0; }
   .cal-label{ font-size:22px; font-weight:800; cursor:pointer; touch-action:none; user-select:none; padding:4px 6px; border-radius:10px; text-align:center; }
   .cal-label:active{ background:var(--bg-soft); }
-  #cal-month-label{ min-width:130px; }
-  #cal-year-label{ min-width:64px; }
+  #cal-month-label, #home-cal-month-label{ min-width:130px; }
+  #cal-year-label, #home-cal-year-label{ min-width:64px; }
   .icon-btn{ width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--border); color:var(--text); cursor:pointer; }
   .icon-btn svg{width:16px; height:16px;}
   .cal-corner-arrow{ position:absolute; top:2px; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--border); color:var(--text); cursor:pointer; }
@@ -158,7 +169,8 @@
   .cal-mode-tabs{display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; margin-bottom:16px;}
   .cal-mode-tabs button{flex:1; border:none; background:transparent; padding:8px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit;}
   .cal-mode-tabs button.active{background:var(--card); color:var(--primary);}
-  .cal-dropdown{ position:absolute; top:110%; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); z-index:20; max-height:220px; overflow-y:auto; width:150px; }
+  .cal-dropdown{ position:absolute; top:110%; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); z-index:20; max-height:220px; overflow-y:auto; width:150px; scrollbar-width:none; }
+  .cal-dropdown::-webkit-scrollbar{ display:none; }
   .cal-dropdown-item{ padding:10px 14px; font-size:14px; cursor:pointer; text-align:center; }
   .cal-dropdown-item.active{ color:var(--primary); font-weight:700; }
   .cal-dropdown-item:active{ background:var(--bg-soft); }
@@ -416,6 +428,9 @@
     /* Desktop shows the full #page-calendar column instead of this
        compact widget inside #page-home. */
     .home-cal-widget{ display:none; }
+    /* Desktop's #page-calendar column is Monthly-only (see render()'s
+       guard that forces state.calMode='month' at this width). */
+    .cal-mode-tabs{ display:none; }
 
     .device.show-menu #page-menu{
       display:block; position:fixed; top:0; bottom:0; left:auto; right:0; z-index:70;
@@ -904,6 +919,10 @@ function itemsForDate(date){
 function render(){
   applyLanguageDom();
   renderAuth();
+  /* Desktop's calendar column only ever shows Monthly (see SPEC.md
+     §11.5) — guard here too in case calMode was left on week/day from
+     an earlier narrower viewport. */
+  if(window.innerWidth >= 960 && state.calMode !== 'month') state.calMode = 'month';
   document.getElementById('page-calendar').innerHTML = renderCalendar();
   document.getElementById('page-home').innerHTML = renderHome();
   document.getElementById('page-menu').innerHTML =
@@ -914,10 +933,12 @@ function render(){
   updateNav();
   renderDaySheet();
   attachCalendarGestures();
+  attachHomeCalendarGestures();
   attachSwipeToDelete(document.getElementById('page-home'));
   attachSwipeToDelete(document.getElementById('page-calendar'));
   attachHomeHeaderSwipe();
   attachHomeCalDrag();
+  positionHomeCalGrid();
   wireMenuInteractivity();
 }
 
@@ -941,32 +962,45 @@ function renderHome(){
    a date in the expanded grid also collapses back to the strip. */
 function renderHomeCalWidget(){
   const d = state.homeDate;
-  const expanded = state.homeCalExpanded;
   const disp = displayMonthYear(d);
-  const weekStart = startOfWeek(d);
-  const weekDays = Array.from({length:7}, (_,i) => addDays(weekStart, i));
-  const cell = (day) => {
+  const cells = monthMatrix(d);
+  const cellHtml = (day) => {
     const inMonth = cellInCurrentMonth(day, d);
     const {tasks, events} = itemsForDate(day);
     const hasAny = tasks.length || events.length;
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
-    return `<div class="day-cell ${expanded && !inMonth ? 'other-month' : ''} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-home-day" data-date="${dateKey(day)}">
+    return `<div class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-home-day" data-date="${dateKey(day)}">
       <span>${displayDayNum(day)}</span>
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
     </div>`;
   };
+  const monthDropdown = state.monthDropdownOpen ? `
+    <div class="cal-dropdown" id="home-month-dropdown">
+      ${Array.from({length:12},(_,i)=>i).map(i => `<div class="cal-dropdown-item ${isJalali() ? ((i+1)===disp.jm?'active':'') : (i===d.getMonth()?'active':'')}" data-action="home-pick-month" data-month="${i}">${isJalali()?jalaliMonthName(i):monthName(i)}</div>`).join('')}
+    </div>` : '';
+  const years = [];
+  if(isJalali()){
+    const curJY = toJalali(today.getFullYear(), today.getMonth()+1, today.getDate()).jy;
+    for(let y = 1369; y <= curJY+10; y++) years.push(y);
+  } else {
+    for(let y = 1990; y <= today.getFullYear()+10; y++) years.push(y);
+  }
+  const yearDropdown = state.yearDropdownOpen ? `
+    <div class="cal-dropdown" id="home-year-dropdown">
+      ${years.map(y => `<div class="cal-dropdown-item ${(isJalali()?y===disp.jy:y===d.getFullYear())?'active':''}" data-action="home-pick-year" data-year="${y}">${y}</div>`).join('')}
+    </div>` : '';
   return `
     <div class="home-cal-widget" id="home-cal-widget">
-      <div class="home-cal-head">
-        <button type="button" class="icon-btn" data-action="home-cal-prev">${ICONS.chevronLeft}</button>
-        <span class="home-cal-label">${disp.monthLabel} ${disp.yearLabel}</span>
-        <button type="button" class="icon-btn" data-action="home-cal-next">${ICONS.chevronRight}</button>
+      <div class="cal-topbar home-cal-topbar">
+        <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
+        <span class="cal-label" id="home-cal-year-label">${disp.yearLabel}</span>
+        ${monthDropdown}${yearDropdown}
       </div>
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
-      ${expanded
-        ? `<div class="month-grid">${monthMatrix(d).map(cell).join('')}</div>`
-        : `<div class="home-week-strip">${weekDays.map(cell).join('')}</div>`}
+      <div class="home-cal-grid-clip" id="home-cal-grid-clip">
+        <div class="month-grid" id="home-cal-grid">${cells.map(cellHtml).join('')}</div>
+      </div>
       <div class="home-cal-handle" id="home-cal-handle"><span></span></div>
     </div>
   `;
@@ -1261,7 +1295,7 @@ function renderCalendar(){
           const {tasks,events} = itemsForDate(d);
           const hasAny = tasks.length || events.length;
           const isToday = sameDay(d, today);
-          const isSelected = state.daySheetOpen && sameDay(d, state.daySheetDate);
+          const isSelected = sameDay(d, state.homeDate);
           return `<div class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-day" data-date="${dateKey(d)}">
             <span>${displayDayNum(d)}</span>
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
@@ -1359,6 +1393,29 @@ function initFabAndMenuInteractions(){
       state.navExpanded = false; render();
     }
   });
+}
+
+/* Mobile-only: the FAB slides away after 5s of no scrolling, and slides
+   back the instant the user scrolls again (desktop keeps it always on,
+   per spec — "طبق طراحی فعلی"). */
+let fabHideTimer = null;
+function showFab(){
+  document.getElementById('fab-add').classList.remove('hidden-fab');
+  document.getElementById('fab-menu').classList.remove('hidden-fab');
+}
+function scheduleFabHide(){
+  if(window.innerWidth >= 960){ showFab(); return; }
+  showFab();
+  clearTimeout(fabHideTimer);
+  fabHideTimer = setTimeout(() => {
+    if(state.navExpanded) return; // don't hide while its own mini-menu is open
+    document.getElementById('fab-add').classList.add('hidden-fab');
+    document.getElementById('fab-menu').classList.add('hidden-fab');
+  }, 5000);
+}
+function initFabAutoHide(){
+  document.getElementById('page-home').addEventListener('scroll', scheduleFabHide, { passive: true });
+  scheduleFabHide();
 }
 
 /* ============ ADD / EDIT POPUP (full MVP fields, icon-driven subviews) ============ */
@@ -1744,18 +1801,13 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-menu'){ state.menuSubView = el.dataset.sub || null; state.menuPanelOpen = true; render(); return; }
   if(action === 'close-menu-overlay'){ state.menuPanelOpen = false; render(); return; }
   if(action === 'pick-home-day'){
+    /* Picking a date no longer force-collapses Monthly back to the week
+       strip — it only collapses via the handle/drag now (per spec). */
     state.homeDate = new Date(el.dataset.date);
-    if(state.homeCalExpanded) state.homeCalExpanded = false;
     render(); return;
   }
-  if(action === 'home-cal-prev'){
-    state.homeDate = state.homeCalExpanded ? stepMonth(state.homeDate, -1) : addDays(state.homeDate, -7);
-    render(); return;
-  }
-  if(action === 'home-cal-next'){
-    state.homeDate = state.homeCalExpanded ? stepMonth(state.homeDate, 1) : addDays(state.homeDate, 7);
-    render(); return;
-  }
+  if(action === 'home-pick-month'){ state.homeDate = setMonthOf(state.homeDate, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
+  if(action === 'home-pick-year'){ state.homeDate = setYearOf(state.homeDate, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }
   if(action === 'submit-popup'){ submitPopup(); return; }
   if(action === 'open-subview'){ state.popupSubView = el.dataset.sub; if(el.dataset.sub==='calendar'){ miniCalCursor = new Date(formDraft.date); } renderPopupBody(); return; }
   if(action === 'close-subview'){ state.popupSubView = null; renderPopupBody(); return; }
@@ -1816,9 +1868,12 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'pick-day'){
+    /* Desktop-only (this action only fires from #page-calendar, which is
+       hidden on mobile): clicking a day updates the Home column right
+       next to it directly, instead of opening a separate day peek. */
     const d = new Date(el.dataset.date);
     state.selectedDate = d;
-    state.daySheetOpen = true; state.daySheetDate = d;
+    state.homeDate = d;
     render();
     return;
   }
@@ -1871,6 +1926,36 @@ function shiftYearRoll(dir){
     state.monthDropdownOpen = false; state.yearDropdownOpen = false;
     render();
     rollIn('cal-year-label', dir);
+  });
+}
+/* Mobile merged widget: same roll/tap-to-dropdown interaction as the
+   desktop calendar's month/year labels, but driving state.homeDate. */
+function attachHomeCalendarGestures(){
+  attachRollGesture(document.getElementById('home-cal-month-label'), (dir) => {
+    if(dir === 'tap'){ state.yearDropdownOpen = false; state.monthDropdownOpen = !state.monthDropdownOpen; render(); }
+    else shiftHomeMonthRoll(dir);
+  });
+  attachRollGesture(document.getElementById('home-cal-year-label'), (dir) => {
+    if(dir === 'tap'){ state.monthDropdownOpen = false; state.yearDropdownOpen = !state.yearDropdownOpen; render(); }
+    else shiftHomeYearRoll(dir);
+  });
+}
+function shiftHomeMonthRoll(dir){
+  const el = document.getElementById('home-cal-month-label');
+  rollOut(el, dir, () => {
+    state.homeDate = stepMonth(state.homeDate, dir);
+    state.monthDropdownOpen = false; state.yearDropdownOpen = false;
+    render();
+    rollIn('home-cal-month-label', dir);
+  });
+}
+function shiftHomeYearRoll(dir){
+  const el = document.getElementById('home-cal-year-label');
+  rollOut(el, dir, () => {
+    state.homeDate = stepYear(state.homeDate, dir);
+    state.monthDropdownOpen = false; state.yearDropdownOpen = false;
+    render();
+    rollIn('home-cal-year-label', dir);
   });
 }
 function rollOut(el, dir, cb){
@@ -1981,21 +2066,68 @@ function attachSwipeToDelete(container){
 }
 function attachHomeCalDrag(){
   const handle = document.getElementById('home-cal-handle');
-  if(!handle) return;
+  const surface = document.getElementById('home-cal-grid-clip');
   let startY = null, moved = false;
-  handle.addEventListener('pointerdown', e => { startY = e.clientY; moved = false; e.stopPropagation(); });
-  handle.addEventListener('pointermove', e => {
+
+  function onDown(e){ startY = e.clientY; moved = false; }
+  function onMove(e){
     if(startY === null) return;
     if(Math.abs(e.clientY - startY) > 8) moved = true;
-  });
-  handle.addEventListener('pointerup', e => {
+  }
+  function onUp(e, isHandle){
     if(startY === null) return;
     const dy = e.clientY - startY;
     if(moved && Math.abs(dy) > 24) state.homeCalExpanded = dy > 0;
-    else if(!moved) state.homeCalExpanded = !state.homeCalExpanded;
+    else if(!moved && isHandle) state.homeCalExpanded = !state.homeCalExpanded;
     startY = null;
     render();
-  });
+  }
+
+  if(handle){
+    handle.addEventListener('pointerdown', e => { onDown(e); e.stopPropagation(); });
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', e => onUp(e, true));
+  }
+  if(surface){
+    surface.addEventListener('pointerdown', onDown);
+    surface.addEventListener('pointermove', onMove);
+    surface.addEventListener('pointerup', e => onUp(e, false));
+    // a real drag (moved) shouldn't also register as a day pick
+    surface.addEventListener('click', e => { if(moved) e.stopPropagation(); });
+  }
+}
+
+/* Sizes/positions the merged widget's month grid so only the row
+   containing state.homeDate shows when collapsed, and the full 6 rows
+   show when expanded — both via the same transform/height, so toggling
+   between them is a smooth animation instead of a content swap. */
+let homeCalFirstPosition = true;
+function positionHomeCalGrid(){
+  const clip = document.getElementById('home-cal-grid-clip');
+  const grid = document.getElementById('home-cal-grid');
+  if(!clip || !grid || !grid.children.length) return;
+  const rowGap = 4;
+  const rowH = grid.children[0].getBoundingClientRect().height;
+  if(!rowH) return;
+  const totalRows = Math.ceil(grid.children.length / 7);
+  const key = dateKey(state.homeDate);
+  let rowIndex = 0;
+  for(let i = 0; i < grid.children.length; i++){
+    if(grid.children[i].dataset.date === key){ rowIndex = Math.floor(i / 7); break; }
+  }
+  const expanded = state.homeCalExpanded;
+  const expandedHeight = totalRows * rowH + (totalRows - 1) * rowGap;
+
+  if(homeCalFirstPosition){ clip.style.transition = 'none'; grid.style.transition = 'none'; }
+  clip.style.height = (expanded ? expandedHeight : rowH) + 'px';
+  grid.style.transform = expanded ? 'translateY(0)' : `translateY(-${rowIndex * (rowH + rowGap)}px)`;
+  if(homeCalFirstPosition){
+    requestAnimationFrame(() => {
+      clip.style.transition = '';
+      grid.style.transition = '';
+      homeCalFirstPosition = false;
+    });
+  }
 }
 
 function attachDaySheetDrag(){
@@ -2030,6 +2162,7 @@ function attachDaySheetDrag(){
 
 /* ============ INIT ============ */
 initFabAndMenuInteractions();
+initFabAutoHide();
 attachDaySheetDrag();
 render();
 </script>
