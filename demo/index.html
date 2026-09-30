@@ -319,6 +319,63 @@
   .auth-form input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--primary-soft); }
   .auth-submit{ width:100%; margin-top:10px; padding:15px; border-radius:14px; font-size:14px; }
   .auth-footer{ margin-top:auto; text-align:center; font-size:12px; color:var(--text-muted); }
+
+  /* ===== Desktop layout (>=960px): calendar + home side by side =====
+     Below 960px this file is untouched — same phone frame, same swiped
+     pages, same gestures. At 960px+ the phone chrome drops, Calendar and
+     Home render as permanent columns (both already fully rendered by
+     render() every time — only the mobile transform ever hid them), and
+     Menu becomes a slide-in side panel instead of a third swiped page. */
+  @media (min-width: 960px){
+    body{ align-items:flex-start; padding-top:34px; }
+    .device{
+      width:100%; max-width:1200px; height:auto; min-height:calc(100vh - 34px);
+      max-height:none; border-radius:0; box-shadow:none; overflow:visible;
+    }
+    .pager-wrap{ position:static; overflow:visible; touch-action:auto; }
+    .pager{
+      position:static; display:grid; grid-template-columns:minmax(320px,380px) 1fr;
+      align-items:start; gap:24px; width:100%; height:auto;
+      transform:none !important; transition:none;
+      padding:28px 32px 150px 32px;
+    }
+    .page{ width:auto; height:auto; overflow:visible; padding:0; touch-action:auto; }
+    #page-menu{ display:none; }
+
+    .device.show-menu #page-menu{
+      display:block; position:fixed; top:0; bottom:0; right:0; z-index:70;
+      width:420px; max-width:90vw; height:100vh; overflow-y:auto;
+      background:var(--card); box-shadow:var(--shadow); padding:28px 24px;
+    }
+    .menu-overlay{ display:none; }
+    .device.show-menu .menu-overlay{
+      display:block; position:fixed; inset:0; z-index:65; background:var(--overlay);
+    }
+
+    .popup-overlay{ position:fixed; }
+    .add-popup{
+      position:fixed; top:50%; left:50%; right:auto; bottom:auto;
+      transform:translate(-50%,-50%) scale(0.05);
+      width:480px; max-width:90vw; max-height:85vh;
+    }
+    .add-popup.show{ transform:translate(-50%,-50%) scale(1); }
+
+    .day-sheet{
+      position:fixed; left:50%; right:auto; bottom:24px;
+      width:460px; max-width:90vw; height:min(560px,70vh);
+      border-radius:20px; transform:translate(-50%,130%);
+    }
+    .day-sheet.show{ transform:translate(-50%,0); }
+
+    .bottom-nav-wrap{ left:50%; right:auto; transform:translateX(-50%); width:220px; }
+
+    .auth-screen{
+      position:fixed; inset:auto; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      width:420px; max-width:90vw; height:auto; max-height:85vh; overflow-y:auto;
+      border-radius:24px; box-shadow:var(--shadow); padding:40px 32px 28px 32px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -348,6 +405,10 @@
 
   <div class="popup-overlay" id="popup-overlay" data-action="close-popup"></div>
   <div class="add-popup" id="add-popup"></div>
+
+  <!-- Desktop-only (>=960px): dims the page behind the Menu side panel.
+       Hidden on phone widths, where Menu is one of the three swiped pages. -->
+  <div class="menu-overlay" id="menu-overlay" data-action="close-menu-overlay"></div>
 
   <div class="bottom-nav-wrap">
     <div class="bottom-nav" id="bottom-nav">
@@ -1118,7 +1179,10 @@ function renderCalendar(){
 }
 function renderDaySheet(){
   const sheet = document.getElementById('day-sheet');
-  const show = state.daySheetOpen && state.page === 'calendar';
+  /* On phones, calendar is one of three swiped pages, so the sheet only
+     makes sense while that page is active. At >=960px calendar is always
+     visible alongside home, so daySheetOpen alone should be enough. */
+  const show = state.daySheetOpen && (state.page === 'calendar' || window.innerWidth >= 960);
   sheet.classList.toggle('show', show);
   if(!show) return;
   const d = state.daySheetDate;
@@ -1134,6 +1198,7 @@ function updateNav(){
   document.getElementById('nav-home').classList.toggle('active', state.page==='home');
   document.getElementById('nav-menu').classList.toggle('active', state.page==='menu');
   document.getElementById('bottom-nav').classList.toggle('expanded', state.navExpanded);
+  document.getElementById('device').classList.toggle('show-menu', state.page === 'menu');
   document.getElementById('nav-layer-main').classList.toggle('show', !state.navExpanded);
   document.getElementById('nav-layer-add').classList.toggle('show', state.navExpanded);
   document.getElementById('nav-layer-add').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
@@ -1590,6 +1655,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
   if(action === 'close-popup'){ closePopup(); return; }
+  if(action === 'close-menu-overlay'){ goPage('home'); return; }
   if(action === 'submit-popup'){ submitPopup(); return; }
   if(action === 'open-subview'){ state.popupSubView = el.dataset.sub; if(el.dataset.sub==='calendar'){ miniCalCursor = new Date(formDraft.date); } renderPopupBody(); return; }
   if(action === 'close-subview'){ state.popupSubView = null; renderPopupBody(); return; }
@@ -1817,6 +1883,7 @@ function attachSwipeToDelete(container){
   const wrap = document.getElementById('pager-wrap');
   let startX = null, startY = null, blocked = false, activePointers = 0;
   wrap.addEventListener('pointerdown', (e) => {
+    if(window.innerWidth >= 960){ startX = null; return; } /* two-column desktop layout: no page-swipe */
     activePointers++;
     if(activePointers > 1){ startX = null; return; }
     blocked = state.popupOpen || state.daySheetOpen || state.navExpanded || state.monthDropdownOpen || state.yearDropdownOpen;
@@ -1824,7 +1891,7 @@ function attachSwipeToDelete(container){
   });
   wrap.addEventListener('pointerup', (e) => {
     activePointers = Math.max(0, activePointers - 1);
-    if(blocked || startX === null){ startX = null; return; }
+    if(window.innerWidth >= 960 || blocked || startX === null){ startX = null; return; }
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     if(Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4){
