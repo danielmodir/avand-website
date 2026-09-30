@@ -1,0 +1,22 @@
+{
+  "name": "avand-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "REST API for Avand. Not deployed or wired to the static site yet — see README.md.",
+  "type": "commonjs",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "migrate": "node scripts/migrate.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0"
+  }
+}
