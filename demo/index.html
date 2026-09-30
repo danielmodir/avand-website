@@ -67,7 +67,7 @@
      transform transition instead of an instant display swap. */
   #page-menu{
     display:block; position:absolute; inset:0; z-index:70; background:var(--card);
-    overflow-y:auto; padding:22px 18px 40px 18px;
+    overflow-y:auto; padding:64px 18px 40px 18px;
     transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
     pointer-events:none;
   }
@@ -131,8 +131,8 @@
   .device.lang-fa .menu-panel-close{ right:auto; left:14px; }
 
   /* ===== desktop-only right-edge menu rail (hidden on mobile) ===== */
-  .menu-rail{ display:none; }
-  .corner-placeholder-btn{ display:none; }
+  .rail-cluster{ display:none; }
+  .desktop-avatar-btn{ display:none; }
 
   .app-header{ margin-bottom:18px; }
   .app-header h1{ font-size:24px; margin:0 0 2px 0; font-weight:700; letter-spacing:-0.3px; }
@@ -278,8 +278,20 @@
     max-width:80%; text-align:center;
   }
   .app-toast.show{ opacity:1; transform:translate(-50%,0); }
-  .device{ transition:opacity .16s ease; }
-  .device.lang-fading{ opacity:0; }
+
+  .lang-loading{
+    position:absolute; inset:0; z-index:95; background:rgba(5,8,10,0.55);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .18s ease;
+  }
+  .lang-loading.show{ opacity:1; pointer-events:auto; }
+  .lang-spinner{
+    width:36px; height:36px; border-radius:50%;
+    border:3px solid rgba(255,255,255,0.25); border-top-color:#fff;
+    animation:lang-spin .7s linear infinite;
+  }
+  @keyframes lang-spin{ to{ transform:rotate(360deg); } }
+
   .hidden{ display:none !important; }
   .weekday-picker{ display:flex; gap:5px; justify-content:space-between; }
   .weekday-picker button{ width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--bg-soft); color:var(--text-muted); font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; }
@@ -371,7 +383,9 @@
   .menu-item-label{ flex:1; font-size:14px; font-weight:600; }
   .menu-item-row svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
 
-  .profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:28px; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; }
+  .profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:28px; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; background-size:cover; background-position:center; }
+  .profile-photo-actions{ display:flex; gap:14px; justify-content:center; margin-bottom:4px; }
+  .link-btn{ font-size:12px; font-weight:600; color:var(--primary); cursor:pointer; }
   .profile-stats{ display:flex; gap:10px; margin-top:16px; }
   .profile-stat{ flex:1; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center; }
   .profile-stat .num{ font-size:18px; font-weight:800; color:var(--primary); }
@@ -453,6 +467,13 @@
     /* Desktop's #page-calendar column is Monthly-only (see render()'s
        guard that forces state.calMode='month' at this width). */
     .cal-mode-tabs{ display:none; }
+    /* Desktop columns don't need generic section titles ("Calendar" /
+       "Today") — the calendar's own month/year label already says what
+       it is, and Home's date line is enough on its own. */
+    #page-calendar .app-header{ display:none; }
+    #home-header h1{ display:none; }
+    #home-header p{ font-size:18px; font-weight:700; color:var(--text); }
+    #home-header{ margin-bottom:14px; }
 
     /* Always rendered (not display:none) so open/close is a slide
        transition, not a sudden pop — same technique as the mobile
@@ -464,7 +485,7 @@
     #page-menu{
       display:block; position:fixed; top:0; bottom:0; left:auto; right:0; z-index:70;
       width:420px; max-width:90vw; height:100vh; overflow-y:auto;
-      background:var(--card); box-shadow:var(--shadow); padding:28px 24px;
+      background:var(--card); box-shadow:var(--shadow); padding:64px 24px 28px 24px;
       transform:translateX(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
       pointer-events:none;
     }
@@ -494,9 +515,20 @@
     /* Bottom nav is mobile-only; desktop uses the hamburger's replacement
        (a right-edge icon rail, see .menu-rail) plus the floating add button. */
     .hamburger-btn{ display:none; }
+    .desktop-avatar-btn{
+      display:flex; align-items:center; justify-content:center;
+      position:fixed; top:18px; right:24px; z-index:42;
+      width:38px; height:38px; border-radius:50%; border:none;
+      background-color:var(--primary); background-size:cover; background-position:center;
+      color:#fff; font-weight:700; font-size:14px; cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+    .rail-cluster{
+      display:flex; flex-direction:column; align-items:flex-end; gap:12px;
+      position:fixed; top:50%; right:0; transform:translateY(-50%); z-index:40;
+    }
     .menu-rail{
       display:flex; flex-direction:column; align-items:center; gap:10px;
-      position:fixed; top:50%; right:0; transform:translateY(-50%); z-index:40;
       background:var(--nav-bg); padding:16px 10px; border-radius:20px 0 0 20px;
       box-shadow:var(--shadow);
     }
@@ -508,16 +540,16 @@
     .menu-rail button svg{ width:18px; height:18px; }
     .menu-rail button:hover{ background:rgba(255,255,255,0.06); color:var(--primary); }
 
-    /* Independent of the rail (own element, own future) — docked to the
-       same screen edge, stacked just above the FAB with a small gap. */
+    /* Independent of the rail (own element, own future) — same cluster
+       column so it keeps a fixed small gap below the rail regardless of
+       the rail's own height, nowhere near the FAB/Add cluster. */
     .corner-placeholder-btn{
       display:flex; align-items:center; justify-content:center;
-      position:fixed; right:20px; bottom:90px; z-index:41;
-      width:48px; height:48px; border-radius:14px;
+      width:40px; height:40px; border-radius:14px 0 0 14px;
       background:var(--nav-bg); color:var(--nav-icon); border:none;
-      box-shadow:var(--shadow); cursor:not-allowed; opacity:.6;
+      box-shadow:var(--shadow); cursor:not-allowed; opacity:.55;
     }
-    .corner-placeholder-btn svg{ width:20px; height:20px; }
+    .corner-placeholder-btn svg{ width:18px; height:18px; }
 
     .auth-screen{
       position:fixed; inset:auto; top:50%; left:50%;
@@ -567,21 +599,32 @@
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
   </button>
 
-  <!-- Desktop-only: menu items as a right-edge icon rail instead of a
-       nav page. Add is deliberately NOT in this rail (stays a separate
-       floating button below) per the "add stays separate" decision. -->
-  <div class="menu-rail" id="menu-rail">
-    <button type="button" data-action="open-menu" data-sub="profile" title="Profile">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-    </button>
-    <button type="button" data-action="open-menu" data-sub="share" title="Share">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.1a3 3 0 0 0-2.1.9l-6.2-3.6c.06-.26.1-.53.1-.8s-.04-.54-.1-.8l6.1-3.56c.6.55 1.38.86 2.2.86a3 3 0 1 0-3-3c0 .27.04.53.1.79L8.9 10.4A3 3 0 1 0 7 16c.83 0 1.6-.32 2.2-.86l6.2 3.62c-.06.24-.1.5-.1.74a2.9 2.9 0 1 0 2.9-3.4z"/></svg>
-    </button>
-    <button type="button" data-action="open-menu" data-sub="about" title="About">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-    </button>
-    <button type="button" data-action="open-menu" data-sub="settings" title="Settings">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+  <!-- Desktop-only: profile avatar near the top edge, opens the Profile
+       panel directly (no detour through the menu root list) — the only
+       entry point for Profile now, so it's not duplicated in the rail. -->
+  <button class="desktop-avatar-btn" id="desktop-avatar-btn" data-action="open-menu" data-sub="profile" aria-label="Profile"></button>
+
+  <!-- Desktop-only: remaining menu items as a right-edge icon rail,
+       plus a separate future-feature placeholder stacked right below it
+       (own element/class, gap from the rail — not the FAB below, which
+       was getting visually confused for a second, broken Add button).
+       Add stays its own floating button, apart from both. -->
+  <div class="rail-cluster" id="rail-cluster">
+    <div class="menu-rail" id="menu-rail">
+      <button type="button" data-action="open-menu" data-sub="share" title="Share">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.1a3 3 0 0 0-2.1.9l-6.2-3.6c.06-.26.1-.53.1-.8s-.04-.54-.1-.8l6.1-3.56c.6.55 1.38.86 2.2.86a3 3 0 1 0-3-3c0 .27.04.53.1.79L8.9 10.4A3 3 0 1 0 7 16c.83 0 1.6-.32 2.2-.86l6.2 3.62c-.06.24-.1.5-.1.74a2.9 2.9 0 1 0 2.9-3.4z"/></svg>
+      </button>
+      <button type="button" data-action="open-menu" data-sub="about" title="About">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      </button>
+      <button type="button" data-action="open-menu" data-sub="settings" title="Settings">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+      </button>
+    </div>
+    <!-- No behavior yet — reserved for a feature to be designed later
+         (see SPEC.md §11.6). -->
+    <button class="corner-placeholder-btn" id="corner-placeholder-btn" aria-label="More" disabled>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>
     </button>
   </div>
 
@@ -601,14 +644,6 @@
   </div>
   <button class="fab-add" id="fab-add" data-action="toggle-add-menu" aria-label="Add">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
-  </button>
-
-  <!-- Desktop-only: independent placeholder, not part of the menu rail.
-       No behavior yet — reserved for a feature to be designed later
-       (see SPEC.md). Kept as its own element/class so its position or
-       purpose can change without touching the rail or the FAB. -->
-  <button class="corner-placeholder-btn" id="corner-placeholder-btn" aria-label="More" disabled>
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>
   </button>
 </div>
 
@@ -811,6 +846,7 @@ const STRINGS = {
     showLabels:'Show labels', showLabelsSub:'Text under New Task / Habit / Event',
     sun:'Sun', mon:'Mon',
     profile:'Profile', name:'Name', email:'Email', tasksDone:'Tasks done', checkins:'Check-ins', logout:'Log out',
+    changePhoto:'Change photo', removePhoto:'Remove',
     shareAvand:'Share Avand', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
@@ -848,6 +884,7 @@ const STRINGS = {
     showLabels:'نمایش برچسب', showLabelsSub:'متن زیر افزودن کار/عادت/رویداد',
     sun:'یک', mon:'دو',
     profile:'پروفایل', name:'نام', email:'ایمیل', tasksDone:'کار انجام‌شده', checkins:'چک‌این', logout:'خروج از حساب',
+    changePhoto:'تغییر عکس', removePhoto:'حذف',
     shareAvand:'اشتراک‌گذاری آوند', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
@@ -900,7 +937,7 @@ const state = {
   homeDate: new Date(today),
   authScreen: true,
   authTab: 'login',
-  profile: { name: 'Daniel', email: 'daniel@example.com' },
+  profile: { name: 'Daniel', email: 'daniel@example.com', photo: null },
   settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali' },
   tasks: [],
   habits: [],
@@ -1229,7 +1266,11 @@ function renderProfilePage(){
   const checkins = state.habits.reduce((sum,h)=>sum+h.completedDates.length, 0);
   return `
     ${subHeader(t('profile'))}
-    <div class="profile-avatar-big">${initials(state.profile.name)}</div>
+    <div class="profile-avatar-big" ${state.profile.photo?`style="background-image:url('${state.profile.photo}')"`:''}>${state.profile.photo?'':initials(state.profile.name)}</div>
+    <div class="profile-photo-actions">
+      <label class="link-btn">${t('changePhoto')}<input type="file" accept="image/*" id="profile-photo-input" class="hidden"></label>
+      ${state.profile.photo ? `<span class="link-btn" data-action="remove-profile-photo">${t('removePhoto')}</span>` : ''}
+    </div>
     <div class="field" style="margin-top:18px;"><input type="text" id="profile-name" value="${escapeAttr(state.profile.name)}" placeholder="${t('name')}"></div>
     <div class="field"><input type="text" id="profile-email" value="${escapeAttr(state.profile.email)}" placeholder="${t('email')}"></div>
     <div class="profile-stats">
@@ -1326,6 +1367,13 @@ function wireMenuInteractivity(){
   document.getElementById('profile-name')?.addEventListener('input', e => { state.profile.name = e.target.value; });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; render(); });
+  document.getElementById('profile-photo-input')?.addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { state.profile.photo = reader.result; render(); };
+    reader.readAsDataURL(file);
+  });
 }
 
 let toastTimer = null;
@@ -1341,6 +1389,28 @@ function showToast(msg){
   el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+/* Language switch: a real loading state (dim overlay + spinner, ~1.1s)
+   instead of an instant text swap, per spec — the user picks a
+   language, sees loading, then the whole UI (labels, digits, calendar
+   system default, hamburger/menu-panel side, everything) lands already
+   switched, all at once, rather than visibly re-flowing piece by piece. */
+function showLanguageLoading(newLang){
+  let el = document.getElementById('lang-loading');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'lang-loading';
+    el.className = 'lang-loading';
+    el.innerHTML = '<div class="lang-spinner"></div>';
+    document.getElementById('device').appendChild(el);
+  }
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    state.settings.language = newLang;
+    render();
+    setTimeout(() => el.classList.remove('show'), 150);
+  }, 1100);
 }
 
 /* ============ CALENDAR ============ */
@@ -1454,6 +1524,15 @@ function updateNav(){
   document.getElementById('fab-add').classList.toggle('active', state.navExpanded);
   document.getElementById('fab-menu').classList.toggle('show', state.navExpanded);
   document.getElementById('fab-menu').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
+
+  const avatarBtn = document.getElementById('desktop-avatar-btn');
+  if(state.profile.photo){
+    avatarBtn.style.backgroundImage = `url('${state.profile.photo}')`;
+    avatarBtn.textContent = '';
+  } else {
+    avatarBtn.style.backgroundImage = 'none';
+    avatarBtn.textContent = initials(state.profile.name);
+  }
 }
 
 function initFabAndMenuInteractions(){
@@ -1490,6 +1569,28 @@ function scheduleFabHide(){
 function initFabAutoHide(){
   document.getElementById('page-home').addEventListener('scroll', scheduleFabHide, { passive: true });
   scheduleFabHide();
+}
+
+/* Expand/collapse the merged calendar widget from scrolling the agenda
+   below it — independent of where the user actually starts a drag.
+   Scrolling down into the bottom of the current content expands to
+   Monthly; scrolling back up near the top collapses to the week strip. */
+let homeScrollLast = 0;
+function initHomeScrollExpand(){
+  const el = document.getElementById('page-home');
+  el.addEventListener('scroll', () => {
+    const st = el.scrollTop;
+    const atBottom = st + el.clientHeight >= el.scrollHeight - 4;
+    const nearTop = st <= 20;
+    if(st > homeScrollLast && atBottom && !state.homeCalExpanded){
+      state.homeCalExpanded = true; render();
+      el.scrollTop = st; // render() rebuilds the list and resets scroll to 0
+    } else if(st < homeScrollLast && nearTop && state.homeCalExpanded){
+      state.homeCalExpanded = false; render();
+      el.scrollTop = 0;
+    }
+    homeScrollLast = el.scrollTop;
+  }, { passive: true });
 }
 
 /* ============ ADD / EDIT POPUP (full MVP fields, icon-driven subviews) ============ */
@@ -1917,6 +2018,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     render();
     return;
   }
+  if(action === 'remove-profile-photo'){ state.profile.photo = null; render(); return; }
   if(action === 'logout-user'){
     state.authScreen = true;
     state.authTab = 'login';
@@ -1931,15 +2033,8 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'hijri-coming-soon'){ showToast(t('hijriComingSoon')); return; }
   if(action === 'set-calendar-system'){ state.settings.calendarSystem = el.dataset.val; state.monthDropdownOpen=false; state.yearDropdownOpen=false; render(); return; }
   if(action === 'set-language'){
-    /* A brief fade instead of text flipping instantly under the user's
-       cursor — the whole app dims out, swaps language, fades back in. */
-    const device = document.getElementById('device');
-    device.classList.add('lang-fading');
-    setTimeout(() => {
-      state.settings.language = el.dataset.val;
-      render();
-      requestAnimationFrame(() => device.classList.remove('lang-fading'));
-    }, 160);
+    if(el.dataset.val === lang()) return;
+    showLanguageLoading(el.dataset.val);
     return;
   }
   if(action === 'share-copy'){
@@ -2153,18 +2248,26 @@ function attachSwipeToDelete(container){
 function attachHomeCalDrag(){
   const handle = document.getElementById('home-cal-handle');
   const surface = document.getElementById('home-cal-grid-clip');
-  let startY = null, moved = false;
+  let startX = null, startY = null, moved = false;
 
-  function onDown(e){ startY = e.clientY; moved = false; }
+  function onDown(e){ startX = e.clientX; startY = e.clientY; moved = false; }
   function onMove(e){
     if(startY === null) return;
-    if(Math.abs(e.clientY - startY) > 8) moved = true;
+    if(Math.abs(e.clientY - startY) > 8 || Math.abs(e.clientX - startX) > 8) moved = true;
   }
   function onUp(e, isHandle){
     if(startY === null) return;
-    const dy = e.clientY - startY;
-    if(moved && Math.abs(dy) > 24) state.homeCalExpanded = dy > 0;
-    else if(!moved && isHandle) state.homeCalExpanded = !state.homeCalExpanded;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if(moved && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40){
+      // Horizontal: previous/next week (collapsed) or month (expanded).
+      // RTL-agnostic on purpose (app stays LTR always) — left = forward.
+      const dir = dx < 0 ? 1 : -1;
+      state.homeDate = state.homeCalExpanded ? stepMonth(state.homeDate, dir) : addDays(state.homeDate, dir*7);
+    } else if(moved && Math.abs(dy) > 24){
+      state.homeCalExpanded = dy > 0;
+    } else if(!moved && isHandle){
+      state.homeCalExpanded = !state.homeCalExpanded;
+    }
     startY = null;
     render();
   }
@@ -2249,6 +2352,7 @@ function attachDaySheetDrag(){
 /* ============ INIT ============ */
 initFabAndMenuInteractions();
 initFabAutoHide();
+initHomeScrollExpand();
 attachDaySheetDrag();
 render();
 </script>
