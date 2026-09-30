@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /demo/
+Disallow: /fa/privacy/
+Disallow: /en/privacy/
+Disallow: /fa/terms/
+Disallow: /en/terms/
+
+Sitemap: https://avand.ir/sitemap.xml

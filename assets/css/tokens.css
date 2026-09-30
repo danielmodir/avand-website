@@ -1,0 +1,165 @@
+/*
+  Design tokens — Avand marketing site.
+  Values are the raw Design System v1 palette from /CLAUDE.md (Primary
+  #3282B8, Secondary #0F4C75, dark bg #1B262C, light bg from #BBE1FA) —
+  deliberately NOT the contrast-tuned palette used inside the HTML
+  prototype (see SPEC.md §9 and §11: contrast still needs a visual check).
+
+  Theme switching: light is the default. Dark applies via
+  `prefers-color-scheme: dark` UNLESS the page has an explicit
+  data-theme="light" (manual override to light on a dark system), and
+  also applies whenever data-theme="dark" is set manually, regardless of
+  system preference. assets/js/theme.js manages the data-theme attribute
+  and its localStorage persistence.
+*/
+
+:root {
+  /* Brand */
+  --color-primary: #3282B8;
+  --color-secondary: #0F4C75;
+
+  /* Light mode (default) */
+  --color-bg: #EAF6FE;
+  --color-bg-soft: #F5FAFD;
+  --color-surface: #FFFFFF;
+  --color-border: rgba(15, 76, 117, 0.16);
+  --color-text: #12242E;
+  --color-text-muted: #4E6672;
+  --color-on-primary: #FFFFFF;
+
+  --color-success: #2E8B57;
+  --color-success-bg: #E3F3EA;
+  --color-error: #B23A2E;
+  --color-error-bg: #FBEAE8;
+  --color-warning: #9C6B05;
+  --color-warning-bg: #FBF3DE;
+
+  --shadow-sm: 0 1px 3px rgba(18, 36, 46, 0.10);
+  --shadow-md: 0 8px 24px rgba(18, 36, 46, 0.14);
+
+  /* Typography */
+  --font-sans-latin: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-sans-fa: 'Vazirmatn', 'Inter', system-ui, Tahoma, sans-serif;
+
+  --font-size-xs: 0.8125rem;   /* 13px */
+  --font-size-sm: 0.9375rem;   /* 15px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-md: 1.125rem;    /* 18px */
+  --font-size-lg: 1.5rem;      /* 24px */
+  --font-size-xl: 2rem;        /* 32px */
+  --font-size-2xl: 2.75rem;    /* 44px */
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.6;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radius (rounded corners, per Design System phase 4) */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-full: 999px;
+
+  /* Motion */
+  --ease-standard: cubic-bezier(.4, 0, .2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #1B262C;
+    --color-bg-soft: #212F36;
+    --color-surface: #243138;
+    --color-border: rgba(255, 255, 255, 0.10);
+    --color-text: #F2F7FA;
+    --color-text-muted: #8FA0AA;
+    --color-on-primary: #FFFFFF;
+
+    --color-success: #4CC38A;
+    --color-success-bg: rgba(76, 195, 138, 0.16);
+    --color-error: #E08578;
+    --color-error-bg: rgba(224, 133, 120, 0.16);
+    --color-warning: #D9B65C;
+    --color-warning-bg: rgba(217, 182, 92, 0.16);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #1B262C;
+  --color-bg-soft: #212F36;
+  --color-surface: #243138;
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-text: #F2F7FA;
+  --color-text-muted: #8FA0AA;
+  --color-on-primary: #FFFFFF;
+
+  --color-success: #4CC38A;
+  --color-success-bg: rgba(76, 195, 138, 0.16);
+  --color-error: #E08578;
+  --color-error-bg: rgba(224, 133, 120, 0.16);
+  --color-warning: #D9B65C;
+  --color-warning-bg: rgba(217, 182, 92, 0.16);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+/*
+  Self-hosted fonts (hard rule: no Google Fonts / CDN — CLAUDE.md).
+  The .woff2 files are not in assets/fonts/ yet, so this block stays
+  commented out and pages fall back to --font-sans-latin / --font-sans-fa
+  (system fonts). Uncomment and fix filenames once the real files land.
+
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/inter/Inter-Regular.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/inter/Inter-SemiBold.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/inter/Inter-Bold.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/inter/Inter-ExtraBold.woff2') format('woff2');
+  font-weight: 800; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../fonts/vazirmatn/Vazirmatn-SemiBold.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../fonts/vazirmatn/Vazirmatn-ExtraBold.woff2') format('woff2');
+  font-weight: 800; font-style: normal; font-display: swap;
+}
+*/

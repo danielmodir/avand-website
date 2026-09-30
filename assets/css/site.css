@@ -1,0 +1,221 @@
+/* Avand marketing site — shared layout and components. Colors, spacing,
+   radius and type all come from tokens.css; never hardcode values here. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans-latin);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  transition: background-color var(--duration-normal) var(--ease-standard),
+              color var(--duration-normal) var(--ease-standard);
+}
+
+html[lang="fa"] body { font-family: var(--font-sans-fa); }
+
+img { max-width: 100%; display: block; }
+
+a { color: inherit; }
+
+/* Accessible focus ring, visible on keyboard nav, not on mouse click */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--space-3);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+  transition: top var(--duration-fast) var(--ease-standard);
+}
+.skip-link:focus { top: var(--space-3); }
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+
+/* ===== Header ===== */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) 0;
+}
+
+.brand { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; }
+.brand-mark {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--color-primary); color: var(--color-on-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: var(--font-size-md); flex: 0 0 auto;
+  font-family: var(--font-sans-fa); /* the mark itself is always the Persian letter آ */
+}
+.brand-name { font-weight: 700; font-size: var(--font-size-md); }
+
+.header-actions { display: flex; align-items: center; gap: var(--space-2); }
+
+.icon-btn {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  color: var(--color-text); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; text-decoration: none; font-size: var(--font-size-sm); font-weight: 600;
+}
+.icon-btn:hover { border-color: var(--color-primary); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+.lang-switch {
+  border-radius: var(--radius-md); border: 1px solid var(--color-border);
+  background: var(--color-surface); color: var(--color-text);
+  padding: 0 var(--space-4); height: 40px; display: flex; align-items: center;
+  font-size: var(--font-size-sm); font-weight: 600; text-decoration: none;
+}
+.lang-switch:hover { border-color: var(--color-primary); }
+
+.theme-toggle .icon-moon { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: flex; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle .icon-sun { display: none; }
+  :root:not([data-theme="light"]) .theme-toggle .icon-moon { display: flex; }
+}
+
+/* ===== Hero ===== */
+.hero { padding: var(--space-8) 0 var(--space-7) 0; text-align: start; }
+.hero h1 {
+  font-size: var(--font-size-2xl); line-height: var(--line-height-tight);
+  font-weight: 800; letter-spacing: -0.01em; margin: 0 0 var(--space-4) 0;
+  max-width: 18ch;
+}
+.hero p {
+  font-size: var(--font-size-md); color: var(--color-text-muted);
+  margin: 0 0 var(--space-6) 0; max-width: 48ch;
+}
+.hero-actions { display: flex; flex-direction: column; gap: var(--space-3); max-width: 340px; }
+
+@media (min-width: 560px) {
+  .hero-actions { flex-direction: row; max-width: none; }
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  border-radius: var(--radius-md); padding: var(--space-4) var(--space-5);
+  font-size: var(--font-size-sm); font-weight: 700; font-family: inherit;
+  border: 1.5px solid transparent; cursor: pointer; text-decoration: none;
+  transition: transform var(--duration-fast) var(--ease-standard),
+              opacity var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+.btn-primary:hover { opacity: 0.92; }
+.btn-outline { background: transparent; color: var(--color-primary); border-color: var(--color-primary); }
+.btn-outline:hover { background: var(--color-primary); color: var(--color-on-primary); }
+.btn-disabled,
+.btn[aria-disabled="true"] {
+  pointer-events: none; opacity: 0.5; border-color: var(--color-border); color: var(--color-text-muted);
+}
+.btn .icon-dir { width: 16px; height: 16px; }
+
+/* Directional icons (arrows) must flip in RTL. Applies to the app's UI
+   too in spirit, but per SPEC.md §2 the app itself is deliberately
+   LTR-only — this rule is for the WEBSITE only. */
+[dir="rtl"] .icon-dir { transform: scaleX(-1); }
+
+/* ===== Sections / cards ===== */
+.section { padding: var(--space-7) 0; }
+.section h2 {
+  font-size: var(--font-size-lg); font-weight: 800; margin: 0 0 var(--space-6) 0;
+}
+.card-grid {
+  display: grid; grid-template-columns: 1fr; gap: var(--space-4);
+}
+@media (min-width: 640px) {
+  .card-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+}
+.card-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  background: var(--color-primary); color: var(--color-on-primary);
+  display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4);
+}
+.card-icon svg { width: 20px; height: 20px; }
+.card h3 { margin: 0 0 var(--space-2) 0; font-size: var(--font-size-md); font-weight: 700; }
+.card p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+
+/* ===== Footer ===== */
+.site-footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-6) 0; margin-top: var(--space-7);
+}
+.footer-row {
+  display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; justify-content: space-between;
+}
+.footer-links { display: flex; flex-wrap: wrap; gap: var(--space-5); list-style: none; margin: 0; padding: 0; }
+.footer-links a { text-decoration: none; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.footer-links a:hover { color: var(--color-primary); }
+.footer-copyright { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+
+/* ===== Language chooser (root "/") ===== */
+.chooser {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: var(--space-6); text-align: center;
+}
+.chooser-buttons { display: flex; gap: var(--space-3); }
+.chooser-buttons .btn { min-width: 140px; }
+
+/* ===== Notice banners (demo preview / legal draft) ===== */
+.notice-bar {
+  background: var(--color-warning-bg); color: var(--color-warning);
+  text-align: center; font-size: var(--font-size-xs); font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+}
+
+/* ===== Simple content pages (about / privacy / terms) ===== */
+.content-page { padding: var(--space-7) 0 var(--space-8) 0; }
+.content-page h1 { font-size: var(--font-size-xl); margin: 0 0 var(--space-5) 0; }
+.content-page p { max-width: 65ch; color: var(--color-text); }
+.content-page p + p { margin-top: var(--space-4); }
+
+/* ===== Download page ===== */
+.download-meta {
+  display: grid; grid-template-columns: 1fr; gap: var(--space-3);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-5); margin: var(--space-5) 0;
+}
+@media (min-width: 560px) {
+  .download-meta { grid-template-columns: repeat(3, 1fr); }
+}
+.download-meta dt { font-size: var(--font-size-xs); color: var(--color-text-muted); margin: 0; }
+.download-meta dd { font-size: var(--font-size-sm); font-weight: 700; margin: var(--space-1) 0 0 0; word-break: break-all; }
+
+.install-steps { padding: 0; margin: var(--space-4) 0 0 0; max-width: 60ch; }
+[dir="ltr"] .install-steps { padding-inline-start: var(--space-5); }
+[dir="rtl"] .install-steps { padding-inline-start: var(--space-5); }
+.install-steps li { margin-bottom: var(--space-2); }
+
+.store-badges { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
+.store-badge-placeholder {
+  border: 1.5px dashed var(--color-border); border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4); color: var(--color-text-muted); font-size: var(--font-size-xs);
+}

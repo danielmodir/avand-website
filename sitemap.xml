@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://avand.ir/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/en/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/fa/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/en/about/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/about/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/about/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/fa/about/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/about/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/about/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/en/download/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/download/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/download/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/fa/download/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/download/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/download/"/>
+  </url>
+</urlset>
