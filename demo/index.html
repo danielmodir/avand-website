@@ -211,6 +211,8 @@
 
   .btn{ border-radius:14px; padding:12px 16px; font-size:14px; font-weight:600; border:none; cursor:pointer; font-family:inherit; }
   .btn-outline{ background:transparent; color:var(--primary); border:1.5px solid var(--primary); width:100%; }
+  .btn-small{ width:auto; padding:8px 14px; border-radius:11px; font-size:12.5px; white-space:nowrap; }
+  .btn:disabled{ opacity:.55; cursor:default; }
 
   /* calendar */
   .cal-topbar{ position:relative; display:flex; align-items:baseline; justify-content:center; gap:10px; margin-bottom:18px; padding:6px 0; }
@@ -434,6 +436,7 @@
   .menu-item-icon{ width:32px; height:32px; border-radius:10px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
   .menu-item-icon svg{ width:16px; height:16px; }
   .menu-item-label{ flex:1; font-size:14px; font-weight:600; }
+  .menu-item-label .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; margin-inline-start:6px; }
   .menu-item-row svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
 
   .profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:28px; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; background-size:cover; background-position:center; }
@@ -721,7 +724,9 @@ const ICONS = {
   gearIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>',
   linkIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12a5 5 0 0 1 5-5h3v2h-3a3 3 0 0 0 0 6h3v2h-3a5 5 0 0 1-5-5zm7-1h6v2h-6v-2zm3.1-4h3a5 5 0 0 1 0 10h-3v-2h3a3 3 0 0 0 0-6h-3V7z"/></svg>',
   messageIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8l-4 4V5a1 1 0 0 1 1-1z"/></svg>',
-  mailIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1.4 2 7.6 6 7.6-6H4.4z"/></svg>'
+  mailIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1.4 2 7.6 6 7.6-6H4.4z"/></svg>',
+  peopleIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-3.3 0-8 1.7-8 5v2h16v-2c0-3.3-4.7-5-8-5zm9-6a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm0 2c-.9 0-1.9.14-2.8.4 1.7 1.1 2.8 2.6 2.8 4.6v2h6v-2c0-2.8-3.6-5-6-5z"/></svg>',
+  storeIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg>'
 };
 
 /* ============ DATE HELPERS ============ */
@@ -907,6 +912,14 @@ const STRINGS = {
     firstName:'First name', lastName:'Last name', username:'Username',
     phoneNumber:'Phone number', gender:'Gender', male:'Male', female:'Female', genderOther:'Prefer not to say',
     dateOfBirth:'Date of birth', uniqueUserId:'Unique user ID', idCopied:'ID copied',
+    connections:'Connections', connectionsSub:'View and manage',
+    friendsSearchPlaceholder:'Search by user ID or phone number',
+    inviteLink:'Your invite link', inviteLinkCopied:'Invite link copied',
+    searchResults:'Search results', noSearchResults:'No user found with that ID or phone number',
+    incomingRequests:'Incoming requests', sentRequests:'Sent requests', myConnections:'My connections',
+    noConnectionsYet:'No connections yet — search by user ID or phone number to add one',
+    connect:'Connect', pending:'Pending', accept:'Accept', decline:'Decline',
+    remove:'Remove', block:'Block', unblock:'Unblock', blocked:'Blocked',
     shareAvand:'Share Avand', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
@@ -952,6 +965,14 @@ const STRINGS = {
     firstName:'نام', lastName:'نام خانوادگی', username:'نام کاربری',
     phoneNumber:'شماره موبایل', gender:'جنسیت', male:'مرد', female:'زن', genderOther:'ترجیح می‌دم نگم',
     dateOfBirth:'تاریخ تولد', uniqueUserId:'شناسه‌ی یکتا', idCopied:'شناسه کپی شد',
+    connections:'ارتباط‌ها', connectionsSub:'مشاهده و مدیریت',
+    friendsSearchPlaceholder:'جست‌وجو با شناسه‌ی کاربری یا شماره موبایل',
+    inviteLink:'لینک دعوت تو', inviteLinkCopied:'لینک دعوت کپی شد',
+    searchResults:'نتیجه‌ی جست‌وجو', noSearchResults:'کاربری با این شناسه یا شماره پیدا نشد',
+    incomingRequests:'درخواست‌های دریافتی', sentRequests:'درخواست‌های ارسالی', myConnections:'ارتباط‌های من',
+    noConnectionsYet:'هنوز ارتباطی نداری — با شناسه‌ی کاربری یا شماره موبایل جست‌وجو کن',
+    connect:'ارتباط', pending:'در انتظار', accept:'تأیید', decline:'رد',
+    remove:'حذف ارتباط', block:'مسدود کردن', unblock:'رفع مسدودی', blocked:'مسدود',
     shareAvand:'اشتراک‌گذاری آوند', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
@@ -1015,7 +1036,19 @@ const state = {
   settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali' },
   tasks: [],
   habits: [],
-  events: []
+  events: [],
+  /* Fake, client-side-only directory simulating other Avand users, so the
+     Friends/Connections search has something to find — this prototype has
+     no real backend/multi-user data, per CLAUDE.md's "zero external
+     requests" rule. status: 'none' | 'pending-outgoing' | 'pending-incoming'
+     | 'accepted' | 'blocked'. */
+  connections: [
+    { id:'AV-7F3K9Q', name:'Sara Ahmadi', phone:'09120000001', status:'accepted' },
+    { id:'AV-2M8P1Z', name:'Reza Karimi', phone:'09120000002', status:'pending-outgoing' },
+    { id:'AV-9X4T6L', name:'Mina Hosseini', phone:'09120000003', status:'pending-incoming' },
+    { id:'AV-5B2W7R', name:'Pouya Jafari', phone:'09120000004', status:'none' }
+  ],
+  friendSearch: ''
 };
 
 function seed(){
@@ -1363,7 +1396,7 @@ function renderAuth(){
 
 /* ============ MENU ============ */
 const MENU_PARENT = {
-  'profile': null, 'share': null, 'about': null, 'settings': null,
+  'profile': null, 'share': null, 'about': null, 'settings': null, 'friends': 'profile',
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings'
 };
 function initials(name){
@@ -1378,6 +1411,7 @@ function subHeader(title){
 function renderMenu(){
   const sub = state.menuSubView;
   if(sub === 'profile') return renderProfilePage();
+  if(sub === 'friends') return renderFriendsPage();
   if(sub === 'share') return renderSharePage();
   if(sub === 'about') return renderAboutPage();
   if(sub === 'settings') return renderSettingsList();
@@ -1444,12 +1478,64 @@ function renderProfilePage(){
       <div><div class="lbl">${t('uniqueUserId')}</div><div class="sub">${escapeHtml(p.userId)}</div></div>
       <span class="link-btn" data-action="copy-user-id">${ICONS.linkIcon}</span>
     </div>
+    <div class="menu-item-row" data-action="menu-nav" data-sub="friends">
+      <div class="menu-item-icon">${ICONS.peopleIcon}</div>
+      <div class="menu-item-label">${t('connections')} <span class="count">${state.connections.filter(c=>c.status==='accepted').length}</span></div>
+      ${ICONS.chevronRightSmall}
+    </div>
     <div class="profile-stats">
       <div class="profile-stat"><div class="num">${completedTasks}</div><div class="lbl">${t('tasksDone')}</div></div>
       <div class="profile-stat"><div class="num">${activeHabits}</div><div class="lbl">${t('habits')}</div></div>
       <div class="profile-stat"><div class="num">${checkins}</div><div class="lbl">${t('checkins')}</div></div>
     </div>
     <button class="btn btn-outline" style="margin-top:22px; color:var(--danger); border-color:var(--danger);" data-action="logout-user">${t('logout')}</button>
+  `;
+}
+function friendRowActions(c){
+  if(c.status==='none') return `<button class="btn btn-primary btn-small" data-action="connect-request" data-id="${c.id}">${t('connect')}</button>`;
+  if(c.status==='pending-outgoing') return `<button class="btn btn-outline btn-small" disabled>${t('pending')}</button>`;
+  if(c.status==='pending-incoming') return `
+    <button class="btn btn-primary btn-small" data-action="connect-accept" data-id="${c.id}">${t('accept')}</button>
+    <button class="btn btn-outline btn-small" data-action="connect-decline" data-id="${c.id}">${t('decline')}</button>`;
+  if(c.status==='accepted') return `
+    <button class="btn btn-outline btn-small" data-action="connect-remove" data-id="${c.id}">${t('remove')}</button>
+    <button class="btn btn-outline btn-small" style="color:var(--danger); border-color:var(--danger);" data-action="connect-block" data-id="${c.id}">${t('block')}</button>`;
+  if(c.status==='blocked') return `<button class="btn btn-outline btn-small" data-action="connect-unblock" data-id="${c.id}">${t('unblock')}</button>`;
+  return '';
+}
+function friendRow(c){
+  return `
+    <div class="settings-row">
+      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <div class="menu-avatar" style="width:36px; height:36px; font-size:13px;">${initials(c.name)}</div>
+        <div style="min-width:0;"><div class="lbl">${escapeHtml(c.name)}</div><div class="sub">${escapeHtml(c.id)}</div></div>
+      </div>
+      <div style="display:flex; gap:6px; flex:0 0 auto;">${friendRowActions(c)}</div>
+    </div>`;
+}
+function renderFriendsPage(){
+  const q = state.friendSearch.trim().toLowerCase();
+  const matches = q ? state.connections.filter(c => c.id.toLowerCase().includes(q) || c.phone.includes(q)) : [];
+  const incoming = state.connections.filter(c=>c.status==='pending-incoming');
+  const accepted = state.connections.filter(c=>c.status==='accepted');
+  const outgoing = state.connections.filter(c=>c.status==='pending-outgoing');
+  const nothingYet = !incoming.length && !accepted.length && !outgoing.length;
+  return `
+    ${subHeader(t('connections'))}
+    <div class="settings-row">
+      <div style="min-width:0;"><div class="lbl">${t('inviteLink')}</div><div class="sub" style="overflow:hidden; text-overflow:ellipsis;">avand.ir/invite/${escapeHtml(state.profile.userId)}</div></div>
+      <span class="link-btn" data-action="copy-invite-link">${ICONS.linkIcon}</span>
+    </div>
+    <div class="field" style="margin-top:16px;"><input type="text" id="friend-search" value="${escapeAttr(state.friendSearch)}" placeholder="${t('friendsSearchPlaceholder')}"></div>
+    ${q ? `
+      <div class="section-title">${t('searchResults')}</div>
+      ${matches.length ? matches.map(friendRow).join('') : `<div class="empty-hint">${t('noSearchResults')}</div>`}
+    ` : `
+      ${incoming.length ? `<div class="section-title">${t('incomingRequests')} <span class="count">${incoming.length}</span></div>${incoming.map(friendRow).join('')}` : ''}
+      ${accepted.length ? `<div class="section-title">${t('myConnections')} <span class="count">${accepted.length}</span></div>${accepted.map(friendRow).join('')}` : ''}
+      ${outgoing.length ? `<div class="section-title">${t('sentRequests')} <span class="count">${outgoing.length}</span></div>${outgoing.map(friendRow).join('')}` : ''}
+      ${nothingYet ? `<div class="empty-hint" style="margin-top:16px;">${t('noConnectionsYet')}</div>` : ''}
+    `}
   `;
 }
 function renderSharePage(){
@@ -1552,6 +1638,13 @@ function wireMenuInteractivity(){
     const reader = new FileReader();
     reader.onload = () => { state.profile.photo = reader.result; render(); };
     reader.readAsDataURL(file);
+  });
+  document.getElementById('friend-search')?.addEventListener('input', e => {
+    state.friendSearch = e.target.value;
+    const cursor = e.target.selectionStart;
+    render();
+    const el2 = document.getElementById('friend-search');
+    if(el2){ el2.focus(); el2.setSelectionRange(cursor, cursor); }
   });
 }
 
@@ -2218,6 +2311,17 @@ document.getElementById('device').addEventListener('click', (e) => {
     showToast(t('idCopied'));
     return;
   }
+  if(action === 'copy-invite-link'){
+    try{ navigator.clipboard.writeText(`avand.ir/invite/${state.profile.userId}`); }catch(err){}
+    showToast(t('inviteLinkCopied'));
+    return;
+  }
+  if(action === 'connect-request'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'pending-outgoing'; render(); return; }
+  if(action === 'connect-accept'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'accepted'; render(); return; }
+  if(action === 'connect-decline'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
+  if(action === 'connect-remove'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
+  if(action === 'connect-block'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'blocked'; render(); return; }
+  if(action === 'connect-unblock'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
   if(action === 'logout-user'){
     state.authScreen = true;
     state.authTab = 'login';
