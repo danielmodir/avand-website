@@ -27,6 +27,12 @@
     --nav-icon:#5C7180;
     --overlay:rgba(0,0,0,0.55);
     --shadow:0 10px 30px rgba(0,0,0,0.45);
+    --danger:#E08578;
+    --danger-soft:rgba(224,133,120,0.16);
+    /* Google's brand button is fixed white/dark-grey by their own brand
+       guidelines, independent of app theme — not a themed surface. */
+    --google-btn-bg:#FFFFFF;
+    --google-btn-text:#1F1F1F;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
@@ -479,7 +485,20 @@
   .auth-form input{ width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:14px; padding:14px 16px; font-size:14px; color:var(--text); font-family:inherit; transition:border-color .2s ease, box-shadow .2s ease; }
   .auth-form input::placeholder{ color:var(--text-muted); }
   .auth-form input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--primary-soft); }
+  .auth-form .field.has-error input{ border-color:var(--danger); }
+  .auth-form .field.has-error input:focus{ box-shadow:0 0 0 5px var(--danger-soft); }
+  .auth-field-error{ color:var(--danger); font-size:12px; margin-top:6px; }
   .auth-submit{ width:100%; margin-top:10px; padding:15px; border-radius:14px; font-size:14px; }
+  .auth-google{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    background:var(--google-btn-bg); color:var(--google-btn-text); border:1px solid var(--border); border-radius:14px;
+    padding:13px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer;
+    transition:background .2s ease, box-shadow .2s ease;
+  }
+  .auth-google:hover{ box-shadow:0 2px 10px rgba(0,0,0,0.18); }
+  .auth-google svg{ width:18px; height:18px; flex:0 0 auto; }
+  .auth-divider{ display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--text-muted); font-size:12px; }
+  .auth-divider::before, .auth-divider::after{ content:''; flex:1; height:1px; background:var(--border); }
   .auth-footer{ margin-top:auto; text-align:center; font-size:12px; color:var(--text-muted); }
 
   /* ===== Desktop layout (>=960px): calendar + home side by side =====
@@ -677,6 +696,10 @@
 
 <script>
 /* ============ ICONS ============ */
+/* Google's "G" mark, official 4-color version — kept separate from ICONS
+   (which are single-color currentColor icons) since brand marks aren't
+   themeable. */
+const GOOGLE_G_ICON = '<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.4 0 6.4 1.17 8.8 3.46l6.55-6.55C35.1 2.68 29.9.5 24 .5 14.86.5 7 5.73 3.2 13.4l7.65 5.94C12.7 13.5 17.9 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.15-3.15-.42-4.64H24v9.03h12.6c-.55 2.9-2.2 5.35-4.68 7l7.4 5.75C43.85 37.4 46.5 31.5 46.5 24.5z"/><path fill="#FBBC05" d="M10.85 19.34a14.5 14.5 0 0 0 0 9.32l-7.65 5.94a24 24 0 0 1 0-21.2z"/><path fill="#34A853" d="M24 47.5c6.48 0 11.9-2.13 15.87-5.8l-7.4-5.75c-2.06 1.4-4.7 2.2-8.47 2.2-6.1 0-11.3-4-13.15-9.4l-7.65 5.94C7 42.27 14.86 47.5 24 47.5z"/><path fill="none" d="M.5.5h47v47H.5z"/></svg>';
 const ICONS = {
   check: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 7h12l-1 14H7L6 7zm3-4h6l1 2h4v2H2V5h4l1-2z"/></svg>',
@@ -893,6 +916,9 @@ const STRINGS = {
     welcomeTitle:'Welcome to Avand', welcomeSub:'Tasks, habits, and events in one place.',
     logIn:'Log in', signUp:'Sign up', fullName:'Full name', password:'Password',
     logInBtn:'Log in', createAccountBtn:'Create account',
+    continueWithGoogle:'Continue with Google', authOr:'or',
+    nameRequired:'Enter your full name', emailInvalid:'Enter a valid email address',
+    passwordTooShort:'Password must be at least 6 characters',
     authFooter:'Prototype only — no account is actually created.'
   },
   fa: {
@@ -931,6 +957,9 @@ const STRINGS = {
     welcomeTitle:'به آوند خوش اومدی', welcomeSub:'کار، عادت و رویداد، همه یه‌جا.',
     logIn:'ورود', signUp:'ثبت‌نام', fullName:'نام و نام خانوادگی', password:'رمز عبور',
     logInBtn:'ورود', createAccountBtn:'ساخت حساب',
+    continueWithGoogle:'ورود با گوگل', authOr:'یا',
+    nameRequired:'نام و نام خانوادگی رو وارد کن', emailInvalid:'یه ایمیل معتبر وارد کن',
+    passwordTooShort:'رمز عبور باید حداقل ۶ کاراکتر باشه',
     authFooter:'فقط پروتوتایپ — حساب واقعی ساخته نمی‌شه.'
   }
 };
@@ -1270,8 +1299,20 @@ function renderItemSections(tasks, habits, events, date){
 
 /* ============ AUTH SCREEN (Login / Sign up) ============ */
 let authDraft = { name:'', email:'', password:'' };
+let authErrors = { name:'', email:'', password:'' };
+function validateAuth(){
+  const isLogin = state.authTab === 'login';
+  const errs = { name:'', email:'', password:'' };
+  if(!isLogin && !authDraft.name.trim()) errs.name = t('nameRequired');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authDraft.email.trim())) errs.email = t('emailInvalid');
+  if(authDraft.password.length < 6) errs.password = t('passwordTooShort');
+  authErrors = errs;
+  return !errs.name && !errs.email && !errs.password;
+}
 function renderAuthScreen(){
   const isLogin = state.authTab === 'login';
+  const errClass = f => authErrors[f] ? 'field has-error' : 'field';
+  const errMsg = f => authErrors[f] ? `<div class="auth-field-error">${authErrors[f]}</div>` : '';
   return `
     <div class="auth-logo">آ</div>
     <div class="auth-title">${t('welcomeTitle')}</div>
@@ -1280,10 +1321,12 @@ function renderAuthScreen(){
       <button type="button" data-action="auth-tab" data-val="login" class="${isLogin?'active':''}">${t('logIn')}</button>
       <button type="button" data-action="auth-tab" data-val="signup" class="${!isLogin?'active':''}">${t('signUp')}</button>
     </div>
+    <button type="button" class="auth-google" data-action="auth-google">${GOOGLE_G_ICON}${t('continueWithGoogle')}</button>
+    <div class="auth-divider">${t('authOr')}</div>
     <div class="auth-form">
-      ${!isLogin ? `<div class="field"><input type="text" id="auth-name" placeholder="${t('fullName')}" value="${escapeAttr(authDraft.name)}"></div>` : ''}
-      <div class="field"><input type="text" id="auth-email" placeholder="${t('email')}" value="${escapeAttr(authDraft.email)}"></div>
-      <div class="field"><input type="password" id="auth-password" placeholder="${t('password')}" value="${escapeAttr(authDraft.password)}"></div>
+      ${!isLogin ? `<div class="${errClass('name')}"><input type="text" id="auth-name" placeholder="${t('fullName')}" value="${escapeAttr(authDraft.name)}">${errMsg('name')}</div>` : ''}
+      <div class="${errClass('email')}"><input type="email" id="auth-email" placeholder="${t('email')}" value="${escapeAttr(authDraft.email)}">${errMsg('email')}</div>
+      <div class="${errClass('password')}"><input type="password" id="auth-password" placeholder="${t('password')}" value="${escapeAttr(authDraft.password)}">${errMsg('password')}</div>
       <button class="btn btn-primary auth-submit" data-action="auth-submit">${isLogin?t('logInBtn'):t('createAccountBtn')}</button>
     </div>
     <div class="auth-footer">${t('authFooter')}</div>
@@ -2099,12 +2142,21 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'toggle-section'){ state.sectionExpanded[el.dataset.section] = !state.sectionExpanded[el.dataset.section]; render(); return; }
   if(action === 'toggle-pin'){ const t = state.tasks.find(x=>x.id===el.dataset.id); t.pinned = !t.pinned; render(); return; }
 
-  if(action === 'auth-tab'){ state.authTab = el.dataset.val; render(); return; }
+  if(action === 'auth-tab'){ state.authTab = el.dataset.val; authErrors = { name:'', email:'', password:'' }; render(); return; }
   if(action === 'auth-submit'){
+    if(!validateAuth()){ render(); return; }
     if(authDraft.name.trim()) state.profile.name = authDraft.name.trim();
     if(authDraft.email.trim()) state.profile.email = authDraft.email.trim();
     state.authScreen = false;
     authDraft = { name:'', email:'', password:'' };
+    authErrors = { name:'', email:'', password:'' };
+    render();
+    return;
+  }
+  if(action === 'auth-google'){
+    state.authScreen = false;
+    authDraft = { name:'', email:'', password:'' };
+    authErrors = { name:'', email:'', password:'' };
     render();
     return;
   }
