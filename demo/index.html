@@ -437,6 +437,20 @@
   .menu-item-icon svg{ width:16px; height:16px; }
   .menu-item-label{ flex:1; font-size:14px; font-weight:600; }
   .menu-item-label .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; margin-inline-start:6px; }
+
+  .store-grid{ display:flex; flex-direction:column; gap:10px; }
+  .store-card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; }
+  .store-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .store-card-icon{ width:40px; height:40px; border-radius:12px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
+  .store-card-icon svg{ width:20px; height:20px; }
+  .store-badge{ font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+  .store-badge-enabled{ background:var(--primary-soft); color:var(--primary); }
+  .store-badge-available, .store-badge-locked{ background:var(--bg-soft); color:var(--text-muted); }
+  .store-badge-premium{ background:var(--primary); color:#fff; }
+  .store-card-name{ font-size:14px; font-weight:700; margin-bottom:3px; }
+  .store-card-desc{ font-size:12.5px; color:var(--text-muted); line-height:1.5; margin-bottom:14px; }
+  .store-card-action{ display:flex; justify-content:flex-end; align-items:center; }
+  .store-card-hint{ font-size:12px; color:var(--text-muted); }
   .menu-item-row svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
 
   .profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:28px; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; background-size:cover; background-position:center; }
@@ -676,6 +690,9 @@
       </button>
       <button type="button" data-action="open-menu" data-sub="settings" title="Settings">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+      </button>
+      <button type="button" data-action="open-menu" data-sub="store" title="Store">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg>
       </button>
     </div>
   </div>
@@ -920,6 +937,14 @@ const STRINGS = {
     noConnectionsYet:'No connections yet — search by user ID or phone number to add one',
     connect:'Connect', pending:'Pending', accept:'Accept', decline:'Decline',
     remove:'Remove', block:'Block', unblock:'Unblock', blocked:'Blocked',
+    store:'Store', storeSub:'Feature marketplace',
+    statusAvailable:'Available', statusEnabled:'Enabled', statusLocked:'Locked', statusPremium:'Premium',
+    activate:'Activate', upgrade:'Upgrade', comingSoon:'Coming soon', upgradeUnavailable:"Upgrades aren't available in this prototype",
+    featThemesName:'Custom Themes', featThemesDesc:'Pick colors beyond the default theme.',
+    featAdvCalName:'Advanced Calendar', featAdvCalDesc:'More calendar views and overlays.',
+    featProdToolsName:'Productivity Tools', featProdToolsDesc:'Extra shortcuts for planning your day.',
+    featAnalyticsName:'Advanced Analytics', featAnalyticsDesc:'Deeper charts and trends over time.',
+    featAIName:'AI Features', featAIDesc:'Smart suggestions for tasks and habits.',
     shareAvand:'Share Avand', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
@@ -973,6 +998,14 @@ const STRINGS = {
     noConnectionsYet:'هنوز ارتباطی نداری — با شناسه‌ی کاربری یا شماره موبایل جست‌وجو کن',
     connect:'ارتباط', pending:'در انتظار', accept:'تأیید', decline:'رد',
     remove:'حذف ارتباط', block:'مسدود کردن', unblock:'رفع مسدودی', blocked:'مسدود',
+    store:'فروشگاه', storeSub:'بازارچه‌ی قابلیت‌ها',
+    statusAvailable:'در دسترس', statusEnabled:'فعال', statusLocked:'قفل', statusPremium:'ویژه',
+    activate:'فعال‌سازی', upgrade:'ارتقا', comingSoon:'به‌زودی', upgradeUnavailable:'ارتقا تو این پروتوتایپ در دسترس نیست',
+    featThemesName:'تم‌های سفارشی', featThemesDesc:'رنگ‌هایی فراتر از تم پیش‌فرض انتخاب کن.',
+    featAdvCalName:'تقویم پیشرفته', featAdvCalDesc:'نماهای بیشتر و لایه‌های اضافه برای تقویم.',
+    featProdToolsName:'ابزارهای بهره‌وری', featProdToolsDesc:'میان‌برهای اضافه برای برنامه‌ریزی روزت.',
+    featAnalyticsName:'آمار پیشرفته', featAnalyticsDesc:'نمودار و روند دقیق‌تر در طول زمان.',
+    featAIName:'قابلیت‌های هوش مصنوعی', featAIDesc:'پیشنهاد هوشمند برای کار و عادت.',
     shareAvand:'اشتراک‌گذاری آوند', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
@@ -1048,7 +1081,19 @@ const state = {
     { id:'AV-9X4T6L', name:'Mina Hosseini', phone:'09120000003', status:'pending-incoming' },
     { id:'AV-5B2W7R', name:'Pouya Jafari', phone:'09120000004', status:'none' }
   ],
-  friendSearch: ''
+  friendSearch: '',
+  /* Feature Marketplace (Store) — client-side only, no real purchase or
+     entitlement system exists in this prototype. kind: 'toggle' | 'locked'
+     | 'premium'. A toggle feature's status label is 'enabled' while on,
+     'available' while off (nothing distinguishes "never turned on" from
+     "turned off again" — not meaningful enough to track separately here). */
+  store: [
+    { id:'theme', kind:'toggle', on:true },
+    { id:'advcal', kind:'toggle', on:false },
+    { id:'prodtools', kind:'toggle', on:false },
+    { id:'analytics', kind:'premium' },
+    { id:'ai', kind:'locked' }
+  ]
 };
 
 function seed(){
@@ -1396,7 +1441,7 @@ function renderAuth(){
 
 /* ============ MENU ============ */
 const MENU_PARENT = {
-  'profile': null, 'share': null, 'about': null, 'settings': null, 'friends': 'profile',
+  'profile': null, 'share': null, 'about': null, 'settings': null, 'friends': 'profile', 'store': null,
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings'
 };
 function initials(name){
@@ -1412,6 +1457,7 @@ function renderMenu(){
   const sub = state.menuSubView;
   if(sub === 'profile') return renderProfilePage();
   if(sub === 'friends') return renderFriendsPage();
+  if(sub === 'store') return renderStorePage();
   if(sub === 'share') return renderSharePage();
   if(sub === 'about') return renderAboutPage();
   if(sub === 'settings') return renderSettingsList();
@@ -1440,6 +1486,9 @@ function renderMenuHome(){
       </div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings">
         <div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('settings')}</div>${ICONS.chevronRightSmall}
+      </div>
+      <div class="menu-item-row" data-action="menu-nav" data-sub="store">
+        <div class="menu-item-icon">${ICONS.storeIcon}</div><div class="menu-item-label">${t('store')}</div>${ICONS.chevronRightSmall}
       </div>
     </div>
   `;
@@ -1536,6 +1585,46 @@ function renderFriendsPage(){
       ${outgoing.length ? `<div class="section-title">${t('sentRequests')} <span class="count">${outgoing.length}</span></div>${outgoing.map(friendRow).join('')}` : ''}
       ${nothingYet ? `<div class="empty-hint" style="margin-top:16px;">${t('noConnectionsYet')}</div>` : ''}
     `}
+  `;
+}
+const STORE_FEATURE_META = {
+  theme: { icon: 'storeIcon', name: 'featThemesName', desc: 'featThemesDesc' },
+  advcal: { icon: 'calendarIcon', name: 'featAdvCalName', desc: 'featAdvCalDesc' },
+  prodtools: { icon: 'repeatIcon', name: 'featProdToolsName', desc: 'featProdToolsDesc' },
+  analytics: { icon: 'bellIcon', name: 'featAnalyticsName', desc: 'featAnalyticsDesc' },
+  ai: { icon: 'infoIcon', name: 'featAIName', desc: 'featAIDesc' }
+};
+function storeFeatureCard(f){
+  const meta = STORE_FEATURE_META[f.id];
+  let badgeClass, badgeLabel, actionHtml;
+  if(f.kind === 'toggle'){
+    badgeClass = f.on ? 'store-badge-enabled' : 'store-badge-available';
+    badgeLabel = f.on ? t('statusEnabled') : t('statusAvailable');
+    actionHtml = `<div class="switch ${f.on?'on':''}" data-action="toggle-store-feature" data-id="${f.id}"><div class="knob"></div></div>`;
+  } else if(f.kind === 'locked'){
+    badgeClass = 'store-badge-locked';
+    badgeLabel = t('statusLocked');
+    actionHtml = `<span class="store-card-hint">${t('comingSoon')}</span>`;
+  } else {
+    badgeClass = 'store-badge-premium';
+    badgeLabel = t('statusPremium');
+    actionHtml = `<button class="btn btn-primary btn-small" data-action="store-upgrade">${t('upgrade')}</button>`;
+  }
+  return `
+    <div class="store-card">
+      <div class="store-card-top">
+        <div class="store-card-icon">${ICONS[meta.icon]}</div>
+        <span class="store-badge ${badgeClass}">${badgeLabel}</span>
+      </div>
+      <div class="store-card-name">${t(meta.name)}</div>
+      <div class="store-card-desc">${t(meta.desc)}</div>
+      <div class="store-card-action">${actionHtml}</div>
+    </div>`;
+}
+function renderStorePage(){
+  return `
+    ${subHeader(t('store'))}
+    <div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>
   `;
 }
 function renderSharePage(){
@@ -2322,6 +2411,8 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'connect-remove'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
   if(action === 'connect-block'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'blocked'; render(); return; }
   if(action === 'connect-unblock'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
+  if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
+  if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
   if(action === 'logout-user'){
     state.authScreen = true;
     state.authTab = 'login';
