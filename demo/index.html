@@ -309,7 +309,7 @@
 
   /* ===== rich form controls (MVP fields) ===== */
   .field{ margin-bottom:14px; }
-  .field input[type=text], .field input[type=date], .field input[type=time], .field input[type=number], .field textarea{
+  .field input[type=text], .field input[type=date], .field input[type=time], .field input[type=number], .field input[type=email], .field input[type=tel], .field textarea{
     width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:14px; padding:13px 14px;
     font-size:14px; color:var(--text); font-family:inherit; transition:border-color .2s ease, box-shadow .2s ease;
   }
@@ -439,6 +439,8 @@
   .profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:28px; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; background-size:cover; background-position:center; }
   .profile-photo-actions{ display:flex; gap:14px; justify-content:center; margin-bottom:4px; }
   .link-btn{ font-size:12px; font-weight:600; color:var(--primary); cursor:pointer; }
+  .profile-field-row{ display:flex; gap:10px; }
+  .profile-field-row .field{ flex:1; }
   .profile-stats{ display:flex; gap:10px; margin-top:16px; }
   .profile-stat{ flex:1; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center; }
   .profile-stat .num{ font-size:18px; font-weight:800; color:var(--primary); }
@@ -724,6 +726,9 @@ const ICONS = {
 
 /* ============ DATE HELPERS ============ */
 const uid = () => 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+/* User-facing ID (Profile / Friends search / invite links) — distinct from
+   uid() above, which is for internal task/habit/event records only. */
+const genUserId = () => 'AV-' + Math.random().toString(36).slice(2, 8).toUpperCase();
 const pad = n => String(n).padStart(2, '0');
 const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const sameDay = (a,b) => dateKey(a) === dateKey(b);
@@ -898,6 +903,10 @@ const STRINGS = {
     sun:'Sun', mon:'Mon',
     profile:'Profile', name:'Name', email:'Email', tasksDone:'Tasks done', checkins:'Check-ins', logout:'Log out',
     changePhoto:'Change photo', removePhoto:'Remove',
+    personalInfo:'Personal info', contactInfo:'Contact info', accountInfo:'Account',
+    firstName:'First name', lastName:'Last name', username:'Username',
+    phoneNumber:'Phone number', gender:'Gender', male:'Male', female:'Female', genderOther:'Prefer not to say',
+    dateOfBirth:'Date of birth', uniqueUserId:'Unique user ID', idCopied:'ID copied',
     shareAvand:'Share Avand', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
@@ -939,6 +948,10 @@ const STRINGS = {
     sun:'یک', mon:'دو',
     profile:'پروفایل', name:'نام', email:'ایمیل', tasksDone:'کار انجام‌شده', checkins:'چک‌این', logout:'خروج از حساب',
     changePhoto:'تغییر عکس', removePhoto:'حذف',
+    personalInfo:'اطلاعات شخصی', contactInfo:'اطلاعات تماس', accountInfo:'حساب کاربری',
+    firstName:'نام', lastName:'نام خانوادگی', username:'نام کاربری',
+    phoneNumber:'شماره موبایل', gender:'جنسیت', male:'مرد', female:'زن', genderOther:'ترجیح می‌دم نگم',
+    dateOfBirth:'تاریخ تولد', uniqueUserId:'شناسه‌ی یکتا', idCopied:'شناسه کپی شد',
     shareAvand:'اشتراک‌گذاری آوند', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
@@ -994,7 +1007,11 @@ const state = {
   homeDate: new Date(today),
   authScreen: true,
   authTab: 'login',
-  profile: { name: 'Daniel', email: 'daniel@example.com', photo: null },
+  profile: {
+    name: 'Daniel', firstName: 'Daniel', lastName: '', username: 'daniel',
+    email: 'daniel@example.com', phone: '', gender: '', dob: '', photo: null,
+    userId: genUserId()
+  },
   settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali' },
   tasks: [],
   habits: [],
@@ -1394,24 +1411,45 @@ function renderMenuHome(){
   `;
 }
 function renderProfilePage(){
+  const p = state.profile;
   const completedTasks = state.tasks.filter(x=>x.done).length;
   const activeHabits = state.habits.length;
   const checkins = state.habits.reduce((sum,h)=>sum+h.completedDates.length, 0);
+  const genderOpt = (val, label) => `<button type="button" data-action="set-gender" data-val="${val}" class="${p.gender===val?'active':''}">${label}</button>`;
   return `
     ${subHeader(t('profile'))}
-    <div class="profile-avatar-big" ${state.profile.photo?`style="background-image:url('${state.profile.photo}')"`:''}>${state.profile.photo?'':initials(state.profile.name)}</div>
+    <div class="profile-avatar-big" ${p.photo?`style="background-image:url('${p.photo}')"`:''}>${p.photo?'':initials(p.name)}</div>
     <div class="profile-photo-actions">
       <label class="link-btn">${t('changePhoto')}<input type="file" accept="image/*" id="profile-photo-input" class="hidden"></label>
-      ${state.profile.photo ? `<span class="link-btn" data-action="remove-profile-photo">${t('removePhoto')}</span>` : ''}
+      ${p.photo ? `<span class="link-btn" data-action="remove-profile-photo">${t('removePhoto')}</span>` : ''}
     </div>
-    <div class="field" style="margin-top:18px;"><input type="text" id="profile-name" value="${escapeAttr(state.profile.name)}" placeholder="${t('name')}"></div>
-    <div class="field"><input type="text" id="profile-email" value="${escapeAttr(state.profile.email)}" placeholder="${t('email')}"></div>
+
+    <div class="section-title" style="margin-top:22px;">${t('personalInfo')}</div>
+    <div class="profile-field-row">
+      <div class="field"><input type="text" id="profile-first-name" value="${escapeAttr(p.firstName)}" placeholder="${t('firstName')}"></div>
+      <div class="field"><input type="text" id="profile-last-name" value="${escapeAttr(p.lastName)}" placeholder="${t('lastName')}"></div>
+    </div>
+    <div class="field"><input type="text" id="profile-username" value="${escapeAttr(p.username)}" placeholder="${t('username')}"></div>
+    <div class="field"><input type="date" id="profile-dob" value="${escapeAttr(p.dob)}" placeholder="${t('dateOfBirth')}"></div>
+    <div class="toggle-pair" style="margin-bottom:12px;">
+      ${genderOpt('male', t('male'))}${genderOpt('female', t('female'))}${genderOpt('other', t('genderOther'))}
+    </div>
+
+    <div class="section-title">${t('contactInfo')}</div>
+    <div class="field"><input type="email" id="profile-email" value="${escapeAttr(p.email)}" placeholder="${t('email')}"></div>
+    <div class="field"><input type="tel" id="profile-phone" value="${escapeAttr(p.phone)}" placeholder="${t('phoneNumber')}"></div>
+
+    <div class="section-title">${t('accountInfo')}</div>
+    <div class="settings-row">
+      <div><div class="lbl">${t('uniqueUserId')}</div><div class="sub">${escapeHtml(p.userId)}</div></div>
+      <span class="link-btn" data-action="copy-user-id">${ICONS.linkIcon}</span>
+    </div>
     <div class="profile-stats">
       <div class="profile-stat"><div class="num">${completedTasks}</div><div class="lbl">${t('tasksDone')}</div></div>
       <div class="profile-stat"><div class="num">${activeHabits}</div><div class="lbl">${t('habits')}</div></div>
       <div class="profile-stat"><div class="num">${checkins}</div><div class="lbl">${t('checkins')}</div></div>
     </div>
-    <button class="btn btn-outline" style="margin-top:22px; color:#D98B8B; border-color:#D98B8B;" data-action="logout-user">${t('logout')}</button>
+    <button class="btn btn-outline" style="margin-top:22px; color:var(--danger); border-color:var(--danger);" data-action="logout-user">${t('logout')}</button>
   `;
 }
 function renderSharePage(){
@@ -1496,8 +1534,16 @@ function renderAvandMenuSettings(){
     </div>
   `;
 }
+function syncProfileName(){
+  state.profile.name = [state.profile.firstName, state.profile.lastName].filter(Boolean).join(' ').trim()
+    || state.profile.username || 'Avand User';
+}
 function wireMenuInteractivity(){
-  document.getElementById('profile-name')?.addEventListener('input', e => { state.profile.name = e.target.value; });
+  document.getElementById('profile-first-name')?.addEventListener('input', e => { state.profile.firstName = e.target.value; syncProfileName(); });
+  document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); });
+  document.getElementById('profile-username')?.addEventListener('input', e => { state.profile.username = e.target.value; syncProfileName(); });
+  document.getElementById('profile-dob')?.addEventListener('input', e => { state.profile.dob = e.target.value; });
+  document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; render(); });
   document.getElementById('profile-photo-input')?.addEventListener('change', e => {
@@ -2145,7 +2191,12 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'auth-tab'){ state.authTab = el.dataset.val; authErrors = { name:'', email:'', password:'' }; render(); return; }
   if(action === 'auth-submit'){
     if(!validateAuth()){ render(); return; }
-    if(authDraft.name.trim()) state.profile.name = authDraft.name.trim();
+    if(authDraft.name.trim()){
+      const parts = authDraft.name.trim().split(/\s+/);
+      state.profile.firstName = parts[0] || '';
+      state.profile.lastName = parts.slice(1).join(' ');
+      syncProfileName();
+    }
     if(authDraft.email.trim()) state.profile.email = authDraft.email.trim();
     state.authScreen = false;
     authDraft = { name:'', email:'', password:'' };
@@ -2161,6 +2212,12 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'remove-profile-photo'){ state.profile.photo = null; render(); return; }
+  if(action === 'set-gender'){ state.profile.gender = el.dataset.val; render(); return; }
+  if(action === 'copy-user-id'){
+    try{ navigator.clipboard.writeText(state.profile.userId); }catch(err){}
+    showToast(t('idCopied'));
+    return;
+  }
   if(action === 'logout-user'){
     state.authScreen = true;
     state.authTab = 'login';
