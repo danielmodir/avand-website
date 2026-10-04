@@ -464,6 +464,41 @@
   .period-legend-item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); }
   .period-legend-item .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
 
+  .period-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .period-card-controls{ display:flex; align-items:center; gap:10px; }
+  .period-off-hint{ font-size:12.5px; color:var(--text-muted); padding:10px 0 2px 0; }
+
+  .article-row{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:13px 15px; cursor:pointer; margin-bottom:8px; }
+  .article-row-icon{ width:32px; height:32px; border-radius:10px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
+  .article-row-icon svg{ width:16px; height:16px; }
+  .article-row-text{ flex:1; min-width:0; }
+  .article-row-title{ font-size:13.5px; font-weight:700; }
+  .article-row-desc{ font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .article-row > svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
+
+  .tips-card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; min-height:78px; display:flex; flex-direction:column; justify-content:center; }
+  .tips-card-title{ font-size:12px; font-weight:700; color:var(--primary); margin-bottom:6px; }
+  .tips-card-text{ font-size:13px; line-height:1.6; color:var(--text); }
+  .tips-card-text .caret{ display:inline-block; width:2px; height:1em; background:var(--primary); margin-inline-start:2px; vertical-align:-2px; animation:caret-blink 1s step-end infinite; }
+  @keyframes caret-blink{ 50%{ opacity:0; } }
+
+  /* ===== period setup quiz (bottom sheet, slides up) ===== */
+  .period-quiz-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .25s ease; }
+  .period-quiz-overlay.show{ opacity:1; pointer-events:auto; }
+  .period-quiz-sheet{
+    position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0;
+    z-index:71; box-shadow:0 -8px 24px rgba(0,0,0,0.4); max-height:72%;
+    transform:translateY(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+    display:flex; flex-direction:column;
+  }
+  .period-quiz-sheet.show{ transform:translateY(0); }
+  .period-quiz-body{ padding:6px 22px 28px 22px; overflow-y:auto; scrollbar-width:none; }
+  .period-quiz-body::-webkit-scrollbar{ display:none; }
+  .period-quiz-step{ animation:stagger-in .32s cubic-bezier(.4,0,.2,1) both; }
+  .period-quiz-dots{ display:flex; justify-content:center; gap:6px; margin-bottom:18px; }
+  .period-quiz-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); }
+  .period-quiz-dots span.active{ background:var(--primary); }
+
   .profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:28px; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; background-size:cover; background-position:center; }
   .profile-photo-actions{ display:flex; gap:14px; justify-content:center; margin-bottom:4px; }
   .link-btn{ font-size:12px; font-weight:600; color:var(--primary); cursor:pointer; }
@@ -608,6 +643,14 @@
     }
     .day-sheet.show{ transform:translate(-50%,0); }
 
+    .period-quiz-overlay{ position:fixed; }
+    .period-quiz-sheet{
+      position:fixed; left:50%; right:auto; bottom:24px;
+      width:420px; max-width:90vw; max-height:70vh;
+      border-radius:20px; transform:translate(-50%,130%);
+    }
+    .period-quiz-sheet.show{ transform:translate(-50%,0); }
+
     /* Bottom nav is mobile-only; desktop uses the hamburger's replacement
        (a right-edge icon rail, see .menu-rail) plus the floating add button. */
     .hamburger-btn{ display:none; }
@@ -669,6 +712,15 @@
 
   <div class="popup-overlay" id="popup-overlay" data-action="close-popup"></div>
   <div class="add-popup" id="add-popup"></div>
+
+  <div class="period-quiz-overlay" id="period-quiz-overlay" data-action="close-period-quiz"></div>
+  <div class="period-quiz-sheet" id="period-quiz-sheet">
+    <div class="popup-topbar">
+      <span></span>
+      <div class="popup-close" data-action="close-period-quiz"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.7l-1.41-1.41L9.17 12 2.89 5.71 4.3 4.29 10.59 10.6l6.29-6.3z"/></svg></div>
+    </div>
+    <div class="period-quiz-body" id="period-quiz-body"></div>
+  </div>
 
   <!-- Desktop-only (>=960px): dims the page behind the Menu side panel.
        On mobile the panel covers the whole screen itself, so no dimmer
@@ -965,12 +1017,26 @@ const STRINGS = {
     adminPanel:'Management', purchasedFeatures:'Purchased features',
     noPurchasedFeatures:"You haven't purchased anything from the Store yet",
     periodTracker:'Period tracking', periodTrackerDesc:"Answer a few quick questions and we'll estimate your period and PMS timing.",
-    startBtn:'Start', nextBtn:'Next', finishBtn:'Finish', restartBtn:'Restart',
+    startBtn:'Start', nextBtn:'Next', finishBtn:'Finish',
     periodQ1:"When did your last period start?", periodQ2:'How many days is your usual cycle, start to start?',
     periodQ3:'How many days does your period usually last?',
     periodDisclaimer:'Estimate only, based on your answers — not medical advice.',
     legendPeriod:'Period', legendPms:'PMS', legendFertile:'Fertile window', legendToday:'Today',
     periodStartsToday:'Your period is estimated to start today',
+    openBtn:'Open', periodOffHint:'This feature is turned off.', editAnswers:'Edit answers',
+    calendarReminderLabel:'Show in Calendar', calendarReminderSub:'Mark period days and reminders on the main calendar',
+    articlesTitle:'Related articles', articlesUnavailable:"Articles aren't available in this prototype",
+    article1Title:'Understanding your cycle', article1Desc:'The basics of the menstrual cycle and its phases.',
+    article2Title:'Common PMS symptoms', article2Desc:'What to expect in the days before your period.',
+    article3Title:'When to see a doctor', article3Desc:'Signs worth getting checked out.',
+    article4Title:'Nutrition and exercise during your period', article4Desc:'Simple habits that can help.',
+    tipsTitle:'Did you know?',
+    tip1:'Staying hydrated can help ease period cramps.',
+    tip2:'The luteal phase (after ovulation) tends to stay fairly consistent in length.',
+    tip3:'Light exercise like walking may help ease PMS symptoms.',
+    tip4:"Everyone's cycle can differ a bit — that's normal.",
+    tip5:'Getting enough sleep can help with PMS-related mood changes.',
+    tip6:"If anything feels unusual, it's worth checking with a doctor.",
     shareAvand:'Share Avand', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
@@ -1036,12 +1102,26 @@ const STRINGS = {
     adminPanel:'مدیریت', purchasedFeatures:'قابلیت‌های خریداری‌شده',
     noPurchasedFeatures:'هنوز چیزی از فروشگاه خریداری نکردی',
     periodTracker:'مدیریت دوره‌ی پریود', periodTrackerDesc:'به چند سؤال کوتاه جواب بده تا زمان تقریبی پریود و PMS‌ت رو تخمین بزنیم.',
-    startBtn:'شروع', nextBtn:'بعدی', finishBtn:'پایان', restartBtn:'شروع دوباره',
+    startBtn:'شروع', nextBtn:'بعدی', finishBtn:'پایان',
     periodQ1:'آخرین پریودت کی شروع شد؟', periodQ2:'چرخه‌ات معمولاً چند روزه؟ (از شروع تا شروع بعدی)',
     periodQ3:'پریودت معمولاً چند روز طول می‌کشه؟',
     periodDisclaimer:'این فقط یه تخمینه بر اساس جواب‌هات — توصیه‌ی پزشکی نیست.',
     legendPeriod:'پریود', legendPms:'PMS', legendFertile:'بازه‌ی باروری', legendToday:'امروز',
     periodStartsToday:'طبق تخمین، پریودت امروز شروع می‌شه',
+    openBtn:'باز کردن', periodOffHint:'این قابلیت خاموشه.', editAnswers:'ویرایش پاسخ‌ها',
+    calendarReminderLabel:'نمایش در تقویم', calendarReminderSub:'روزهای پریود و یادآوری رو تو تقویم اصلی نشون بده',
+    articlesTitle:'مقالات مرتبط', articlesUnavailable:'مقاله‌ها تو این پروتوتایپ در دسترس نیستن',
+    article1Title:'فهمیدن چرخه‌ی قاعدگی', article1Desc:'مبانی چرخه‌ی قاعدگی و فازهاش.',
+    article2Title:'نشونه‌های رایج PMS', article2Desc:'چه انتظاری باید تو روزهای قبل از پریود داشته باشی.',
+    article3Title:'کی باید به پزشک مراجعه کنی', article3Desc:'نشونه‌هایی که ارزش چک‌کردن دارن.',
+    article4Title:'تغذیه و ورزش تو دوره‌ی پریود', article4Desc:'چند عادت ساده که می‌تونن کمک کنن.',
+    tipsTitle:'می‌دونستی؟',
+    tip1:'نوشیدن آب کافی می‌تونه کرامپ‌های پریود رو کمتر کنه.',
+    tip2:'فاز لوتئال (بعد از تخمک‌گذاری) معمولاً تو همه‌ی چرخه‌ها طول نسبتاً ثابتی داره.',
+    tip3:'ورزش سبک مثل پیاده‌روی می‌تونه به کاهش علائم PMS کمک کنه.',
+    tip4:'چرخه‌ی هر فرد می‌تونه یه‌کم با فرد دیگه فرق داشته باشه — این طبیعیه.',
+    tip5:'خواب کافی تو فاز PMS می‌تونه به بهتر شدن خلق‌وخو کمک کنه.',
+    tip6:'اگه چیزی غیرعادی به‌نظر می‌رسه، بهتره با پزشک مشورت کنی.',
     shareAvand:'اشتراک‌گذاری آوند', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
@@ -1124,12 +1204,17 @@ const state = {
      page still renders (with an empty state) so it's ready for real
      features later. */
   store: [],
-  /* Period tracking (Admin Panel, shown only when profile.gender ===
+  /* Period tracking (Management, shown only when profile.gender ===
      'female'). step 0 = not started; 1-3 = the setup quiz questions;
      'done' = predictions computed from the quiz answers below. All dates
      are 'YYYY-MM-DD' strings (dateKey format), all math is approximate —
-     this is a wellness estimate, not medical advice. */
+     this is a wellness estimate, not medical advice. enabled is the
+     feature's own on/off master switch, independent of quiz progress;
+     calendarReminder is a separate toggle for showing period days in the
+     main Calendar (display-only in this prototype — no real reminders). */
   period: {
+    enabled: true,
+    calendarReminder: false,
     step: 0,
     lastStart: dateKey(addDays(today, -14)),
     cycleLength: 28,
@@ -1234,6 +1319,11 @@ function render(){
   positionHomeCalGrid();
   animateDayStats();
   wireMenuInteractivity();
+  if(state.menuSubView === 'period' && state.period.enabled){
+    startPeriodTipsRotator();
+  } else {
+    stopPeriodTipsRotator();
+  }
 }
 
 /* ============ HOME ============ */
@@ -1482,7 +1572,7 @@ function renderAuth(){
 
 /* ============ MENU ============ */
 const MENU_PARENT = {
-  'profile': null, 'share': null, 'about': null, 'settings': null, 'friends': 'profile', 'store': null, 'admin': null,
+  'profile': null, 'share': null, 'about': null, 'settings': null, 'friends': 'profile', 'store': null, 'admin': null, 'period': 'admin',
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings'
 };
 function initials(name){
@@ -1500,6 +1590,7 @@ function renderMenu(){
   if(sub === 'friends') return renderFriendsPage();
   if(sub === 'store') return renderStorePage();
   if(sub === 'admin') return renderAdminPanel();
+  if(sub === 'period') return renderPeriodPage();
   if(sub === 'share') return renderSharePage();
   if(sub === 'about') return renderAboutPage();
   if(sub === 'settings') return renderSettingsList();
@@ -1742,58 +1833,178 @@ function periodWheelSvg(cats){
   }
   return `<svg viewBox="0 0 ${size} ${size}" class="period-wheel">${ticks}</svg>`;
 }
+/* Compact entry card shown in Management. Just the toggle, a settings
+   gear (jumps straight into the quiz for editing), title/description,
+   and an Open button into the full page below — the actual quiz, wheel,
+   articles and tips all live in renderPeriodPage(), not here. */
 function renderPeriodTrackerSection(){
   const p = state.period;
-  let body;
-  if(p.step === 0){
-    body = `
+  return `
+    <div class="section-title">${t('periodTracker')}</div>
+    <div class="store-card">
+      <div class="period-card-top">
+        <div class="store-card-icon">${ICONS.dropIcon}</div>
+        <div class="period-card-controls">
+          <button type="button" class="icon-btn" data-action="period-settings" aria-label="${t('editAnswers')}">${ICONS.gearIcon}</button>
+          <div class="switch ${p.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
+        </div>
+      </div>
+      <div class="store-card-name">${t('periodTracker')}</div>
+      <div class="store-card-desc">${t('periodTrackerDesc')}</div>
+      <button class="btn btn-primary" style="width:100%;" data-action="menu-nav" data-sub="period">${t('openBtn')}</button>
+    </div>
+  `;
+}
+
+/* Dedicated full page (menuSubView 'period', parent 'admin'). */
+function renderPeriodPage(){
+  const p = state.period;
+  if(!p.enabled){
+    return `
+      ${subHeader(t('periodTracker'))}
+      <div class="empty-hint">${t('periodOffHint')}</div>
+      <div class="settings-row" style="margin-top:12px;">
+        <div class="lbl">${t('periodTracker')}</div>
+        <div class="switch ${p.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
+      </div>
+    `;
+  }
+  const trackerBody = p.step !== 'done' ? `
+    <div class="store-card">
       <div class="empty-hint">${t('periodTrackerDesc')}</div>
       <button class="btn btn-primary" style="width:100%; margin-top:12px;" data-action="period-quiz-start">${ICONS.dropIcon} ${t('startBtn')}</button>
-    `;
-  } else if(p.step === 1){
-    body = `
-      <div class="field" style="margin-top:12px;">
-        <label class="field-label">${t('periodQ1')}</label>
-        <input type="date" id="period-q1" value="${escapeAttr(p.lastStart)}" max="${dateKey(today)}">
+    </div>
+  ` : (() => {
+    const cats = periodDayCategories();
+    return `
+      <div class="store-card">
+        <div class="period-wheel-wrap">
+          ${periodWheelSvg(cats)}
+          <div class="period-wheel-center">${periodSummaryText(cats)}</div>
+        </div>
+        <div class="period-legend">
+          <span class="period-legend-item"><span class="dot" style="background:var(--danger);"></span>${t('legendPeriod')}</span>
+          <span class="period-legend-item"><span class="dot" style="background:var(--pms);"></span>${t('legendPms')}</span>
+          <span class="period-legend-item"><span class="dot" style="background:var(--secondary);"></span>${t('legendFertile')}</span>
+        </div>
+        <div class="empty-hint" style="margin-top:12px;">${t('periodDisclaimer')}</div>
+        <span class="link-btn" style="display:block; text-align:center; margin-top:12px;" data-action="period-settings">${t('editAnswers')}</span>
       </div>
-      <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
-    `;
-  } else if(p.step === 2){
-    body = `
-      <div class="field" style="margin-top:12px;">
-        <label class="field-label">${t('periodQ2')}</label>
-        <input type="number" id="period-q2" value="${p.cycleLength}" min="15" max="60">
+      <div class="settings-row" style="margin-top:14px;">
+        <div><div class="lbl">${t('calendarReminderLabel')}</div><div class="sub">${t('calendarReminderSub')}</div></div>
+        <div class="switch ${p.calendarReminder?'on':''}" data-action="toggle-calendar-reminder"><div class="knob"></div></div>
       </div>
-      <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
     `;
-  } else if(p.step === 3){
-    body = `
-      <div class="field" style="margin-top:12px;">
+  })();
+  return `
+    ${subHeader(t('periodTracker'))}
+    ${trackerBody}
+    <div class="section-title">${t('articlesTitle')}</div>
+    ${[1,2,3,4].map(i => `
+      <div class="article-row" data-action="open-article">
+        <div class="article-row-icon">${ICONS.infoIcon}</div>
+        <div class="article-row-text">
+          <div class="article-row-title">${t('article'+i+'Title')}</div>
+          <div class="article-row-desc">${t('article'+i+'Desc')}</div>
+        </div>
+        ${ICONS.chevronRightSmall}
+      </div>
+    `).join('')}
+    <div class="section-title">${t('tipsTitle')}</div>
+    <div class="tips-card">
+      <div class="tips-card-text" id="period-tip-text"></div>
+    </div>
+  `;
+}
+
+/* Rotating tips, typed out character by character and swapped every few
+   seconds. Runs via setInterval against a fixed element id, never via
+   render() — so it can never trigger the kind of full-page re-render
+   that caused the earlier scroll/animation bug. Always cleared before a
+   new one starts so leaving and reopening the page can't stack timers. */
+const PERIOD_TIPS = ['tip1','tip2','tip3','tip4','tip5','tip6'];
+let periodTipsTimer = null;
+function stopPeriodTipsRotator(){
+  clearTimeout(periodTipsTimer);
+  periodTipsTimer = null;
+}
+function startPeriodTipsRotator(){
+  stopPeriodTipsRotator();
+  const el = document.getElementById('period-tip-text');
+  if(!el) return;
+  let tipIndex = 0;
+  const typeTip = () => {
+    const text = t(PERIOD_TIPS[tipIndex]);
+    let i = 0;
+    const type = () => {
+      el.innerHTML = escapeHtml(text.slice(0, i)) + '<span class="caret"></span>';
+      i++;
+      if(i <= text.length){
+        periodTipsTimer = setTimeout(type, 22);
+      } else {
+        periodTipsTimer = setTimeout(() => {
+          tipIndex = (tipIndex + 1) % PERIOD_TIPS.length;
+          typeTip();
+        }, 3200);
+      }
+    };
+    type();
+  };
+  typeTip();
+}
+
+/* ============ PERIOD SETUP QUIZ (popup, one question per screen) ======== */
+function periodQuizStepHtml(){
+  const p = state.period;
+  if(p.step === 1){
+    return `
+      <div class="period-quiz-step">
+        <div class="field">
+          <label class="field-label">${t('periodQ1')}</label>
+          <input type="date" id="period-q1" value="${escapeAttr(p.lastStart)}" max="${dateKey(today)}">
+        </div>
+        <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
+      </div>
+    `;
+  }
+  if(p.step === 2){
+    return `
+      <div class="period-quiz-step">
+        <div class="field">
+          <label class="field-label">${t('periodQ2')}</label>
+          <input type="number" id="period-q2" value="${p.cycleLength}" min="15" max="60">
+        </div>
+        <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="period-quiz-step">
+      <div class="field">
         <label class="field-label">${t('periodQ3')}</label>
         <input type="number" id="period-q3" value="${p.periodLength}" min="1" max="14">
       </div>
       <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-finish">${t('finishBtn')}</button>
-    `;
-  } else {
-    const cats = periodDayCategories();
-    body = `
-      <div class="period-wheel-wrap">
-        ${periodWheelSvg(cats)}
-        <div class="period-wheel-center">${periodSummaryText(cats)}</div>
-      </div>
-      <div class="period-legend">
-        <span class="period-legend-item"><span class="dot" style="background:var(--danger);"></span>${t('legendPeriod')}</span>
-        <span class="period-legend-item"><span class="dot" style="background:var(--pms);"></span>${t('legendPms')}</span>
-        <span class="period-legend-item"><span class="dot" style="background:var(--secondary);"></span>${t('legendFertile')}</span>
-      </div>
-      <div class="empty-hint" style="margin-top:12px;">${t('periodDisclaimer')}</div>
-      <span class="link-btn" style="display:block; text-align:center; margin-top:12px;" data-action="period-quiz-restart">${t('restartBtn')}</span>
-    `;
-  }
-  return `
-    <div class="section-title">${t('periodTracker')}</div>
-    <div class="store-card">${body}</div>
+    </div>
   `;
+}
+function renderPeriodQuiz(){
+  const p = state.period;
+  const dots = [1,2,3].map(n => `<span class="${p.step===n?'active':''}"></span>`).join('');
+  document.getElementById('period-quiz-body').innerHTML = `<div class="period-quiz-dots">${dots}</div>${periodQuizStepHtml()}`;
+  document.getElementById('period-q1')?.addEventListener('input', e => { state.period.lastStart = e.target.value; });
+  document.getElementById('period-q2')?.addEventListener('input', e => { const v = Number(e.target.value); if(v>0) state.period.cycleLength = v; });
+  document.getElementById('period-q3')?.addEventListener('input', e => { const v = Number(e.target.value); if(v>0) state.period.periodLength = v; });
+}
+function openPeriodQuiz(){
+  state.period.step = 1;
+  document.getElementById('period-quiz-overlay').classList.add('show');
+  document.getElementById('period-quiz-sheet').classList.add('show');
+  renderPeriodQuiz();
+}
+function closePeriodQuiz(){
+  document.getElementById('period-quiz-overlay').classList.remove('show');
+  document.getElementById('period-quiz-sheet').classList.remove('show');
 }
 function renderSharePage(){
   return `
@@ -2100,26 +2311,41 @@ function initFabAutoHide(){
   scheduleFabHide();
 }
 
-/* Expand/collapse the merged calendar widget from scrolling the agenda
-   below it — independent of where the user actually starts a drag.
-   Scrolling down into the bottom of the current content expands to
-   Monthly; scrolling back up near the top collapses to the week strip. */
-let homeScrollLast = 0;
+/* Expand/collapse the merged calendar widget — reversed from the old
+   behavior by request: scrolling DOWN into the agenda never expands it
+   anymore (it collapses back to the week strip instead). The month view
+   only opens via a "pull" gesture at the very top of the page: mouse
+   wheel scrolled up, or a touch/pointer drag downward, while already at
+   scrollTop 0. Nothing here calls preventDefault, so native scrolling
+   (wheel and touch) stays completely unaffected either way. */
 function initHomeScrollExpand(){
   const el = document.getElementById('page-home');
   el.addEventListener('scroll', () => {
-    const st = el.scrollTop;
-    const atBottom = st + el.clientHeight >= el.scrollHeight - 4;
-    const nearTop = st <= 20;
-    if(st > homeScrollLast && atBottom && !state.homeCalExpanded){
-      setHomeCalExpanded(true);
-      el.scrollTop = st; // widget got taller; keep the visual scroll position
-    } else if(st < homeScrollLast && nearTop && state.homeCalExpanded){
+    if(el.scrollTop > 4 && state.homeCalExpanded){
       setHomeCalExpanded(false);
-      el.scrollTop = 0;
     }
-    homeScrollLast = el.scrollTop;
   }, { passive: true });
+
+  el.addEventListener('wheel', (e) => {
+    if(el.scrollTop <= 0 && e.deltaY < -10 && !state.homeCalExpanded){
+      setHomeCalExpanded(true);
+    }
+  }, { passive: true });
+
+  let pullStartY = null, pullActive = false;
+  el.addEventListener('pointerdown', (e) => {
+    pullActive = el.scrollTop <= 0;
+    pullStartY = e.clientY;
+  }, { passive: true });
+  el.addEventListener('pointermove', (e) => {
+    if(!pullActive || pullStartY === null || state.homeCalExpanded) return;
+    if(e.clientY - pullStartY > 50){
+      setHomeCalExpanded(true);
+      pullActive = false;
+    }
+  }, { passive: true });
+  el.addEventListener('pointerup', () => { pullActive = false; pullStartY = null; }, { passive: true });
+  el.addEventListener('pointercancel', () => { pullActive = false; pullStartY = null; }, { passive: true });
 }
 
 /* ============ ADD / EDIT POPUP (full MVP fields, icon-driven subviews) ============ */
@@ -2581,7 +2807,16 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'connect-unblock'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
   if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
-  if(action === 'period-quiz-start'){ state.period.step = 1; render(); return; }
+  if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
+  if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }
+  if(action === 'open-article'){ showToast(t('articlesUnavailable')); return; }
+  if(action === 'period-settings' || action === 'period-quiz-start'){
+    state.menuSubView = 'period';
+    render();
+    openPeriodQuiz();
+    return;
+  }
+  if(action === 'close-period-quiz'){ closePeriodQuiz(); return; }
   if(action === 'period-quiz-next'){
     const s = state.period.step;
     if(s === 1){
@@ -2594,17 +2829,17 @@ document.getElementById('device').addEventListener('click', (e) => {
       if(v > 0) state.period.cycleLength = v;
       state.period.step = 3;
     }
-    render();
+    renderPeriodQuiz();
     return;
   }
   if(action === 'period-quiz-finish'){
     const v = Number(document.getElementById('period-q3')?.value);
     if(v > 0) state.period.periodLength = v;
     state.period.step = 'done';
+    closePeriodQuiz();
     render();
     return;
   }
-  if(action === 'period-quiz-restart'){ state.period.step = 0; render(); return; }
   if(action === 'logout-user'){
     state.authScreen = true;
     state.authTab = 'login';
