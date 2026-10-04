@@ -29,6 +29,8 @@
     --shadow:0 10px 30px rgba(0,0,0,0.45);
     --danger:#E08578;
     --danger-soft:rgba(224,133,120,0.16);
+    --pms:#E0A458;
+    --pms-soft:rgba(224,164,88,0.16);
     /* Google's brand button is fixed white/dark-grey by their own brand
        guidelines, independent of app theme — not a themed surface. */
     --google-btn-bg:#FFFFFF;
@@ -213,6 +215,7 @@
   .btn-outline{ background:transparent; color:var(--primary); border:1.5px solid var(--primary); width:100%; }
   .btn-small{ width:auto; padding:8px 14px; border-radius:11px; font-size:12.5px; white-space:nowrap; }
   .btn:disabled{ opacity:.55; cursor:default; }
+  .btn svg{ width:16px; height:16px; vertical-align:-3px; margin-inline-end:6px; }
 
   /* calendar */
   .cal-topbar{ position:relative; display:flex; align-items:baseline; justify-content:center; gap:10px; margin-bottom:18px; padding:6px 0; }
@@ -452,6 +455,14 @@
   .store-card-action{ display:flex; justify-content:flex-end; align-items:center; }
   .store-card-hint{ font-size:12px; color:var(--text-muted); }
   .menu-item-row svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
+
+  .field-label{ display:block; font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:7px; }
+  .period-wheel-wrap{ position:relative; width:240px; height:240px; margin:4px auto 6px auto; }
+  .period-wheel{ width:100%; height:100%; }
+  .period-wheel-center{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; font-size:12.5px; font-weight:700; color:var(--text); padding:0 44px; line-height:1.4; }
+  .period-legend{ display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin-top:4px; }
+  .period-legend-item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); }
+  .period-legend-item .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
 
   .profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:28px; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; background-size:cover; background-position:center; }
   .profile-photo-actions{ display:flex; gap:14px; justify-content:center; margin-bottom:4px; }
@@ -694,6 +705,9 @@
       <button type="button" data-action="open-menu" data-sub="store" title="Store">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg>
       </button>
+      <button type="button" data-action="open-menu" data-sub="admin" title="Admin panel">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+      </button>
     </div>
   </div>
 
@@ -743,7 +757,9 @@ const ICONS = {
   messageIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8l-4 4V5a1 1 0 0 1 1-1z"/></svg>',
   mailIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1.4 2 7.6 6 7.6-6H4.4z"/></svg>',
   peopleIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-3.3 0-8 1.7-8 5v2h16v-2c0-3.3-4.7-5-8-5zm9-6a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm0 2c-.9 0-1.9.14-2.8.4 1.7 1.1 2.8 2.6 2.8 4.6v2h6v-2c0-2.8-3.6-5-6-5z"/></svg>',
-  storeIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg>'
+  storeIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg>',
+  adminIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>',
+  dropIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s7 8.1 7 12.5A7 7 0 0 1 5 14.5C5 10.1 12 2 12 2z"/></svg>'
 };
 
 /* ============ DATE HELPERS ============ */
@@ -945,6 +961,16 @@ const STRINGS = {
     featProdToolsName:'Productivity Tools', featProdToolsDesc:'Extra shortcuts for planning your day.',
     featAnalyticsName:'Advanced Analytics', featAnalyticsDesc:'Deeper charts and trends over time.',
     featAIName:'AI Features', featAIDesc:'Smart suggestions for tasks and habits.',
+    storeEmpty:'New features will show up here soon',
+    adminPanel:'Admin panel', purchasedFeatures:'Purchased features',
+    noPurchasedFeatures:"You haven't purchased anything from the Store yet",
+    periodTracker:'Period tracking', periodTrackerDesc:"Answer a few quick questions and we'll estimate your period and PMS timing.",
+    startBtn:'Start', nextBtn:'Next', finishBtn:'Finish', restartBtn:'Restart',
+    periodQ1:"When did your last period start?", periodQ2:'How many days is your usual cycle, start to start?',
+    periodQ3:'How many days does your period usually last?',
+    periodDisclaimer:'Estimate only, based on your answers — not medical advice.',
+    legendPeriod:'Period', legendPms:'PMS', legendFertile:'Fertile window', legendToday:'Today',
+    periodStartsToday:'Your period is estimated to start today',
     shareAvand:'Share Avand', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
@@ -1006,6 +1032,16 @@ const STRINGS = {
     featProdToolsName:'ابزارهای بهره‌وری', featProdToolsDesc:'میان‌برهای اضافه برای برنامه‌ریزی روزت.',
     featAnalyticsName:'آمار پیشرفته', featAnalyticsDesc:'نمودار و روند دقیق‌تر در طول زمان.',
     featAIName:'قابلیت‌های هوش مصنوعی', featAIDesc:'پیشنهاد هوشمند برای کار و عادت.',
+    storeEmpty:'قابلیت‌های جدید به‌زودی اینجا اضافه می‌شن',
+    adminPanel:'پنل مدیریتی', purchasedFeatures:'قابلیت‌های خریداری‌شده',
+    noPurchasedFeatures:'هنوز چیزی از فروشگاه خریداری نکردی',
+    periodTracker:'مدیریت دوره‌ی پریود', periodTrackerDesc:'به چند سؤال کوتاه جواب بده تا زمان تقریبی پریود و PMS‌ت رو تخمین بزنیم.',
+    startBtn:'شروع', nextBtn:'بعدی', finishBtn:'پایان', restartBtn:'شروع دوباره',
+    periodQ1:'آخرین پریودت کی شروع شد؟', periodQ2:'چرخه‌ات معمولاً چند روزه؟ (از شروع تا شروع بعدی)',
+    periodQ3:'پریودت معمولاً چند روز طول می‌کشه؟',
+    periodDisclaimer:'این فقط یه تخمینه بر اساس جواب‌هات — توصیه‌ی پزشکی نیست.',
+    legendPeriod:'پریود', legendPms:'PMS', legendFertile:'بازه‌ی باروری', legendToday:'امروز',
+    periodStartsToday:'طبق تخمین، پریودت امروز شروع می‌شه',
     shareAvand:'اشتراک‌گذاری آوند', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
@@ -1084,16 +1120,21 @@ const state = {
   friendSearch: '',
   /* Feature Marketplace (Store) — client-side only, no real purchase or
      entitlement system exists in this prototype. kind: 'toggle' | 'locked'
-     | 'premium'. A toggle feature's status label is 'enabled' while on,
-     'available' while off (nothing distinguishes "never turned on" from
-     "turned off again" — not meaningful enough to track separately here). */
-  store: [
-    { id:'theme', kind:'toggle', on:true },
-    { id:'advcal', kind:'toggle', on:false },
-    { id:'prodtools', kind:'toggle', on:false },
-    { id:'analytics', kind:'premium' },
-    { id:'ai', kind:'locked' }
-  ]
+     | 'premium'. Empty for now by explicit product decision — the Store
+     page still renders (with an empty state) so it's ready for real
+     features later. */
+  store: [],
+  /* Period tracking (Admin Panel, shown only when profile.gender ===
+     'female'). step 0 = not started; 1-3 = the setup quiz questions;
+     'done' = predictions computed from the quiz answers below. All dates
+     are 'YYYY-MM-DD' strings (dateKey format), all math is approximate —
+     this is a wellness estimate, not medical advice. */
+  period: {
+    step: 0,
+    lastStart: dateKey(addDays(today, -14)),
+    cycleLength: 28,
+    periodLength: 6
+  }
 };
 
 function seed(){
@@ -1441,7 +1482,7 @@ function renderAuth(){
 
 /* ============ MENU ============ */
 const MENU_PARENT = {
-  'profile': null, 'share': null, 'about': null, 'settings': null, 'friends': 'profile', 'store': null,
+  'profile': null, 'share': null, 'about': null, 'settings': null, 'friends': 'profile', 'store': null, 'admin': null,
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings'
 };
 function initials(name){
@@ -1458,6 +1499,7 @@ function renderMenu(){
   if(sub === 'profile') return renderProfilePage();
   if(sub === 'friends') return renderFriendsPage();
   if(sub === 'store') return renderStorePage();
+  if(sub === 'admin') return renderAdminPanel();
   if(sub === 'share') return renderSharePage();
   if(sub === 'about') return renderAboutPage();
   if(sub === 'settings') return renderSettingsList();
@@ -1489,6 +1531,9 @@ function renderMenuHome(){
       </div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="store">
         <div class="menu-item-icon">${ICONS.storeIcon}</div><div class="menu-item-label">${t('store')}</div>${ICONS.chevronRightSmall}
+      </div>
+      <div class="menu-item-row" data-action="menu-nav" data-sub="admin">
+        <div class="menu-item-icon">${ICONS.adminIcon}</div><div class="menu-item-label">${t('adminPanel')}</div>${ICONS.chevronRightSmall}
       </div>
     </div>
   `;
@@ -1624,7 +1669,130 @@ function storeFeatureCard(f){
 function renderStorePage(){
   return `
     ${subHeader(t('store'))}
-    <div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>
+    ${state.store.length
+      ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
+      : `<div class="empty-hint">${t('storeEmpty')}</div>`}
+  `;
+}
+function renderAdminPanel(){
+  return `
+    ${subHeader(t('adminPanel'))}
+    <div class="section-title">${t('purchasedFeatures')}</div>
+    ${state.store.length
+      ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
+      : `<div class="empty-hint">${t('noPurchasedFeatures')}</div>`}
+    ${state.profile.gender === 'female' ? renderPeriodTrackerSection() : ''}
+  `;
+}
+
+/* ============ PERIOD TRACKING (Admin Panel, gender === 'female' only) ====
+   All estimates, not medical advice: period days from the quiz answers,
+   repeated every cycleLength; PMS = the 5 days before each predicted
+   period; ovulation/fertile window = ~14 days before each predicted
+   period (the luteal phase is the relatively constant part of a cycle). */
+function computePeriodCycleStart(){
+  const p = state.period;
+  const lastStart = new Date(p.lastStart + 'T00:00:00');
+  const daysSince = Math.round((today - lastStart) / 86400000);
+  const cyclesPassed = Math.floor(daysSince / p.cycleLength);
+  return addDays(lastStart, cyclesPassed * p.cycleLength);
+}
+function periodDayCategories(){
+  const p = state.period;
+  const currentCycleStart = computePeriodCycleStart();
+  const cats = new Array(30).fill('normal');
+  const rank = { normal:0, fertile:1, pms:2, period:3 };
+  for(let k=-1;k<=2;k++){
+    const cycleStart = addDays(currentCycleStart, k*p.cycleLength);
+    const periodEnd = addDays(cycleStart, p.periodLength-1);
+    const pmsStart = addDays(cycleStart, -5);
+    const pmsEnd = addDays(cycleStart, -1);
+    const ovulation = addDays(cycleStart, -14);
+    const fertileStart = addDays(ovulation, -4);
+    const fertileEnd = addDays(ovulation, 1);
+    for(let i=0;i<30;i++){
+      const d = addDays(today, i);
+      let cat = null;
+      if(d >= cycleStart && d <= periodEnd) cat = 'period';
+      else if(d >= pmsStart && d <= pmsEnd) cat = 'pms';
+      else if(d >= fertileStart && d <= fertileEnd) cat = 'fertile';
+      if(cat && rank[cat] > rank[cats[i]]) cats[i] = cat;
+    }
+  }
+  return cats;
+}
+function periodSummaryText(cats){
+  const nextPeriodIdx = cats.indexOf('period');
+  if(nextPeriodIdx === 0) return t('periodStartsToday');
+  if(nextPeriodIdx > 0){
+    return lang()==='fa' ? `${nextPeriodIdx} روز تا پریود بعدیت` : `${nextPeriodIdx} day${nextPeriodIdx===1?'':'s'} until your next period`;
+  }
+  return '';
+}
+function periodWheelSvg(cats){
+  const size=240, cx=size/2, cy=size/2, rOuter=104, rInner=74;
+  const colorFor = c => c==='period' ? 'var(--danger)' : c==='pms' ? 'var(--pms)' : c==='fertile' ? 'var(--secondary)' : 'var(--border)';
+  let ticks = '';
+  for(let i=0;i<30;i++){
+    const angle = (i/30)*2*Math.PI - Math.PI/2;
+    const x1 = (cx + rInner*Math.cos(angle)).toFixed(1), y1 = (cy + rInner*Math.sin(angle)).toFixed(1);
+    const x2 = (cx + rOuter*Math.cos(angle)).toFixed(1), y2 = (cy + rOuter*Math.sin(angle)).toFixed(1);
+    const isToday = i===0;
+    ticks += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorFor(cats[i])}" stroke-width="${isToday?5:3}" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="0 0 ${size} ${size}" class="period-wheel">${ticks}</svg>`;
+}
+function renderPeriodTrackerSection(){
+  const p = state.period;
+  let body;
+  if(p.step === 0){
+    body = `
+      <div class="empty-hint">${t('periodTrackerDesc')}</div>
+      <button class="btn btn-primary" style="width:100%; margin-top:12px;" data-action="period-quiz-start">${ICONS.dropIcon} ${t('startBtn')}</button>
+    `;
+  } else if(p.step === 1){
+    body = `
+      <div class="field" style="margin-top:12px;">
+        <label class="field-label">${t('periodQ1')}</label>
+        <input type="date" id="period-q1" value="${escapeAttr(p.lastStart)}" max="${dateKey(today)}">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
+    `;
+  } else if(p.step === 2){
+    body = `
+      <div class="field" style="margin-top:12px;">
+        <label class="field-label">${t('periodQ2')}</label>
+        <input type="number" id="period-q2" value="${p.cycleLength}" min="15" max="60">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
+    `;
+  } else if(p.step === 3){
+    body = `
+      <div class="field" style="margin-top:12px;">
+        <label class="field-label">${t('periodQ3')}</label>
+        <input type="number" id="period-q3" value="${p.periodLength}" min="1" max="14">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-finish">${t('finishBtn')}</button>
+    `;
+  } else {
+    const cats = periodDayCategories();
+    body = `
+      <div class="period-wheel-wrap">
+        ${periodWheelSvg(cats)}
+        <div class="period-wheel-center">${periodSummaryText(cats)}</div>
+      </div>
+      <div class="period-legend">
+        <span class="period-legend-item"><span class="dot" style="background:var(--danger);"></span>${t('legendPeriod')}</span>
+        <span class="period-legend-item"><span class="dot" style="background:var(--pms);"></span>${t('legendPms')}</span>
+        <span class="period-legend-item"><span class="dot" style="background:var(--secondary);"></span>${t('legendFertile')}</span>
+      </div>
+      <div class="empty-hint" style="margin-top:12px;">${t('periodDisclaimer')}</div>
+      <span class="link-btn" style="display:block; text-align:center; margin-top:12px;" data-action="period-quiz-restart">${t('restartBtn')}</span>
+    `;
+  }
+  return `
+    <div class="section-title">${t('periodTracker')}</div>
+    <div class="store-card">${body}</div>
   `;
 }
 function renderSharePage(){
@@ -2413,6 +2581,30 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'connect-unblock'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
   if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
+  if(action === 'period-quiz-start'){ state.period.step = 1; render(); return; }
+  if(action === 'period-quiz-next'){
+    const s = state.period.step;
+    if(s === 1){
+      const v = document.getElementById('period-q1')?.value;
+      if(!v) return;
+      state.period.lastStart = v;
+      state.period.step = 2;
+    } else if(s === 2){
+      const v = Number(document.getElementById('period-q2')?.value);
+      if(v > 0) state.period.cycleLength = v;
+      state.period.step = 3;
+    }
+    render();
+    return;
+  }
+  if(action === 'period-quiz-finish'){
+    const v = Number(document.getElementById('period-q3')?.value);
+    if(v > 0) state.period.periodLength = v;
+    state.period.step = 'done';
+    render();
+    return;
+  }
+  if(action === 'period-quiz-restart'){ state.period.step = 0; render(); return; }
   if(action === 'logout-user'){
     state.authScreen = true;
     state.authTab = 'login';
