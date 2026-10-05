@@ -196,7 +196,17 @@
   .item-card{ background:var(--card); border-radius:16px; padding:14px; margin-bottom:10px; border:1px solid var(--border); display:flex; align-items:center; gap:12px; }
   .item-card.done{opacity:0.5;}
   .item-card.task-row{ padding:9px 14px; border-radius:24px; margin-bottom:8px; }
-  .checkbox{ width:22px; height:22px; border-radius:50%; border:2px solid var(--primary); flex:0 0 auto; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .15s cubic-bezier(.34,1.56,.64,1); }
+  .checkbox{ position:relative; width:22px; height:22px; border-radius:50%; border:2px solid var(--primary); flex:0 0 auto; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .15s cubic-bezier(.34,1.56,.64,1); }
+  .checkbox-quickset{
+    position:absolute; top:50%; left:calc(100% + 8px); z-index:5;
+    display:flex; gap:6px; opacity:0; pointer-events:none;
+    transform:translateY(-50%) scale(.85); transform-origin:left center;
+    transition:opacity .15s ease, transform .15s cubic-bezier(.34,1.56,.64,1);
+  }
+  .checkbox-quickset.show{ opacity:1; pointer-events:auto; transform:translateY(-50%) scale(1); }
+  .checkbox-quickset button{ font-size:10.5px; font-weight:700; padding:6px 11px; border-radius:999px; cursor:pointer; font-family:inherit; white-space:nowrap; box-shadow:var(--shadow); }
+  .checkbox-quickset .qs-done{ background:var(--primary); color:#fff; border:none; }
+  .checkbox-quickset .qs-undone{ background:var(--card); color:var(--text-muted); border:1px solid var(--border); }
   .checkbox:active{ transform:scale(0.85); }
   .checkbox.checked{background:var(--primary); animation:checkbox-pop .3s cubic-bezier(.34,1.56,.64,1); }
   @keyframes checkbox-pop{ 0%{ transform:scale(0.7); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
@@ -1018,6 +1028,7 @@ const STRINGS = {
     noPurchasedFeatures:"You haven't purchased anything from the Store yet",
     periodTracker:'Period tracking', periodTrackerDesc:"Answer a few quick questions and we'll estimate your period and PMS timing.",
     startBtn:'Start', nextBtn:'Next', finishBtn:'Finish',
+    qsDone:'DONE', qsUndone:'UNDONE',
     periodQ1:"When did your last period start?", periodQ2:'How many days is your usual cycle, start to start?',
     periodQ3:'How many days does your period usually last?',
     periodDisclaimer:'Estimate only, based on your answers — not medical advice.',
@@ -1103,6 +1114,7 @@ const STRINGS = {
     noPurchasedFeatures:'هنوز چیزی از فروشگاه خریداری نکردی',
     periodTracker:'مدیریت دوره‌ی پریود', periodTrackerDesc:'به چند سؤال کوتاه جواب بده تا زمان تقریبی پریود و PMS‌ت رو تخمین بزنیم.',
     startBtn:'شروع', nextBtn:'بعدی', finishBtn:'پایان',
+    qsDone:'DONE', qsUndone:'UNDONE',
     periodQ1:'آخرین پریودت کی شروع شد؟', periodQ2:'چرخه‌ات معمولاً چند روزه؟ (از شروع تا شروع بعدی)',
     periodQ3:'پریودت معمولاً چند روز طول می‌کشه؟',
     periodDisclaimer:'این فقط یه تخمینه بر اساس جواب‌هات — توصیه‌ی پزشکی نیست.',
@@ -1459,11 +1471,20 @@ function renderHomeCalWidget(){
     </div>
   `;
 }
+/* Small DONE/UNDONE popover, revealed by holding a checkbox (see
+   attachCheckboxLongPress) — an explicit alternative to the normal tap-
+   to-toggle, independent of the row's own swipe-to-delete gesture. */
+function checkboxQuicksetHtml(){
+  return `<div class="checkbox-quickset">
+    <button type="button" class="qs-done" data-qs="done">${t('qsDone')}</button>
+    <button type="button" class="qs-undone" data-qs="undone">${t('qsUndone')}</button>
+  </div>`;
+}
 function taskRow(t){
   return `<div class="swipe-wrap task-wrap" data-swipe-type="task" data-swipe-id="${t.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card task-row ${t.done?'done':''}">
-      <div class="checkbox ${t.done?'checked':''}" data-action="toggle-task" data-id="${t.id}">${t.done?ICONS.check:''}</div>
+      <div class="checkbox ${t.done?'checked':''}" data-action="toggle-task" data-id="${t.id}">${t.done?ICONS.check:''}${checkboxQuicksetHtml()}</div>
       <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${t.id}">
         <p class="item-title">${escapeHtml(t.title)}</p>
       </div>
@@ -1477,7 +1498,7 @@ function habitRow(h, date){
   return `<div class="swipe-wrap" data-swipe-type="habit" data-swipe-id="${h.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card ${checked?'done':''}">
-      <div class="checkbox square ${checked?'checked':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}">${checked?ICONS.check:''}</div>
+      <div class="checkbox square ${checked?'checked':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}">${checked?ICONS.check:''}${checkboxQuicksetHtml()}</div>
       <p class="item-title" data-action="edit-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}</p>
     </div>
   </div>`;
@@ -2749,22 +2770,14 @@ document.getElementById('device').addEventListener('click', (e) => {
   const action = el.dataset.action;
 
   if(action === 'toggle-task'){
-    const t = state.tasks.find(x=>x.id===el.dataset.id); t.done = !t.done;
-    el.classList.toggle('checked', t.done);
-    el.innerHTML = t.done ? ICONS.check : '';
-    el.closest('.item-card')?.classList.toggle('done', t.done);
-    updateDayStatsInPlace();
+    const t = state.tasks.find(x=>x.id===el.dataset.id);
+    applyQuicksetState(el, !t.done);
     return;
   }
   if(action === 'toggle-habit'){
-    const h = state.habits.find(x=>x.id===el.dataset.id); const dk = el.dataset.date;
-    const i = h.completedDates.indexOf(dk);
-    const checked = i < 0;
-    if(i>=0) h.completedDates.splice(i,1); else h.completedDates.push(dk);
-    el.classList.toggle('checked', checked);
-    el.innerHTML = checked ? ICONS.check : '';
-    el.closest('.item-card')?.classList.toggle('done', checked);
-    updateDayStatsInPlace();
+    const dk = el.dataset.date;
+    const h = state.habits.find(x=>x.id===el.dataset.id);
+    applyQuicksetState(el, !h.completedDates.includes(dk));
     return;
   }
   if(action === 'delete-habit'){ state.habits = state.habits.filter(x=>x.id!==el.dataset.id); render(); return; }
@@ -2950,6 +2963,79 @@ function initCalendarWheelSwipe(){
     else if(state.calMode === 'week') shiftWeek(dir);
     else shiftDay(dir);
   }, { passive: true });
+}
+
+/* Holding a checkbox (task or habit) reveals a small DONE/UNDONE popover
+   next to it — an explicit alternative to the normal tap-to-toggle,
+   separate from the row's own swipe-to-delete gesture. Delegated once on
+   #device (not per-row) so it keeps working after the scoped DOM patches
+   in the toggle-task/habit handlers, which never re-render the row. */
+function applyQuicksetState(cb, wantDone){
+  const action = cb.dataset.action;
+  let isDone;
+  if(action === 'toggle-task'){
+    const item = state.tasks.find(x => x.id === cb.dataset.id);
+    if(!item) return;
+    item.done = wantDone; isDone = wantDone;
+  } else if(action === 'toggle-habit'){
+    const item = state.habits.find(x => x.id === cb.dataset.id);
+    if(!item) return;
+    const dk = cb.dataset.date;
+    const i = item.completedDates.indexOf(dk);
+    if(wantDone && i < 0) item.completedDates.push(dk);
+    else if(!wantDone && i >= 0) item.completedDates.splice(i, 1);
+    isDone = wantDone;
+  } else return;
+  cb.classList.toggle('checked', isDone);
+  const qs = cb.querySelector('.checkbox-quickset');
+  qs?.classList.remove('show'); // always closes the popover, even when set via a qs button
+  cb.innerHTML = (isDone ? ICONS.check : '') + (qs ? qs.outerHTML : '');
+  cb.closest('.item-card')?.classList.toggle('done', isDone);
+  updateDayStatsInPlace();
+}
+function attachCheckboxLongPress(){
+  const root = document.getElementById('device');
+  if(!root) return;
+  let timer = null, startX = 0, startY = 0;
+  const closeAllQuicksets = () => {
+    document.querySelectorAll('.checkbox-quickset.show').forEach(el => el.classList.remove('show'));
+  };
+  root.addEventListener('pointerdown', e => {
+    const cb = e.target.closest('.checkbox[data-action]');
+    if(!cb){ closeAllQuicksets(); return; }
+    if(e.target.closest('.checkbox-quickset')) return;
+    startX = e.clientX; startY = e.clientY;
+    e.stopPropagation(); // keep the row's own swipe-to-delete from tracking this drag
+    timer = setTimeout(() => {
+      timer = null;
+      closeAllQuicksets();
+      cb.dataset.suppressClick = '1';
+      cb.querySelector('.checkbox-quickset')?.classList.add('show');
+      if(navigator.vibrate) navigator.vibrate(12);
+    }, 450);
+  }, true);
+  root.addEventListener('pointermove', e => {
+    if(!timer) return;
+    if(Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8){ clearTimeout(timer); timer = null; }
+  }, true);
+  root.addEventListener('pointerup', () => { clearTimeout(timer); timer = null; }, true);
+  root.addEventListener('pointercancel', () => { clearTimeout(timer); timer = null; }, true);
+  root.addEventListener('click', e => {
+    const qsBtn = e.target.closest('[data-qs]');
+    if(qsBtn){
+      e.stopPropagation();
+      const cb = qsBtn.closest('.checkbox');
+      if(cb) applyQuicksetState(cb, qsBtn.dataset.qs === 'done');
+      return;
+    }
+    const cb = e.target.closest('.checkbox[data-action]');
+    if(cb && cb.dataset.suppressClick){
+      delete cb.dataset.suppressClick;
+      e.stopPropagation();
+      return; // the long-press already opened the popover; swallow this tap
+    }
+    closeAllQuicksets();
+  }, true);
 }
 
 /* ============ CALENDAR GESTURES: swipe-to-roll month/year, pinch to zoom ============ */
@@ -3291,6 +3377,7 @@ initFabAndMenuInteractions();
 initFabAutoHide();
 initHomeScrollExpand();
 initCalendarWheelSwipe();
+attachCheckboxLongPress();
 attachDaySheetDrag();
 render();
 </script>
