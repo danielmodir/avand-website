@@ -120,7 +120,32 @@ a { color: inherit; }
   .hero { padding: var(--space-8) 0 var(--space-8) 0; }
   .hero h1 { font-size: 3.25rem; max-width: 20ch; }
   .hero p { font-size: var(--font-size-lg); max-width: 56ch; }
+  .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); align-items: center; }
 }
+
+/* ===== Hero visual: a schematic (not photographic) mockup built from the
+   same design tokens as the real app — honest about being an abstraction,
+   not a fabricated screenshot of a feature that doesn't exist. Pure
+   CSS/inline-SVG, no image download, so it stays light on slow links. */
+.hero-visual { margin-top: var(--space-7); }
+@media (min-width: 960px) { .hero-visual { margin-top: 0; } }
+.browser-frame {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden;
+}
+.browser-frame-bar { display: flex; align-items: center; gap: 6px; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+.browser-frame-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-border); }
+.browser-frame-body { padding: var(--space-5); }
+.mock-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.mock-cal-head span:first-child { font-weight: 700; font-size: var(--font-size-sm); }
+.mock-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: var(--space-5); }
+.mock-cal-grid span { aspect-ratio: 1; border-radius: 6px; background: var(--color-bg-soft); }
+.mock-cal-grid span.on { background: var(--color-accent); }
+.mock-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; }
+.mock-row .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--color-accent); flex: 0 0 auto; }
+.mock-row .dot.filled { background: var(--color-accent); }
+.mock-row .bar { height: 10px; border-radius: 999px; background: var(--color-bg-soft); flex: 1; }
+.mock-row .bar.short { max-width: 55%; }
 
 /* ===== Buttons ===== */
 .btn {
@@ -174,6 +199,52 @@ a { color: inherit; }
 .card-icon svg { width: 20px; height: 20px; }
 .card h3 { margin: 0 0 var(--space-2) 0; font-size: var(--font-size-md); font-weight: 700; }
 .card p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+
+.section-sub {
+  color: var(--color-text-muted); font-size: var(--font-size-sm);
+  margin: calc(var(--space-6) * -1 + var(--space-2)) 0 var(--space-6) 0; max-width: 60ch;
+}
+
+/* ===== Why Avand (bullet list, not cards — a calmer rhythm than another
+   4-card grid right after the features section) ===== */
+.why-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-5); }
+.why-item { display: flex; gap: var(--space-4); align-items: flex-start; }
+.why-item .card-icon { margin-bottom: 0; flex: 0 0 auto; }
+.why-item p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.why-item strong { display: block; font-size: var(--font-size-md); margin-bottom: var(--space-1); }
+
+/* ===== Showcase ===== */
+.showcase-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
+@media (min-width: 640px) { .showcase-grid { grid-template-columns: repeat(2, 1fr); } }
+.showcase-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+.showcase-card .browser-frame { box-shadow: none; }
+.showcase-card h3 { margin: 0; font-size: var(--font-size-sm); font-weight: 700; }
+
+/* ===== How it works ===== */
+.steps { display: grid; grid-template-columns: 1fr; gap: var(--space-5); counter-reset: step; }
+@media (min-width: 640px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 960px) { .steps { grid-template-columns: repeat(4, 1fr); } }
+.step { }
+.step-num {
+  font-size: var(--font-size-sm); font-weight: 800; color: var(--color-accent);
+  margin: 0 0 var(--space-2) 0;
+}
+.step h3 { margin: 0 0 var(--space-1) 0; font-size: var(--font-size-md); font-weight: 700; }
+.step p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+
+/* ===== Final CTA band ===== */
+.cta-band {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-7) var(--space-5);
+  text-align: center; margin: var(--space-7) 0;
+}
+.cta-band h2 { margin: 0 0 var(--space-5) 0; font-size: var(--font-size-lg); font-weight: 800; }
+.cta-band .hero-actions { margin: 0 auto; align-items: center; justify-content: center; }
+@media (min-width: 960px) { .cta-band { padding: var(--space-8); } }
 
 /* ===== Footer ===== */
 .site-footer {
