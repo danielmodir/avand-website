@@ -305,6 +305,7 @@
   .add-popup{ position:absolute; top:7%; left:5%; right:5%; bottom:9%; background:var(--card); border-radius:28px; z-index:56; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.05); opacity:0; pointer-events:none; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
   .add-popup.show{ transform:scale(1); opacity:1; pointer-events:auto; }
   .popup-topbar{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 6px 18px; flex:0 0 auto; }
+  .popup-delete, .popup-close{ border:none; padding:0; font:inherit; }
   .popup-delete{ width:34px; height:34px; border-radius:50%; background:rgba(217,139,139,0.16); color:#D98B8B; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .popup-delete svg{ width:14px; height:14px; }
   .popup-delete.invisible{ visibility:hidden; }
@@ -720,7 +721,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <h2 id="day-sheet-title">—</h2>
-      <button class="icon-btn" data-action="close-day-sheet"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.7l-1.41-1.41L9.17 12 2.89 5.71 4.3 4.29 10.59 10.6l6.29-6.3z"/></svg></button>
+      <button class="icon-btn" data-action="close-day-sheet" aria-label="Close"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.7l-1.41-1.41L9.17 12 2.89 5.71 4.3 4.29 10.59 10.6l6.29-6.3z"/></svg></button>
     </div>
     <div class="day-sheet-body" id="day-sheet-body"></div>
   </div>
@@ -732,7 +733,7 @@
   <div class="period-quiz-sheet" id="period-quiz-sheet">
     <div class="popup-topbar">
       <span></span>
-      <div class="popup-close" data-action="close-period-quiz"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.7l-1.41-1.41L9.17 12 2.89 5.71 4.3 4.29 10.59 10.6l6.29-6.3z"/></svg></div>
+      <button type="button" class="popup-close" data-action="close-period-quiz" aria-label="Close"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.7l-1.41-1.41L9.17 12 2.89 5.71 4.3 4.29 10.59 10.6l6.29-6.3z"/></svg></button>
     </div>
     <div class="period-quiz-body" id="period-quiz-body"></div>
   </div>
@@ -1034,6 +1035,7 @@ const STRINGS = {
     periodTracker:'Period tracking', periodTrackerDesc:"Answer a few quick questions and we'll estimate your period and PMS timing.",
     startBtn:'Start', nextBtn:'Next', finishBtn:'Finish',
     qsDone:'DONE', qsUndone:'UNDONE',
+    closeBtn:'Close', deleteBtn:'Delete', pinBtn:'Pin', unpinBtn:'Unpin',
     periodQ1:"When did your last period start?", periodQ2:'How many days is your usual cycle, start to start?',
     periodQ3:'How many days does your period usually last?',
     periodDisclaimer:'Estimate only, based on your answers — not medical advice.',
@@ -1120,6 +1122,7 @@ const STRINGS = {
     periodTracker:'مدیریت دوره‌ی پریود', periodTrackerDesc:'به چند سؤال کوتاه جواب بده تا زمان تقریبی پریود و PMS‌ت رو تخمین بزنیم.',
     startBtn:'شروع', nextBtn:'بعدی', finishBtn:'پایان',
     qsDone:'DONE', qsUndone:'UNDONE',
+    closeBtn:'بستن', deleteBtn:'حذف', pinBtn:'پین', unpinBtn:'برداشتن پین',
     periodQ1:'آخرین پریودت کی شروع شد؟', periodQ2:'چرخه‌ات معمولاً چند روزه؟ (از شروع تا شروع بعدی)',
     periodQ3:'پریودت معمولاً چند روز طول می‌کشه؟',
     periodDisclaimer:'این فقط یه تخمینه بر اساس جواب‌هات — توصیه‌ی پزشکی نیست.',
@@ -1164,6 +1167,9 @@ const STRINGS = {
   }
 };
 function t(key){ return (STRINGS[lang()] || STRINGS.en)[key] || key; }
+/* Alias for use inside functions whose own parameter is named `t` (task
+   objects, mostly) and would otherwise shadow the translator above. */
+const tr = t;
 function applyLanguageDom(){
   document.documentElement.setAttribute('lang', lang()==='fa' ? 'fa' : 'en');
   document.body.style.fontFamily = lang()==='fa' ? "'Vazirmatn','Inter',system-ui,Tahoma,sans-serif" : "'Inter','Vazirmatn',system-ui,sans-serif";
@@ -1493,7 +1499,7 @@ function taskRow(t){
       <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${t.id}">
         <p class="item-title">${escapeHtml(t.title)}</p>
       </div>
-      <button class="star-mini ${t.pinned?'active':''}" data-action="toggle-pin" data-id="${t.id}">${ICONS.star}</button>
+      <button class="star-mini ${t.pinned?'active':''}" data-action="toggle-pin" data-id="${t.id}" aria-label="${t.pinned?tr('unpinBtn'):tr('pinBtn')}">${ICONS.star}</button>
     </div>
   </div>`;
 }
@@ -1521,7 +1527,7 @@ function sortEvents(events){
 function eventCard(e){
   const time = e.notification?.type === 'time' ? e.notification.time : '';
   return `<div class="event-card" data-action="edit-item" data-type="event" data-id="${e.id}">
-    <button class="mini-btn event-del" data-action="delete-event" data-id="${e.id}">${ICONS.trash}</button>
+    <button class="mini-btn event-del" data-action="delete-event" data-id="${e.id}" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>
     ${time?`<span class="event-time">${time}</span>`:''}
     <p class="event-title">${escapeHtml(e.title)}</p>
   </div>`;
@@ -2477,8 +2483,8 @@ function openPopup(type, originEl, existing){
 
   popup.innerHTML = `
     <div class="popup-topbar">
-      <div class="popup-delete ${existing?'':'invisible'}" data-action="delete-popup-item">${ICONS.trash}</div>
-      <div class="popup-close" data-action="close-popup">${ICONS.close}</div>
+      <button type="button" class="popup-delete ${existing?'':'invisible'}" data-action="delete-popup-item" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>
+      <button type="button" class="popup-close" data-action="close-popup" aria-label="${t('closeBtn')}">${ICONS.close}</button>
     </div>
     <div class="popup-body"></div>
     <div class="popup-footer">
