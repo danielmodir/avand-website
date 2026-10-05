@@ -33,7 +33,7 @@ a { color: inherit; }
 .skip-link {
   position: absolute;
   top: -100px;
-  left: var(--space-3);
+  inset-inline-start: var(--space-3);
   background: var(--color-surface);
   color: var(--color-text);
   padding: var(--space-2) var(--space-4);

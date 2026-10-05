@@ -329,6 +329,14 @@
   .float-field label{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:15px; color:var(--text-muted); pointer-events:none; transition:all .2s ease; }
   .float-field input:focus + label,
   .float-field input:not(:placeholder-shown) + label{ top:9px; left:16px; transform:translate(0,0); font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--primary); }
+  /* Typed titles are Persian in fa mode — force-left-aligning them (the
+     base rule above) scrolls RTL text oddly as you type, so mirror both
+     the text and the floated label for this language, same pattern as
+     the other .lang-fa overrides in this file. */
+  .device.lang-fa .float-field input:focus,
+  .device.lang-fa .float-field input:not(:placeholder-shown){ text-align:right; direction:rtl; }
+  .device.lang-fa .float-field input:focus + label,
+  .device.lang-fa .float-field input:not(:placeholder-shown) + label{ left:auto; right:16px; }
 
   /* ===== rich form controls (MVP fields) ===== */
   .field{ margin-bottom:14px; }
