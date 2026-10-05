@@ -1,0 +1,17 @@
+{
+  "name": "آوند — Avand",
+  "short_name": "آوند",
+  "description": "آوند کار، عادت، رویداد و تقویم روزانه‌تون رو یک‌جا نگه می‌داره.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1B262C",
+  "theme_color": "#1B262C",
+  "dir": "rtl",
+  "lang": "fa",
+  "icons": [
+    { "src": "../assets/icons/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "../assets/icons/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
