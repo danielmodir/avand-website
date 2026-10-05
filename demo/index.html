@@ -212,6 +212,7 @@
   .checkbox-quickset button{ font-size:10.5px; font-weight:700; padding:6px 11px; border-radius:999px; cursor:pointer; font-family:inherit; white-space:nowrap; box-shadow:var(--shadow); }
   .checkbox-quickset .qs-done{ background:var(--primary); color:#fff; border:none; }
   .checkbox-quickset .qs-undone{ background:var(--card); color:var(--text-muted); border:1px solid var(--border); }
+  .checkbox:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
   .checkbox:active{ transform:scale(0.85); }
   .checkbox.checked{background:var(--primary); animation:checkbox-pop .3s cubic-bezier(.34,1.56,.64,1); }
   @keyframes checkbox-pop{ 0%{ transform:scale(0.7); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
@@ -255,7 +256,8 @@
   .weekday-header{display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:6px;}
   .weekday-header span{font-size:10px; color:var(--text-muted); font-weight:700;}
   .month-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
-  .day-cell{ aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); border:1px solid transparent; }
+  .day-cell{ aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); border:1px solid transparent; background:none; padding:0; font-family:inherit; -webkit-tap-highlight-color:transparent; }
+  .day-cell:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
   .day-cell.other-month{color:var(--text-muted); opacity:0.3;}
   .day-cell.today{border-color:var(--primary);}
   .day-cell.selected{background:var(--primary); color:#fff;}
@@ -1448,10 +1450,10 @@ function renderHomeCalWidget(){
     const hasAny = tasks.length || events.length;
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
-    return `<div class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-home-day" data-date="${dateKey(day)}">
+    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-home-day" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
       <span>${displayDayNum(day)}</span>
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
-    </div>`;
+    </button>`;
   };
   const monthDropdown = state.monthDropdownOpen ? `
     <div class="cal-dropdown" id="home-month-dropdown">
@@ -1490,15 +1492,15 @@ function renderHomeCalWidget(){
    to-toggle, independent of the row's own swipe-to-delete gesture. */
 function checkboxQuicksetHtml(){
   return `<div class="checkbox-quickset">
-    <button type="button" class="qs-done" data-qs="done">${t('qsDone')}</button>
-    <button type="button" class="qs-undone" data-qs="undone">${t('qsUndone')}</button>
+    <button type="button" class="qs-done" data-qs="done" tabindex="-1">${t('qsDone')}</button>
+    <button type="button" class="qs-undone" data-qs="undone" tabindex="-1">${t('qsUndone')}</button>
   </div>`;
 }
 function taskRow(t){
   return `<div class="swipe-wrap task-wrap" data-swipe-type="task" data-swipe-id="${t.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card task-row ${t.done?'done':''}">
-      <div class="checkbox ${t.done?'checked':''}" data-action="toggle-task" data-id="${t.id}">${t.done?ICONS.check:''}${checkboxQuicksetHtml()}</div>
+      <div class="checkbox ${t.done?'checked':''}" data-action="toggle-task" data-id="${t.id}" role="checkbox" aria-checked="${t.done}" aria-label="${escapeAttr(t.title)}" tabindex="0">${t.done?ICONS.check:''}${checkboxQuicksetHtml()}</div>
       <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${t.id}">
         <p class="item-title">${escapeHtml(t.title)}</p>
       </div>
@@ -1512,7 +1514,7 @@ function habitRow(h, date){
   return `<div class="swipe-wrap" data-swipe-type="habit" data-swipe-id="${h.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card ${checked?'done':''}">
-      <div class="checkbox square ${checked?'checked':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}">${checked?ICONS.check:''}${checkboxQuicksetHtml()}</div>
+      <div class="checkbox square ${checked?'checked':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}" role="checkbox" aria-checked="${checked}" aria-label="${escapeAttr(h.title)}" tabindex="0">${checked?ICONS.check:''}${checkboxQuicksetHtml()}</div>
       <p class="item-title" data-action="edit-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}</p>
     </div>
   </div>`;
@@ -2246,10 +2248,10 @@ function renderCalendar(){
           const hasAny = tasks.length || events.length;
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
-          return `<div class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-day" data-date="${dateKey(d)}">
+          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-day" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
             <span>${displayDayNum(d)}</span>
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
-          </div>`;
+          </button>`;
         }).join('')}
       </div>`;
   } else if(state.calMode === 'week'){
@@ -2967,6 +2969,17 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'close-day-sheet'){ state.daySheetOpen = false; render(); return; }
 });
+/* role="checkbox" divs (task/habit toggles) have no native Enter/Space
+   activation the way a <button> would, so wire it up manually. They can't
+   be real <button>s because each one nests the qs-done/qs-undone quickset
+   buttons, and a <button> can't contain interactive children. */
+document.getElementById('device').addEventListener('keydown', (e) => {
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const cb = e.target.closest('[role="checkbox"]');
+  if(!cb) return;
+  e.preventDefault();
+  cb.click();
+});
 
 function shiftWeek(dir){ state.calCursor = addDays(state.calCursor, 7*dir); render(); }
 function shiftDay(dir){ state.calCursor = addDays(state.calCursor, dir); render(); }
@@ -3011,6 +3024,7 @@ function applyQuicksetState(cb, wantDone){
     isDone = wantDone;
   } else return;
   cb.classList.toggle('checked', isDone);
+  cb.setAttribute('aria-checked', isDone);
   const qs = cb.querySelector('.checkbox-quickset');
   qs?.classList.remove('show'); // always closes the popover, even when set via a qs button
   cb.innerHTML = (isDone ? ICONS.check : '') + (qs ? qs.outerHTML : '');
