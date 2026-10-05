@@ -19,10 +19,17 @@ Read the relevant doc before any big change.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.
   Never hardcode colors anywhere else.
 - Brand is a placeholder (logo "آ" in a circle). Keep it swappable in one place.
-- /demo/ holds the HTML prototype. It must have noindex and make no external requests.
-  Status: the visible "this is a preview" banner was removed by explicit product decision
-  (SPEC.md §11.9) — noindex still applies, and the marketing site (outside /demo/) must
-  still never describe it as the finished product.
+- /demo/ holds the HTML prototype. It must have noindex. noindex still applies, and the
+  marketing site (outside /demo/) must still never describe it as the finished product.
+  The visible "this is a preview" banner was removed by explicit product decision (SPEC.md §11.9).
+  Status (conscious exception, 2026-10-06): /demo/ now makes real requests to the project's
+  own Supabase backend (demo/cloud.js — plain fetch, no SDK, no CDN) for auth, profile,
+  settings, tasks, habits and events, so the prototype is a real, usable, multi-device app
+  instead of in-memory fake data. This was a deliberate decision made with the repo owner,
+  not a drift — see backend/README.md for why the old /backend/ Express+pg code is now
+  superseded by Supabase rather than ever being deployed itself. Social/Store/Period still
+  have no backend and stay demo-only fakes. This exception is /demo/-only: the marketing
+  site (index.html, /en/, /fa/) still makes zero external requests, full stop.
 - Domains: .ir is canonical; .com redirects to it (settled during deployment).
 
 ## Product claims

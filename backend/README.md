@@ -1,12 +1,23 @@
-# Avand backend (not deployed)
+# Avand backend (superseded by Supabase — not deployed)
 
 A real Express + PostgreSQL API matching the data the `/demo/` prototype
-currently fakes client-side (tasks, habits, events, profile, settings,
-auth). **This is not connected to the live site and not deployed anywhere.**
+used to fake client-side (tasks, habits, events, profile, settings, auth).
+**This is not connected to the live site and not deployed anywhere.**
 GitHub Pages (where `avand-website` is hosted) only serves static files —
-it cannot run Node.js or a database, so this code exists for review and as
-a starting point, not as something currently running. See `SPEC.md §11.8`
-in the repo root for the full context on that decision.
+it cannot run Node.js or a database, so running this would need a separate
+Node host (Render/Railway/Fly.io/a VPS), which means creating an account
+somewhere new. See `SPEC.md §11.8` in the repo root for the full context
+on that original decision.
+
+As of 2026-10-06, `/demo/` is wired to a real backend anyway — just not
+this one. It talks directly to the project's existing Supabase project
+(Postgres + Auth, via plain `fetch()` in `demo/cloud.js`, no SDK) instead,
+since that didn't require provisioning anything new. This Express API is
+kept here for reference/review but won't be deployed; the schema below
+and `src/db/schema.sql` describe the same data shape, just normalized
+differently (this uses join tables for subtasks/photos/sessions, while
+the live Supabase schema uses `jsonb` columns since the UI always
+reads/writes those as whole objects anyway).
 
 ## Running it locally
 

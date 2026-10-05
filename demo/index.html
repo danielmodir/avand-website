@@ -811,6 +811,7 @@
   </button>
 </div>
 
+<script src="cloud.js"></script>
 <script>
 /* ============ ICONS ============ */
 /* Google's "G" mark, official 4-color version — kept separate from ICONS
@@ -844,7 +845,7 @@ const ICONS = {
 };
 
 /* ============ DATE HELPERS ============ */
-const uid = () => 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const uid = () => Cloud.uuid();
 /* User-facing ID (Profile / Friends search / invite links) — distinct from
    uid() above, which is for internal task/habit/event records only. */
 const genUserId = () => 'AV-' + Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -1089,7 +1090,10 @@ const STRINGS = {
     continueWithGoogle:'Continue with Google', authOr:'or',
     nameRequired:'Enter your full name', emailInvalid:'Enter a valid email address',
     passwordTooShort:'Password must be at least 6 characters',
-    authFooter:'Prototype only — no account is actually created.'
+    sessionExpired:'Your session expired — please log in again.',
+    googleNotAvailable:'Google sign-in isn\'t set up yet.',
+    authSubmitting:'Please wait…',
+    authFooter:'Your account and data are saved for real.'
   },
   fa: {
     today:'امروز', calendar:'تقویم', menu:'منو',
@@ -1176,7 +1180,10 @@ const STRINGS = {
     continueWithGoogle:'ورود با گوگل', authOr:'یا',
     nameRequired:'نام و نام خانوادگی رو وارد کن', emailInvalid:'یه ایمیل معتبر وارد کن',
     passwordTooShort:'رمز عبور باید حداقل ۶ کاراکتر باشه',
-    authFooter:'فقط پروتوتایپ — حساب واقعی ساخته نمی‌شه.'
+    sessionExpired:'نشست شما منقضی شد — دوباره وارد شو.',
+    googleNotAvailable:'ورود با گوگل هنوز فعال نشده.',
+    authSubmitting:'لطفاً صبر کن…',
+    authFooter:'حساب و اطلاعاتت واقعاً ذخیره می‌شه.'
   }
 };
 function t(key){ return (STRINGS[lang()] || STRINGS.en)[key] || key; }
@@ -1288,7 +1295,9 @@ function seed(){
       recurrence:{mode:null, interval:1, weekdays:[]}, notification:{type:null} }
   ];
 }
-seed();
+// seed() is only used to give a brand-new (real) account some starter
+// content right after signup — see the auth-submit handler. Returning
+// visitors load their actual data from the backend instead (see boot()).
 
 function occursOnDate(item, date){
   const dKey = dateKey(date);
@@ -1601,10 +1610,11 @@ function renderItemSections(tasks, habits, events, date){
 
 /* ============ AUTH SCREEN (Login / Sign up) ============ */
 let authDraft = { name:'', email:'', password:'' };
-let authErrors = { name:'', email:'', password:'' };
+let authErrors = { name:'', email:'', password:'', general:'' };
+let authBusy = false;
 function validateAuth(){
   const isLogin = state.authTab === 'login';
-  const errs = { name:'', email:'', password:'' };
+  const errs = { name:'', email:'', password:'', general:'' };
   if(!isLogin && !authDraft.name.trim()) errs.name = t('nameRequired');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authDraft.email.trim())) errs.email = t('emailInvalid');
   if(authDraft.password.length < 6) errs.password = t('passwordTooShort');
@@ -1625,11 +1635,12 @@ function renderAuthScreen(){
     </div>
     <button type="button" class="auth-google" data-action="auth-google">${GOOGLE_G_ICON}${t('continueWithGoogle')}</button>
     <div class="auth-divider">${t('authOr')}</div>
+    ${authErrors.general ? `<div class="auth-field-error" style="text-align:center;margin-bottom:10px;">${escapeHtml(authErrors.general)}</div>` : ''}
     <div class="auth-form">
       ${!isLogin ? `<div class="${errClass('name')}"><input type="text" id="auth-name" placeholder="${t('fullName')}" value="${escapeAttr(authDraft.name)}">${errMsg('name')}</div>` : ''}
       <div class="${errClass('email')}"><input type="email" id="auth-email" placeholder="${t('email')}" value="${escapeAttr(authDraft.email)}">${errMsg('email')}</div>
       <div class="${errClass('password')}"><input type="password" id="auth-password" placeholder="${t('password')}" value="${escapeAttr(authDraft.password)}">${errMsg('password')}</div>
-      <button class="btn btn-primary auth-submit" data-action="auth-submit">${isLogin?t('logInBtn'):t('createAccountBtn')}</button>
+      <button class="btn btn-primary auth-submit" data-action="auth-submit" ${authBusy?'disabled':''}>${authBusy?t('authSubmitting'):(isLogin?t('logInBtn'):t('createAccountBtn'))}</button>
     </div>
     <div class="auth-footer">${t('authFooter')}</div>
   `;
@@ -2168,19 +2179,24 @@ function syncProfileName(){
   state.profile.name = [state.profile.firstName, state.profile.lastName].filter(Boolean).join(' ').trim()
     || state.profile.username || 'Avand User';
 }
+let profileSaveTimer = null;
+function scheduleProfileSave(){
+  clearTimeout(profileSaveTimer);
+  profileSaveTimer = setTimeout(() => Cloud.saveProfile(state.profile).catch(()=>{}), 600);
+}
 function wireMenuInteractivity(){
-  document.getElementById('profile-first-name')?.addEventListener('input', e => { state.profile.firstName = e.target.value; syncProfileName(); });
-  document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); });
-  document.getElementById('profile-username')?.addEventListener('input', e => { state.profile.username = e.target.value; syncProfileName(); });
-  document.getElementById('profile-dob')?.addEventListener('input', e => { state.profile.dob = e.target.value; });
-  document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; });
-  document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; });
-  document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; render(); });
+  document.getElementById('profile-first-name')?.addEventListener('input', e => { state.profile.firstName = e.target.value; syncProfileName(); scheduleProfileSave(); });
+  document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); scheduleProfileSave(); });
+  document.getElementById('profile-username')?.addEventListener('input', e => { state.profile.username = e.target.value; syncProfileName(); scheduleProfileSave(); });
+  document.getElementById('profile-dob')?.addEventListener('input', e => { state.profile.dob = e.target.value; scheduleProfileSave(); });
+  document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
+  document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; scheduleProfileSave(); });
+  document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; Cloud.saveSettings(state.settings).catch(()=>{}); render(); });
   document.getElementById('profile-photo-input')?.addEventListener('change', e => {
     const file = e.target.files && e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = () => { state.profile.photo = reader.result; render(); };
+    reader.onload = () => { state.profile.photo = reader.result; Cloud.saveProfile(state.profile).catch(()=>{}); render(); };
     reader.readAsDataURL(file);
   });
   document.getElementById('friend-search')?.addEventListener('input', e => {
@@ -2224,6 +2240,7 @@ function showLanguageLoading(newLang){
   requestAnimationFrame(() => el.classList.add('show'));
   setTimeout(() => {
     state.settings.language = newLang;
+    Cloud.saveSettings(state.settings).catch(()=>{});
     render();
     setTimeout(() => el.classList.remove('show'), 150);
   }, 1100);
@@ -2783,10 +2800,12 @@ function submitPopup(){
   closePopup();
   render();
 }
+const CLOUD_SAVE_BY_ARRKEY = { tasks: Cloud.saveTask, habits: Cloud.saveHabit, events: Cloud.saveEvent };
 function upsert(arrKey, obj){
   const arr = state[arrKey];
   const idx = arr.findIndex(x => x.id === obj.id);
   if(idx >= 0) arr[idx] = obj; else arr.push(obj);
+  CLOUD_SAVE_BY_ARRKEY[arrKey](obj).catch(()=>{});
 }
 
 
@@ -2814,8 +2833,8 @@ document.getElementById('device').addEventListener('click', (e) => {
     applyQuicksetState(el, !h.completedDates.includes(dk));
     return;
   }
-  if(action === 'delete-habit'){ state.habits = state.habits.filter(x=>x.id!==el.dataset.id); render(); return; }
-  if(action === 'delete-event'){ state.events = state.events.filter(x=>x.id!==el.dataset.id); render(); return; }
+  if(action === 'delete-habit'){ state.habits = state.habits.filter(x=>x.id!==el.dataset.id); Cloud.deleteHabit(el.dataset.id).catch(()=>{}); render(); return; }
+  if(action === 'delete-event'){ state.events = state.events.filter(x=>x.id!==el.dataset.id); Cloud.deleteEvent(el.dataset.id).catch(()=>{}); render(); return; }
 
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
@@ -2838,9 +2857,10 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'delete-popup-item'){
     if(!state.editingId) return;
     const type = state.popupType;
-    if(type === 'task') state.tasks = state.tasks.filter(x=>x.id!==state.editingId);
-    if(type === 'habit') state.habits = state.habits.filter(x=>x.id!==state.editingId);
-    if(type === 'event') state.events = state.events.filter(x=>x.id!==state.editingId);
+    const id = state.editingId;
+    if(type === 'task'){ state.tasks = state.tasks.filter(x=>x.id!==id); Cloud.deleteTask(id).catch(()=>{}); }
+    if(type === 'habit'){ state.habits = state.habits.filter(x=>x.id!==id); Cloud.deleteHabit(id).catch(()=>{}); }
+    if(type === 'event'){ state.events = state.events.filter(x=>x.id!==id); Cloud.deleteEvent(id).catch(()=>{}); }
     closePopup();
     render();
     return;
@@ -2857,34 +2877,48 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'toggle-pin'){
     const t = state.tasks.find(x=>x.id===el.dataset.id); t.pinned = !t.pinned;
     el.classList.toggle('active', t.pinned);
+    Cloud.saveTask(t).catch(()=>{});
     return;
   }
 
-  if(action === 'auth-tab'){ state.authTab = el.dataset.val; authErrors = { name:'', email:'', password:'' }; render(); return; }
+  if(action === 'auth-tab'){ state.authTab = el.dataset.val; authErrors = { name:'', email:'', password:'', general:'' }; render(); return; }
   if(action === 'auth-submit'){
+    if(authBusy) return;
+    authErrors.general = '';
     if(!validateAuth()){ render(); return; }
-    if(authDraft.name.trim()){
-      const parts = authDraft.name.trim().split(/\s+/);
-      state.profile.firstName = parts[0] || '';
-      state.profile.lastName = parts.slice(1).join(' ');
-      syncProfileName();
-    }
-    if(authDraft.email.trim()) state.profile.email = authDraft.email.trim();
-    state.authScreen = false;
-    authDraft = { name:'', email:'', password:'' };
-    authErrors = { name:'', email:'', password:'' };
+    const isLogin = state.authTab === 'login';
+    const email = authDraft.email.trim();
+    const password = authDraft.password;
+    const name = authDraft.name.trim();
+    authBusy = true;
     render();
+    (isLogin ? Cloud.signIn(email, password) : Cloud.signUp(email, password, name))
+      .then(async () => {
+        await loadFromCloud();
+        if(!isLogin){
+          // Brand-new account: seed a few starter items so the screen
+          // isn't empty, and persist them for real right away.
+          seed();
+          await Promise.all([
+            ...state.tasks.map(x => Cloud.saveTask(x)),
+            ...state.habits.map(x => Cloud.saveHabit(x)),
+            ...state.events.map(x => Cloud.saveEvent(x)),
+          ]);
+        }
+        state.authScreen = false;
+        authDraft = { name:'', email:'', password:'' };
+        authErrors = { name:'', email:'', password:'', general:'' };
+      })
+      .catch(err => { authErrors.general = err.message || String(err); })
+      .finally(() => { authBusy = false; render(); });
     return;
   }
   if(action === 'auth-google'){
-    state.authScreen = false;
-    authDraft = { name:'', email:'', password:'' };
-    authErrors = { name:'', email:'', password:'' };
-    render();
+    showToast(t('googleNotAvailable'));
     return;
   }
-  if(action === 'remove-profile-photo'){ state.profile.photo = null; render(); return; }
-  if(action === 'set-gender'){ state.profile.gender = el.dataset.val; render(); return; }
+  if(action === 'remove-profile-photo'){ state.profile.photo = null; Cloud.saveProfile(state.profile).catch(()=>{}); render(); return; }
+  if(action === 'set-gender'){ state.profile.gender = el.dataset.val; Cloud.saveProfile(state.profile).catch(()=>{}); render(); return; }
   if(action === 'copy-user-id'){
     try{ navigator.clipboard.writeText(state.profile.userId); }catch(err){}
     showToast(t('idCopied'));
@@ -2937,18 +2971,20 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'logout-user'){
+    Cloud.signOut();
     state.authScreen = true;
     state.authTab = 'login';
     state.menuSubView = null;
+    state.tasks = []; state.habits = []; state.events = [];
     render();
     return;
   }
   if(action === 'menu-nav'){ state.menuSubView = el.dataset.sub; render(); return; }
   if(action === 'menu-back'){ state.menuSubView = MENU_PARENT[state.menuSubView] || null; render(); return; }
-  if(action === 'toggle-setting'){ state.settings[el.dataset.key] = !state.settings[el.dataset.key]; render(); return; }
-  if(action === 'set-week-start'){ state.settings.weekStartDay = el.dataset.val; render(); return; }
+  if(action === 'toggle-setting'){ state.settings[el.dataset.key] = !state.settings[el.dataset.key]; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
+  if(action === 'set-week-start'){ state.settings.weekStartDay = el.dataset.val; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
   if(action === 'hijri-coming-soon'){ showToast(t('hijriComingSoon')); return; }
-  if(action === 'set-calendar-system'){ state.settings.calendarSystem = el.dataset.val; state.monthDropdownOpen=false; state.yearDropdownOpen=false; render(); return; }
+  if(action === 'set-calendar-system'){ state.settings.calendarSystem = el.dataset.val; state.monthDropdownOpen=false; state.yearDropdownOpen=false; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
   if(action === 'set-language'){
     if(el.dataset.val === lang()) return;
     showLanguageLoading(el.dataset.val);
@@ -3022,6 +3058,7 @@ function applyQuicksetState(cb, wantDone){
     const item = state.tasks.find(x => x.id === cb.dataset.id);
     if(!item) return;
     item.done = wantDone; isDone = wantDone;
+    Cloud.saveTask(item).catch(()=>{});
   } else if(action === 'toggle-habit'){
     const item = state.habits.find(x => x.id === cb.dataset.id);
     if(!item) return;
@@ -3030,6 +3067,7 @@ function applyQuicksetState(cb, wantDone){
     if(wantDone && i < 0) item.completedDates.push(dk);
     else if(!wantDone && i >= 0) item.completedDates.splice(i, 1);
     isDone = wantDone;
+    Cloud.saveHabit(item).catch(()=>{});
   } else return;
   cb.classList.toggle('checked', isDone);
   cb.setAttribute('aria-checked', isDone);
@@ -3425,7 +3463,37 @@ initHomeScrollExpand();
 initCalendarWheelSwipe();
 attachCheckboxLongPress();
 attachDaySheetDrag();
-render();
+
+async function loadFromCloud(){
+  const data = await Cloud.loadAll();
+  state.profile = Object.assign({}, state.profile, data.profile);
+  syncProfileName();
+  state.settings = Object.assign({}, state.settings, data.settings);
+  state.tasks = data.tasks;
+  state.habits = data.habits;
+  state.events = data.events;
+}
+Cloud.onSessionExpired = () => {
+  state.authScreen = true;
+  state.authTab = 'login';
+  state.tasks = []; state.habits = []; state.events = [];
+  render();
+  showToast(t('sessionExpired'));
+};
+
+async function boot(){
+  render(); // immediate paint (auth screen) while a saved session, if any, is checked
+  if(Cloud.hasSession()){
+    try{
+      await loadFromCloud();
+      state.authScreen = false;
+    }catch(err){
+      state.authScreen = true;
+    }
+    render();
+  }
+}
+boot();
 </script>
 </body>
 </html>
