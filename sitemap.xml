@@ -27,6 +27,26 @@
     <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/about/"/>
   </url>
   <url>
+    <loc>https://avand.ir/en/privacy/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/privacy/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/fa/privacy/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/privacy/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/en/terms/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/terms/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/fa/terms/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/terms/"/>
+  </url>
+  <url>
     <loc>https://avand.ir/en/download/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/download/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/download/"/>
