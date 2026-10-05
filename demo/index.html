@@ -2326,7 +2326,19 @@ function initHomeScrollExpand(){
     }
   }, { passive: true });
 
+  let lastWheelDayNav = 0;
   el.addEventListener('wheel', (e) => {
+    /* Trackpad horizontal swipe (deltaX-dominant) shifts a day, same
+       gesture a touchpad/Magic Mouse user would reach for instinctively —
+       separate from the vertical pull-to-expand case below. Debounced so
+       one continuous swipe doesn't fire a dozen times. */
+    if(Math.abs(e.deltaX) > Math.abs(e.deltaY)){
+      if(Math.abs(e.deltaX) > 30 && Date.now() - lastWheelDayNav > 400){
+        lastWheelDayNav = Date.now();
+        shiftHomeDay(e.deltaX > 0 ? 1 : -1);
+      }
+      return;
+    }
     if(el.scrollTop <= 0 && e.deltaY < -10 && !state.homeCalExpanded){
       setHomeCalExpanded(true);
     }
@@ -2885,6 +2897,24 @@ document.getElementById('device').addEventListener('click', (e) => {
 function shiftWeek(dir){ state.calCursor = addDays(state.calCursor, 7*dir); render(); }
 function shiftDay(dir){ state.calCursor = addDays(state.calCursor, dir); render(); }
 
+/* Desktop-only: trackpad horizontal swipe over the calendar grid moves
+   to the previous/next day, week or month depending on the active tab —
+   same debounced deltaX-dominant pattern as the Home widget's version. */
+function initCalendarWheelSwipe(){
+  const el = document.getElementById('page-calendar');
+  if(!el) return;
+  let lastWheelNav = 0;
+  el.addEventListener('wheel', (e) => {
+    if(Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+    if(Math.abs(e.deltaX) < 30 || Date.now() - lastWheelNav < 400) return;
+    lastWheelNav = Date.now();
+    const dir = e.deltaX > 0 ? 1 : -1;
+    if(state.calMode === 'month') shiftMonthRoll(dir);
+    else if(state.calMode === 'week') shiftWeek(dir);
+    else shiftDay(dir);
+  }, { passive: true });
+}
+
 /* ============ CALENDAR GESTURES: swipe-to-roll month/year, pinch to zoom ============ */
 function attachCalendarGestures(){
   attachRollGesture(document.getElementById('cal-month-label'), (dir) => {
@@ -3222,6 +3252,7 @@ function attachDaySheetDrag(){
 initFabAndMenuInteractions();
 initFabAutoHide();
 initHomeScrollExpand();
+initCalendarWheelSwipe();
 attachDaySheetDrag();
 render();
 </script>
