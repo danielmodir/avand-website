@@ -1384,6 +1384,27 @@ function animateDayStats(){
   }
   requestAnimationFrame(step);
 }
+/* Recomputes and animates the stat card's ring/percentage and the
+   tasks/habits mini-counts in place, without touching any other DOM —
+   used after toggling a task/habit so the whole page never re-renders
+   just because a checkbox was tapped (see the toggle-task/habit/pin
+   action handlers). The card node persists, so animateDayStats() eases
+   from its current value instead of restarting from 0. */
+function updateDayStatsInPlace(){
+  const card = document.getElementById('day-stat-card');
+  if(!card) return;
+  const d = state.homeDate;
+  const {tasks, habits} = itemsForDate(d);
+  const doneTasks = tasks.filter(x => x.done).length;
+  const doneHabits = habits.filter(h => h.completedDates.includes(dateKey(d))).length;
+  const totalDoable = tasks.length + habits.length;
+  const donePct = totalDoable ? Math.round((doneTasks + doneHabits) / totalDoable * 100) : 0;
+  card.dataset.pct = donePct;
+  animateDayStats();
+  const counts = card.querySelectorAll('.stat-mini b');
+  if(counts[0]) counts[0].textContent = `${doneTasks}/${tasks.length}`;
+  if(counts[1]) counts[1].textContent = `${doneHabits}/${habits.length}`;
+}
 
 /* ============ MERGED CALENDAR WIDGET (mobile only — see
    .home-cal-widget{display:none} in the >=960px block, where the full
@@ -2727,12 +2748,24 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(!el) return;
   const action = el.dataset.action;
 
-  if(action === 'toggle-task'){ const t = state.tasks.find(x=>x.id===el.dataset.id); t.done = !t.done; render(); return; }
+  if(action === 'toggle-task'){
+    const t = state.tasks.find(x=>x.id===el.dataset.id); t.done = !t.done;
+    el.classList.toggle('checked', t.done);
+    el.innerHTML = t.done ? ICONS.check : '';
+    el.closest('.item-card')?.classList.toggle('done', t.done);
+    updateDayStatsInPlace();
+    return;
+  }
   if(action === 'toggle-habit'){
     const h = state.habits.find(x=>x.id===el.dataset.id); const dk = el.dataset.date;
     const i = h.completedDates.indexOf(dk);
+    const checked = i < 0;
     if(i>=0) h.completedDates.splice(i,1); else h.completedDates.push(dk);
-    render(); return;
+    el.classList.toggle('checked', checked);
+    el.innerHTML = checked ? ICONS.check : '';
+    el.closest('.item-card')?.classList.toggle('done', checked);
+    updateDayStatsInPlace();
+    return;
   }
   if(action === 'delete-habit'){ state.habits = state.habits.filter(x=>x.id!==el.dataset.id); render(); return; }
   if(action === 'delete-event'){ state.events = state.events.filter(x=>x.id!==el.dataset.id); render(); return; }
@@ -2774,7 +2807,11 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'cal-next-day'){ shiftDay(1); return; }
   if(action === 'set-cal-mode'){ state.calMode = el.dataset.mode; state.daySheetOpen = false; render(); return; }
   if(action === 'toggle-section'){ state.sectionExpanded[el.dataset.section] = !state.sectionExpanded[el.dataset.section]; render(); return; }
-  if(action === 'toggle-pin'){ const t = state.tasks.find(x=>x.id===el.dataset.id); t.pinned = !t.pinned; render(); return; }
+  if(action === 'toggle-pin'){
+    const t = state.tasks.find(x=>x.id===el.dataset.id); t.pinned = !t.pinned;
+    el.classList.toggle('active', t.pinned);
+    return;
+  }
 
   if(action === 'auth-tab'){ state.authTab = el.dataset.val; authErrors = { name:'', email:'', password:'' }; render(); return; }
   if(action === 'auth-submit'){
@@ -3168,20 +3205,21 @@ function slideHomeCalDate(dir, updateFn){
   }, 150);
 }
 
-/* Expanding/collapsing the widget never changes which date is selected,
-   so it never needed to re-render the stat card or agenda list — doing
-   so from a HIGH-FREQUENCY trigger like scroll caused a real bug (the
-   ring chart visibly resetting/"spinning" and cards replaying their
-   entrance animation on every scroll tick, since a full render()
-   recreates those DOM nodes from scratch). This updates ONLY the
-   calendar widget itself. */
+/* Expanding/collapsing the widget never changes which date is selected
+   or the grid's content (the month grid is always fully rendered — only
+   positionHomeCalGrid()'s clip-height/translateY decide how much of it
+   shows), so it never needed to re-render anything at all. It used to
+   replace the whole widget via outerHTML "to be safe", but that's what
+   caused the resize to look sudden instead of smooth: a freshly-inserted
+   node has no prior height for the CSS transition to animate FROM, so
+   the browser just jumps straight to the target size. Updating state and
+   calling positionHomeCalGrid() on the SAME, already-transitioning DOM
+   node is what makes the grow/shrink animate properly — and also avoids
+   re-attaching gesture listeners onto elements that never went away. */
 function setHomeCalExpanded(expanded){
   state.homeCalExpanded = expanded;
   const widget = document.getElementById('home-cal-widget');
   if(!widget){ render(); return; }
-  widget.outerHTML = renderHomeCalWidget();
-  attachHomeCalendarGestures();
-  attachHomeCalDrag();
   positionHomeCalGrid();
 }
 
