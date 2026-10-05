@@ -161,6 +161,8 @@
   .section-title{ font-size:13px; font-weight:600; color:var(--text-muted); letter-spacing:.02em; margin:22px 2px 10px 2px; display:flex; align-items:center; justify-content:space-between; }
   .section-title .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; }
   .empty-hint{ color:var(--text-muted); font-size:13px; background:var(--card); border:1px dashed var(--border); border-radius:16px; padding:16px; text-align:center; }
+  .empty-section-hint{ margin-bottom:8px; }
+  .empty-section-hint p{ margin:0 0 10px 0; }
 
   /* ===== dashboard-style stat card (reference: colorful ring + mini stats) ===== */
   .stat-card{
@@ -1526,16 +1528,27 @@ function eventCard(e){
 /* Empty sections render nothing at all now (not even a title + "no X"
    hint) — an empty Dashboard should look clean, not like three
    placeholders stacked on top of each other. */
+/* Empty-state markup for a section — friendly line + a CTA straight into
+   the add form for that type. Section 34 of the Oct 2026 site brief
+   explicitly wants these visible (not hidden), overriding an earlier,
+   explicit decision this same prototype had (hide Task/Habit/Event
+   sections entirely when empty) — see SPEC.md §11.9 for that history. */
+function emptySectionHtml(type, hintKey){
+  return `<div class="empty-hint empty-section-hint">
+    <p>${t(hintKey)}</p>
+    <button class="btn btn-outline btn-small" data-action="open-popup" data-type="${type}">${t('new' + type.charAt(0).toUpperCase() + type.slice(1))}</button>
+  </div>`;
+}
 function renderEventsSection(events){
-  if(!events.length) return '';
   const sorted = sortEvents(events);
   return `
     <div class="section-title">${t('events')} <span class="count">${events.length}</span></div>
-    <div class="events-scroll">${sorted.map(e=>eventCard(e)).join('')}</div>
+    ${events.length
+      ? `<div class="events-scroll">${sorted.map(e=>eventCard(e)).join('')}</div>`
+      : emptySectionHtml('event', 'noEventsToday')}
   `;
 }
 function renderTasksSection(tasks){
-  if(!tasks.length) return '';
   const sorted = [...tasks].sort((a,b) => (b.pinned - a.pinned) || (a.done - b.done));
   const limit = 3;
   const expanded = state.sectionExpanded.tasks;
@@ -1545,11 +1558,10 @@ function renderTasksSection(tasks){
     <div class="section-title">${t('tasks')} <span class="count">${tasks.length}</span>
       ${hasMore ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="tasks">${ICONS.chevronDown}</button>` : ''}
     </div>
-    ${visible.map(t=>taskRow(t)).join('')}
+    ${tasks.length ? visible.map(t=>taskRow(t)).join('') : emptySectionHtml('task', 'noTasksToday')}
   `;
 }
 function renderHabitsSection(habits, date){
-  if(!habits.length) return '';
   const limit = 2;
   const expanded = state.sectionExpanded.habits;
   const visible = expanded ? habits : habits.slice(0, limit);
@@ -1558,7 +1570,7 @@ function renderHabitsSection(habits, date){
     <div class="section-title">${t('habits')} <span class="count">${habits.length}</span>
       ${hasMore ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="habits">${ICONS.chevronDown}</button>` : ''}
     </div>
-    ${visible.map(h=>habitRow(h,date)).join('')}
+    ${habits.length ? visible.map(h=>habitRow(h,date)).join('') : emptySectionHtml('habit', 'noHabitsYet')}
   `;
 }
 function renderItemSections(tasks, habits, events, date){
