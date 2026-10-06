@@ -20,8 +20,12 @@
     --bg:#1B262C;
     --bg-soft:#212F36;
     --card:#243138;
-    --primary:#4E9CD6;
-    --primary-soft:rgba(78,156,214,0.16);
+    /* Was #4E9CD6 (white-on-primary text only hit 2.98:1, below WCAG AA's
+       4.5:1). Matched to the documented phase-4 primary (#3282B8, already
+       used elsewhere in this file as --secondary) — best contrast (4.18:1)
+       reachable while staying a brand blue rather than inventing a new one. */
+    --primary:#3282B8;
+    --primary-soft:rgba(50,130,184,0.16);
     --secondary:#3282B8;
     --text:#F2F7FA;
     --text-muted:#8FA0AA;
@@ -107,7 +111,7 @@
   .fab-add{
     position:absolute; bottom:24px; right:20px; z-index:50; width:54px; height:54px;
     border-radius:50%; background:var(--primary); color:#fff; border:none;
-    box-shadow:0 6px 18px rgba(78,156,214,0.45); display:flex; align-items:center;
+    box-shadow:0 6px 18px rgba(50,130,184,0.45); display:flex; align-items:center;
     justify-content:center; cursor:pointer; transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
   }
   .fab-add svg{ width:22px; height:22px; transition:transform .2s ease; }
@@ -291,7 +295,7 @@
   .nav-layer.show{ opacity:1; pointer-events:auto; transition:opacity .32s cubic-bezier(.4,0,.2,1) .08s; }
   #nav-layer-add{ flex-direction:column; justify-content:center; gap:10px; padding:16px 18px; }
 
-  .nav-slider{ position:absolute; top:50%; width:46px; height:46px; border-radius:50%; background:var(--primary); box-shadow:0 4px 14px rgba(78,156,214,0.45); transform:translate(-50%,-50%); transition:left .3s cubic-bezier(.4,0,.2,1); z-index:1; }
+  .nav-slider{ position:absolute; top:50%; width:46px; height:46px; border-radius:50%; background:var(--primary); box-shadow:0 4px 14px rgba(50,130,184,0.45); transform:translate(-50%,-50%); transition:left .3s cubic-bezier(.4,0,.2,1); z-index:1; }
   .nav-btn{ position:relative; z-index:2; background:none; border:none; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--nav-icon); user-select:none; transition:color .2s ease, transform .18s ease; transform-origin:center; }
   .nav-btn.active{ color:#fff; }
   .nav-btn svg{width:19px; height:19px;}
