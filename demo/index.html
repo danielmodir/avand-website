@@ -1688,7 +1688,11 @@ function wireAuthInteractivity(){
 function renderAuth(){
   const el = document.getElementById('auth-screen');
   el.innerHTML = renderAuthScreen();
-  el.classList.toggle('hidden', !state.authScreen);
+  /* authScreen defaults to true before boot() has had a chance to confirm
+     anything, so without the extra checks here the login form would sit
+     on top of (it has the higher z-index) the boot skeleton/retry screen
+     for the whole time boot() is still working. */
+  el.classList.toggle('hidden', !state.authScreen || state.booting || !!state.bootError);
   wireAuthInteractivity();
 }
 
