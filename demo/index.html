@@ -3541,7 +3541,9 @@ async function loadFromCloud(){
   state.habits = data.habits;
   state.events = data.events;
 }
+let sessionJustExpired = false; // set true for the duration of a boot() that onSessionExpired fired during
 Cloud.onSessionExpired = () => {
+  sessionJustExpired = true;
   state.authScreen = true;
   state.authTab = 'login';
   state.tasks = []; state.habits = []; state.events = [];
@@ -3552,6 +3554,7 @@ Cloud.onSessionExpired = () => {
 async function boot(){
   state.booting = Cloud.hasSession();
   state.bootError = null;
+  sessionJustExpired = false;
   render(); // skeleton while a saved session is checked, else the normal auth screen
   if(Cloud.hasSession()){
     try{
@@ -3562,8 +3565,10 @@ async function boot(){
          login form itself (see Cloud.onSessionExpired above). Anything
          else here — offline, timeout, a 5xx — isn't a real "you're
          logged out", so don't force the login screen over it; show a
-         retry screen and leave the saved session alone instead. */
-      if(!state.authScreen) state.bootError = 'network';
+         retry screen and leave the saved session alone instead. authScreen
+         defaults to true on a cold load, so it can't tell these apart by
+         itself — sessionJustExpired is the real signal. */
+      if(!sessionJustExpired) state.bootError = 'network';
     }
     state.booting = false;
     render();
