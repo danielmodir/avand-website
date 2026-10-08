@@ -298,6 +298,23 @@
   .checkbox-quickset button{ font-size:10.5px; font-weight:700; padding:6px 11px; border-radius:999px; cursor:pointer; font-family:inherit; white-space:nowrap; box-shadow:var(--shadow); }
   .checkbox-quickset .qs-done{ background:var(--primary); color:#fff; border:none; }
   .checkbox-quickset .qs-undone{ background:var(--card); color:var(--text-muted); border:1px solid var(--border); }
+  /* Desktop-only: right-click on a task/habit checkbox or row (see
+     attachDesktopContextMenu) — Done/Undone/Edit/Delete, the mouse-driven
+     equivalent of the mobile long-press quickset, plus the two actions
+     that popover doesn't have room for. */
+  .row-context-menu{
+    position:fixed; z-index:200; background:var(--card); border:1px solid var(--border);
+    border-radius:14px; box-shadow:var(--shadow); padding:6px; min-width:160px;
+    display:flex; flex-direction:column;
+  }
+  .row-context-menu button{
+    display:flex; align-items:center; gap:10px; border:none; background:none;
+    color:var(--text); font-size:13px; font-weight:600; font-family:inherit;
+    padding:9px 10px; border-radius:9px; cursor:pointer; text-align:start;
+  }
+  .row-context-menu button svg{ width:15px; height:15px; flex:0 0 auto; }
+  .row-context-menu button:hover{ background:var(--bg-soft); }
+  .row-context-menu button.danger{ color:var(--danger); }
   .checkbox:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
   .checkbox:active{ transform:scale(0.85); }
   .checkbox.checked{background:var(--primary); animation:checkbox-pop .3s cubic-bezier(.34,1.56,.64,1); }
@@ -3443,6 +3460,61 @@ function attachCheckboxLongPress(){
   }, true);
 }
 
+/* ============ DESKTOP: right-click context menu for task/habit rows ======
+   Mouse equivalent of the mobile long-press quickset, plus Edit/Delete
+   which that popover has no room for. Mobile has no reliable right-click,
+   so this only arms at >=960px. */
+function closeRowContextMenu(){ document.getElementById('row-context-menu')?.remove(); }
+function showRowContextMenu(x, y, type, id, wrap){
+  closeRowContextMenu();
+  const menu = document.createElement('div');
+  menu.id = 'row-context-menu';
+  menu.className = 'row-context-menu';
+  menu.innerHTML = `
+    <button type="button" data-ctx="done">${ICONS.check}${t('qsDone')}</button>
+    <button type="button" data-ctx="undone">${ICONS.close}${t('qsUndone')}</button>
+    <button type="button" data-ctx="edit">${ICONS.pencilIcon}${t('editBtn')}</button>
+    <button type="button" data-ctx="delete" class="danger">${ICONS.trash}${t('deleteBtn')}</button>
+  `;
+  document.body.appendChild(menu);
+  // Clamp so it never renders off the right/bottom edge of the viewport.
+  const w = menu.offsetWidth, h = menu.offsetHeight;
+  menu.style.left = Math.min(x, window.innerWidth - w - 8) + 'px';
+  menu.style.top = Math.min(y, window.innerHeight - h - 8) + 'px';
+  menu.addEventListener('click', e => {
+    const btn = e.target.closest('[data-ctx]');
+    if(!btn) return;
+    e.stopPropagation();
+    const action = btn.dataset.ctx;
+    const cb = wrap.querySelector('.checkbox[data-action]');
+    if(action === 'done' && cb) applyQuicksetState(cb, true);
+    else if(action === 'undone' && cb) applyQuicksetState(cb, false, true);
+    else if(action === 'edit') openPopup(type, wrap, findItem(type, id));
+    else if(action === 'delete'){
+      if(type === 'task') state.tasks = state.tasks.filter(x => x.id !== id);
+      if(type === 'habit') state.habits = state.habits.filter(x => x.id !== id);
+      render();
+    }
+    closeRowContextMenu();
+  });
+}
+function attachDesktopContextMenu(){
+  const root = document.getElementById('device');
+  root.addEventListener('contextmenu', e => {
+    if(window.innerWidth < 960) return;
+    const wrap = e.target.closest('.swipe-wrap[data-swipe-type]');
+    if(!wrap) return;
+    const type = wrap.dataset.swipeType;
+    if(type !== 'task' && type !== 'habit') return;
+    e.preventDefault();
+    showRowContextMenu(e.clientX, e.clientY, type, wrap.dataset.swipeId, wrap);
+  });
+  document.addEventListener('pointerdown', e => {
+    if(!e.target.closest('.row-context-menu')) closeRowContextMenu();
+  });
+  document.addEventListener('scroll', closeRowContextMenu, true);
+}
+
 /* ============ CALENDAR GESTURES: swipe-to-roll month/year, pinch to zoom ============ */
 function attachCalendarGestures(){
   attachRollGesture(document.getElementById('cal-month-label'), (dir) => {
@@ -3788,6 +3860,7 @@ initFabAndMenuInteractions();
 initHomeScrollExpand();
 initCalendarWheelSwipe();
 attachCheckboxLongPress();
+attachDesktopContextMenu();
 attachDaySheetDrag();
 
 async function loadFromCloud(){
