@@ -632,6 +632,19 @@
   .period-quiz-dots span.active{ background:var(--primary); }
 
   .profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:28px; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; background-size:cover; background-position:center; }
+  /* New profile header: photo top-start, username+edit pencil above the
+     user id+copy button, instead of a centered big avatar with the id
+     buried in a settings row further down. */
+  .profile-header-new{ display:flex; align-items:center; gap:14px; }
+  .profile-avatar-sm{ flex:0 0 auto; width:56px; height:56px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:19px; display:flex; align-items:center; justify-content:center; background-size:cover; background-position:center; }
+  .profile-header-text{ min-width:0; flex:1; }
+  .profile-username-row{ display:flex; align-items:center; gap:8px; }
+  .profile-username{ font-size:16px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .profile-id-row{ display:flex; align-items:center; gap:6px; margin-top:4px; }
+  .profile-id-text{ font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .icon-btn-sm{ flex:0 0 auto; width:22px; height:22px; border:none; background:none; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .icon-btn-sm svg{ width:14px; height:14px; }
+  .icon-btn-sm:hover{ color:var(--primary); }
   .profile-photo-actions{ display:flex; gap:14px; justify-content:center; margin-bottom:4px; }
   .link-btn{ font-size:12px; font-weight:600; color:var(--primary); cursor:pointer; }
   .profile-field-row{ display:flex; gap:10px; }
@@ -987,7 +1000,9 @@ const ICONS = {
   storeIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg>',
   manageIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>',
   dropIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s7 8.1 7 12.5A7 7 0 0 1 5 14.5C5 10.1 12 2 12 2z"/></svg>',
-  wifiOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 3.5-2.3M12 20h.01M15.5 10.2A10 10 0 0 1 19 12.5"/></svg>'
+  wifiOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 3.5-2.3M12 20h.01M15.5 10.2A10 10 0 0 1 19 12.5"/></svg>',
+  pencilIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+  copyIcon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
 };
 
 /* ============ DATE HELPERS ============ */
@@ -1217,6 +1232,7 @@ const STRINGS = {
     tip6:"If anything feels unusual, it's worth checking with a doctor.",
     shareAvand:'Share Avand', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
+    editBtn:'Edit', copyBtn:'Copy',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
     aboutVersion:'Version 0.1 — MVP Prototype',
     aboutDesc:'Avand helps you manage tasks, habits, and events in one place — combining daily planning with long-term goals in a single, focused app.',
@@ -1309,6 +1325,7 @@ const STRINGS = {
     tip6:'اگه چیزی غیرعادی به‌نظر می‌رسه، بهتره با پزشک مشورت کنی.',
     shareAvand:'اشتراک‌گذاری آوند', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
+    editBtn:'ویرایش', copyBtn:'کپی',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
     aboutVersion:'نسخه‌ی ۰.۱ — پروتوتایپ MVP',
     aboutDesc:'آوند کمکت می‌کنه کارها، عادت‌ها و رویدادها رو یه‌جا مدیریت کنی — برنامه‌ریزی روزانه و اهداف بلندمدت، تو یه اپ ساده.',
@@ -1361,6 +1378,7 @@ const state = {
   navExpanded: false,   // true while the FAB's Task/Habit/Event mini-menu is open
   menuPanelOpen: false, // true while the Menu overlay/side-panel is open
   menuMaximized: false, // desktop-only: full-height panel vs the inset card
+  profileEditOpen: false, // Profile page: edit fields collapsed by default, pencil icon reveals them
   homeCalExpanded: false, // mobile merged widget: false = week strip, true = month grid
   popupOpen: false,
   popupType: null,
@@ -1924,15 +1942,29 @@ function renderProfilePage(){
   const activeHabits = state.habits.length;
   const checkins = state.habits.reduce((sum,h)=>sum+h.completedDates.length, 0);
   const genderOpt = (val, label) => `<button type="button" data-action="set-gender" data-val="${val}" class="${p.gender===val?'active':''}">${label}</button>`;
+  const displayName = p.username || p.name || '';
   return `
     ${subHeader(t('profile'))}
-    <div class="profile-avatar-big" ${p.photo?`style="background-image:url('${p.photo}')"`:''}>${p.photo?'':initials(p.name)}</div>
-    <div class="profile-photo-actions">
+    <div class="profile-header-new">
+      <div class="profile-avatar-sm" ${p.photo?`style="background-image:url('${p.photo}')"`:''}>${p.photo?'':initials(p.name)}</div>
+      <div class="profile-header-text">
+        <div class="profile-username-row">
+          <span class="profile-username">${escapeHtml(displayName)}</span>
+          <button type="button" class="icon-btn-sm" data-action="toggle-profile-edit" aria-label="${t('editBtn')}">${ICONS.pencilIcon}</button>
+        </div>
+        <div class="profile-id-row">
+          <span class="profile-id-text">${escapeHtml(p.userId)}</span>
+          <button type="button" class="icon-btn-sm" data-action="copy-user-id" aria-label="${t('copyBtn')}">${ICONS.copyIcon}</button>
+        </div>
+      </div>
+    </div>
+
+    ${state.profileEditOpen ? `
+    <div class="profile-photo-actions" style="margin-top:16px;">
       <label class="link-btn">${t('changePhoto')}<input type="file" accept="image/*" id="profile-photo-input" class="hidden"></label>
       ${p.photo ? `<span class="link-btn" data-action="remove-profile-photo">${t('removePhoto')}</span>` : ''}
     </div>
-
-    <div class="section-title" style="margin-top:22px;">${t('personalInfo')}</div>
+    <div class="section-title" style="margin-top:18px;">${t('personalInfo')}</div>
     <div class="profile-field-row">
       <div class="field"><input type="text" id="profile-first-name" value="${escapeAttr(p.firstName)}" placeholder="${t('firstName')}"></div>
       <div class="field"><input type="text" id="profile-last-name" value="${escapeAttr(p.lastName)}" placeholder="${t('lastName')}"></div>
@@ -1946,12 +1978,9 @@ function renderProfilePage(){
     <div class="section-title">${t('contactInfo')}</div>
     <div class="field"><input type="email" id="profile-email" value="${escapeAttr(p.email)}" placeholder="${t('email')}"></div>
     <div class="field"><input type="tel" id="profile-phone" value="${escapeAttr(p.phone)}" placeholder="${t('phoneNumber')}"></div>
+    ` : ''}
 
-    <div class="section-title">${t('accountInfo')}</div>
-    <div class="settings-row">
-      <div><div class="lbl">${t('uniqueUserId')}</div><div class="sub">${escapeHtml(p.userId)}</div></div>
-      <span class="link-btn" data-action="copy-user-id">${ICONS.linkIcon}</span>
-    </div>
+    <div class="section-title" style="margin-top:22px;">${t('accountInfo')}</div>
     <div class="menu-item-row" data-action="menu-nav" data-sub="friends">
       <div class="menu-item-icon">${ICONS.peopleIcon}</div>
       <div class="menu-item-label">${t('connections')} <span class="count">${state.connections.filter(c=>c.status==='accepted').length}</span></div>
@@ -3185,6 +3214,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     showToast(t('idCopied'));
     return;
   }
+  if(action === 'toggle-profile-edit'){ state.profileEditOpen = !state.profileEditOpen; render(); return; }
   if(action === 'copy-invite-link'){
     try{ navigator.clipboard.writeText(`avand.ir/invite/${state.profile.userId}`); }catch(err){}
     showToast(t('inviteLinkCopied'));
