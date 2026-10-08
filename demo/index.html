@@ -103,15 +103,6 @@
   .device.show-menu .menu-panel-content{ opacity:1; transform:translateY(0); }
   .menu-overlay{ display:none; }
 
-  /* ===== hamburger (mobile menu entry point) ===== */
-  .hamburger-btn{
-    position:absolute; top:16px; right:16px; z-index:50; width:38px; height:38px;
-    border-radius:12px; background:var(--card); border:1px solid var(--border);
-    color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer;
-  }
-  .hamburger-btn svg{ width:18px; height:18px; }
-  .device.lang-fa .hamburger-btn{ right:auto; left:16px; }
-
   /* ===== floating add button (replaces the old hold-to-open bottom nav) ===== */
   .fab-add{
     position:absolute; bottom:24px; right:20px; z-index:50; width:54px; height:54px;
@@ -127,34 +118,26 @@
     transform:translateY(10px); transition:opacity .2s ease, transform .2s ease;
   }
   .fab-menu.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
-  /* Mobile-only: auto-hides after 5s idle, reappears on scroll (see
-     scheduleFabHide()). Desktop never gets this class. */
-  .fab-add.hidden-fab{ transform:translateY(120px); opacity:0; pointer-events:none; }
-  .fab-menu.hidden-fab{ opacity:0; pointer-events:none; transform:translateY(120px); }
   .fab-menu .nav-add-item{ width:auto; white-space:nowrap; background:var(--card); }
   .fab-menu.labels-hidden .nav-add-item{ justify-content:center; width:44px; padding:11px; }
   .fab-menu.labels-hidden .nav-add-item span{ display:none; }
 
   /* ===== mobile-only bottom bar: Profile circle (left) + Store/Management
-     capsule (middle), alongside the Add FAB (right, above). These three
-     are the only way into Profile/Store/Management on mobile now — the
-     menu root list (renderMenuHome) no longer carries them. ===== */
+     capsule (middle), alongside the Add FAB (right, above) — fixed in
+     place, never hidden. These three are the only way into
+     Profile/Store/Management on mobile now. ===== */
   .profile-fab{
     position:absolute; bottom:24px; left:20px; z-index:50; width:54px; height:54px;
     border-radius:50%; background:var(--primary); color:#fff; border:none;
     font-weight:700; font-size:16px; display:flex; align-items:center; justify-content:center;
     cursor:pointer; background-size:cover; background-position:center;
     box-shadow:0 6px 18px rgba(50,130,184,0.45);
-    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
   }
-  .profile-fab.hidden-fab{ transform:translateY(120px); opacity:0; pointer-events:none; }
   .nav-capsule{
     position:absolute; bottom:33px; left:50%; transform:translateX(-50%); z-index:50;
     display:flex; background:var(--card); border:1px solid var(--border); border-radius:999px;
     box-shadow:var(--shadow); overflow:hidden;
-    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
   }
-  .nav-capsule.hidden-fab{ transform:translate(-50%,120px); opacity:0; pointer-events:none; }
   .nav-capsule button{
     width:46px; height:36px; border:none; background:transparent; color:var(--text-muted);
     display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -741,9 +724,8 @@
     }
     .period-quiz-sheet.show{ transform:translate(-50%,0); }
 
-    /* Bottom nav is mobile-only; desktop uses the hamburger's replacement
-       (a right-edge icon rail, see .menu-rail) plus the floating add button. */
-    .hamburger-btn{ display:none; }
+    /* Bottom nav is mobile-only; desktop uses a right-edge icon rail
+       (see .menu-rail) plus the floating add button. */
     .profile-fab{ display:none; }
     .nav-capsule{ display:none; }
     .desktop-avatar-btn{
@@ -819,12 +801,6 @@
        On mobile the panel covers the whole screen itself, so no dimmer
        is needed there — this stays hidden below 960px. -->
   <div class="menu-overlay" id="menu-overlay" data-action="close-menu-overlay"></div>
-
-  <!-- Mobile-only: opens the Menu overlay. Swaps sides by language via
-       the .lang-fa class (applyLanguageDom toggles it on #device). -->
-  <button class="hamburger-btn" id="hamburger-btn" data-action="open-menu" aria-label="Menu">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-  </button>
 
   <!-- Mobile-only: bottom bar — Profile circle (left), Store/Management
        capsule (middle). The Add FAB (right) lives in its own block below.
@@ -1818,7 +1794,7 @@ function renderBootScreen(){
 
 /* ============ MENU ============ */
 const MENU_PARENT = {
-  'profile': null, 'share': null, 'about': null, 'settings': null, 'friends': 'profile', 'store': null, 'admin': null, 'period': 'admin',
+  'profile': null, 'share': 'profile', 'about': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null, 'period': 'admin',
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings'
 };
 function initials(name){
@@ -1843,26 +1819,10 @@ function renderMenu(){
   if(sub === 'settings-general') return renderGeneralSettings();
   if(sub === 'settings-calendar') return renderCalendarSettings();
   if(sub === 'settings-avandmenu') return renderAvandMenuSettings();
-  return renderMenuHome();
-}
-function renderMenuHome(){
-  /* Profile/Store/Management moved out to their own mobile bottom-bar
-     buttons (see #profile-fab / #nav-capsule) — this hamburger-triggered
-     list only carries what's left over. */
-  return `
-    <div class="app-header"><h1>${t('menu')}</h1></div>
-    <div class="menu-list">
-      <div class="menu-item-row" data-action="menu-nav" data-sub="share">
-        <div class="menu-item-icon">${ICONS.shareIcon}</div><div class="menu-item-label">${t('shareApp')}</div>${ICONS.chevronRightSmall}
-      </div>
-      <div class="menu-item-row" data-action="menu-nav" data-sub="about">
-        <div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t('aboutUs')}</div>${ICONS.chevronRightSmall}
-      </div>
-      <div class="menu-item-row" data-action="menu-nav" data-sub="settings">
-        <div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('settings')}</div>${ICONS.chevronRightSmall}
-      </div>
-    </div>
-  `;
+  /* No button opens the menu panel with no data-sub anymore (the
+     hamburger entry point is gone — Profile/Store/Management each have
+     their own bottom-bar button), so this is just a safe fallback. */
+  return renderProfilePage();
 }
 function renderProfilePage(){
   const p = state.profile;
@@ -1902,6 +1862,15 @@ function renderProfilePage(){
       <div class="menu-item-icon">${ICONS.peopleIcon}</div>
       <div class="menu-item-label">${t('connections')} <span class="count">${state.connections.filter(c=>c.status==='accepted').length}</span></div>
       ${ICONS.chevronRightSmall}
+    </div>
+    <div class="menu-item-row" data-action="menu-nav" data-sub="share">
+      <div class="menu-item-icon">${ICONS.shareIcon}</div><div class="menu-item-label">${t('shareApp')}</div>${ICONS.chevronRightSmall}
+    </div>
+    <div class="menu-item-row" data-action="menu-nav" data-sub="about">
+      <div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t('aboutUs')}</div>${ICONS.chevronRightSmall}
+    </div>
+    <div class="menu-item-row" data-action="menu-nav" data-sub="settings">
+      <div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('settings')}</div>${ICONS.chevronRightSmall}
     </div>
     <div class="profile-stats">
       <div class="profile-stat"><div class="num">${completedTasks}</div><div class="lbl">${t('tasksDone')}</div></div>
@@ -2542,36 +2511,6 @@ function initFabAndMenuInteractions(){
       state.navExpanded = false; render();
     }
   });
-}
-
-/* Mobile-only: the FAB slides away after 5s of no scrolling, and slides
-   back the instant the user scrolls again (desktop keeps it always on,
-   per spec — "طبق طراحی فعلی"). */
-let fabHideTimer = null;
-/* Profile circle + Store/Management capsule sit in the same bottom bar
-   as the Add FAB now, so they hide/show together with it — otherwise
-   the FAB would slide away while its neighbors stayed put. */
-function showFab(){
-  document.getElementById('fab-add').classList.remove('hidden-fab');
-  document.getElementById('fab-menu').classList.remove('hidden-fab');
-  document.getElementById('profile-fab').classList.remove('hidden-fab');
-  document.getElementById('nav-capsule').classList.remove('hidden-fab');
-}
-function scheduleFabHide(){
-  if(window.innerWidth >= 960){ showFab(); return; }
-  showFab();
-  clearTimeout(fabHideTimer);
-  fabHideTimer = setTimeout(() => {
-    if(state.navExpanded) return; // don't hide while its own mini-menu is open
-    document.getElementById('fab-add').classList.add('hidden-fab');
-    document.getElementById('fab-menu').classList.add('hidden-fab');
-    document.getElementById('profile-fab').classList.add('hidden-fab');
-    document.getElementById('nav-capsule').classList.add('hidden-fab');
-  }, 5000);
-}
-function initFabAutoHide(){
-  document.getElementById('page-home').addEventListener('scroll', scheduleFabHide, { passive: true });
-  scheduleFabHide();
 }
 
 /* Expand/collapse the merged calendar widget — reversed from the old
@@ -3636,7 +3575,6 @@ function attachDaySheetDrag(){
 
 /* ============ INIT ============ */
 initFabAndMenuInteractions();
-initFabAutoHide();
 initHomeScrollExpand();
 initCalendarWheelSwipe();
 attachCheckboxLongPress();
