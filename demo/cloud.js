@@ -10,9 +10,11 @@
    itself provisioned (Supabase), over plain fetch(), with no other
    third-party script loaded.
 
-   Covers exactly the MVP backend scope (auth, profile, settings, tasks,
-   habits, events) — Social/Store/Period stay demo-only fakes, same as the
-   unused Express prototype in /backend/ was scoped.
+   Covers auth, profile, settings, tasks, habits, events, and (2026-10-08)
+   Connections — a real `connections` table + SECURITY DEFINER RPCs (no
+   direct table writes from the client; see the migration in the Supabase
+   project for the exact rules). Store/Period still stay demo-only fakes,
+   same as the unused Express prototype in /backend/ was scoped.
    ========================================================================= */
 (function (global) {
   'use strict';
@@ -227,6 +229,36 @@
     return restPatchSingle('user_settings', 'user_id', session.user_id, toRow(settings, SETTINGS_MAP, {}));
   }
 
+  // ---- connections (real: server-side RPCs, not client-trusted writes) -----
+  async function rpc(name, params) {
+    var res = await authFetch('/rest/v1/rpc/' + name, { method: 'POST', body: JSON.stringify(params || {}) });
+    if (!res.ok) {
+      var body = await res.json().catch(function () { return {}; });
+      throw new Error(body.message || 'Request failed');
+    }
+    return res.json();
+  }
+  function searchUser(query) { return rpc('search_user', { q: query }); }
+  function sendConnectionRequest(targetId) { return rpc('send_connection_request', { target: targetId }); }
+  function respondConnectionRequest(targetId, accept) { return rpc('respond_connection_request', { target: targetId, do_accept: accept }); }
+  function removeConnection(targetId) { return rpc('remove_connection', { target: targetId }); }
+  function blockUser(targetId) { return rpc('block_user', { target: targetId }); }
+  function unblockUser(targetId) { return rpc('unblock_user', { target: targetId }); }
+  async function listConnections() {
+    var session = loadSession();
+    var rows = await rpc('list_connections', {});
+    // Translate the server's (status, requested_by) pair into the app's
+    // existing perspective-aware vocabulary (pending-outgoing vs
+    // pending-incoming), so the UI code written for the old fake data
+    // doesn't need to change its status model.
+    return rows.map(function (r) {
+      var status = r.status;
+      if (status === 'pending') status = (r.requested_by === session.user_id) ? 'pending-outgoing' : 'pending-incoming';
+      else if (status === 'blocked' && r.requested_by !== session.user_id) status = 'blocked-by-them';
+      return { id: r.friend_id, name: r.display_name || r.username || r.phone || 'Avand user', phone: r.phone || '', status: status };
+    });
+  }
+
   global.Cloud = {
     uuid: uuid,
     hasSession: hasSession,
@@ -239,6 +271,13 @@
     saveEvent: saveEvent, deleteEvent: deleteEvent,
     saveProfile: saveProfile,
     saveSettings: saveSettings,
+    searchUser: searchUser,
+    sendConnectionRequest: sendConnectionRequest,
+    respondConnectionRequest: respondConnectionRequest,
+    removeConnection: removeConnection,
+    blockUser: blockUser,
+    unblockUser: unblockUser,
+    listConnections: listConnections,
     set onSessionExpired(fn) { onSessionExpired = fn; },
   };
 })(window);

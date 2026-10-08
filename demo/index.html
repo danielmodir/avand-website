@@ -1356,18 +1356,17 @@ const state = {
   tasks: [],
   habits: [],
   events: [],
-  /* Fake, client-side-only directory simulating other Avand users, so the
-     Friends/Connections search has something to find — this prototype has
-     no real backend/multi-user data, per CLAUDE.md's "zero external
-     requests" rule. status: 'none' | 'pending-outgoing' | 'pending-incoming'
-     | 'accepted' | 'blocked'. */
-  connections: [
-    { id:'AV-7F3K9Q', name:'Sara Ahmadi', phone:'09120000001', status:'accepted' },
-    { id:'AV-2M8P1Z', name:'Reza Karimi', phone:'09120000002', status:'pending-outgoing' },
-    { id:'AV-9X4T6L', name:'Mina Hosseini', phone:'09120000003', status:'pending-incoming' },
-    { id:'AV-5B2W7R', name:'Pouya Jafari', phone:'09120000004', status:'none' }
-  ],
+  /* Real connections (demo/cloud.js: a `connections` table + SECURITY
+     DEFINER RPCs, not client-trusted writes) — loaded via
+     refreshConnections() when the Friends page opens, not at boot, since
+     this is the one part of state loadFromCloud() doesn't fetch eagerly.
+     status: 'pending-outgoing' | 'pending-incoming' | 'accepted' |
+     'blocked' | 'blocked-by-them' (search results, not in this list yet,
+     have no status field at all). */
+  connections: [],
   friendSearch: '',
+  friendSearchResults: [],
+  friendSearchBusy: false,
   /* Feature Marketplace (Store) — client-side only, no real purchase or
      entitlement system exists in this prototype. kind: 'toggle' | 'locked'
      | 'premium'. Empty for now by explicit product decision — the Store
@@ -1939,30 +1938,59 @@ function renderProfilePage(){
   `;
 }
 function friendRowActions(c){
-  if(c.status==='none') return `<button class="btn btn-primary btn-small" data-action="connect-request" data-id="${c.id}">${t('connect')}</button>`;
-  if(c.status==='pending-outgoing') return `<button class="btn btn-outline btn-small" disabled>${t('pending')}</button>`;
-  if(c.status==='pending-incoming') return `
+  const status = c.status || 'none';
+  if(status==='none') return `<button class="btn btn-primary btn-small" data-action="connect-request" data-id="${c.id}">${t('connect')}</button>`;
+  if(status==='pending-outgoing') return `<button class="btn btn-outline btn-small" disabled>${t('pending')}</button>`;
+  if(status==='pending-incoming') return `
     <button class="btn btn-primary btn-small" data-action="connect-accept" data-id="${c.id}">${t('accept')}</button>
     <button class="btn btn-outline btn-small" data-action="connect-decline" data-id="${c.id}">${t('decline')}</button>`;
-  if(c.status==='accepted') return `
+  if(status==='accepted') return `
     <button class="btn btn-outline btn-small" data-action="connect-remove" data-id="${c.id}">${t('remove')}</button>
     <button class="btn btn-outline btn-small" style="color:var(--danger); border-color:var(--danger);" data-action="connect-block" data-id="${c.id}">${t('block')}</button>`;
-  if(c.status==='blocked') return `<button class="btn btn-outline btn-small" data-action="connect-unblock" data-id="${c.id}">${t('unblock')}</button>`;
+  if(status==='blocked') return `<button class="btn btn-outline btn-small" data-action="connect-unblock" data-id="${c.id}">${t('unblock')}</button>`;
+  if(status==='blocked-by-them') return '';
   return '';
 }
 function friendRow(c){
+  // Search results don't carry a status (the backend doesn't expose
+  // blocked-by-someone-else), so fall back to the real connection list
+  // if this id is already known there (e.g. searching up someone you
+  // already have a pending/accepted connection with).
+  const known = state.connections.find(x => x.id === c.id);
+  const merged = known || c;
   return `
     <div class="settings-row">
       <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-        <div class="menu-avatar" style="width:36px; height:36px; font-size:13px;">${initials(c.name)}</div>
-        <div style="min-width:0;"><div class="lbl">${escapeHtml(c.name)}</div><div class="sub">${escapeHtml(c.id)}</div></div>
+        <div class="menu-avatar" style="width:36px; height:36px; font-size:13px;">${initials(merged.name)}</div>
+        <div style="min-width:0;"><div class="lbl">${escapeHtml(merged.name)}</div><div class="sub">${escapeHtml(merged.id)}</div></div>
       </div>
-      <div style="display:flex; gap:6px; flex:0 0 auto;">${friendRowActions(c)}</div>
+      <div style="display:flex; gap:6px; flex:0 0 auto;">${friendRowActions(merged)}</div>
     </div>`;
 }
+async function refreshConnections(){
+  try{ state.connections = await Cloud.listConnections(); }
+  catch(e){ /* keep whatever was already loaded */ }
+  render();
+}
+function runConnectionAction(btn, fn){
+  btn.disabled = true;
+  fn().then(refreshConnections).catch(err => { showToast(err.message || String(err)); render(); });
+}
+let friendSearchTimer = null;
+function scheduleFriendSearch(){
+  clearTimeout(friendSearchTimer);
+  const q = state.friendSearch.trim();
+  if(!q){ state.friendSearchResults = []; state.friendSearchBusy = false; render(); return; }
+  state.friendSearchBusy = true;
+  friendSearchTimer = setTimeout(async () => {
+    try{ state.friendSearchResults = await Cloud.searchUser(q); }
+    catch(e){ state.friendSearchResults = []; }
+    state.friendSearchBusy = false;
+    render();
+  }, 350);
+}
 function renderFriendsPage(){
-  const q = state.friendSearch.trim().toLowerCase();
-  const matches = q ? state.connections.filter(c => c.id.toLowerCase().includes(q) || c.phone.includes(q)) : [];
+  const q = state.friendSearch.trim();
   const incoming = state.connections.filter(c=>c.status==='pending-incoming');
   const accepted = state.connections.filter(c=>c.status==='accepted');
   const outgoing = state.connections.filter(c=>c.status==='pending-outgoing');
@@ -1976,7 +2004,8 @@ function renderFriendsPage(){
     <div class="field" style="margin-top:16px;"><input type="text" id="friend-search" value="${escapeAttr(state.friendSearch)}" placeholder="${t('friendsSearchPlaceholder')}"></div>
     ${q ? `
       <div class="section-title">${t('searchResults')}</div>
-      ${matches.length ? matches.map(friendRow).join('') : `<div class="empty-hint">${t('noSearchResults')}</div>`}
+      ${state.friendSearchBusy ? `<div class="empty-hint">…</div>`
+        : state.friendSearchResults.length ? state.friendSearchResults.map(friendRow).join('') : `<div class="empty-hint">${t('noSearchResults')}</div>`}
     ` : `
       ${incoming.length ? `<div class="section-title">${t('incomingRequests')} <span class="count">${incoming.length}</span></div>${incoming.map(friendRow).join('')}` : ''}
       ${accepted.length ? `<div class="section-title">${t('myConnections')} <span class="count">${accepted.length}</span></div>${accepted.map(friendRow).join('')}` : ''}
@@ -2377,6 +2406,7 @@ function wireMenuInteractivity(){
   document.getElementById('friend-search')?.addEventListener('input', e => {
     state.friendSearch = e.target.value;
     const cursor = e.target.selectionStart;
+    scheduleFriendSearch();
     render();
     const el2 = document.getElementById('friend-search');
     if(el2){ el2.focus(); el2.setSelectionRange(cursor, cursor); }
@@ -3010,7 +3040,11 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
   if(action === 'close-popup'){ closePopup(); return; }
-  if(action === 'open-menu'){ state.menuSubView = el.dataset.sub || null; state.menuPanelOpen = true; render(); return; }
+  if(action === 'open-menu'){
+    state.menuSubView = el.dataset.sub || null; state.menuPanelOpen = true; render();
+    if(state.menuSubView === 'friends') refreshConnections();
+    return;
+  }
   if(action === 'close-menu-overlay'){ state.menuPanelOpen = false; render(); return; }
   if(action === 'pick-home-day'){
     /* Picking a date no longer force-collapses Monthly back to the week
@@ -3106,12 +3140,12 @@ document.getElementById('device').addEventListener('click', (e) => {
     showToast(t('inviteLinkCopied'));
     return;
   }
-  if(action === 'connect-request'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'pending-outgoing'; render(); return; }
-  if(action === 'connect-accept'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'accepted'; render(); return; }
-  if(action === 'connect-decline'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
-  if(action === 'connect-remove'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
-  if(action === 'connect-block'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'blocked'; render(); return; }
-  if(action === 'connect-unblock'){ const c = state.connections.find(x=>x.id===el.dataset.id); if(c) c.status = 'none'; render(); return; }
+  if(action === 'connect-request'){ runConnectionAction(el, () => Cloud.sendConnectionRequest(el.dataset.id)); return; }
+  if(action === 'connect-accept'){ runConnectionAction(el, () => Cloud.respondConnectionRequest(el.dataset.id, true)); return; }
+  if(action === 'connect-decline'){ runConnectionAction(el, () => Cloud.respondConnectionRequest(el.dataset.id, false)); return; }
+  if(action === 'connect-remove'){ runConnectionAction(el, () => Cloud.removeConnection(el.dataset.id)); return; }
+  if(action === 'connect-block'){ runConnectionAction(el, () => Cloud.blockUser(el.dataset.id)); return; }
+  if(action === 'connect-unblock'){ runConnectionAction(el, () => Cloud.unblockUser(el.dataset.id)); return; }
   if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
@@ -3156,7 +3190,11 @@ document.getElementById('device').addEventListener('click', (e) => {
     render();
     return;
   }
-  if(action === 'menu-nav'){ state.menuSubView = el.dataset.sub; render(); return; }
+  if(action === 'menu-nav'){
+    state.menuSubView = el.dataset.sub; render();
+    if(state.menuSubView === 'friends') refreshConnections();
+    return;
+  }
   if(action === 'menu-back'){ state.menuSubView = MENU_PARENT[state.menuSubView] || null; render(); return; }
   if(action === 'toggle-setting'){ state.settings[el.dataset.key] = !state.settings[el.dataset.key]; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
   if(action === 'set-week-start'){ state.settings.weekStartDay = el.dataset.val; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }

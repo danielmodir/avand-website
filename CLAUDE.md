@@ -28,9 +28,13 @@ Read the relevant doc before any big change.
   settings, tasks, habits and events, so the prototype is a real, usable, multi-device app
   instead of in-memory fake data. This was a deliberate decision made with the repo owner,
   not a drift — see backend/README.md for why the old /backend/ Express+pg code is now
-  superseded by Supabase rather than ever being deployed itself. Social/Store/Period still
-  have no backend and stay demo-only fakes. This exception is /demo/-only: the marketing
-  site (index.html, /en/, /fa/) still makes zero external requests, full stop.
+  superseded by Supabase rather than ever being deployed itself. Store/Period still have
+  no backend and stay demo-only fakes. Connections (2026-10-08) is also real now — a
+  `connections` table + SECURITY DEFINER RPCs (search_user, send_connection_request,
+  respond_connection_request, remove_connection, block_user, unblock_user,
+  list_connections); the client never writes the table directly. This exception is
+  /demo/-only: the marketing site (index.html, /en/, /fa/) still makes zero external
+  requests, full stop.
 - Domains: .ir is canonical; .com redirects to it (settled during deployment).
 
 ## Product claims
