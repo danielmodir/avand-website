@@ -1300,6 +1300,11 @@ const state = {
   yearDropdownOpen: false,
   editingId: null,
   sectionExpanded: { tasks:false, habits:false, events:false },
+  /* Mobile-only (<960px): a non-empty section is shown by default, this
+     only tracks the user manually collapsing it — opposite default from
+     sectionExpanded above (desktop's "show more than the preview limit"),
+     so it's its own key rather than overloading that one. */
+  sectionCollapsed: { tasks:false, habits:false, events:false },
   popupSubView: null,   // null | 'calendar' | 'repeat' | 'notification'
   rangeDragStart: null,
   menuSubView: null,
@@ -1674,12 +1679,13 @@ function renderEventsSection(events){
   const sorted = sortEvents(events);
   const isMobile = window.innerWidth < 960;
   if(isMobile && !events.length) return '';
-  const expanded = state.sectionExpanded.events;
+  const collapsed = state.sectionCollapsed.events;
   const showToggle = isMobile && events.length > 0;
-  const visible = isMobile ? (expanded ? sorted : []) : sorted;
+  const visible = isMobile ? (collapsed ? [] : sorted) : sorted;
+  const open = !collapsed;
   return `
     <div class="section-title">${t('events')} <span class="count">${events.length}</span>
-      ${showToggle ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="events">${ICONS.chevronDown}</button>` : ''}
+      ${showToggle ? `<button class="section-toggle ${open?'open':''}" data-action="toggle-section" data-section="events">${ICONS.chevronDown}</button>` : ''}
     </div>
     ${events.length
       ? `<div class="events-scroll">${visible.map(e=>eventCard(e)).join('')}</div>`
@@ -1692,12 +1698,14 @@ function renderTasksSection(tasks){
   if(isMobile && !tasks.length) return '';
   const limit = 3;
   const expanded = state.sectionExpanded.tasks;
+  const collapsed = state.sectionCollapsed.tasks;
   const hasMore = sorted.length > limit;
-  const visible = isMobile ? (expanded ? sorted : []) : (expanded ? sorted : sorted.slice(0, limit));
+  const visible = isMobile ? (collapsed ? [] : sorted) : (expanded ? sorted : sorted.slice(0, limit));
   const showToggle = isMobile ? tasks.length > 0 : hasMore;
+  const open = isMobile ? !collapsed : expanded;
   return `
     <div class="section-title">${t('tasks')} <span class="count">${tasks.length}</span>
-      ${showToggle ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="tasks">${ICONS.chevronDown}</button>` : ''}
+      ${showToggle ? `<button class="section-toggle ${open?'open':''}" data-action="toggle-section" data-section="tasks">${ICONS.chevronDown}</button>` : ''}
     </div>
     ${tasks.length ? visible.map(t=>taskRow(t)).join('') : emptySectionHtml('task', 'noTasksToday')}
   `;
@@ -1707,12 +1715,14 @@ function renderHabitsSection(habits, date){
   if(isMobile && !habits.length) return '';
   const limit = 2;
   const expanded = state.sectionExpanded.habits;
+  const collapsed = state.sectionCollapsed.habits;
   const hasMore = habits.length > limit;
-  const visible = isMobile ? (expanded ? habits : []) : (expanded ? habits : habits.slice(0, limit));
+  const visible = isMobile ? (collapsed ? [] : habits) : (expanded ? habits : habits.slice(0, limit));
   const showToggle = isMobile ? habits.length > 0 : hasMore;
+  const open = isMobile ? !collapsed : expanded;
   return `
     <div class="section-title">${t('habits')} <span class="count">${habits.length}</span>
-      ${showToggle ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="habits">${ICONS.chevronDown}</button>` : ''}
+      ${showToggle ? `<button class="section-toggle ${open?'open':''}" data-action="toggle-section" data-section="habits">${ICONS.chevronDown}</button>` : ''}
     </div>
     ${habits.length ? visible.map(h=>habitRow(h,date)).join('') : emptySectionHtml('habit', 'noHabitsYet')}
   `;
@@ -3033,7 +3043,13 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'cal-prev-day'){ shiftDay(-1); return; }
   if(action === 'cal-next-day'){ shiftDay(1); return; }
   if(action === 'set-cal-mode'){ state.calMode = el.dataset.mode; state.daySheetOpen = false; render(); return; }
-  if(action === 'toggle-section'){ state.sectionExpanded[el.dataset.section] = !state.sectionExpanded[el.dataset.section]; render(); return; }
+  if(action === 'toggle-section'){
+    const key = el.dataset.section;
+    if(window.innerWidth < 960) state.sectionCollapsed[key] = !state.sectionCollapsed[key];
+    else state.sectionExpanded[key] = !state.sectionExpanded[key];
+    render();
+    return;
+  }
   if(action === 'toggle-pin'){
     const t = state.tasks.find(x=>x.id===el.dataset.id); t.pinned = !t.pinned;
     el.classList.toggle('active', t.pinned);
