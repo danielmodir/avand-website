@@ -74,6 +74,11 @@
      scrollable box itself stays full-width (so touch-scroll works
      right up to the screen edge). */
   .page{ width:100%; height:100%; overflow-y:auto; padding:22px max(18px, calc((100% - 640px)/2)) 100px; scrollbar-width:none; }
+  /* Without this, the browser's own rubber-band bounce at the top of
+     #page-home fights the pull-to-expand-calendar gesture in
+     initHomeScrollExpand() — the native bounce eats the first chunk of
+     the drag before our pointermove handler sees enough delta. */
+  #page-home{ overscroll-behavior-y:contain; }
   .page::-webkit-scrollbar{display:none;}
   .page.no-scroll{ overflow-y:hidden; }
   #page-calendar{ display:none; }
@@ -129,6 +134,33 @@
   .fab-menu .nav-add-item{ width:auto; white-space:nowrap; background:var(--card); }
   .fab-menu.labels-hidden .nav-add-item{ justify-content:center; width:44px; padding:11px; }
   .fab-menu.labels-hidden .nav-add-item span{ display:none; }
+
+  /* ===== mobile-only bottom bar: Profile circle (left) + Store/Management
+     capsule (middle), alongside the Add FAB (right, above). These three
+     are the only way into Profile/Store/Management on mobile now — the
+     menu root list (renderMenuHome) no longer carries them. ===== */
+  .profile-fab{
+    position:absolute; bottom:24px; left:20px; z-index:50; width:54px; height:54px;
+    border-radius:50%; background:var(--primary); color:#fff; border:none;
+    font-weight:700; font-size:16px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; background-size:cover; background-position:center;
+    box-shadow:0 6px 18px rgba(50,130,184,0.45);
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
+  }
+  .profile-fab.hidden-fab{ transform:translateY(120px); opacity:0; pointer-events:none; }
+  .nav-capsule{
+    position:absolute; bottom:33px; left:50%; transform:translateX(-50%); z-index:50;
+    display:flex; background:var(--card); border:1px solid var(--border); border-radius:999px;
+    box-shadow:var(--shadow); overflow:hidden;
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
+  }
+  .nav-capsule.hidden-fab{ transform:translate(-50%,120px); opacity:0; pointer-events:none; }
+  .nav-capsule button{
+    width:46px; height:36px; border:none; background:transparent; color:var(--text-muted);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .nav-capsule button:first-child{ border-inline-end:1px solid var(--border); }
+  .nav-capsule button svg{ width:18px; height:18px; }
 
   /* ===== merged calendar+home widget (mobile only) =====
      Collapsed = this week as a 7-day strip. Expanded = full month grid,
@@ -242,6 +274,12 @@
 
   /* calendar */
   .cal-topbar{ position:relative; display:flex; align-items:baseline; justify-content:center; gap:10px; margin-bottom:18px; padding:6px 0; }
+  .back-today-btn{
+    position:absolute; top:4px; right:0; z-index:1;
+    background:var(--bg-soft); border:1px solid var(--border); color:var(--primary);
+    font-size:11px; font-weight:700; font-family:inherit; border-radius:999px;
+    padding:6px 12px; cursor:pointer;
+  }
   .cal-label{ font-size:22px; font-weight:800; cursor:pointer; touch-action:none; user-select:none; padding:4px 6px; border-radius:10px; text-align:center; }
   .cal-label:active{ background:var(--bg-soft); }
   #cal-month-label, #home-cal-month-label{ min-width:130px; }
@@ -706,6 +744,8 @@
     /* Bottom nav is mobile-only; desktop uses the hamburger's replacement
        (a right-edge icon rail, see .menu-rail) plus the floating add button. */
     .hamburger-btn{ display:none; }
+    .profile-fab{ display:none; }
+    .nav-capsule{ display:none; }
     .desktop-avatar-btn{
       display:flex; align-items:center; justify-content:center;
       position:fixed; top:18px; right:24px; z-index:42;
@@ -785,6 +825,20 @@
   <button class="hamburger-btn" id="hamburger-btn" data-action="open-menu" aria-label="Menu">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
   </button>
+
+  <!-- Mobile-only: bottom bar — Profile circle (left), Store/Management
+       capsule (middle). The Add FAB (right) lives in its own block below.
+       Content (avatar initials/photo) is set in updateNav() since it's
+       dynamic, same pattern as #desktop-avatar-btn. -->
+  <button class="profile-fab" id="profile-fab" data-action="open-menu" data-sub="profile" aria-label="Profile"></button>
+  <div class="nav-capsule" id="nav-capsule">
+    <button type="button" data-action="open-menu" data-sub="store" aria-label="Store">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg>
+    </button>
+    <button type="button" data-action="open-menu" data-sub="admin" aria-label="Management">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>
+    </button>
+  </div>
 
   <!-- Desktop-only: profile avatar near the top edge, opens the Profile
        panel directly (no detour through the menu root list) — the only
@@ -1034,7 +1088,7 @@ function setYearOf(anchor, year){
 
 const STRINGS = {
   en: {
-    today:'Today', calendar:'Calendar', menu:'Menu',
+    today:'Today', calendar:'Calendar', menu:'Menu', backToToday:'Back to today',
     events:'Events', tasks:'Tasks', habits:'Habits',
     noEventsToday:'No events today', noTasksToday:'No tasks today', noHabitsYet:'No habits yet',
     noEvents:'No events', noTasks:'No tasks', noHabits:'No habits',
@@ -1126,7 +1180,7 @@ const STRINGS = {
     retryBtn:'Retry'
   },
   fa: {
-    today:'امروز', calendar:'تقویم', menu:'منو',
+    today:'امروز', calendar:'تقویم', menu:'منو', backToToday:'بازگشت به امروز',
     events:'رویدادها', tasks:'کارها', habits:'عادت‌ها',
     noEventsToday:'رویدادی برای امروز نیست', noTasksToday:'کاری برای امروز نیست', noHabitsYet:'هنوز عادتی نیست',
     noEvents:'رویدادی نیست', noTasks:'کاری نیست', noHabits:'عادتی نیست',
@@ -1245,7 +1299,7 @@ const state = {
   monthDropdownOpen: false,
   yearDropdownOpen: false,
   editingId: null,
-  sectionExpanded: { tasks:false, habits:false },
+  sectionExpanded: { tasks:false, habits:false, events:false },
   popupSubView: null,   // null | 'calendar' | 'repeat' | 'notification'
   rangeDragStart: null,
   menuSubView: null,
@@ -1410,9 +1464,13 @@ function render(){
 function renderHome(){
   const d = state.homeDate;
   const {tasks, habits, events} = itemsForDate(d);
+  /* The overall progress-ring card is desktop-only now (mobile home
+     starts blank — see renderItemSections) — #page-home is shared markup
+     between both breakpoints, so this has to branch on viewport here
+     rather than via CSS alone. */
   return `
     ${renderHomeCalWidget()}
-    ${renderDayStatsCard(tasks, habits, events, d)}
+    ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
     ${renderItemSections(tasks, habits, events, d)}
   `;
 }
@@ -1528,6 +1586,7 @@ function renderHomeCalWidget(){
         <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
         <span class="cal-label" id="home-cal-year-label">${disp.yearLabel}</span>
         ${monthDropdown}${yearDropdown}
+        ${!sameDay(d, today) ? `<button type="button" class="back-today-btn" data-action="go-today">${t('backToToday')}</button>` : ''}
       </div>
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
       <div class="home-cal-grid-clip" id="home-cal-grid-clip">
@@ -1605,36 +1664,55 @@ function emptySectionHtml(type, hintKey){
     <button class="btn btn-outline btn-small" data-action="open-popup" data-type="${type}">${t('new' + type.charAt(0).toUpperCase() + type.slice(1))}</button>
   </div>`;
 }
+/* Mobile-only (<960px): a non-empty section gets a collapse triangle
+   that hides/shows its whole list (not just a truncated preview), and an
+   empty section is hidden outright — not even its title. Desktop keeps
+   the original behavior (empty-state card, toggle only past `limit`
+   items) untouched; #page-home is shared markup between both breakpoints,
+   so this has to branch on viewport here rather than via CSS alone. */
 function renderEventsSection(events){
   const sorted = sortEvents(events);
+  const isMobile = window.innerWidth < 960;
+  if(isMobile && !events.length) return '';
+  const expanded = state.sectionExpanded.events;
+  const showToggle = isMobile && events.length > 0;
+  const visible = isMobile ? (expanded ? sorted : []) : sorted;
   return `
-    <div class="section-title">${t('events')} <span class="count">${events.length}</span></div>
+    <div class="section-title">${t('events')} <span class="count">${events.length}</span>
+      ${showToggle ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="events">${ICONS.chevronDown}</button>` : ''}
+    </div>
     ${events.length
-      ? `<div class="events-scroll">${sorted.map(e=>eventCard(e)).join('')}</div>`
+      ? `<div class="events-scroll">${visible.map(e=>eventCard(e)).join('')}</div>`
       : emptySectionHtml('event', 'noEventsToday')}
   `;
 }
 function renderTasksSection(tasks){
   const sorted = [...tasks].sort((a,b) => (b.pinned - a.pinned) || (a.done - b.done));
+  const isMobile = window.innerWidth < 960;
+  if(isMobile && !tasks.length) return '';
   const limit = 3;
   const expanded = state.sectionExpanded.tasks;
-  const visible = expanded ? sorted : sorted.slice(0, limit);
   const hasMore = sorted.length > limit;
+  const visible = isMobile ? (expanded ? sorted : []) : (expanded ? sorted : sorted.slice(0, limit));
+  const showToggle = isMobile ? tasks.length > 0 : hasMore;
   return `
     <div class="section-title">${t('tasks')} <span class="count">${tasks.length}</span>
-      ${hasMore ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="tasks">${ICONS.chevronDown}</button>` : ''}
+      ${showToggle ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="tasks">${ICONS.chevronDown}</button>` : ''}
     </div>
     ${tasks.length ? visible.map(t=>taskRow(t)).join('') : emptySectionHtml('task', 'noTasksToday')}
   `;
 }
 function renderHabitsSection(habits, date){
+  const isMobile = window.innerWidth < 960;
+  if(isMobile && !habits.length) return '';
   const limit = 2;
   const expanded = state.sectionExpanded.habits;
-  const visible = expanded ? habits : habits.slice(0, limit);
   const hasMore = habits.length > limit;
+  const visible = isMobile ? (expanded ? habits : []) : (expanded ? habits : habits.slice(0, limit));
+  const showToggle = isMobile ? habits.length > 0 : hasMore;
   return `
     <div class="section-title">${t('habits')} <span class="count">${habits.length}</span>
-      ${hasMore ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="habits">${ICONS.chevronDown}</button>` : ''}
+      ${showToggle ? `<button class="section-toggle ${expanded?'open':''}" data-action="toggle-section" data-section="habits">${ICONS.chevronDown}</button>` : ''}
     </div>
     ${habits.length ? visible.map(h=>habitRow(h,date)).join('') : emptySectionHtml('habit', 'noHabitsYet')}
   `;
@@ -1758,16 +1836,11 @@ function renderMenu(){
   return renderMenuHome();
 }
 function renderMenuHome(){
+  /* Profile/Store/Management moved out to their own mobile bottom-bar
+     buttons (see #profile-fab / #nav-capsule) — this hamburger-triggered
+     list only carries what's left over. */
   return `
     <div class="app-header"><h1>${t('menu')}</h1></div>
-    <div class="menu-row" data-action="menu-nav" data-sub="profile">
-      <div class="menu-avatar">${initials(state.profile.name)}</div>
-      <div class="menu-row-text">
-        <div class="menu-row-title">${escapeHtml(state.profile.name)}</div>
-        <div class="menu-row-sub">${t('viewProfile')}</div>
-      </div>
-      ${ICONS.chevronRightSmall}
-    </div>
     <div class="menu-list">
       <div class="menu-item-row" data-action="menu-nav" data-sub="share">
         <div class="menu-item-icon">${ICONS.shareIcon}</div><div class="menu-item-label">${t('shareApp')}</div>${ICONS.chevronRightSmall}
@@ -1777,12 +1850,6 @@ function renderMenuHome(){
       </div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings">
         <div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('settings')}</div>${ICONS.chevronRightSmall}
-      </div>
-      <div class="menu-item-row" data-action="menu-nav" data-sub="store">
-        <div class="menu-item-icon">${ICONS.storeIcon}</div><div class="menu-item-label">${t('store')}</div>${ICONS.chevronRightSmall}
-      </div>
-      <div class="menu-item-row" data-action="menu-nav" data-sub="admin">
-        <div class="menu-item-icon">${ICONS.manageIcon}</div><div class="menu-item-label">${t('adminPanel')}</div>${ICONS.chevronRightSmall}
       </div>
     </div>
   `;
@@ -2429,18 +2496,33 @@ function updateNav(){
   document.getElementById('fab-menu').classList.toggle('show', state.navExpanded);
   document.getElementById('fab-menu').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
 
-  const avatarBtn = document.getElementById('desktop-avatar-btn');
-  if(state.profile.photo){
-    avatarBtn.style.backgroundImage = `url('${state.profile.photo}')`;
-    avatarBtn.textContent = '';
-  } else {
-    avatarBtn.style.backgroundImage = 'none';
-    avatarBtn.textContent = initials(state.profile.name);
-  }
+  [document.getElementById('desktop-avatar-btn'), document.getElementById('profile-fab')].forEach(avatarBtn => {
+    if(state.profile.photo){
+      avatarBtn.style.backgroundImage = `url('${state.profile.photo}')`;
+      avatarBtn.textContent = '';
+    } else {
+      avatarBtn.style.backgroundImage = 'none';
+      avatarBtn.textContent = initials(state.profile.name);
+    }
+  });
+
+  /* Mobile-only: '+' doesn't make sense while browsing Store/Management
+     (reached via the capsule next to this same button), so it swaps to a
+     "back to today" control there instead of opening the add-menu — see
+     the click handler in initFabAndMenuInteractions() for the behavior. */
+  const fab = document.getElementById('fab-add');
+  const inStoreOrAdmin = state.menuPanelOpen && (state.menuSubView === 'store' || state.menuSubView === 'admin');
+  fab.setAttribute('aria-label', inStoreOrAdmin ? 'Calendar' : 'Add');
+  fab.innerHTML = inStoreOrAdmin ? ICONS.calendarIcon
+    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>';
 }
 
 function initFabAndMenuInteractions(){
   document.getElementById('fab-add').addEventListener('click', () => {
+    if(state.menuPanelOpen && (state.menuSubView === 'store' || state.menuSubView === 'admin')){
+      state.menuPanelOpen = false; render();
+      return;
+    }
     state.navExpanded = !state.navExpanded;
     render();
   });
@@ -3084,6 +3166,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'close-day-sheet'){ state.daySheetOpen = false; render(); return; }
   if(action === 'retry-boot'){ boot(); return; }
+  if(action === 'go-today'){ state.homeDate = new Date(today); render(); return; }
 });
 /* role="checkbox" divs (task/habit toggles) have no native Enter/Space
    activation the way a <button> would, so wire it up manually. They can't
