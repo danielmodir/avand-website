@@ -124,6 +124,41 @@
 
   function hasSession() { return !!loadSession(); }
 
+  // ---- Google OAuth (redirect flow, no SDK) ---------------------------------
+  // signInWithGoogle() sends the whole page to Google via Supabase's /authorize
+  // endpoint; Google sends it back to Supabase's own /callback, which then
+  // redirects here with the session in the URL fragment. consumeOAuthRedirect()
+  // picks that up on the next load — call it before checking hasSession().
+  function signInWithGoogle() {
+    var redirectTo = global.location.origin + global.location.pathname;
+    global.location.href = SUPABASE_URL + '/auth/v1/authorize?provider=google'
+      + '&apikey=' + encodeURIComponent(SUPABASE_ANON_KEY)
+      + '&redirect_to=' + encodeURIComponent(redirectTo);
+  }
+  function parseJwtSub(token) {
+    try {
+      var payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      var json = decodeURIComponent(Array.prototype.map.call(atob(payload), function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(json).sub;
+    } catch (e) { return null; }
+  }
+  function consumeOAuthRedirect() {
+    var hash = global.location.hash;
+    if (!hash || hash.indexOf('access_token') === -1) return false;
+    var params = new URLSearchParams(hash.slice(1));
+    var access_token = params.get('access_token');
+    var refresh_token = params.get('refresh_token');
+    var sub = access_token && parseJwtSub(access_token);
+    // Strip the token hash from the URL either way, so it never lingers in
+    // history/address bar — even on failure, nothing usable was left behind.
+    history.replaceState(null, '', global.location.pathname + global.location.search);
+    if (!access_token || !sub) return false;
+    storeSession({ access_token: access_token, refresh_token: refresh_token, user: { id: sub } });
+    return true;
+  }
+
   // ---- generic REST helpers -------------------------------------------------
   async function restGet(table, query) {
     var res = await authFetch('/rest/v1/' + table + (query || ''));
@@ -263,6 +298,8 @@
     hasSession: hasSession,
     signUp: signUp,
     signIn: signIn,
+    signInWithGoogle: signInWithGoogle,
+    consumeOAuthRedirect: consumeOAuthRedirect,
     signOut: signOut,
     loadAll: loadAll,
     saveTask: saveTask, deleteTask: deleteTask,

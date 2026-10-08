@@ -226,6 +226,17 @@
   }
   .menu-panel-close svg{ width:14px; height:14px; }
   .device.lang-fa .menu-panel-close{ right:auto; left:14px; }
+  /* Desktop-only: toggles #page-menu between the inset (equal top/bottom
+     margin) card and the old full-height panel. Mobile's panel is
+     already full-screen, so this stays hidden there. */
+  .menu-maximize-btn{
+    display:none; position:absolute; top:14px; right:58px; z-index:2; width:34px; height:34px;
+    border-radius:50%; background:var(--bg-soft); color:var(--text-muted); border:none;
+    cursor:pointer;
+  }
+  .menu-maximize-btn svg{ width:14px; height:14px; transition:transform .2s ease; }
+  .device.menu-maximized .menu-maximize-btn svg{ transform:rotate(180deg); }
+  .device.lang-fa .menu-maximize-btn{ right:auto; left:58px; }
 
   /* ===== desktop-only right-edge menu rail (hidden on mobile) ===== */
   .rail-cluster{ display:none; }
@@ -748,17 +759,22 @@
        language (unlike the mobile hamburger, which flips sides) — the
        .lang-fa override here reclaims that from the base rule, which
        has higher specificity because it carries two classes. */
+    /* Equal top/bottom margin by default (not flush edge-to-edge) — a
+       maximize toggle (menu-maximize-btn) switches to the old full-height
+       behavior. Plain slide, no scale — same reasoning as the mobile
+       panel's animation (SPEC.md): scale+opacity read as a separate
+       screen popping in on top, not a panel sliding into place. */
     #page-menu{
-      display:block; position:fixed; top:0; bottom:0; left:auto; right:0; z-index:70;
-      width:420px; max-width:90vw; height:100vh; overflow-y:auto;
+      display:block; position:fixed; top:40px; bottom:40px; left:auto; right:0; z-index:70;
+      width:420px; max-width:90vw; height:auto; overflow-y:auto;
       background:var(--card); box-shadow:var(--shadow); padding:64px 24px 28px 24px;
-      transform-origin:top right;
-      transform:translateX(100%) scale(0.9); opacity:0.5;
-      transition:transform .38s cubic-bezier(.34,1.56,.64,1), opacity .28s ease;
+      border-radius:20px 0 0 20px;
+      transform:translateX(100%);
+      transition:transform .32s cubic-bezier(.4,0,.2,1), top .25s ease, bottom .25s ease, border-radius .25s ease;
       pointer-events:none;
     }
-    .device.lang-fa #page-menu{ transform-origin:top right; transform:translateX(100%) scale(0.9); }
-    .device.show-menu #page-menu{ transform:translateX(0) scale(1); opacity:1; pointer-events:auto; }
+    .device.show-menu #page-menu{ transform:translateX(0); pointer-events:auto; }
+    .device.menu-maximized #page-menu{ top:0; bottom:0; border-radius:0; }
     .menu-overlay{
       display:block; position:fixed; inset:0; z-index:65; background:var(--overlay);
       opacity:0; pointer-events:none; transition:opacity .32s ease;
@@ -792,7 +808,18 @@
        (see .menu-rail) plus the floating add button. */
     .profile-fab{ display:none; }
     .nav-capsule{ display:none; }
-    .back-today-btn{ display:none; }
+    /* Shown below the calendar column instead of above a bottom bar (there
+       isn't one on desktop) — position (left/top) is set in updateNav()
+       from #page-calendar's measured rect, since the column sits inside a
+       centered, max-width-capped grid with no fixed offset to key off in
+       CSS alone. */
+    .back-today-btn{ bottom:auto; }
+    /* The Task/Habit/Event quick-add list opens to the FAB's left here
+       instead of stacking above it — same card style, just the popup
+       direction changes. */
+    .fab-menu{ bottom:28px; right:92px; transform:translateX(10px); }
+    .fab-menu.show{ transform:translateX(0); }
+    .menu-maximize-btn{ display:flex; align-items:center; justify-content:center; }
     .desktop-avatar-btn{
       display:flex; align-items:center; justify-content:center;
       position:fixed; top:18px; right:24px; z-index:42;
@@ -806,16 +833,17 @@
       position:fixed; top:50%; right:0; transform:translateY(-50%); z-index:40;
     }
     .menu-rail{
-      display:flex; flex-direction:column; align-items:center; gap:10px;
-      background:var(--nav-bg); padding:16px 10px; border-radius:20px 0 0 20px;
-      box-shadow:var(--shadow);
+      display:flex; flex-direction:column; align-items:stretch;
+      background:var(--card); border:1px solid var(--border); border-radius:999px;
+      box-shadow:var(--shadow); overflow:hidden; margin-inline-end:14px;
     }
     .menu-rail button{
-      width:42px; height:42px; border-radius:50%; border:none; background:none;
+      width:50px; height:50px; border:none; background:none;
       color:var(--nav-icon); display:flex; align-items:center; justify-content:center;
       cursor:pointer; transition:color .2s ease, background .2s ease;
     }
-    .menu-rail button svg{ width:18px; height:18px; }
+    .menu-rail button:first-child{ border-bottom:1px solid var(--border); }
+    .menu-rail button svg{ width:19px; height:19px; }
     .menu-rail button:hover{ background:rgba(255,255,255,0.06); color:var(--primary); }
 
     .auth-screen{
@@ -894,20 +922,12 @@
        (own element/class, gap from the rail — not the FAB below, which
        was getting visually confused for a second, broken Add button).
        Add stays its own floating button, apart from both. -->
+  <!-- Desktop-only: Store + Management, same as the mobile capsule next to
+       profile-fab — Connections/Share/About/Settings all moved inside the
+       Profile page itself (see renderProfilePage), same on both
+       breakpoints, so they're not duplicated here anymore either. -->
   <div class="rail-cluster" id="rail-cluster">
     <div class="menu-rail" id="menu-rail">
-      <button type="button" data-action="open-menu" data-sub="friends" title="Connections" aria-label="Connections">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-3.3 0-8 1.7-8 5v2h16v-2c0-3.3-4.7-5-8-5zm9-6a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm0 2c-.9 0-1.9.14-2.8.4 1.7 1.1 2.8 2.6 2.8 4.6v2h6v-2c0-2.8-3.6-5-6-5z"/></svg>
-      </button>
-      <button type="button" data-action="open-menu" data-sub="share" title="Share" aria-label="Share">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.1a3 3 0 0 0-2.1.9l-6.2-3.6c.06-.26.1-.53.1-.8s-.04-.54-.1-.8l6.1-3.56c.6.55 1.38.86 2.2.86a3 3 0 1 0-3-3c0 .27.04.53.1.79L8.9 10.4A3 3 0 1 0 7 16c.83 0 1.6-.32 2.2-.86l6.2 3.62c-.06.24-.1.5-.1.74a2.9 2.9 0 1 0 2.9-3.4z"/></svg>
-      </button>
-      <button type="button" data-action="open-menu" data-sub="about" title="About" aria-label="About">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-      </button>
-      <button type="button" data-action="open-menu" data-sub="settings" title="Settings" aria-label="Settings">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-      </button>
       <button type="button" data-action="open-menu" data-sub="store" title="Store" aria-label="Store">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg>
       </button>
@@ -1340,6 +1360,7 @@ const state = {
   daySheetDate: new Date(today),
   navExpanded: false,   // true while the FAB's Task/Habit/Event mini-menu is open
   menuPanelOpen: false, // true while the Menu overlay/side-panel is open
+  menuMaximized: false, // desktop-only: full-height panel vs the inset card
   homeCalExpanded: false, // mobile merged widget: false = week strip, true = month grid
   popupOpen: false,
   popupType: null,
@@ -1489,10 +1510,12 @@ function render(){
   document.getElementById('page-home').innerHTML = renderHome();
   document.getElementById('page-menu').innerHTML =
     `<button class="menu-panel-close" data-action="close-menu-overlay" aria-label="Close">${ICONS.close}</button>` +
+    `<button class="menu-maximize-btn" data-action="toggle-menu-maximize" aria-label="Maximize">${ICONS.chevronDown}</button>` +
     `<div class="menu-panel-content">${renderMenu()}</div>`;
   document.getElementById('page-menu').classList.toggle('leave-bottom-bar', state.menuSubView !== 'profile');
   document.getElementById('page-calendar').classList.toggle('no-scroll', state.calMode === 'month');
   document.getElementById('device').classList.toggle('show-menu', state.menuPanelOpen);
+  document.getElementById('device').classList.toggle('menu-maximized', state.menuMaximized);
 
   updateNav();
   renderDaySheet();
@@ -2600,6 +2623,13 @@ function updateNav(){
   const backBtn = document.getElementById('back-today-btn');
   backBtn.textContent = t('backToToday');
   backBtn.classList.toggle('show', !sameDay(state.homeDate, today));
+  if(window.innerWidth >= 960){
+    const calRect = document.getElementById('page-calendar').getBoundingClientRect();
+    backBtn.style.left = (calRect.left + calRect.width / 2) + 'px';
+    backBtn.style.top = (calRect.bottom + 16) + 'px';
+  } else {
+    backBtn.style.left = ''; backBtn.style.top = '';
+  }
 }
 
 function initFabAndMenuInteractions(){
@@ -3060,6 +3090,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'close-menu-overlay'){ state.menuPanelOpen = false; render(); return; }
+  if(action === 'toggle-menu-maximize'){ state.menuMaximized = !state.menuMaximized; render(); return; }
   if(action === 'pick-home-day'){
     /* Picking a date no longer force-collapses Monthly back to the week
        strip — it only collapses via the handle/drag now (per spec). */
@@ -3138,10 +3169,7 @@ document.getElementById('device').addEventListener('click', (e) => {
       .finally(() => { authBusy = false; render(); });
     return;
   }
-  if(action === 'auth-google'){
-    showToast(t('googleNotAvailable'));
-    return;
-  }
+  if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }
   if(action === 'remove-profile-photo'){ state.profile.photo = null; Cloud.saveProfile(state.profile).catch(()=>{}); render(); return; }
   if(action === 'set-gender'){ state.profile.gender = el.dataset.val; Cloud.saveProfile(state.profile).catch(()=>{}); render(); return; }
   if(action === 'copy-user-id'){
