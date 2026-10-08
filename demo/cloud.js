@@ -232,11 +232,10 @@
   // ---- connections (real: server-side RPCs, not client-trusted writes) -----
   async function rpc(name, params) {
     var res = await authFetch('/rest/v1/rpc/' + name, { method: 'POST', body: JSON.stringify(params || {}) });
-    if (!res.ok) {
-      var body = await res.json().catch(function () { return {}; });
-      throw new Error(body.message || 'Request failed');
-    }
-    return res.json();
+    var text = await res.text();
+    var body = text ? JSON.parse(text) : null; // void-returning functions (e.g. send_connection_request) come back 204/empty
+    if (!res.ok) throw new Error((body && body.message) || 'Request failed');
+    return body;
   }
   function searchUser(query) { return rpc('search_user', { q: query }); }
   function sendConnectionRequest(targetId) { return rpc('send_connection_request', { target: targetId }); }
