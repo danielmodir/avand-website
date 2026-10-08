@@ -2538,9 +2538,14 @@ function initFabAndMenuInteractions(){
    back the instant the user scrolls again (desktop keeps it always on,
    per spec — "طبق طراحی فعلی"). */
 let fabHideTimer = null;
+/* Profile circle + Store/Management capsule sit in the same bottom bar
+   as the Add FAB now, so they hide/show together with it — otherwise
+   the FAB would slide away while its neighbors stayed put. */
 function showFab(){
   document.getElementById('fab-add').classList.remove('hidden-fab');
   document.getElementById('fab-menu').classList.remove('hidden-fab');
+  document.getElementById('profile-fab').classList.remove('hidden-fab');
+  document.getElementById('nav-capsule').classList.remove('hidden-fab');
 }
 function scheduleFabHide(){
   if(window.innerWidth >= 960){ showFab(); return; }
@@ -2550,6 +2555,8 @@ function scheduleFabHide(){
     if(state.navExpanded) return; // don't hide while its own mini-menu is open
     document.getElementById('fab-add').classList.add('hidden-fab');
     document.getElementById('fab-menu').classList.add('hidden-fab');
+    document.getElementById('profile-fab').classList.add('hidden-fab');
+    document.getElementById('nav-capsule').classList.add('hidden-fab');
   }, 5000);
 }
 function initFabAutoHide(){
