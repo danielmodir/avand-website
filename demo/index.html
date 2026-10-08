@@ -1760,30 +1760,18 @@ function eventCard(e){
 }
 
 /* ============ SHARED COLLAPSIBLE SECTIONS ============ */
-/* Empty sections render nothing at all now (not even a title + "no X"
-   hint) — an empty Dashboard should look clean, not like three
-   placeholders stacked on top of each other. */
-/* Empty-state markup for a section — friendly line + a CTA straight into
-   the add form for that type. Section 34 of the Oct 2026 site brief
-   explicitly wants these visible (not hidden), overriding an earlier,
-   explicit decision this same prototype had (hide Task/Habit/Event
-   sections entirely when empty) — see SPEC.md §11.9 for that history. */
-function emptySectionHtml(type, hintKey){
-  return `<div class="empty-hint empty-section-hint">
-    <p>${t(hintKey)}</p>
-    <button class="btn btn-outline btn-small" data-action="open-popup" data-type="${type}">${t('new' + type.charAt(0).toUpperCase() + type.slice(1))}</button>
-  </div>`;
-}
-/* Mobile-only (<960px): a non-empty section gets a collapse triangle
-   that hides/shows its whole list (not just a truncated preview), and an
-   empty section is hidden outright — not even its title. Desktop keeps
-   the original behavior (empty-state card, toggle only past `limit`
-   items) untouched; #page-home is shared markup between both breakpoints,
-   so this has to branch on viewport here rather than via CSS alone. */
+/* An empty section renders nothing at all — not even a title — on both
+   breakpoints now (desktop used to keep a "no X yet" + CTA card per an
+   earlier decision, see SPEC.md §11.9; dropped on request so both
+   breakpoints match). Mobile-only: a non-empty section also gets a
+   collapse triangle that hides/shows its whole list (not just a
+   truncated preview); desktop keeps the truncate-past-`limit` toggle.
+   #page-home is shared markup between both breakpoints, so this has to
+   branch on viewport here rather than via CSS alone. */
 function renderEventsSection(events){
   const sorted = sortEvents(events);
   const isMobile = window.innerWidth < 960;
-  if(isMobile && !events.length) return '';
+  if(!events.length) return '';
   const collapsed = state.sectionCollapsed.events;
   const showToggle = isMobile && events.length > 0;
   const visible = isMobile ? (collapsed ? [] : sorted) : sorted;
@@ -1792,15 +1780,13 @@ function renderEventsSection(events){
     <div class="section-title">${t('events')} <span class="count">${events.length}</span>
       ${showToggle ? `<button class="section-toggle ${open?'open':''}" data-action="toggle-section" data-section="events">${ICONS.chevronDown}</button>` : ''}
     </div>
-    ${events.length
-      ? `<div class="events-scroll">${visible.map(e=>eventCard(e)).join('')}</div>`
-      : emptySectionHtml('event', 'noEventsToday')}
+    <div class="events-scroll">${visible.map(e=>eventCard(e)).join('')}</div>
   `;
 }
 function renderTasksSection(tasks){
   const sorted = [...tasks].sort((a,b) => (b.pinned - a.pinned) || (a.done - b.done));
   const isMobile = window.innerWidth < 960;
-  if(isMobile && !tasks.length) return '';
+  if(!tasks.length) return '';
   const limit = 3;
   const expanded = state.sectionExpanded.tasks;
   const collapsed = state.sectionCollapsed.tasks;
@@ -1812,12 +1798,12 @@ function renderTasksSection(tasks){
     <div class="section-title">${t('tasks')} <span class="count">${tasks.length}</span>
       ${showToggle ? `<button class="section-toggle ${open?'open':''}" data-action="toggle-section" data-section="tasks">${ICONS.chevronDown}</button>` : ''}
     </div>
-    ${tasks.length ? visible.map(t=>taskRow(t)).join('') : emptySectionHtml('task', 'noTasksToday')}
+    ${visible.map(t=>taskRow(t)).join('')}
   `;
 }
 function renderHabitsSection(habits, date){
   const isMobile = window.innerWidth < 960;
-  if(isMobile && !habits.length) return '';
+  if(!habits.length) return '';
   const limit = 2;
   const expanded = state.sectionExpanded.habits;
   const collapsed = state.sectionCollapsed.habits;
@@ -1829,7 +1815,7 @@ function renderHabitsSection(habits, date){
     <div class="section-title">${t('habits')} <span class="count">${habits.length}</span>
       ${showToggle ? `<button class="section-toggle ${open?'open':''}" data-action="toggle-section" data-section="habits">${ICONS.chevronDown}</button>` : ''}
     </div>
-    ${habits.length ? visible.map(h=>habitRow(h,date)).join('') : emptySectionHtml('habit', 'noHabitsYet')}
+    ${visible.map(h=>habitRow(h,date)).join('')}
   `;
 }
 function renderItemSections(tasks, habits, events, date){
