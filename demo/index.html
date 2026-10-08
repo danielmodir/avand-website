@@ -144,7 +144,11 @@
   /* Bottom bar (FAB/profile/capsule) stays visible behind the panel for
      every section except Profile, which still covers the full screen —
      set via JS (render()) since it depends on state.menuSubView. */
-  #page-menu.leave-bottom-bar{ bottom:96px; border-radius:0 0 24px 24px; }
+  /* height, not bottom: #page-menu also carries the shared .page class,
+     which sets height:100% — with top/height/bottom all non-auto at
+     once the box is over-constrained and the browser recomputes bottom
+     from top+height anyway, silently ignoring a bottom override here. */
+  #page-menu.leave-bottom-bar{ height:calc(100% - 96px); border-radius:0 0 24px 24px; }
   /* Content settles in just after the panel shape itself does — "shell
      first, then content", instead of everything appearing at once. */
   .menu-panel-content{
@@ -1318,7 +1322,7 @@ function t(key){ return (STRINGS[lang()] || STRINGS.en)[key] || key; }
 const tr = t;
 function applyLanguageDom(){
   document.documentElement.setAttribute('lang', lang()==='fa' ? 'fa' : 'en');
-  document.body.style.fontFamily = lang()==='fa' ? "'Vazirmatn','Inter',system-ui,Tahoma,sans-serif" : "'Inter','Vazirmatn',system-ui,sans-serif";
+  document.body.style.fontFamily = lang()==='fa' ? "'SG Kara','Inter',system-ui,Tahoma,sans-serif" : "'Inter','SG Kara',system-ui,sans-serif";
   document.getElementById('device').classList.toggle('lang-fa', lang()==='fa');
 }
 
