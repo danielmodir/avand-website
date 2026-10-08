@@ -167,8 +167,8 @@
     return obj;
   }
 
-  var TASK_MAP = { title: 'title', category: 'category', description: 'description', photos: 'photos', pinned: 'pinned', done: 'done', subtasks: 'subtasks', timeMode: 'time_mode', date: 'date', endDate: 'end_date', recurrence: 'recurrence', notification: 'notification' };
-  var HABIT_MAP = { title: 'title', recurrence: 'recurrence', notification: 'notification', startDate: 'start_date', completedDates: 'completed_dates' };
+  var TASK_MAP = { title: 'title', category: 'category', description: 'description', photos: 'photos', pinned: 'pinned', done: 'done', skipped: 'skipped', subtasks: 'subtasks', timeMode: 'time_mode', date: 'date', endDate: 'end_date', recurrence: 'recurrence', notification: 'notification' };
+  var HABIT_MAP = { title: 'title', recurrence: 'recurrence', notification: 'notification', startDate: 'start_date', completedDates: 'completed_dates', skippedDates: 'skipped_dates' };
   var EVENT_MAP = { title: 'title', timeMode: 'time_mode', date: 'date', endDate: 'end_date', recurrence: 'recurrence', notification: 'notification' };
   var PROFILE_MAP = { firstName: 'first_name', lastName: 'last_name', username: 'username', email: 'email', phone: 'phone', gender: 'gender', dob: 'dob', photo: 'photo_url' };
   var SETTINGS_MAP = { notifications: 'notifications', weekStartDay: 'week_start_day', showAddMenuLabels: 'show_add_menu_labels', language: 'language', calendarSystem: 'calendar_system' };

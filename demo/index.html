@@ -150,15 +150,15 @@
 
   /* ===== floating add button (replaces the old hold-to-open bottom nav) ===== */
   .fab-add{
-    position:absolute; bottom:24px; right:20px; z-index:50; width:54px; height:54px;
+    position:absolute; bottom:28px; right:20px; z-index:50; width:46px; height:46px;
     border-radius:50%; background:var(--primary); color:#fff; border:none;
     box-shadow:0 6px 18px rgba(50,130,184,0.45); display:flex; align-items:center;
     justify-content:center; cursor:pointer; transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
   }
-  .fab-add svg{ width:22px; height:22px; transition:transform .2s ease; }
+  .fab-add svg{ width:20px; height:20px; transition:transform .2s ease; }
   .fab-add.active svg{ transform:rotate(45deg); }
   .fab-menu{
-    position:absolute; bottom:88px; right:20px; z-index:50; display:flex;
+    position:absolute; bottom:80px; right:20px; z-index:50; display:flex;
     flex-direction:column; align-items:stretch; gap:8px; opacity:0; pointer-events:none;
     transform:translateY(10px); transition:opacity .2s ease, transform .2s ease;
   }
@@ -172,23 +172,23 @@
      place, never hidden. These three are the only way into
      Profile/Store/Management on mobile now. ===== */
   .profile-fab{
-    position:absolute; bottom:24px; left:20px; z-index:50; width:54px; height:54px;
+    position:absolute; bottom:28px; left:20px; z-index:50; width:46px; height:46px;
     border-radius:50%; background:var(--primary); color:#fff; border:none;
-    font-weight:700; font-size:16px; display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;
     cursor:pointer; background-size:cover; background-position:center;
     box-shadow:0 6px 18px rgba(50,130,184,0.45);
   }
   .nav-capsule{
-    position:absolute; bottom:33px; left:50%; transform:translateX(-50%); z-index:50;
+    position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:50;
     display:flex; background:var(--card); border:1px solid var(--border); border-radius:999px;
     box-shadow:var(--shadow); overflow:hidden;
   }
   .nav-capsule button{
-    width:46px; height:36px; border:none; background:transparent; color:var(--text-muted);
+    width:50px; height:46px; border:none; background:transparent; color:var(--text-muted);
     display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
   .nav-capsule button:first-child{ border-inline-end:1px solid var(--border); }
-  .nav-capsule button svg{ width:18px; height:18px; }
+  .nav-capsule button svg{ width:19px; height:19px; }
 
   /* ===== merged calendar+home widget (mobile only) =====
      Collapsed = this week as a 7-day strip. Expanded = full month grid,
@@ -252,16 +252,14 @@
   .stat-mini b{ color:var(--text); font-weight:700; margin-inline-start:auto; }
   .stat-dot{ width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
 
-  /* Stagger-in for agenda lists — each row fades/slides up slightly later
-     than the one before it, instead of the whole list popping in at once. */
+  /* No entrance animation on .item-card/.event-card on purpose —
+     #page-home's lists are fully rebuilt on every render (including just
+     switching days), so a fade/slide-in on every row read as the page
+     "reloading" each time, and briefly showed the red .swipe-delete-bg
+     through the fading opacity underneath each card. The keyframe itself
+     stays for .period-quiz-step below, a one-time flow that doesn't
+     re-render this way. */
   @keyframes stagger-in{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
-  .item-card, .event-card{ animation:stagger-in .32s cubic-bezier(.4,0,.2,1) both; }
-  .item-card:nth-child(1), .event-card:nth-child(1){ animation-delay:0ms; }
-  .item-card:nth-child(2), .event-card:nth-child(2){ animation-delay:40ms; }
-  .item-card:nth-child(3), .event-card:nth-child(3){ animation-delay:80ms; }
-  .item-card:nth-child(4), .event-card:nth-child(4){ animation-delay:120ms; }
-  .item-card:nth-child(5), .event-card:nth-child(5){ animation-delay:160ms; }
-  .item-card:nth-child(n+6), .event-card:nth-child(n+6){ animation-delay:200ms; }
   .item-card{ background:var(--card); border-radius:16px; padding:14px; margin-bottom:10px; border:1px solid var(--border); display:flex; align-items:center; gap:12px; }
   .item-card.done{opacity:0.5;}
   .item-card.task-row{ padding:9px 14px; border-radius:24px; margin-bottom:8px; }
@@ -282,6 +280,10 @@
   .checkbox:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
   .checkbox:active{ transform:scale(0.85); }
   .checkbox.checked{background:var(--primary); animation:checkbox-pop .3s cubic-bezier(.34,1.56,.64,1); }
+  /* Explicitly marked "not done" via the long-press quickset (see
+     applyQuicksetState) — distinct from the plain empty/untouched state. */
+  .checkbox.skipped{background:var(--danger); border-color:var(--danger); animation:checkbox-pop .3s cubic-bezier(.34,1.56,.64,1); }
+  .checkbox.skipped svg{width:12px; height:12px; fill:#fff;}
   @keyframes checkbox-pop{ 0%{ transform:scale(0.7); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
   .item-card{ transition:transform .15s ease, opacity .3s ease; }
   .item-card:active{ transform:scale(0.985); }
@@ -290,6 +292,7 @@
   .item-title{ font-size:15px; font-weight:600; margin:0; flex:1; }
   .task-row .item-title{ font-size:14px; font-weight:500; }
   .item-card.done .item-title{ text-decoration:line-through; color:var(--text-muted); }
+  .item-card.skipped .item-title{ text-decoration:line-through; color:var(--danger); }
   .item-actions{display:flex; gap:6px;}
   .mini-btn{ width:28px; height:28px; border-radius:9px; border:1px solid var(--border); background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .mini-btn svg{width:14px; height:14px;}
@@ -302,12 +305,18 @@
 
   /* calendar */
   .cal-topbar{ position:relative; display:flex; align-items:baseline; justify-content:center; gap:10px; margin-bottom:18px; padding:6px 0; }
+  /* Mobile-only: sits just above the bottom bar (FAB/profile/capsule) —
+     static markup like the rest of that bar, so it can slide up into
+     place with a transition instead of just appearing/disappearing. */
   .back-today-btn{
-    position:absolute; top:4px; right:0; z-index:1;
+    position:absolute; bottom:84px; left:50%; z-index:49;
     background:var(--bg-soft); border:1px solid var(--border); color:var(--primary);
-    font-size:11px; font-weight:700; font-family:inherit; border-radius:999px;
-    padding:6px 12px; cursor:pointer;
+    font-size:12px; font-weight:700; font-family:inherit; border-radius:999px;
+    padding:8px 16px; cursor:pointer; box-shadow:var(--shadow);
+    transform:translate(-50%, 20px); opacity:0; pointer-events:none;
+    transition:transform .25s cubic-bezier(.4,0,.2,1), opacity .25s ease;
   }
+  .back-today-btn.show{ transform:translate(-50%,0); opacity:1; pointer-events:auto; }
   .cal-label{ font-size:22px; font-weight:800; cursor:pointer; touch-action:none; user-select:none; padding:4px 6px; border-radius:10px; text-align:center; }
   .cal-label:active{ background:var(--bg-soft); }
   #cal-month-label, #home-cal-month-label{ min-width:130px; }
@@ -489,7 +498,7 @@
   .swipe-wrap{ position:relative; overflow:hidden; border-radius:16px; margin-bottom:8px; touch-action:pan-y; }
   .swipe-wrap.task-wrap{ border-radius:24px; margin-bottom:8px; }
   .swipe-wrap .item-card{ margin-bottom:0; border-radius:inherit; position:relative; background:var(--card); }
-  .swipe-delete-bg{ position:absolute; inset:0; background:#D9534F; border-radius:inherit; display:flex; align-items:center; justify-content:flex-end; padding-right:20px; }
+  .swipe-delete-bg{ position:absolute; inset:0; background:#D9534F; border-radius:inherit; display:flex; align-items:center; justify-content:center; }
   .swipe-delete-bg svg{ width:17px; height:17px; fill:#fff; }
 
   /* event cards */
@@ -773,6 +782,7 @@
        (see .menu-rail) plus the floating add button. */
     .profile-fab{ display:none; }
     .nav-capsule{ display:none; }
+    .back-today-btn{ display:none; }
     .desktop-avatar-btn{
       display:flex; align-items:center; justify-content:center;
       position:fixed; top:18px; right:24px; z-index:42;
@@ -860,6 +870,9 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>
     </button>
   </div>
+  <!-- Mobile-only: shown (slides up) only while a non-today day is
+       selected — see render()'s toggle of the .show class below. -->
+  <button type="button" class="back-today-btn" id="back-today-btn" data-action="go-today"></button>
 
   <!-- Desktop-only: profile avatar near the top edge, opens the Profile
        panel directly (no detour through the menu root list) — the only
@@ -1612,7 +1625,6 @@ function renderHomeCalWidget(){
         <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
         <span class="cal-label" id="home-cal-year-label">${disp.yearLabel}</span>
         ${monthDropdown}${yearDropdown}
-        ${!sameDay(d, today) ? `<button type="button" class="back-today-btn" data-action="go-today">${t('backToToday')}</button>` : ''}
       </div>
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
       <div class="home-cal-grid-clip" id="home-cal-grid-clip">
@@ -1636,8 +1648,8 @@ function checkboxQuicksetHtml(){
 function taskRow(t){
   return `<div class="swipe-wrap task-wrap" data-swipe-type="task" data-swipe-id="${t.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
-    <div class="item-card task-row ${t.done?'done':''}">
-      <div class="checkbox ${t.done?'checked':''}" data-action="toggle-task" data-id="${t.id}" role="checkbox" aria-checked="${t.done}" aria-label="${escapeAttr(t.title)}" tabindex="0">${t.done?ICONS.check:''}${checkboxQuicksetHtml()}</div>
+    <div class="item-card task-row ${t.done?'done':''} ${t.skipped?'skipped':''}">
+      <div class="checkbox ${t.done?'checked':''} ${t.skipped?'skipped':''}" data-action="toggle-task" data-id="${t.id}" role="checkbox" aria-checked="${t.done}" aria-label="${escapeAttr(t.title)}" tabindex="0">${t.done?ICONS.check:t.skipped?ICONS.close:''}${checkboxQuicksetHtml()}</div>
       <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${t.id}">
         <p class="item-title">${escapeHtml(t.title)}</p>
       </div>
@@ -1648,10 +1660,11 @@ function taskRow(t){
 function habitRow(h, date){
   const key = dateKey(date);
   const checked = h.completedDates.includes(key);
+  const skipped = !checked && (h.skippedDates||[]).includes(key);
   return `<div class="swipe-wrap" data-swipe-type="habit" data-swipe-id="${h.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
-    <div class="item-card ${checked?'done':''}">
-      <div class="checkbox square ${checked?'checked':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}" role="checkbox" aria-checked="${checked}" aria-label="${escapeAttr(h.title)}" tabindex="0">${checked?ICONS.check:''}${checkboxQuicksetHtml()}</div>
+    <div class="item-card ${checked?'done':''} ${skipped?'skipped':''}">
+      <div class="checkbox square ${checked?'checked':''} ${skipped?'skipped':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}" role="checkbox" aria-checked="${checked}" aria-label="${escapeAttr(h.title)}" tabindex="0">${checked?ICONS.check:skipped?ICONS.close:''}${checkboxQuicksetHtml()}</div>
       <p class="item-title" data-action="edit-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}</p>
     </div>
   </div>`;
@@ -2539,6 +2552,10 @@ function updateNav(){
   fab.setAttribute('aria-label', inStoreOrAdmin ? 'Calendar' : 'Add');
   fab.innerHTML = inStoreOrAdmin ? ICONS.calendarIcon
     : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>';
+
+  const backBtn = document.getElementById('back-today-btn');
+  backBtn.textContent = t('backToToday');
+  backBtn.classList.toggle('show', !sameDay(state.homeDate, today));
 }
 
 function initFabAndMenuInteractions(){
@@ -3213,13 +3230,18 @@ function initCalendarWheelSwipe(){
    separate from the row's own swipe-to-delete gesture. Delegated once on
    #device (not per-row) so it keeps working after the scoped DOM patches
    in the toggle-task/habit handlers, which never re-render the row. */
-function applyQuicksetState(cb, wantDone){
+/* markSkipped is only ever true from the quickset's UNDONE button — an
+   explicit "not done" (red X + strikethrough), distinct from the plain
+   tap-to-toggle empty state. The three states this gives a task/habit:
+   done, explicitly-not-done, and (via swipe) deleted. */
+function applyQuicksetState(cb, wantDone, markSkipped){
   const action = cb.dataset.action;
+  const isSkipped = !!markSkipped && !wantDone;
   let isDone;
   if(action === 'toggle-task'){
     const item = state.tasks.find(x => x.id === cb.dataset.id);
     if(!item) return;
-    item.done = wantDone; isDone = wantDone;
+    item.done = wantDone; item.skipped = isSkipped; isDone = wantDone;
     Cloud.saveTask(item).catch(()=>{});
   } else if(action === 'toggle-habit'){
     const item = state.habits.find(x => x.id === cb.dataset.id);
@@ -3228,15 +3250,21 @@ function applyQuicksetState(cb, wantDone){
     const i = item.completedDates.indexOf(dk);
     if(wantDone && i < 0) item.completedDates.push(dk);
     else if(!wantDone && i >= 0) item.completedDates.splice(i, 1);
+    item.skippedDates = item.skippedDates || [];
+    const si = item.skippedDates.indexOf(dk);
+    if(isSkipped && si < 0) item.skippedDates.push(dk);
+    else if(!isSkipped && si >= 0) item.skippedDates.splice(si, 1);
     isDone = wantDone;
     Cloud.saveHabit(item).catch(()=>{});
   } else return;
   cb.classList.toggle('checked', isDone);
+  cb.classList.toggle('skipped', isSkipped);
   cb.setAttribute('aria-checked', isDone);
   const qs = cb.querySelector('.checkbox-quickset');
   qs?.classList.remove('show'); // always closes the popover, even when set via a qs button
-  cb.innerHTML = (isDone ? ICONS.check : '') + (qs ? qs.outerHTML : '');
+  cb.innerHTML = (isDone ? ICONS.check : isSkipped ? ICONS.close : '') + (qs ? qs.outerHTML : '');
   cb.closest('.item-card')?.classList.toggle('done', isDone);
+  cb.closest('.item-card')?.classList.toggle('skipped', isSkipped);
   updateDayStatsInPlace();
 }
 function attachCheckboxLongPress(){
@@ -3271,7 +3299,7 @@ function attachCheckboxLongPress(){
     if(qsBtn){
       e.stopPropagation();
       const cb = qsBtn.closest('.checkbox');
-      if(cb) applyQuicksetState(cb, qsBtn.dataset.qs === 'done');
+      if(cb) applyQuicksetState(cb, qsBtn.dataset.qs === 'done', true);
       return;
     }
     const cb = e.target.closest('.checkbox[data-action]');
@@ -3438,15 +3466,15 @@ function attachSwipeToDelete(container){
         isHorizontal = Math.abs(ddx) > Math.abs(ddy);
       }
       if(!isHorizontal) return;
-      dx = Math.min(0, ddx);
+      dx = ddx;
       fg.style.transform = `translateX(${dx}px)`;
     });
     const end = () => {
       if(!dragging) return;
       dragging = false;
       fg.style.transition = 'transform .22s ease';
-      if(isHorizontal && dx < -60){
-        fg.style.transform = 'translateX(-100%)';
+      if(isHorizontal && Math.abs(dx) > 60){
+        fg.style.transform = `translateX(${dx < 0 ? '-100%' : '100%'})`;
         fg.style.opacity = '0';
         setTimeout(() => {
           const type = wrap.dataset.swipeType, id = wrap.dataset.swipeId;
