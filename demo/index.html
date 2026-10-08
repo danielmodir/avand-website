@@ -2624,9 +2624,17 @@ function updateNav(){
   backBtn.textContent = t('backToToday');
   backBtn.classList.toggle('show', !sameDay(state.homeDate, today));
   if(window.innerWidth >= 960){
+    /* #page-calendar itself stretches to the full grid-row height (it
+       has height:100%, and the row is as tall as the taller of the two
+       columns), so its own rect.bottom sits near the bottom of the
+       whole device, not "under the calendar" the way it looks — measure
+       the rendered month grid instead, which is the last visual piece
+       of the calendar itself. */
+    const gridEl = document.querySelector('#page-calendar .month-grid');
     const calRect = document.getElementById('page-calendar').getBoundingClientRect();
+    const bottomRef = gridEl ? gridEl.getBoundingClientRect().bottom : calRect.bottom;
     backBtn.style.left = (calRect.left + calRect.width / 2) + 'px';
-    backBtn.style.top = (calRect.bottom + 16) + 'px';
+    backBtn.style.top = (bottomRef + 16) + 'px';
   } else {
     backBtn.style.left = ''; backBtn.style.top = '';
   }
