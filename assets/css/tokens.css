@@ -49,7 +49,7 @@
 
   /* Typography */
   --font-sans-latin: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-  --font-sans-fa: 'Vazirmatn', 'Inter', system-ui, Tahoma, sans-serif;
+  --font-sans-fa: 'SG Kara', 'Inter', system-ui, Tahoma, sans-serif;
 
   --font-size-xs: 0.8125rem;   /* 13px */
   --font-size-sm: 0.9375rem;   /* 15px */
@@ -154,9 +154,10 @@
 
 /*
   Self-hosted fonts (hard rule: no Google Fonts / CDN — CLAUDE.md).
-  Files live in assets/fonts/{inter,vazirmatn}/, fetched at build time from
-  each font's official open-source release (SIL OFL license — see the
-  LICENSE.txt next to each family). Zero runtime third-party requests.
+  Inter: assets/fonts/inter/, official open-source release (SIL OFL
+  license, see LICENSE.txt there). SG Kara: assets/fonts/sg-kara/,
+  provided directly by the project owner — see NOTE.txt there, no formal
+  license file came with it. Zero runtime third-party requests either way.
 */
 @font-face {
   font-family: 'Inter';
@@ -183,23 +184,11 @@
   src: url('../fonts/inter/Inter-ExtraBold.woff2') format('woff2');
   font-weight: 800; font-style: normal; font-display: swap;
 }
+/* Only one weight exists for this face (Light) — declared once at 400 so
+   normal text renders at its real weight; headings/bold text fall back to
+   the browser's synthesized (faux) bold rather than a true bold face. */
 @font-face {
-  font-family: 'Vazirmatn';
-  src: url('../fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+  font-family: 'SG Kara';
+  src: url('../fonts/sg-kara/SGKara-Light.woff2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Vazirmatn';
-  src: url('../fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
-  font-weight: 500; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Vazirmatn';
-  src: url('../fonts/vazirmatn/Vazirmatn-SemiBold.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Vazirmatn';
-  src: url('../fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
-  font-weight: 700; font-style: normal; font-display: swap;
 }

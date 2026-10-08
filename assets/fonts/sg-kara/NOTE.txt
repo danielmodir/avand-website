@@ -1,0 +1,11 @@
+SG Kara (weight: Light)
+
+Source: provided directly by the project owner (SGKara-Light.ttf), converted
+to SGKara-Light.woff2 for self-hosting per CLAUDE.md's font rule. The
+original zip included a credit graphic naming "قلموم، آکادمی آموزش گرافیک"
+(Ghalamoon, Graphic Design Education Academy) but no separate license file —
+unlike Inter/Vazirmatn, there's no LICENSE.txt here because none was
+provided. Confirm usage rights with that source before any public release.
+
+Only one weight (Light) exists. Bold/heading text in this weight range is
+browser-synthesized (faux-bold), not a true bold face.

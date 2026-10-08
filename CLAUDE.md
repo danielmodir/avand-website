@@ -8,12 +8,13 @@ Read the relevant doc before any big change.
 ## Hard rules
 - Plain HTML, CSS and vanilla JS. No frameworks, no npm packages, no build step.
 - ZERO external requests at runtime: no CDNs, no Google Fonts, no analytics, no
-  third-party scripts. Fonts (Vazirmatn, Inter) must be self-hosted in
-  /assets/fonts — never linked from Google Fonts or any CDN.
-  Status: the .woff2 files aren't in /assets/fonts yet, so tokens.css's
-  @font-face block is commented out and pages fall back to system fonts.
-  Uncomment it and drop the files in once they're added; don't add a CDN
-  link as a shortcut in the meantime.
+  third-party scripts. Fonts (SG Kara for fa, Inter for latin) must be
+  self-hosted in /assets/fonts — never linked from Google Fonts or any CDN.
+  Status (2026-10-08): both are live via tokens.css's @font-face block.
+  SG Kara replaced Vazirmatn at the repo owner's request — it only ships
+  one weight (Light), so bold/heading text in fa is browser-synthesized
+  faux-bold, not a true bold face; see assets/fonts/sg-kara/NOTE.txt for
+  provenance (no formal license file came with it, unlike Inter's OFL one).
 - Audience is in Iran on a slow, filtered network. Keep pages light (target: under
   300 KB per page excluding fonts). Prefer SVG or WebP, lazy-load images.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.

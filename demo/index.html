@@ -10,12 +10,45 @@
 <link rel="apple-touch-icon" href="../assets/icons/logo.svg">
 <style>
   /*
-    Self-hosted fonts are not in assets/fonts/ yet (see CLAUDE.md hard
-    rule: no Google Fonts/CDN). The original prototype loaded Inter +
-    Vazirmatn from fonts.googleapis.com — that link is removed and this
-    falls back to system fonts until the real .woff2 files are added,
-    same as the rest of the site (see tokens.css).
+    Self-hosted fonts (hard rule: no Google Fonts/CDN — CLAUDE.md). The
+    original prototype loaded Inter + Vazirmatn from fonts.googleapis.com;
+    that link was removed early on, but this file never actually declared
+    its own @font-face either (see tokens.css for the site's copy), so
+    'Inter' below was silently falling back to system-ui the whole time.
+    SG Kara (fa) replaced Vazirmatn at the repo owner's request — only one
+    weight (Light) exists, so bold/heading fa text is browser-synthesized
+    faux-bold; see assets/fonts/sg-kara/NOTE.txt for provenance.
   */
+  @font-face {
+    font-family: 'Inter';
+    src: url('../assets/fonts/inter/Inter-Regular.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Inter';
+    src: url('../assets/fonts/inter/Inter-Medium.woff2') format('woff2');
+    font-weight: 500; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Inter';
+    src: url('../assets/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+    font-weight: 600; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Inter';
+    src: url('../assets/fonts/inter/Inter-Bold.woff2') format('woff2');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Inter';
+    src: url('../assets/fonts/inter/Inter-ExtraBold.woff2') format('woff2');
+    font-weight: 800; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'SG Kara';
+    src: url('../assets/fonts/sg-kara/SGKara-Light.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
   :root{
     --bg:#1B262C;
     --bg-soft:#212F36;
@@ -49,15 +82,22 @@
     background:var(--bg);
     font-family:'Inter',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
     display:flex; align-items:center; justify-content:center;
-    min-height:100vh; color:var(--text);
+    min-height:100vh; min-height:100dvh; color:var(--text);
     box-sizing:border-box;
   }
+  .device.lang-fa{ font-family:'SG Kara','Inter',system-ui,Tahoma,sans-serif; }
   /* Full-bleed at every width — no phone-bezel chrome, no visible frame
      around the app, matching body background so there's no seam even
-     when centered under the desktop max-width below. Exactly 100vh so
-     the page itself never needs to scroll. */
+     when centered under the desktop max-width below. Exactly the real
+     viewport height so the page itself never needs to scroll — 100vh on
+     a real mobile browser is the height with the address bar collapsed,
+     taller than what's actually visible on load, which pushed the
+     bottom-fixed nav (FAB/profile/capsule, all positioned relative to
+     this element) below the fold until the user scrolled once. 100dvh
+     tracks the real visible height instead; the 100vh above it is just
+     the fallback for browsers that don't support dvh yet. */
   .device{
-    width:100%; height:100vh; background:var(--bg);
+    width:100%; height:100vh; height:100dvh; background:var(--bg);
     position:relative; overflow:hidden; border-radius:0; box-shadow:none;
   }
 
@@ -73,7 +113,12 @@
      cards stretch edge-to-edge on tablet-width screens, while the
      scrollable box itself stays full-width (so touch-scroll works
      right up to the screen edge). */
-  .page{ width:100%; height:100%; overflow-y:auto; padding:22px max(18px, calc((100% - 640px)/2)) 100px; scrollbar-width:none; }
+  /* overflow-x explicit, not left to its 'visible' default — with only
+     overflow-y set, the spec silently promotes the unset x-axis to
+     'auto' too, so any inner content even a px too wide (or a touch
+     that starts on the horizontal .events-scroll strip) could drag the
+     whole page sideways on a real phone. */
+  .page{ width:100%; height:100%; overflow-y:auto; overflow-x:hidden; padding:22px max(18px, calc((100% - 640px)/2)) 100px; scrollbar-width:none; }
   /* Without this, the browser's own rubber-band bounce at the top of
      #page-home fights the pull-to-expand-calendar gesture in
      initHomeScrollExpand() — the native bounce eats the first chunk of
