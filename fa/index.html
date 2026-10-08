@@ -20,6 +20,8 @@
 <meta name="twitter:description" content="آوند تسک، عادت و برنامه‌ی روزانه‌تون رو تو یک تقویم ساده کنار هم نگه می‌داره.">
 <meta name="twitter:image" content="https://avand.ir/assets/icons/og-image.svg">
 <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="../assets/fonts/vazirmatn/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/vazirmatn/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/site.css">
 </head>
@@ -44,8 +46,9 @@
     <section class="hero">
       <div class="hero-grid">
         <div class="hero-copy">
-          <h1>زمان و عادت‌هاتون، یک‌جا.</h1>
-          <p>آوند کار، عادت، رویداد و تقویم روزانه‌تون رو به‌جای چند اپ جدا، تو یه تجربه‌ی واحد کنار هم نگه می‌داره.</p>
+          <span class="hero-eyebrow"><span class="dot"></span> نسخه‌ی اولیه — در حال ساخت، همین الان قابل امتحانه</span>
+          <h1>زمان و عادت‌هاتون، <em>یک‌جا</em>.</h1>
+          <p>آوند کار، عادت، رویداد و تقویم روزانه‌تون رو به‌جای چند اپ جدا، تو یه تجربه‌ی ساده و آروم کنار هم نگه می‌داره.</p>
           <div class="hero-actions">
             <a id="cta-webapp" class="btn btn-primary" data-cta="webapp"
                data-label-preview="امتحان پیش‌نمایش وب" data-label-ready="باز کردن وب‌اپ"
@@ -60,22 +63,11 @@
             </a>
           </div>
         </div>
-        <div class="hero-visual" aria-hidden="true">
-          <div class="browser-frame">
-            <div class="browser-frame-bar">
-              <span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span>
-            </div>
-            <div class="browser-frame-body">
-              <div class="mock-cal-head"><span>مهر ۱۴۰۵</span><span class="bar short" style="width:40px; display:inline-block;"></span></div>
-              <div class="mock-cal-grid">
-                <span></span><span class="on"></span><span></span><span></span><span class="on"></span><span></span><span></span>
-                <span class="on"></span><span></span><span></span><span class="on"></span><span></span><span class="on"></span><span></span>
-                <span></span><span class="on"></span><span></span><span></span><span class="on"></span><span></span><span class="on"></span>
-              </div>
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-              <div class="mock-row"><div class="dot"></div><div class="bar short"></div></div>
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-            </div>
+        <div class="hero-visual">
+          <div class="device-frame-glow" aria-hidden="true"></div>
+          <div class="device-frame">
+            <img src="../assets/img/app-home-mobile.jpg" width="375" height="812" loading="eager"
+                 alt="نمای صفحه‌ی خانه‌ی آوند: تقویم هفتگی، درصد پیشرفت روز، و فهرست کار و عادت‌های امروز">
           </div>
         </div>
       </div>
@@ -84,7 +76,7 @@
     <section class="section" aria-labelledby="features-title">
       <h2 id="features-title">چی داخلشه</h2>
       <p class="section-sub">آوند کار، عادت و رویدادهاتون رو با تیک‌زدن و تقویم روزانه/هفتگی/ماهانه، یک‌جا جلوی چشمتون می‌ذاره.</p>
-      <div class="card-grid">
+      <div class="card-grid" data-reveal-group>
         <article class="card">
           <div class="card-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
@@ -116,10 +108,37 @@
       </div>
     </section>
 
+    <section class="section" aria-labelledby="showcase-title">
+      <h2 id="showcase-title">آوند چطور کار می‌کنه</h2>
+      <p class="section-sub">همون طراحی واقعی که تو نسخه‌ی پیش‌نمایش وب می‌بینید — نه یه مدل ساختگی.</p>
+      <div class="showcase">
+        <div class="showcase-sticky">
+          <div class="device-frame">
+            <img src="../assets/img/app-home-desktop.jpg" width="800" height="514" loading="lazy"
+                 alt="نمای دسکتاپ آوند: تقویم ماهانه در کنار آجندای روزانه و نوار ابزار کناری">
+          </div>
+        </div>
+        <div class="showcase-steps" data-reveal-group>
+          <div class="showcase-step">
+            <h3>کار، عادت یا رویداد رو اضافه کنید</h3>
+            <p>با یه دکمه‌ی شناور، در عرض چند ثانیه یه آیتم جدید می‌سازید — بدون فرم‌های طولانی.</p>
+          </div>
+          <div class="showcase-step">
+            <h3>همه‌چیز رو روی یه تقویم ببینید</h3>
+            <p>کارها، عادت‌ها و رویدادها کنار هم، روی نمای روزانه، هفتگی یا ماهانه — نه در سه اپ جدا.</p>
+          </div>
+          <div class="showcase-step">
+            <h3>روزتون رو با آرامش جلو ببرید</h3>
+            <p>تیک بزنید، پین کنید، یادآوری تنظیم کنید. کار انجام‌نشده گم نمی‌شه، فقط صبر می‌کنه.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="section" aria-labelledby="why-title">
       <h2 id="why-title">چرا آوند؟</h2>
-      <p class="section-sub">هدف آوند جمع‌کردن کار، عادت، رویداد، تقویم و (در آینده) هوش مصنوعی زیر یه سقف واحده — نه یه اپ تقویم دیگه.</p>
-      <ul class="why-list">
+      <p class="section-sub">هدف آوند جمع‌کردن کار، عادت، رویداد و تقویم زیر یه سقف واحده — نه یه اپ تقویم دیگه.</p>
+      <ul class="why-list" data-reveal-group>
         <li class="why-item">
           <div class="card-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
@@ -140,94 +159,17 @@
         </li>
         <li class="why-item">
           <div class="card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 1 0-20z"/><path d="M12 7v5l3 2"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v6l4.2 2.4M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/></svg>
           </div>
           <div>
-            <strong>آماده برای هوش مصنوعی</strong>
-            <p>جایگاه یه دستیار هوشمند از همین حالا تو طراحی در نظر گرفته شده — برای وقتی که واقعاً آماده بشه.</p>
+            <strong>بدون حساب‌کاربری اجباری، همین الان امتحانش کنید</strong>
+            <p>پیش‌نمایش وب مستقیم تو مرورگرتون باز می‌شه — نیازی به ثبت‌نام یا دانلود چیزی نیست.</p>
           </div>
         </li>
       </ul>
     </section>
 
-    <section class="section" aria-labelledby="showcase-title">
-      <h2 id="showcase-title">نمایی از وب‌اپ آوند</h2>
-      <p class="section-sub">همون طراحی واقعی که تو نسخه‌ی پیش‌نمایش وب می‌بینید — نه یه مدل ساختگی.</p>
-      <div class="showcase-grid">
-        <div class="showcase-card">
-          <div class="browser-frame">
-            <div class="browser-frame-bar"><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span></div>
-            <div class="browser-frame-body">
-              <div class="mock-cal-grid">
-                <span></span><span class="on"></span><span></span><span></span><span class="on"></span><span></span><span></span>
-                <span class="on"></span><span></span><span></span><span class="on"></span><span></span><span class="on"></span><span></span>
-              </div>
-            </div>
-          </div>
-          <h3>تقویم</h3>
-        </div>
-        <div class="showcase-card">
-          <div class="browser-frame">
-            <div class="browser-frame-bar"><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span></div>
-            <div class="browser-frame-body">
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-              <div class="mock-row"><div class="dot"></div><div class="bar short"></div></div>
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-            </div>
-          </div>
-          <h3>کار</h3>
-        </div>
-        <div class="showcase-card">
-          <div class="browser-frame">
-            <div class="browser-frame-bar"><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span></div>
-            <div class="browser-frame-body">
-              <div class="mock-row"><div class="dot filled"></div><div class="bar short"></div></div>
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-            </div>
-          </div>
-          <h3>عادت</h3>
-        </div>
-        <div class="showcase-card">
-          <div class="browser-frame">
-            <div class="browser-frame-bar"><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span></div>
-            <div class="browser-frame-body">
-              <div class="mock-row"><div class="dot filled" style="border-radius:50%; width:28px; height:28px;"></div><div class="bar short"></div></div>
-              <div class="mock-row"><div class="bar short"></div></div>
-              <div class="mock-row"><div class="bar short"></div></div>
-            </div>
-          </div>
-          <h3>پروفایل</h3>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="steps-title">
-      <h2 id="steps-title">آوند چطور کار می‌کنه</h2>
-      <div class="steps">
-        <div class="step">
-          <p class="step-num">۰۱</p>
-          <h3>کارها و عادت‌هاتون رو اضافه کنید</h3>
-          <p>با یه دکمه‌ی ساده، کار، عادت یا رویداد جدید بسازید.</p>
-        </div>
-        <div class="step">
-          <p class="step-num">۰۲</p>
-          <h3>برنامه‌تون رو روی تقویم ببینید</h3>
-          <p>همه‌چیز کنار هم، روی نمای روزانه، هفتگی یا ماهانه.</p>
-        </div>
-        <div class="step">
-          <p class="step-num">۰۳</p>
-          <h3>روزتون رو مدیریت کنید</h3>
-          <p>تیک بزنید، پین کنید، یادآوری تنظیم کنید.</p>
-        </div>
-        <div class="step">
-          <p class="step-num">۰۴</p>
-          <h3>در آینده، با هوش مصنوعی ساده‌تر کنید</h3>
-          <p>جایگاه این قابلیت آماده‌ست؛ هنوز فعال نیست.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section cta-band" aria-labelledby="final-cta-title">
+    <section class="section cta-band" aria-labelledby="final-cta-title" data-reveal>
       <h2 id="final-cta-title">آماده‌اید روزتون رو بهتر مدیریت کنید؟</h2>
       <div class="hero-actions">
         <a class="btn btn-primary" href="../demo/">
@@ -253,5 +195,6 @@
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/buttons.js" defer></script>
 <script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/reveal.js" defer></script>
 </body>
 </html>

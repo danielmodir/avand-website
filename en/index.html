@@ -20,6 +20,8 @@
 <meta name="twitter:description" content="Avand keeps your tasks, habits, and daily schedule together in one simple calendar.">
 <meta name="twitter:image" content="https://avand.ir/assets/icons/og-image.svg">
 <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="../assets/fonts/inter/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/inter/Inter-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/site.css">
 </head>
@@ -44,38 +46,28 @@
     <section class="hero">
       <div class="hero-grid">
         <div class="hero-copy">
-      <h1>Your time and habits, in one place.</h1>
-      <p>Avand keeps your tasks, habits, and daily schedule together in one simple calendar.</p>
-      <div class="hero-actions">
-        <a id="cta-webapp" class="btn btn-primary" data-cta="webapp"
-           data-label-preview="Try web preview" data-label-ready="Open web app"
-           data-url-preview="../demo/" href="../demo/">
-          <span class="btn-label">Try web preview</span>
-          <svg class="icon-dir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <a id="cta-download" class="btn btn-outline btn-disabled" data-cta="download" aria-disabled="true"
-           data-label-comingsoon="Coming soon" data-label-ready="Download for Android"
-           data-url-ready="../en/download/">
-          <span class="btn-label">Coming soon</span>
-        </a>
+          <span class="hero-eyebrow"><span class="dot"></span> Early build — already live to try</span>
+          <h1>Your time and habits, <em>in one place</em>.</h1>
+          <p>Avand keeps your tasks, habits, events, and daily schedule together in one calm, simple experience — instead of three different apps.</p>
+          <div class="hero-actions">
+            <a id="cta-webapp" class="btn btn-primary" data-cta="webapp"
+               data-label-preview="Try web preview" data-label-ready="Open web app"
+               data-url-preview="../demo/" href="../demo/">
+              <span class="btn-label">Try web preview</span>
+              <svg class="icon-dir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <a id="cta-download" class="btn btn-outline btn-disabled" data-cta="download" aria-disabled="true"
+               data-label-comingsoon="Coming soon" data-label-ready="Download for Android"
+               data-url-ready="../en/download/">
+              <span class="btn-label">Coming soon</span>
+            </a>
           </div>
         </div>
-        <div class="hero-visual" aria-hidden="true">
-          <div class="browser-frame">
-            <div class="browser-frame-bar">
-              <span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span>
-            </div>
-            <div class="browser-frame-body">
-              <div class="mock-cal-head"><span>October 2026</span><span class="bar short" style="width:40px; display:inline-block;"></span></div>
-              <div class="mock-cal-grid">
-                <span></span><span class="on"></span><span></span><span></span><span class="on"></span><span></span><span></span>
-                <span class="on"></span><span></span><span></span><span class="on"></span><span></span><span class="on"></span><span></span>
-                <span></span><span class="on"></span><span></span><span></span><span class="on"></span><span></span><span class="on"></span>
-              </div>
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-              <div class="mock-row"><div class="dot"></div><div class="bar short"></div></div>
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-            </div>
+        <div class="hero-visual">
+          <div class="device-frame-glow" aria-hidden="true"></div>
+          <div class="device-frame">
+            <img src="../assets/img/app-home-mobile.jpg" width="375" height="812" loading="eager"
+                 alt="Avand's home screen: a weekly calendar strip, the day's progress ring, and today's tasks and habits">
           </div>
         </div>
       </div>
@@ -84,7 +76,7 @@
     <section class="section" aria-labelledby="features-title">
       <h2 id="features-title">What's inside</h2>
       <p class="section-sub">Avand puts your tasks, habits, and events in front of you with simple check-ins and a daily, weekly, or monthly calendar.</p>
-      <div class="card-grid">
+      <div class="card-grid" data-reveal-group>
         <article class="card">
           <div class="card-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
@@ -116,10 +108,37 @@
       </div>
     </section>
 
+    <section class="section" aria-labelledby="showcase-title">
+      <h2 id="showcase-title">How Avand works</h2>
+      <p class="section-sub">The same real design you'll see in the web preview — not a fabricated mockup.</p>
+      <div class="showcase">
+        <div class="showcase-sticky">
+          <div class="device-frame">
+            <img src="../assets/img/app-home-desktop.jpg" width="800" height="514" loading="lazy"
+                 alt="Avand's desktop layout: a full monthly calendar next to the day's agenda and a side toolbar">
+          </div>
+        </div>
+        <div class="showcase-steps" data-reveal-group>
+          <div class="showcase-step">
+            <h3>Add a task, habit, or event</h3>
+            <p>One floating button gets a new item on your calendar in seconds — no long forms.</p>
+          </div>
+          <div class="showcase-step">
+            <h3>See it all on one calendar</h3>
+            <p>Tasks, habits, and events together, in a daily, weekly, or monthly view — not three separate apps.</p>
+          </div>
+          <div class="showcase-step">
+            <h3>Move through your day at your pace</h3>
+            <p>Check things off, pin what matters, set reminders. An unfinished task doesn't vanish — it just waits.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="section" aria-labelledby="why-title">
       <h2 id="why-title">Why Avand?</h2>
-      <p class="section-sub">Avand's goal is to bring tasks, habits, events, a calendar, and (eventually) AI together under one roof — not to be just another calendar app.</p>
-      <ul class="why-list">
+      <p class="section-sub">Avand's goal is to bring tasks, habits, events, and a calendar together under one roof — not to be just another calendar app.</p>
+      <ul class="why-list" data-reveal-group>
         <li class="why-item">
           <div class="card-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
@@ -140,94 +159,17 @@
         </li>
         <li class="why-item">
           <div class="card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 1 0-20z"/><path d="M12 7v5l3 2"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v6l4.2 2.4M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/></svg>
           </div>
           <div>
-            <strong>Built with AI in mind</strong>
-            <p>A place for a smart assistant is already part of the design — for when it's actually ready.</p>
+            <strong>No account required — try it right now</strong>
+            <p>The web preview opens straight in your browser. No sign-up, nothing to install.</p>
           </div>
         </li>
       </ul>
     </section>
 
-    <section class="section" aria-labelledby="showcase-title">
-      <h2 id="showcase-title">A look at the Avand web app</h2>
-      <p class="section-sub">The same real design you'll see in the web preview — not a fabricated mockup.</p>
-      <div class="showcase-grid">
-        <div class="showcase-card">
-          <div class="browser-frame">
-            <div class="browser-frame-bar"><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span></div>
-            <div class="browser-frame-body">
-              <div class="mock-cal-grid">
-                <span></span><span class="on"></span><span></span><span></span><span class="on"></span><span></span><span></span>
-                <span class="on"></span><span></span><span></span><span class="on"></span><span></span><span class="on"></span><span></span>
-              </div>
-            </div>
-          </div>
-          <h3>Calendar</h3>
-        </div>
-        <div class="showcase-card">
-          <div class="browser-frame">
-            <div class="browser-frame-bar"><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span></div>
-            <div class="browser-frame-body">
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-              <div class="mock-row"><div class="dot"></div><div class="bar short"></div></div>
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-            </div>
-          </div>
-          <h3>Task</h3>
-        </div>
-        <div class="showcase-card">
-          <div class="browser-frame">
-            <div class="browser-frame-bar"><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span></div>
-            <div class="browser-frame-body">
-              <div class="mock-row"><div class="dot filled"></div><div class="bar short"></div></div>
-              <div class="mock-row"><div class="dot filled"></div><div class="bar"></div></div>
-            </div>
-          </div>
-          <h3>Habit</h3>
-        </div>
-        <div class="showcase-card">
-          <div class="browser-frame">
-            <div class="browser-frame-bar"><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span><span class="browser-frame-dot"></span></div>
-            <div class="browser-frame-body">
-              <div class="mock-row"><div class="dot filled" style="border-radius:50%; width:28px; height:28px;"></div><div class="bar short"></div></div>
-              <div class="mock-row"><div class="bar short"></div></div>
-              <div class="mock-row"><div class="bar short"></div></div>
-            </div>
-          </div>
-          <h3>Profile</h3>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="steps-title">
-      <h2 id="steps-title">How Avand works</h2>
-      <div class="steps">
-        <div class="step">
-          <p class="step-num">01</p>
-          <h3>Add your tasks and habits</h3>
-          <p>Create a new task, habit, or event with one simple button.</p>
-        </div>
-        <div class="step">
-          <p class="step-num">02</p>
-          <h3>See your plan on the calendar</h3>
-          <p>Everything together, in a daily, weekly, or monthly view.</p>
-        </div>
-        <div class="step">
-          <p class="step-num">03</p>
-          <h3>Manage your day</h3>
-          <p>Check things off, pin what matters, set reminders.</p>
-        </div>
-        <div class="step">
-          <p class="step-num">04</p>
-          <h3>Later, simplify it with AI</h3>
-          <p>A place for this is ready; it isn't active yet.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section cta-band" aria-labelledby="final-cta-title">
+    <section class="section cta-band" aria-labelledby="final-cta-title" data-reveal>
       <h2 id="final-cta-title">Ready to manage your day better?</h2>
       <div class="hero-actions">
         <a class="btn btn-primary" href="../demo/">
@@ -253,5 +195,6 @@
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/buttons.js" defer></script>
 <script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/reveal.js" defer></script>
 </body>
 </html>

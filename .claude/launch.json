@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "avand-site",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8080"],
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "http-server", "-p", "8080", "-c-1"],
       "port": 8080
     }
   ]

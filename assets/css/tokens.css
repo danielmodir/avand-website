@@ -58,6 +58,7 @@
   --font-size-lg: 1.5rem;      /* 24px */
   --font-size-xl: 2rem;        /* 32px */
   --font-size-2xl: 2.75rem;    /* 44px */
+  --font-size-3xl: 3.75rem;    /* 60px — hero display */
 
   --line-height-tight: 1.2;
   --line-height-normal: 1.6;
@@ -71,17 +72,30 @@
   --space-6: 32px;
   --space-7: 48px;
   --space-8: 64px;
+  --space-9: 96px;
 
-  /* Radius (rounded corners, per Design System phase 4) */
+  /* Radius (rounded corners, per Design System phase 4 — soft/warm pass
+     pushes the large size further for a softer, huggable card language) */
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 22px;
+  --radius-xl: 32px;
   --radius-full: 999px;
+
+  /* Warm gradient + soft-UI accents (soft/warm redesign pass). Built only
+     from the locked brand colors — no new hues introduced. */
+  --gradient-brand: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-glow: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--color-primary) 35%, transparent), transparent 60%);
+  --shadow-soft-sm: 0 2px 8px color-mix(in srgb, var(--color-secondary) 10%, transparent);
+  --shadow-soft-lg: 0 24px 60px -16px color-mix(in srgb, var(--color-secondary) 28%, transparent);
+  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, transparent), 0 16px 40px -12px color-mix(in srgb, var(--color-primary) 45%, transparent);
 
   /* Motion */
   --ease-standard: cubic-bezier(.4, 0, .2, 1);
+  --ease-spring: cubic-bezier(.22, 1, .36, 1);
   --duration-fast: 150ms;
   --duration-normal: 250ms;
+  --duration-slow: 650ms;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -106,6 +120,9 @@
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --shadow-soft-sm: 0 2px 10px rgba(0, 0, 0, 0.3);
+    --shadow-soft-lg: 0 28px 70px -18px rgba(0, 0, 0, 0.55);
+    --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 24%, transparent), 0 18px 46px -14px color-mix(in srgb, var(--color-accent) 55%, transparent);
   }
 }
 
@@ -130,18 +147,26 @@
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-soft-sm: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --shadow-soft-lg: 0 28px 70px -18px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 24%, transparent), 0 18px 46px -14px color-mix(in srgb, var(--color-accent) 55%, transparent);
 }
 
 /*
   Self-hosted fonts (hard rule: no Google Fonts / CDN — CLAUDE.md).
-  The .woff2 files are not in assets/fonts/ yet, so this block stays
-  commented out and pages fall back to --font-sans-latin / --font-sans-fa
-  (system fonts). Uncomment and fix filenames once the real files land.
-
+  Files live in assets/fonts/{inter,vazirmatn}/, fetched at build time from
+  each font's official open-source release (SIL OFL license — see the
+  LICENSE.txt next to each family). Zero runtime third-party requests.
+*/
 @font-face {
   font-family: 'Inter';
   src: url('../fonts/inter/Inter-Regular.woff2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/inter/Inter-Medium.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Inter';
@@ -165,6 +190,11 @@
 }
 @font-face {
   font-family: 'Vazirmatn';
+  src: url('../fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
   src: url('../fonts/vazirmatn/Vazirmatn-SemiBold.woff2') format('woff2');
   font-weight: 600; font-style: normal; font-display: swap;
 }
@@ -173,9 +203,3 @@
   src: url('../fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
   font-weight: 700; font-style: normal; font-display: swap;
 }
-@font-face {
-  font-family: 'Vazirmatn';
-  src: url('../fonts/vazirmatn/Vazirmatn-ExtraBold.woff2') format('woff2');
-  font-weight: 800; font-style: normal; font-display: swap;
-}
-*/
