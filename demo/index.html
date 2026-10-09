@@ -470,6 +470,8 @@
   .cal-corner-arrow.left{ left:0; }
   .cal-corner-arrow.right{ right:0; }
   .cal-corner-arrow svg{width:16px;height:16px;}
+  .cal-subrow{ text-align:center; font-size:11px; color:var(--text-muted); margin:-6px 0 10px 0; }
+  [data-density="compact"] .cal-subrow{ display:none; }
   .cal-mode-tabs{display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; margin-bottom:16px;}
   .cal-mode-tabs button{flex:1; border:none; background:transparent; padding:8px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit;}
   .cal-mode-tabs button.active{background:var(--card); color:var(--primary);}
@@ -486,6 +488,10 @@
   .day-cell.other-month{color:var(--text-muted); opacity:0.3;}
   .day-cell.today{border-color:var(--primary);}
   .day-cell.selected{background:var(--primary); color:var(--on-primary);}
+  .day-cell.selected.today{ box-shadow:0 0 0 2px var(--on-primary) inset; }
+  .day-cell{ transition:transform .1s ease; }
+  .day-cell.press{ transform:scale(.94); }
+  .day-cell.selected.press{ transform:translateY(-1px) scale(1.01); }
   /* Secondary line: the two non-primary calendar systems (Gregorian/
      Jalali, whichever isn't the big number, plus Hijri), small and muted
      so the primary number stays the visual focus — same idea as the
@@ -1495,6 +1501,21 @@ function setYearOf(anchor, year){
   return new Date(year, anchor.getMonth(), 1);
 }
 function monthNameFor(i0){ return isHijriPrimary() ? hijriMonthName(i0) : isJalali() ? jalaliMonthName(i0) : monthName(i0); }
+/* Subtitle row under the month/year title: every *enabled* non-primary
+   system's own month+year, so e.g. a Jalali-primary user still sees
+   "Mehr 1405" AND "Rabi' II 1448" / "October 2026" without opening a
+   dropdown — same idea as the reference's Gregorian/Hijri range
+   subtitle under the Jalali title. Forced LTR with isolate spans since
+   it's mixing scripts/digit systems inside a possibly-RTL page. */
+function secondaryLabelsFor(d){
+  const en = state.settings.calendarEnabled;
+  const labels = [];
+  if(en.gregorian && primarySystem() !== 'gregorian') labels.push(`${monthName(d.getMonth())} ${d.getFullYear()}`);
+  if(en.jalali && primarySystem() !== 'jalali'){ const j = toJalali(d.getFullYear(),d.getMonth()+1,d.getDate()); labels.push(`${jalaliMonthName(j.jm-1)} ${j.jy}`); }
+  if(en.hijri && primarySystem() !== 'hijri'){ const h = toHijri(d.getFullYear(),d.getMonth()+1,d.getDate()); labels.push(`${hijriMonthName(h.hm-1)} ${h.hy}`); }
+  if(!labels.length) return '';
+  return `<div class="cal-subrow" dir="ltr">${labels.map(l => `<span style="unicode-bidi:isolate;">${l}</span>`).join(' · ')}</div>`;
+}
 function primaryYearOf(anchor){
   if(isHijriPrimary()) return toHijri(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).hy;
   if(isJalali()) return toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).jy;
@@ -1536,6 +1557,7 @@ const STRINGS = {
     calendarSystemsShown:'Calendars shown', calendarSystemsShownSub:'Turn systems on or off in day cells — at least one stays on',
     primarySystemBadge:'Shown as the big number', primarySystem:'Primary calendar', primarySystemSub:'Which one shows as the big number',
     atLeastOneCalendar:'At least one calendar has to stay on',
+    prev:'Previous', next:'Next',
     noOccasionsToday:'No occasions on this day.',
     hijriComingSoon:'Hijri calendar support is coming soon',
     showLabels:'Show labels', showLabelsSub:'Text under New Task / Habit / Event',
@@ -1634,6 +1656,7 @@ const STRINGS = {
     calendarSystemsShown:'تقویم‌های نمایش‌داده‌شده', calendarSystemsShownSub:'هر تقویم رو جدا روشن/خاموش کن — حداقل یکی باید روشن بمونه',
     primarySystemBadge:'به‌عنوان عدد بزرگ نشون داده می‌شه', primarySystem:'تقویم اصلی', primarySystemSub:'کدوم به‌عنوان عدد بزرگ نشون داده بشه',
     atLeastOneCalendar:'حداقل یک تقویم باید روشن بمونه',
+    prev:'قبلی', next:'بعدی',
     noOccasionsToday:'مناسبتی برای این روز ثبت نشده.',
     hijriComingSoon:'پشتیبانی از تقویم قمری به‌زودی اضافه می‌شه',
     showLabels:'نمایش برچسب', showLabelsSub:'متن زیر افزودن کار/عادت/رویداد',
@@ -1906,6 +1929,8 @@ function render(){
   attachHomeCalendarGestures();
   attachDensityGesture(document.getElementById('cal-month-grid'), document.getElementById('page-calendar'));
   attachDensityGesture(document.getElementById('home-cal-grid'), document.getElementById('page-home'));
+  attachDayCellGestures(document.getElementById('cal-month-grid'), false);
+  attachDayCellGestures(document.getElementById('home-cal-grid'), true);
   attachDesktopPager();
   attachSwipeToDelete(document.getElementById('page-home'));
   attachSwipeToDelete(document.getElementById('page-calendar'));
@@ -2073,7 +2098,7 @@ function renderHomeCalWidget(){
     const hasAny = tasks.length || events.length;
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
-    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-home-day" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
       ${dayCellDateHtml(day)}
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
     </button>`;
@@ -2089,10 +2114,13 @@ function renderHomeCalWidget(){
   return `
     <div class="home-cal-widget" id="home-cal-widget" dir="${lang()==='fa'?'rtl':'ltr'}">
       <div class="cal-topbar home-cal-topbar">
+        <div class="cal-corner-arrow left" data-action="home-prev-month" aria-label="${t('prev')}">${ICONS.chevronLeft}</div>
         <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
         <span class="cal-label" id="home-cal-year-label">${disp.yearLabel}</span>
+        <div class="cal-corner-arrow right" data-action="home-next-month" aria-label="${t('next')}">${ICONS.chevronRight}</div>
         ${monthDropdown}${yearDropdown}
       </div>
+      ${secondaryLabelsFor(d)}
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
       <div class="home-cal-grid-clip" id="home-cal-grid-clip">
         <div id="home-cal-slide">
@@ -2984,7 +3012,7 @@ function renderCalendar(){
           const hasAny = tasks.length || events.length;
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
-          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-day" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
             ${dayCellDateHtml(d)}
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
           </button>`;
@@ -3019,18 +3047,23 @@ function renderCalendar(){
       ${yearRangeFor().map(y => `<div class="cal-dropdown-item ${y===primaryYearOf(c)?'active':''}" data-action="pick-year" data-year="${y}">${y}</div>`).join('')}
     </div>` : '';
 
-  const showSideArrows = state.calMode === 'week' || state.calMode === 'day';
-  const prevAction = state.calMode === 'day' ? 'cal-prev-day' : 'cal-prev-week';
-  const nextAction = state.calMode === 'day' ? 'cal-next-day' : 'cal-next-week';
+  /* Icon-only prev/next arrows now show in every mode, not just week/
+     day — month mode used to have no visible way to step the month
+     besides the (undiscoverable) roll/drag gesture on the label, no
+     text on the buttons themselves (just the chevron), matching the
+     reference's icon-only nav. */
+  const prevAction = state.calMode === 'day' ? 'cal-prev-day' : state.calMode === 'week' ? 'cal-prev-week' : 'cal-prev-month';
+  const nextAction = state.calMode === 'day' ? 'cal-next-day' : state.calMode === 'week' ? 'cal-next-week' : 'cal-next-month';
 
   return `
     <div class="cal-topbar">
-      ${showSideArrows ? `<div class="cal-corner-arrow left" data-action="${prevAction}">${ICONS.chevronLeft}</div>` : ''}
+      <div class="cal-corner-arrow left" data-action="${prevAction}" aria-label="${t('prev')}">${ICONS.chevronLeft}</div>
       <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
       <span class="cal-label" id="cal-year-label" data-action="tap-year">${disp.yearLabel}</span>
-      ${showSideArrows ? `<div class="cal-corner-arrow right" data-action="${nextAction}">${ICONS.chevronRight}</div>` : ''}
+      <div class="cal-corner-arrow right" data-action="${nextAction}" aria-label="${t('next')}">${ICONS.chevronRight}</div>
       ${monthDropdown}${yearDropdown}
     </div>
+    ${secondaryLabelsFor(c)}
     <div class="cal-mode-tabs">
       <button class="${state.calMode==='day'?'active':''}" data-action="set-cal-mode" data-mode="day">${t('day')}</button>
       <button class="${state.calMode==='week'?'active':''}" data-action="set-cal-mode" data-mode="week">${t('week')}</button>
@@ -3574,12 +3607,6 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'close-menu-overlay'){ state.menuPanelOpen = false; render(); return; }
   if(action === 'toggle-menu-maximize'){ state.menuMaximized = !state.menuMaximized; render(); return; }
-  if(action === 'pick-home-day'){
-    /* Picking a date no longer force-collapses Monthly back to the week
-       strip — it only collapses via the handle/drag now (per spec). */
-    state.homeDate = new Date(el.dataset.date);
-    render(); return;
-  }
   if(action === 'home-pick-month'){ state.homeDate = setMonthOf(state.homeDate, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
   if(action === 'home-pick-year'){ state.homeDate = setYearOf(state.homeDate, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }
   if(action === 'submit-popup'){ submitPopup(); return; }
@@ -3605,6 +3632,10 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'cal-next-week'){ shiftWeek(1); return; }
   if(action === 'cal-prev-day'){ shiftDay(-1); return; }
   if(action === 'cal-next-day'){ shiftDay(1); return; }
+  if(action === 'cal-prev-month'){ shiftMonthRoll(-1); return; }
+  if(action === 'cal-next-month'){ shiftMonthRoll(1); return; }
+  if(action === 'home-prev-month'){ shiftHomeMonthRoll(-1); return; }
+  if(action === 'home-next-month'){ shiftHomeMonthRoll(1); return; }
   if(action === 'set-cal-mode'){ state.calMode = el.dataset.mode; state.daySheetOpen = false; render(); return; }
   if(action === 'toggle-section'){
     const key = el.dataset.section;
@@ -3783,9 +3814,9 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'pick-day'){
-    /* Desktop-only (this action only fires from #page-calendar, which is
-       hidden on mobile): clicking a day updates the Home column right
-       next to it directly, instead of opening a separate day peek. */
+    /* Only the week-mode list rows still use this click action now — the
+       month-grid day cells are handled by attachDayCellGestures()'s
+       pointer state machine instead. */
     const d = new Date(el.dataset.date);
     state.selectedDate = d;
     state.homeDate = d;
@@ -4020,6 +4051,57 @@ function attachDensityGesture(el, scopeEl){
     touchY = y;
   }, {passive:false});
   el.addEventListener('touchend', () => { touchY = null; acc = 0; });
+}
+/* Day-cell tap / long-press state machine: a plain tap on an in-month
+   cell selects it (same as the old pick-day/pick-home-day click action
+   it replaces); a tap on an out-of-month cell instead jumps the view to
+   that day's month; a ~500ms hold vibrates and opens the day detail
+   (desktop day-sheet for the main calendar grid). Pointer events only,
+   so it doesn't collide with attachDensityGesture()'s separate wheel/
+   touch listeners on the same grid element. */
+function attachDayCellGestures(gridEl, isHome){
+  if(!gridEl) return;
+  let pressEl = null, timer = null, startX = 0, startY = 0, longFired = false, moved = false;
+  const clearPress = () => {
+    if(timer){ clearTimeout(timer); timer = null; }
+    if(pressEl){ pressEl.classList.remove('press'); pressEl = null; }
+  };
+  gridEl.addEventListener('pointerdown', e => {
+    const btn = e.target.closest('.day-cell');
+    if(!btn) return;
+    pressEl = btn; startX = e.clientX; startY = e.clientY; moved = false; longFired = false;
+    btn.classList.add('press');
+    timer = setTimeout(() => {
+      longFired = true;
+      btn.classList.remove('press');
+      try{ navigator.vibrate && navigator.vibrate(15); }catch(err){}
+      const d = new Date(btn.dataset.date);
+      state.selectedDate = d;
+      state.homeDate = d;
+      if(!isHome) state.daySheetOpen = true;
+      render();
+    }, 500);
+  });
+  gridEl.addEventListener('pointermove', e => {
+    if(!pressEl) return;
+    if(Math.hypot(e.clientX - startX, e.clientY - startY) > 10){ moved = true; clearPress(); }
+  });
+  gridEl.addEventListener('pointerup', () => {
+    if(!pressEl) return;
+    const btn = pressEl;
+    clearPress();
+    if(longFired || moved) return;
+    const d = new Date(btn.dataset.date);
+    if(btn.classList.contains('other-month')){
+      if(isHome) state.homeDate = d; else state.calCursor = d;
+    } else {
+      state.selectedDate = d;
+      state.homeDate = d;
+    }
+    render();
+  });
+  gridEl.addEventListener('pointercancel', clearPress);
+  gridEl.addEventListener('contextmenu', e => e.preventDefault());
 }
 function attachCalendarGestures(){
   attachRollGesture(document.getElementById('cal-month-label'), (dir) => {
