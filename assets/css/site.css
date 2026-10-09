@@ -91,12 +91,20 @@ a { color: inherit; }
 .brand { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; }
 .brand-mark {
   /* Single source for the placeholder brand mark: assets/icons/logo.svg.
-     Swap that one file to rebrand every page at once (per CLAUDE.md). */
-  width: 38px; height: 38px; border-radius: var(--radius-md); flex: 0 0 auto; display: block;
+     Swap that one file to rebrand every page at once (per CLAUDE.md).
+     42px = the shared logo.svg's old 38px circle, 10% bigger. */
+  width: 42px; height: 42px; border-radius: var(--radius-md); flex: 0 0 auto; display: block;
   box-shadow: var(--shadow-soft-sm);
   transition: transform var(--duration-normal) var(--ease-spring);
 }
 .brand:hover .brand-mark { transform: rotate(-8deg) scale(1.05); }
+/* fa/en index.html's header only: logo-header(-dark).svg, a 40%-bigger
+   mark inside the same-size circle (see that file's own comment), swapped
+   light/dark via [data-theme] instead of the shared logo.svg everywhere
+   else staying a single static file. */
+.brand-mark-dark { display: none; }
+[data-theme="dark"] .brand-mark-light { display: none; }
+[data-theme="dark"] .brand-mark-dark { display: block; }
 .brand-name { font-weight: 800; font-size: var(--font-size-md); letter-spacing: -0.01em; }
 
 .header-actions { display: flex; align-items: center; gap: var(--space-2); }
@@ -221,6 +229,15 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) { .device-frame { animation: none; } }
 @keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .device-frame img { display: block; width: 100%; height: auto; }
+/* Two real screenshots (light/dark theme, captured per-language) stacked
+   in the same frame, swapped by [data-theme] — same technique as the
+   header logo marks above. Only one is ever laid out at a time.
+   Specificity note: these need to beat ".device-frame img" above (class
+   + element), so they're written as "img.preview-img-*" (class + element
+   too, but later in the cascade) rather than the class alone. */
+.device-frame img.preview-img-dark { display: none; }
+[data-theme="dark"] .device-frame img.preview-img-light { display: none; }
+[data-theme="dark"] .device-frame img.preview-img-dark { display: block; }
 .device-frame::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 6%, transparent);
@@ -317,7 +334,7 @@ a { color: inherit; }
 }
 .showcase-sticky { position: relative; }
 @media (min-width: 900px) { .showcase-sticky { position: sticky; top: calc(var(--space-8) + 64px); } }
-.showcase-sticky .device-frame { width: min(360px, 100%); margin: 0 auto; animation: none; }
+.showcase-sticky .device-frame { width: min(432px, 100%); margin: 0 auto; animation: none; } /* 360px, 20% bigger */
 .showcase-steps { display: flex; flex-direction: column; gap: var(--space-6); counter-reset: step; }
 .showcase-step {
   counter-increment: step;

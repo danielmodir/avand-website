@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>(function(){try{var t=localStorage.getItem('toojibee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>
+  /* Auto-pick a language instead of making every visitor tap a button:
+     English only if the browser/system language clearly says so,
+     everything else (Persian, unset, anything ambiguous) defaults to
+     Persian — priority stays with fa per the repo owner's request. The
+     chooser buttons below still work normally as a fallback (JS
+     disabled, or this script's own redirect gets interrupted). */
+  (function(){
+    try{
+      var navLang = ((navigator.language || (navigator.languages && navigator.languages[0]) || '') + '').toLowerCase();
+      var dest = navLang.indexOf('en') === 0 ? 'en/' : 'fa/';
+      location.replace(dest);
+    }catch(e){}
+  })();
+</script>
 <title>Toojibee</title>
 <meta name="description" content="Toojibee — choose your language / زبان خود را انتخاب کنید.">
 <link rel="canonical" href="https://avand.ir/">
