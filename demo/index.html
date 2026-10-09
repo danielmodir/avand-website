@@ -397,11 +397,27 @@
   .weekday-header{display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:6px;}
   .weekday-header span{font-size:10px; color:var(--text-muted); font-weight:700;}
   .month-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
-  .day-cell{ aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); border:1px solid transparent; background:none; padding:0; font-family:inherit; -webkit-tap-highlight-color:transparent; }
+  .day-cell{ aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); border:1px solid transparent; background:none; padding:0; font-family:inherit; -webkit-tap-highlight-color:transparent; }
   .day-cell:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
   .day-cell.other-month{color:var(--text-muted); opacity:0.3;}
   .day-cell.today{border-color:var(--primary);}
   .day-cell.selected{background:var(--primary); color:#fff;}
+  /* Secondary line: the two non-primary calendar systems (Gregorian/
+     Jalali, whichever isn't the big number, plus Hijri), small and muted
+     so the primary number stays the visual focus — same idea as the
+     calendar09.html reference's triple-date cells. */
+  .day-cell-num{ line-height:1.1; }
+  .day-cell-sub{ font-size:8.5px; font-weight:500; line-height:1; opacity:.55; letter-spacing:-0.2px; }
+  .day-cell.selected .day-cell-sub{ opacity:.85; }
+  /* Density states driven by attachDensityGesture()'s scroll/touch state
+     machine (phone-only). "full" is the default/untouched look above. */
+  .month-grid{ transition:gap .18s ease; }
+  .month-grid[data-density="mid"] .day-cell-sub{ display:none; }
+  .month-grid[data-density="mid"] .day-cell{ font-size:12px; }
+  .month-grid[data-density="compact"]{ gap:2px; }
+  .month-grid[data-density="compact"] .day-cell-sub{ display:none; }
+  .month-grid[data-density="compact"] .day-cell{ font-size:10.5px; border-radius:7px; }
+  .month-grid[data-density="compact"] .day-dots{ display:none; }
   .day-dots{display:flex; gap:2px; height:4px;}
   .day-dots span{width:4px; height:4px; border-radius:50%; background:var(--primary);}
   .day-cell.selected .day-dots span{background:#fff;}
@@ -1144,6 +1160,29 @@ function d2j(jdn){
 function toJalali(gy,gm,gd){ return d2j(g2d(gy,gm,gd)); }
 function toGregorian(jy,jm,jd){ return d2g(j2d(jy,jm,jd)); }
 
+/* Standard tabular/civil Islamic calendar (not astronomical Umm al-Qura —
+   that needs a lookup table we don't have). Pure arithmetic, no external
+   calls, used only to print a secondary Hijri day number in each calendar
+   cell (see dayCellDateHtml) — distinct from Settings' "Hijri as the
+   primary calendar system" toggle, which stays unimplemented/"coming
+   soon" since that needs real month-length accuracy, not just a number. */
+function gregorianToJDN(y,m,d){
+  const a = Math.floor((14-m)/12), y2 = y+4800-a, m2 = m+12*a-3;
+  return d + Math.floor((153*m2+2)/5) + 365*y2 + Math.floor(y2/4) - Math.floor(y2/100) + Math.floor(y2/400) - 32045;
+}
+function toHijri(gy,gm,gd){
+  const ISLAMIC_EPOCH_JDN = 1948440;
+  let l = gregorianToJDN(gy,gm,gd) - ISLAMIC_EPOCH_JDN + 10632;
+  const n = Math.floor((l-1)/10631);
+  l = l - 10631*n + 354;
+  const j = Math.floor((10985-l)/5316)*Math.floor((50*l)/17719) + Math.floor(l/5670)*Math.floor((43*l)/15238);
+  l = l - Math.floor((30-j)/15)*Math.floor((17719*j)/50) - Math.floor(j/16)*Math.floor((15238*j)/43) + 29;
+  const hm = Math.floor((24*l)/709);
+  const hd = l - Math.floor((709*hm)/24);
+  const hy = 30*n + j - 30;
+  return { hy, hm, hd };
+}
+
 const JALALI_MONTHS_FA = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 const JALALI_MONTHS_EN = ['Farvardin','Ordibehesht','Khordad','Tir','Mordad','Shahrivar','Mehr','Aban','Azar','Dey','Bahman','Esfand'];
 function isJalali(){ return state.settings.calendarSystem === 'jalali'; }
@@ -1158,6 +1197,17 @@ function displayMonthYear(d){
 function displayDayNum(d){
   if(isJalali()) return toJalali(d.getFullYear(), d.getMonth()+1, d.getDate()).jd;
   return d.getDate();
+}
+/* Triple-date cell body: big primary day number (whichever system
+   Settings has active) plus the other two systems as a small secondary
+   line underneath — same idea as the calendar09.html reference's day
+   cells, re-themed to this app's own .day-cell markup instead of its
+   markup/CSS. */
+function dayCellDateHtml(d){
+  const primary = displayDayNum(d);
+  const sub = isJalali() ? d.getDate() : toJalali(d.getFullYear(), d.getMonth()+1, d.getDate()).jd;
+  const hd = toHijri(d.getFullYear(), d.getMonth()+1, d.getDate()).hd;
+  return `<span class="day-cell-num">${primary}</span><span class="day-cell-sub">${sub} / ${hd}</span>`;
 }
 function cellInCurrentMonth(cellDate, cursorDate){
   if(isJalali()){
@@ -1586,6 +1636,8 @@ function render(){
   renderDaySheet();
   attachCalendarGestures();
   attachHomeCalendarGestures();
+  attachDensityGesture(document.getElementById('cal-month-grid'));
+  attachDensityGesture(document.getElementById('home-cal-grid'));
   attachSwipeToDelete(document.getElementById('page-home'));
   attachSwipeToDelete(document.getElementById('page-calendar'));
   attachHomeHeaderSwipe();
@@ -1702,7 +1754,7 @@ function renderHomeCalWidget(){
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
     return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-home-day" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-      <span>${displayDayNum(day)}</span>
+      ${dayCellDateHtml(day)}
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
     </button>`;
   };
@@ -2571,7 +2623,7 @@ function renderCalendar(){
     const cells = monthMatrix(c);
     body = `
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
-      <div class="month-grid">
+      <div class="month-grid" id="cal-month-grid">
         ${cells.map(d => {
           const inMonth = cellInCurrentMonth(d, c);
           const {tasks,events} = itemsForDate(d);
@@ -2579,7 +2631,7 @@ function renderCalendar(){
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
           return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-day" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-            <span>${displayDayNum(d)}</span>
+            ${dayCellDateHtml(d)}
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
           </button>`;
         }).join('')}
@@ -3533,6 +3585,44 @@ function attachDesktopContextMenu(){
 }
 
 /* ============ CALENDAR GESTURES: swipe-to-roll month/year, pinch to zoom ============ */
+/* "اسکرول درجا" — scroll/touch-driven density morph for the month grid,
+   phone-only (ported in spirit, not in code, from calendar09.html's
+   feed()/setMode state machine: a gesture-to-state-machine mapping with
+   hysteresis, not real page scrolling or CSS scroll-snap). Re-themed to
+   this app's own .month-grid/.day-cell markup rather than the
+   reference's. */
+const CAL_DENSITY_ORDER = ['full','mid','compact'];
+function attachDensityGesture(el){
+  if(!el) return;
+  if(window.innerWidth >= 768){ el.removeAttribute('data-density'); return; }
+  if(!state.calDensity) state.calDensity = 'full';
+  el.setAttribute('data-density', state.calDensity);
+  let acc = 0;
+  const step = (dir) => {
+    const i = CAL_DENSITY_ORDER.indexOf(state.calDensity);
+    const next = i + dir;
+    if(next < 0 || next > 2) return;
+    state.calDensity = CAL_DENSITY_ORDER[next];
+    acc = 0;
+    el.setAttribute('data-density', state.calDensity);
+  };
+  const feed = (dy) => {
+    acc = Math.max(0, Math.min(200, acc + Math.abs(dy)));
+    const i = CAL_DENSITY_ORDER.indexOf(state.calDensity);
+    if(dy > 0 && acc > (i === 0 ? 40 : 140)) step(1);
+    else if(dy < 0 && acc > (i === 2 ? 15 : 115)) step(-1);
+  };
+  el.addEventListener('wheel', e => { if(Math.abs(e.deltaY) > 1) feed(e.deltaY); }, {passive:true});
+  let touchY = null;
+  el.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, {passive:true});
+  el.addEventListener('touchmove', e => {
+    if(touchY === null) return;
+    const y = e.touches[0].clientY;
+    feed(touchY - y);
+    touchY = y;
+  }, {passive:true});
+  el.addEventListener('touchend', () => { touchY = null; acc = 0; });
+}
 function attachCalendarGestures(){
   attachRollGesture(document.getElementById('cal-month-label'), (dir) => {
     if(dir === 'tap'){ state.yearDropdownOpen = false; state.monthDropdownOpen = !state.monthDropdownOpen; render(); }
