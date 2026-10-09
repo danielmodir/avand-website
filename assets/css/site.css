@@ -1,4 +1,4 @@
-/* Avand marketing site — shared layout and components. Colors, spacing,
+/* Toojibee marketing site — shared layout and components. Colors, spacing,
    radius and type all come from tokens.css; never hardcode values here. */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -295,7 +295,7 @@ a { color: inherit; }
   margin: calc(var(--space-6) * -1 + var(--space-2)) 0 var(--space-6) 0; max-width: 60ch;
 }
 
-/* ===== Why Avand (bullet list, not cards — a calmer rhythm than another
+/* ===== Why Toojibee (bullet list, not cards — a calmer rhythm than another
    4-card grid right after the features section) ===== */
 .why-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-5); }
 .why-item { display: flex; gap: var(--space-4); align-items: flex-start; }

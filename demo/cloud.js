@@ -1,5 +1,5 @@
 /* ============================================================================
-   Avand demo — real backend wiring (Supabase: Postgres + Auth via plain REST,
+   Toojibee demo — real backend wiring (Supabase: Postgres + Auth via plain REST,
    no SDK, no CDN — fits CLAUDE.md's "vanilla JS, no npm packages" rule).
 
    This is a conscious, deliberate exception to CLAUDE.md's "/demo/ makes no
@@ -289,7 +289,7 @@
       var status = r.status;
       if (status === 'pending') status = (r.requested_by === session.user_id) ? 'pending-outgoing' : 'pending-incoming';
       else if (status === 'blocked' && r.requested_by !== session.user_id) status = 'blocked-by-them';
-      return { id: r.friend_id, name: r.display_name || r.username || r.phone || 'Avand user', phone: r.phone || '', status: status };
+      return { id: r.friend_id, name: r.display_name || r.username || r.phone || 'Toojibee user', phone: r.phone || '', status: status };
     });
   }
 

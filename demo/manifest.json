@@ -1,7 +1,7 @@
 {
-  "name": "آوند — Avand",
-  "short_name": "آوند",
-  "description": "آوند کار، عادت، رویداد و تقویم روزانه‌تون رو یک‌جا نگه می‌داره.",
+  "name": "توجیبی — Toojibee",
+  "short_name": "توجیبی",
+  "description": "توجیبی کار، عادت، رویداد و تقویم روزانه‌تون رو یک‌جا نگه می‌داره.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

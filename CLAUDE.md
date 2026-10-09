@@ -1,7 +1,9 @@
-# Avand marketing website
+# Toojibee marketing website
 
 ## What this is
-Static, bilingual (fa/en) landing site for Avand, a time-based personal-development app.
+Static, bilingual (fa/en) landing site for Toojibee (formerly "Avand", renamed
+2026-10-09 at the repo owner's request — see git history/commits for the rename),
+a time-based personal-development app.
 Two primary CTAs: web app and "Download for Android". Project docs are in /docs.
 Read the relevant doc before any big change.
 
@@ -19,7 +21,7 @@ Read the relevant doc before any big change.
   300 KB per page excluding fonts). Prefer SVG or WebP, lazy-load images.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.
   Never hardcode colors anywhere else.
-- Brand is a placeholder (logo "آ" in a circle). Keep it swappable in one place.
+- Brand is a placeholder (logo "ت" in a circle). Keep it swappable in one place.
 - /demo/ holds the HTML prototype. It must have noindex. noindex still applies, and the
   marketing site (outside /demo/) must still never describe it as the finished product.
   The visible "this is a preview" banner was removed by explicit product decision (SPEC.md §11.9).
@@ -51,7 +53,11 @@ Read the relevant doc before any big change.
 - If something is not in /docs, ask me instead of guessing.
 
 ## Design system (docs/avand_phase4-designsystem_v1.md)
-- Primary #3282B8, secondary #0F4C75, dark bg #1B262C, light bg derived from #BBE1FA.
+- Status (2026-10-09): palette replaced at the repo owner's request with
+  https://coolors.co/palette/000000-14213d-fca311-e5e5e5-ffffff — primary
+  #FCA311 (orange), secondary #14213D (navy), dark bg #000000, light bg
+  derived from #E5E5E5. The docs/avand_phase4-designsystem_v1.md file still
+  describes the original blue palette; tokens.css is the source of truth.
 - Minimal and serious mood, rounded corners, filled icons.
 - Digits: Persian digits (۰-۹) in /fa/ copy, Latin digits in /en/. The app's Design
   System uses Latin digits; this is a deliberate site-only difference.
