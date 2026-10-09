@@ -3949,7 +3949,19 @@ Cloud.onSessionExpired = () => {
   showToast(t('sessionExpired'));
 };
 
+/* Temporarily disabled at the repo owner's request (2026-10-09) so the
+   desktop-rail/profile rework can be checked without a real account —
+   flip back to false to restore real Supabase login. Skips straight past
+   the auth screen into the local placeholder profile/data already in
+   `state` above; no cloud calls happen while this is true. */
+const REAL_LOGIN_DISABLED = true;
+
 async function boot(){
+  if(REAL_LOGIN_DISABLED){
+    state.authScreen = false;
+    render();
+    return;
+  }
   state.booting = Cloud.hasSession();
   state.bootError = null;
   sessionJustExpired = false;
