@@ -508,6 +508,8 @@
      default/untouched look above. */
   .month-grid{ transition:gap .18s ease; }
   [data-density] .cal-topbar, [data-density] .home-cal-topbar{ transition:font-size .18s ease, margin .18s ease, padding .18s ease; }
+  .density-fade .month-grid, .density-fade .weekday-header{ animation:density-fade .18s ease; }
+  @keyframes density-fade{ from{ opacity:.4; } to{ opacity:1; } }
   [data-density="mid"] .weekday-header{ margin-bottom:3px; }
   [data-density="mid"] .weekday-header span{ font-size:9px; }
   [data-density="mid"] .cal-topbar, [data-density="mid"] .home-cal-topbar{ font-size:13px; margin-bottom:8px; padding:2px 0; }
@@ -1931,6 +1933,8 @@ function render(){
   attachDensityGesture(document.getElementById('home-cal-grid'), document.getElementById('page-home'));
   attachDayCellGestures(document.getElementById('cal-month-grid'), false);
   attachDayCellGestures(document.getElementById('home-cal-grid'), true);
+  clampDropdowns();
+  scrollYearDropdownActive();
   attachDesktopPager();
   attachSwipeToDelete(document.getElementById('page-home'));
   attachSwipeToDelete(document.getElementById('page-calendar'));
@@ -4020,11 +4024,24 @@ const CAL_DENSITY_ORDER = ['full','mid','compact'];
    vertical scroll underneath it, the way the reference's gesture was
    the only thing listening (it wasn't embedded in a taller scrolling
    page the way this app's calendar/home pages are). */
+/* Resets density back to "full" when the viewport crosses the phone/
+   desktop breakpoint, so a resize (or a device rotation) doesn't leave
+   a compacted grid stuck on a layout that no longer needs it. */
+if(!window.__densityBreakpointWatcher){
+  window.__densityBreakpointWatcher = true;
+  window.matchMedia('(min-width:768px)').addEventListener('change', () => {
+    state.calDensity = 'full';
+    render();
+  });
+}
 function attachDensityGesture(el, scopeEl){
   if(!el || !scopeEl) return;
   if(window.innerWidth >= 768){ scopeEl.removeAttribute('data-density'); return; }
   if(!state.calDensity) state.calDensity = 'full';
   scopeEl.setAttribute('data-density', state.calDensity);
+  // A sheet/dropdown open over the grid shouldn't also be eating the
+  // same scroll/touch gesture to change density underneath it.
+  const blocked = () => state.monthDropdownOpen || state.yearDropdownOpen || state.daySheetOpen;
   let acc = 0;
   const step = (dir) => {
     const i = CAL_DENSITY_ORDER.indexOf(state.calDensity);
@@ -4032,7 +4049,9 @@ function attachDensityGesture(el, scopeEl){
     if(next < 0 || next > 2) return;
     state.calDensity = CAL_DENSITY_ORDER[next];
     acc = 0;
+    scopeEl.classList.add('density-fade');
     scopeEl.setAttribute('data-density', state.calDensity);
+    setTimeout(() => scopeEl.classList.remove('density-fade'), 180);
   };
   const feed = (dy) => {
     acc = Math.max(0, Math.min(200, acc + Math.abs(dy)));
@@ -4040,9 +4059,9 @@ function attachDensityGesture(el, scopeEl){
     if(dy > 0 && acc > (i === 0 ? 40 : 140)) step(1);
     else if(dy < 0 && acc > (i === 2 ? 15 : 115)) step(-1);
   };
-  el.addEventListener('wheel', e => { if(Math.abs(e.deltaY) > 1){ e.preventDefault(); feed(e.deltaY); } }, {passive:false});
+  el.addEventListener('wheel', e => { if(!blocked() && Math.abs(e.deltaY) > 1){ e.preventDefault(); feed(e.deltaY); } }, {passive:false});
   let touchY = null;
-  el.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, {passive:true});
+  el.addEventListener('touchstart', e => { touchY = blocked() ? null : e.touches[0].clientY; }, {passive:true});
   el.addEventListener('touchmove', e => {
     if(touchY === null) return;
     e.preventDefault();
@@ -4102,6 +4121,36 @@ function attachDayCellGestures(gridEl, isHome){
   });
   gridEl.addEventListener('pointercancel', clearPress);
   gridEl.addEventListener('contextmenu', e => e.preventDefault());
+}
+/* Keeps the month/year dropdowns from spilling past their card's edges
+   on narrow screens (they're centered under the topbar by default,
+   which can overflow when the label sits near the card's left/right
+   edge). */
+function clampDropdowns(){
+  ['month-dropdown','year-dropdown','home-month-dropdown','home-year-dropdown'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.style.transform = 'translateX(-50%)';
+    const card = el.closest('.card') || el.parentElement;
+    const bounds = card.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+    const pad = 8;
+    let shift = 0;
+    if(rect.left < bounds.left + pad) shift = (bounds.left + pad) - rect.left;
+    else if(rect.right > bounds.right - pad) shift = (bounds.right - pad) - rect.right;
+    if(shift) el.style.transform = `translateX(calc(-50% + ${shift}px))`;
+  });
+}
+/* Scrolls the currently-selected year to the center of the year-list
+   dropdown when it opens, instead of leaving the list at its native
+   top-scroll position (which can bury the current year many rows down). */
+function scrollYearDropdownActive(){
+  ['year-dropdown','home-year-dropdown'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const active = el.querySelector('.cal-dropdown-item.active');
+    if(active) active.scrollIntoView({ block:'center' });
+  });
 }
 function attachCalendarGestures(){
   attachRollGesture(document.getElementById('cal-month-label'), (dir) => {
@@ -4302,7 +4351,7 @@ function attachHomeCalDrag(){
   function onUp(e, isHandle){
     if(startY === null) return;
     const dx = e.clientX - startX, dy = e.clientY - startY;
-    if(moved && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40){
+    if(moved && Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)){
       // Horizontal: previous/next week (collapsed) or month (expanded),
       // with a slide in the swipe's own direction instead of an instant
       // date swap. RTL-agnostic on purpose (app stays LTR always) — left
