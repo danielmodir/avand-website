@@ -392,7 +392,7 @@
   .week-row .wd .name{font-size:10px; color:var(--text-muted);}
   .week-row .counts{flex:1; font-size:12px; color:var(--text-muted);}
 
-  .day-sheet{ position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0; z-index:35; box-shadow:0 -8px 24px rgba(0,0,0,0.4); height:44%; transform:translateY(100%); transition:transform .28s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column; }
+  .day-sheet{ position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0; overflow:hidden; z-index:35; box-shadow:0 -8px 24px rgba(0,0,0,0.4); height:44%; transform:translateY(100%); transition:transform .28s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column; }
   .day-sheet.show{transform:translateY(0);}
   .sheet-handle{width:40px; height:4px; background:var(--border); border-radius:999px; margin:10px auto 4px auto;}
   .sheet-header{display:flex; align-items:center; justify-content:space-between; padding:8px 18px 12px 18px;}
@@ -424,7 +424,7 @@
   /* ===== add popup ===== */
   .popup-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:55; opacity:0; pointer-events:none; transition:opacity .25s ease; }
   .popup-overlay.show{ opacity:1; pointer-events:auto; }
-  .add-popup{ position:absolute; top:7%; left:5%; right:5%; bottom:9%; background:var(--card); border-radius:28px; z-index:56; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.05); opacity:0; pointer-events:none; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
+  .add-popup{ position:absolute; top:7%; left:5%; right:5%; bottom:9%; background:var(--card); border-radius:28px; overflow:hidden; z-index:56; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.05); opacity:0; pointer-events:none; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
   .add-popup.show{ transform:scale(1); opacity:1; pointer-events:auto; }
   .popup-topbar{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 6px 18px; flex:0 0 auto; }
   .popup-delete, .popup-close{ border:none; padding:0; font:inherit; }
@@ -635,7 +635,7 @@
   .period-quiz-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .25s ease; }
   .period-quiz-overlay.show{ opacity:1; pointer-events:auto; }
   .period-quiz-sheet{
-    position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0;
+    position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0; overflow:hidden;
     z-index:71; box-shadow:0 -8px 24px rgba(0,0,0,0.4); max-height:72%;
     transform:translateY(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
     display:flex; flex-direction:column;
