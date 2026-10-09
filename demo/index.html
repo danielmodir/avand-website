@@ -246,6 +246,27 @@
   .app-header h1{ font-size:24px; margin:0 0 2px 0; font-weight:700; letter-spacing:-0.3px; }
   .app-header p{ margin:0; font-size:13px; color:var(--text-muted); }
 
+  /* Sticky banner header for the calendar/planning/period workspaces
+     (ported in spirit, not in code, from the t02.html header reference —
+     that file had no real sticky behavior and a fixed 4:1 ratio for every
+     size, so this is a fresh build: position:sticky + an 8:1 desktop /
+     4:1 mobile aspect-ratio. Deliberately excludes the admin-panel and
+     dark-mode buttons the reference had — those stay out for now. */
+  .app-banner{
+    position:sticky; top:0; z-index:30; margin:0 0 16px 0;
+    aspect-ratio:8/1; border-radius:24px; overflow:hidden;
+    background:linear-gradient(135deg, var(--primary), #0F4C75);
+    display:flex; align-items:center; gap:10px; padding:0 18px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.35);
+  }
+  .app-banner-mark{
+    flex:0 0 auto; width:34px; height:34px; border-radius:50%;
+    background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;
+  }
+  .app-banner-mark img{ width:62%; height:62%; filter:invert(1); display:block; }
+  .app-banner-title{ color:#fff; font-weight:800; font-size:15px; letter-spacing:-0.2px; }
+  @media (max-width:600px){ .app-banner{ aspect-ratio:4/1; } }
+
   .section-title{ font-size:13px; font-weight:600; color:var(--text-muted); letter-spacing:.02em; margin:22px 2px 10px 2px; display:flex; align-items:center; justify-content:space-between; }
   .section-title .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; }
   .empty-hint{ color:var(--text-muted); font-size:13px; background:var(--card); border:1px dashed var(--border); border-radius:16px; padding:16px; text-align:center; }
@@ -776,11 +797,10 @@
     /* Desktop's #page-calendar column is Monthly-only (see render()'s
        guard that forces state.calMode='month' at this width). */
     .cal-mode-tabs{ display:none; }
-    /* Desktop's #page-calendar column doesn't need a generic "Calendar"
-       title — the month/year label already says what it is. (Home's own
-       header was removed entirely, both breakpoints — see Dashboard
-       cleanup in SPEC.md.) */
-    #page-calendar .app-header{ display:none; }
+    /* The old generic "Calendar" text title was hidden here (the month/
+       year label already says what it is), but the sticky brand banner
+       that replaced it (.app-banner) stays visible at every width — it's
+       a branding surface, not a redundant label. */
 
     /* Always rendered (not display:none) so open/close is a slide
        transition, not a sudden pop — same technique as the mobile
@@ -1184,7 +1204,7 @@ function setYearOf(anchor, year){
 
 const STRINGS = {
   en: {
-    today:'Today', calendar:'Calendar', menu:'Menu', backToToday:'Back to today',
+    today:'Today', calendar:'Calendar', planning:'Planning', menu:'Menu', backToToday:'Back to today',
     events:'Events', tasks:'Tasks', habits:'Habits',
     noEventsToday:'No events today', noTasksToday:'No tasks today', noHabitsYet:'No habits yet',
     noEvents:'No events', noTasks:'No tasks', noHabits:'No habits',
@@ -1277,7 +1297,7 @@ const STRINGS = {
     retryBtn:'Retry'
   },
   fa: {
-    today:'امروز', calendar:'تقویم', menu:'منو', backToToday:'بازگشت به امروز',
+    today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', menu:'منو', backToToday:'بازگشت به امروز',
     events:'رویدادها', tasks:'کارها', habits:'عادت‌ها',
     noEventsToday:'رویدادی برای امروز نیست', noTasksToday:'کاری برای امروز نیست', noHabitsYet:'هنوز عادتی نیست',
     noEvents:'رویدادی نیست', noTasks:'کاری نیست', noHabits:'عادتی نیست',
@@ -1374,6 +1394,16 @@ function t(key){ return (STRINGS[lang()] || STRINGS.en)[key] || key; }
 /* Alias for use inside functions whose own parameter is named `t` (task
    objects, mostly) and would otherwise shadow the translator above. */
 const tr = t;
+/* Shared sticky banner for the calendar/planning/period workspaces — see
+   the .app-banner CSS comment for context on where this came from. */
+function renderAppBanner(titleKey){
+  return `
+    <div class="app-banner">
+      <div class="app-banner-mark"><img src="../assets/icons/logo-mark.png" alt=""></div>
+      <div class="app-banner-title">${t(titleKey)}</div>
+    </div>
+  `;
+}
 function applyLanguageDom(){
   document.documentElement.setAttribute('lang', lang()==='fa' ? 'fa' : 'en');
   document.body.style.fontFamily = lang()==='fa' ? "'SG Kara','Inter',system-ui,Tahoma,sans-serif" : "'Inter','SG Kara',system-ui,sans-serif";
@@ -1579,6 +1609,7 @@ function renderHome(){
      between both breakpoints, so this has to branch on viewport here
      rather than via CSS alone. */
   return `
+    ${renderAppBanner('planning')}
     ${renderHomeCalWidget()}
     ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
     ${renderItemSections(tasks, habits, events, d)}
@@ -2594,7 +2625,7 @@ function renderCalendar(){
   const nextAction = state.calMode === 'day' ? 'cal-next-day' : 'cal-next-week';
 
   return `
-    <div class="app-header"><h1>${t('calendar')}</h1></div>
+    ${renderAppBanner('calendar')}
     <div class="cal-topbar">
       ${showSideArrows ? `<div class="cal-corner-arrow left" data-action="${prevAction}">${ICONS.chevronLeft}</div>` : ''}
       <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
