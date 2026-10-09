@@ -99,6 +99,7 @@
   .device{
     width:100%; height:100vh; height:100dvh; background:var(--bg);
     position:relative; overflow:hidden; border-radius:0; box-shadow:none;
+    display:flex; flex-direction:column;
   }
 
   /* ===== app body =====
@@ -106,8 +107,14 @@
      merged into it via .home-cal-widget (see below) and Menu is a
      hamburger-triggered overlay instead of a swiped page. At 960px+ the
      desktop media query turns this into a two-column grid showing
-     #page-calendar and #page-home side by side (see there). */
-  .pager-wrap{ position:absolute; inset:0; overflow:hidden; }
+     #page-calendar and #page-home side by side (see there).
+     #app-banner (a normal flex item, see its own CSS) sits above this as
+     a sibling in the body markup, so pager-wrap only needs to fill
+     whatever height is left — position:relative (not absolute/inset:0
+     like before #app-banner existed) plus flex:1 and min-height:0 (the
+     usual flexbox fix for a scrolling child not forcing its flex item
+     taller than the available space). */
+  .pager-wrap{ position:relative; flex:1 1 auto; min-height:0; overflow:hidden; }
   .pager{ position:absolute; inset:0; }
   /* Horizontal padding grows with viewport (capped) instead of letting
      cards stretch edge-to-edge on tablet-width screens, while the
@@ -242,29 +249,38 @@
   .rail-cluster{ display:none; }
   .desktop-avatar-btn{ display:none; }
 
-  .app-header{ margin-bottom:18px; }
-  .app-header h1{ font-size:24px; margin:0 0 2px 0; font-weight:700; letter-spacing:-0.3px; }
-  .app-header p{ margin:0; font-size:13px; color:var(--text-muted); }
-
-  /* Sticky banner header for the calendar/planning/period workspaces
-     (ported in spirit, not in code, from the t02.html header reference —
-     that file had no real sticky behavior and a fixed 4:1 ratio for every
-     size, so this is a fresh build: position:sticky + an 8:1 desktop /
-     4:1 mobile aspect-ratio. Deliberately excludes the admin-panel and
-     dark-mode buttons the reference had — those stay out for now. */
+  /* ONE single persistent header for the calendar/planning/period
+     workspaces (not one per page/pane — see #app-banner's place in the
+     body markup, a sibling before #pager-wrap, outside every page's own
+     scroll, so it never duplicates and never scrolls away). Re-themed
+     from the t02.html header reference: that file had no real sticky
+     behavior and only a flat 4:1 ratio for every size, and this is a
+     fresh build instead — a normal flex item above the pager (so no
+     scroll-under tricks are even needed), 8:1 desktop / 4:1 mobile, with
+     an image layer (.app-banner-bg) for the "can show a photo" ability
+     the reference had (its own background image/video layer) — empty by
+     default until an image is actually set. Deliberately excludes the
+     admin-panel and dark-mode buttons the reference had next to its
+     header — those stay out for now. */
   .app-banner{
-    position:sticky; top:0; z-index:30; margin:0 0 16px 0;
+    position:relative; flex:0 0 auto; z-index:30; margin:14px 14px 10px 14px;
     aspect-ratio:8/1; border-radius:24px; overflow:hidden;
     background:linear-gradient(135deg, var(--primary), #0F4C75);
     display:flex; align-items:center; gap:10px; padding:0 18px;
     box-shadow:0 8px 20px rgba(0,0,0,0.35);
   }
+  .device.show-menu .app-banner{ display:none; }
+  .app-banner-bg{
+    position:absolute; inset:0; background-size:cover; background-position:center;
+    opacity:0; transition:opacity .25s ease;
+  }
+  .app-banner-bg.has-image{ opacity:1; }
   .app-banner-mark{
-    flex:0 0 auto; width:34px; height:34px; border-radius:50%;
+    position:relative; flex:0 0 auto; width:34px; height:34px; border-radius:50%;
     background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;
   }
   .app-banner-mark img{ width:62%; height:62%; filter:invert(1); display:block; }
-  .app-banner-title{ color:#fff; font-weight:800; font-size:15px; letter-spacing:-0.2px; }
+  .app-banner-title{ position:relative; color:#fff; font-weight:800; font-size:15px; letter-spacing:-0.2px; }
   @media (max-width:600px){ .app-banner{ aspect-ratio:4/1; } }
 
   /* Three swipeable "desktops" (occasions / planning / period) that live
@@ -424,14 +440,27 @@
   .day-cell-sub{ font-size:8.5px; font-weight:500; line-height:1; opacity:.55; letter-spacing:-0.2px; }
   .day-cell.selected .day-cell-sub{ opacity:.85; }
   /* Density states driven by attachDensityGesture()'s scroll/touch state
-     machine (phone-only). "full" is the default/untouched look above. */
+     machine (phone-only), set as data-density on the whole page
+     container (#page-calendar / #page-home) so it can also shrink the
+     grid's siblings (weekday header, month/year title row) — same idea
+     as the reference's "shrink title, hide nav arrows, shrink .occwrap"
+     compaction, re-themed to this app's own elements. "full" is the
+     default/untouched look above. */
   .month-grid{ transition:gap .18s ease; }
-  .month-grid[data-density="mid"] .day-cell-sub{ display:none; }
-  .month-grid[data-density="mid"] .day-cell{ font-size:12px; }
-  .month-grid[data-density="compact"]{ gap:2px; }
-  .month-grid[data-density="compact"] .day-cell-sub{ display:none; }
-  .month-grid[data-density="compact"] .day-cell{ font-size:10.5px; border-radius:7px; }
-  .month-grid[data-density="compact"] .day-dots{ display:none; }
+  [data-density] .cal-topbar, [data-density] .home-cal-topbar{ transition:font-size .18s ease, margin .18s ease, padding .18s ease; }
+  [data-density="mid"] .weekday-header{ margin-bottom:3px; }
+  [data-density="mid"] .weekday-header span{ font-size:9px; }
+  [data-density="mid"] .cal-topbar, [data-density="mid"] .home-cal-topbar{ font-size:13px; margin-bottom:8px; padding:2px 0; }
+  [data-density="mid"] .day-cell-sub{ display:none; }
+  [data-density="mid"] .day-cell{ font-size:12px; }
+  [data-density="compact"] .weekday-header{ margin-bottom:0; }
+  [data-density="compact"] .weekday-header span{ font-size:0; }
+  [data-density="compact"] .cal-topbar, [data-density="compact"] .home-cal-topbar{ font-size:11px; margin-bottom:4px; padding:0; }
+  [data-density="compact"] .cal-corner-arrow{ display:none; }
+  [data-density="compact"] .month-grid{ gap:2px; }
+  [data-density="compact"] .day-cell-sub{ display:none; }
+  [data-density="compact"] .day-cell{ font-size:10.5px; border-radius:7px; }
+  [data-density="compact"] .day-dots{ display:none; }
   .day-dots{display:flex; gap:2px; height:4px;}
   .day-dots span{width:4px; height:4px; border-radius:50%; background:var(--primary);}
   .day-cell.selected .day-dots span{background:#fff;}
@@ -811,7 +840,7 @@
       width:100%; max-width:1200px; height:100vh; max-height:none;
       border-radius:0; box-shadow:none; overflow:hidden;
     }
-    .pager-wrap{ position:static; overflow:visible; touch-action:auto; height:100%; }
+    .pager-wrap{ position:static; overflow:visible; touch-action:auto; flex:1 1 auto; min-height:0; }
     .pager{
       position:static; display:grid; grid-template-columns:minmax(320px,380px) 1fr;
       align-items:start; gap:24px; width:100%; height:100%;
@@ -827,10 +856,6 @@
     /* Desktop's #page-calendar column is Monthly-only (see render()'s
        guard that forces state.calMode='month' at this width). */
     .cal-mode-tabs{ display:none; }
-    /* The old generic "Calendar" text title was hidden here (the month/
-       year label already says what it is), but the sticky brand banner
-       that replaced it (.app-banner) stays visible at every width — it's
-       a branding surface, not a redundant label. */
 
     /* Always rendered (not display:none) so open/close is a slide
        transition, not a sudden pop — same technique as the mobile
@@ -940,6 +965,19 @@
 
   <div class="auth-screen" id="auth-screen"></div>
   <div class="boot-screen hidden" id="boot-screen"></div>
+
+  <!-- ONE single header for the calendar/planning/period workspaces — a
+       normal-flow flex item above #pager-wrap (see .device/.pager-wrap
+       CSS), not page content, so it's never duplicated per page and
+       never scrolls away. #app-banner-bg is an image layer (empty/no
+       "has-image" class until a photo is actually set — see the
+       .app-banner CSS comment) for the "can show a photo" ability.
+       Hidden via CSS while the Menu panel is open (.device.show-menu). -->
+  <div class="app-banner" id="app-banner">
+    <div class="app-banner-bg" id="app-banner-bg"></div>
+    <div class="app-banner-mark"><img src="../assets/icons/logo-mark.png" alt=""></div>
+    <div class="app-banner-title">Avand</div>
+  </div>
 
   <div class="pager-wrap" id="pager-wrap">
     <div class="pager" id="pager">
@@ -1458,16 +1496,6 @@ function t(key){ return (STRINGS[lang()] || STRINGS.en)[key] || key; }
 /* Alias for use inside functions whose own parameter is named `t` (task
    objects, mostly) and would otherwise shadow the translator above. */
 const tr = t;
-/* Shared sticky banner for the calendar/planning/period workspaces — see
-   the .app-banner CSS comment for context on where this came from. */
-function renderAppBanner(titleKey){
-  return `
-    <div class="app-banner">
-      <div class="app-banner-mark"><img src="../assets/icons/logo-mark.png" alt=""></div>
-      <div class="app-banner-title">${t(titleKey)}</div>
-    </div>
-  `;
-}
 function applyLanguageDom(){
   document.documentElement.setAttribute('lang', lang()==='fa' ? 'fa' : 'en');
   document.body.style.fontFamily = lang()==='fa' ? "'SG Kara','Inter',system-ui,Tahoma,sans-serif" : "'Inter','SG Kara',system-ui,sans-serif";
@@ -1650,8 +1678,8 @@ function render(){
   renderDaySheet();
   attachCalendarGestures();
   attachHomeCalendarGestures();
-  attachDensityGesture(document.getElementById('cal-month-grid'));
-  attachDensityGesture(document.getElementById('home-cal-grid'));
+  attachDensityGesture(document.getElementById('cal-month-grid'), document.getElementById('page-calendar'));
+  attachDensityGesture(document.getElementById('home-cal-grid'), document.getElementById('page-home'));
   attachDesktopPager();
   attachSwipeToDelete(document.getElementById('page-home'));
   attachSwipeToDelete(document.getElementById('page-calendar'));
@@ -1688,18 +1716,16 @@ function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = [
     { key:'occasionsDesktop', html:`
-      ${renderAppBanner('occasionsDesktop')}
       <div class="empty-hint">${t('occasionsComingSoon')}</div>
     ` },
     { key:'planning', html:`
-      ${renderAppBanner('planning')}
       ${renderHomeCalWidget()}
       ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
       ${renderItemSections(tasks, habits, events, d)}
     ` },
   ];
   if(state.profile.gender === 'female'){
-    panes.push({ key:'periodDesktop', html: renderPeriodPage(renderAppBanner('periodDesktop')) });
+    panes.push({ key:'periodDesktop', html: renderPeriodPage('') });
   }
   return `
     <div class="desktop-wrap" id="desktop-wrap">
@@ -2741,7 +2767,6 @@ function renderCalendar(){
   const nextAction = state.calMode === 'day' ? 'cal-next-day' : 'cal-next-week';
 
   return `
-    ${renderAppBanner('calendar')}
     <div class="cal-topbar">
       ${showSideArrows ? `<div class="cal-corner-arrow left" data-action="${prevAction}">${ICONS.chevronLeft}</div>` : ''}
       <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
@@ -3661,11 +3686,21 @@ function attachDesktopContextMenu(){
    this app's own .month-grid/.day-cell markup rather than the
    reference's. */
 const CAL_DENSITY_ORDER = ['full','mid','compact'];
-function attachDensityGesture(el){
-  if(!el) return;
-  if(window.innerWidth >= 768){ el.removeAttribute('data-density'); return; }
+/* `el` is the gesture surface (the month grid); `scopeEl` is the page
+   container the data-density attribute is set on, so CSS can also
+   shrink siblings of the grid (weekday header, month/year title) —
+   matching the reference's broader "hide .goto, shrink title, hide nav
+   arrows, shrink .occwrap" compaction, not just the grid itself. Also
+   calls preventDefault on the wheel/touch handlers so this gesture
+   exclusively drives density instead of fighting with the page's own
+   vertical scroll underneath it, the way the reference's gesture was
+   the only thing listening (it wasn't embedded in a taller scrolling
+   page the way this app's calendar/home pages are). */
+function attachDensityGesture(el, scopeEl){
+  if(!el || !scopeEl) return;
+  if(window.innerWidth >= 768){ scopeEl.removeAttribute('data-density'); return; }
   if(!state.calDensity) state.calDensity = 'full';
-  el.setAttribute('data-density', state.calDensity);
+  scopeEl.setAttribute('data-density', state.calDensity);
   let acc = 0;
   const step = (dir) => {
     const i = CAL_DENSITY_ORDER.indexOf(state.calDensity);
@@ -3673,7 +3708,7 @@ function attachDensityGesture(el){
     if(next < 0 || next > 2) return;
     state.calDensity = CAL_DENSITY_ORDER[next];
     acc = 0;
-    el.setAttribute('data-density', state.calDensity);
+    scopeEl.setAttribute('data-density', state.calDensity);
   };
   const feed = (dy) => {
     acc = Math.max(0, Math.min(200, acc + Math.abs(dy)));
@@ -3681,15 +3716,16 @@ function attachDensityGesture(el){
     if(dy > 0 && acc > (i === 0 ? 40 : 140)) step(1);
     else if(dy < 0 && acc > (i === 2 ? 15 : 115)) step(-1);
   };
-  el.addEventListener('wheel', e => { if(Math.abs(e.deltaY) > 1) feed(e.deltaY); }, {passive:true});
+  el.addEventListener('wheel', e => { if(Math.abs(e.deltaY) > 1){ e.preventDefault(); feed(e.deltaY); } }, {passive:false});
   let touchY = null;
   el.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, {passive:true});
   el.addEventListener('touchmove', e => {
     if(touchY === null) return;
+    e.preventDefault();
     const y = e.touches[0].clientY;
     feed(touchY - y);
     touchY = y;
-  }, {passive:true});
+  }, {passive:false});
   el.addEventListener('touchend', () => { touchY = null; acc = 0; });
 }
 function attachCalendarGestures(){
