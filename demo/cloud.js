@@ -34,6 +34,17 @@
     return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
   }
 
+  /* A short, meaningful, display-only id ("DANI4821") instead of the raw
+     auth UUID — derived deterministically from the name + uuid (same
+     inputs always give the same id, so it needs no extra DB column and
+     stays stable across logins/devices) rather than actually random. */
+  function friendlyUserId(name, rawUuid) {
+    var base = (name || 'user').replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase() || 'USER';
+    var hash = 0;
+    for (var i = 0; i < rawUuid.length; i++) hash = (hash * 31 + rawUuid.charCodeAt(i)) >>> 0;
+    return base + (1000 + (hash % 9000));
+  }
+
   function loadSession() {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; }
   }
@@ -225,7 +236,7 @@
     var profileRow = results[0][0] || {};
     var settingsRow = results[1][0] || {};
     return {
-      profile: Object.assign(fromRow(profileRow, PROFILE_MAP), { userId: userId, photo: profileRow.photo_url || null, dob: profileRow.dob || '' }),
+      profile: Object.assign(fromRow(profileRow, PROFILE_MAP), { userId: friendlyUserId(profileRow.username || profileRow.first_name, userId), photo: profileRow.photo_url || null, dob: profileRow.dob || '' }),
       settings: fromRow(settingsRow, SETTINGS_MAP),
       tasks: results[2].map(function (r) { return fromRow(r, TASK_MAP); }),
       habits: results[3].map(function (r) { return fromRow(r, HABIT_MAP); }),

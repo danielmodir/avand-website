@@ -14,7 +14,7 @@
       }
       var next = current === 'dark' ? 'light' : 'dark';
       root.setAttribute('data-theme', next);
-      try { localStorage.setItem('avand-theme', next); } catch (e) { /* private mode, ignore */ }
+      try { localStorage.setItem('toojibee-theme', next); } catch (e) { /* private mode, ignore */ }
       btn.setAttribute('aria-pressed', next === 'dark' ? 'true' : 'false');
     });
   });
