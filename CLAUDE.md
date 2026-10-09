@@ -19,9 +19,18 @@ Read the relevant doc before any big change.
   provenance (no formal license file came with it, unlike Inter's OFL one).
 - Audience is in Iran on a slow, filtered network. Keep pages light (target: under
   300 KB per page excluding fonts). Prefer SVG or WebP, lazy-load images.
+- Daily occasions (مناسبت‌ها, demo/'s اصلی desktop pane) use a self-hosted static
+  dataset, /assets/data/occasions.json — a one-time download of
+  github.com/BaseMax/persian-holidays-api's holidays.json (238 entries, Jalali/
+  Gregorian/Hijri), fetched once from this app's own origin at boot and cached in
+  memory (loadOccasionsData() in demo/index.html). Not a live third-party API call —
+  that would break the zero-external-requests rule above.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.
   Never hardcode colors anywhere else.
-- Brand is a placeholder (logo "ت" in a circle). Keep it swappable in one place.
+- Brand mark is assets/icons/logo-mark.png (the "Tj" monogram) on a navy circle —
+  swap that one file to rebrand everywhere (assets/icons/logo.svg, favicon.svg,
+  og-image.svg, and demo/'s header banner all reference it). Keep it swappable in
+  one place.
 - /demo/ holds the HTML prototype. It must have noindex. noindex still applies, and the
   marketing site (outside /demo/) must still never describe it as the finished product.
   The visible "this is a preview" banner was removed by explicit product decision (SPEC.md §11.9).

@@ -60,6 +60,11 @@
     the text color for anything with background:var(--primary).
   */
   :root{
+    /* Without this, native form controls (the week-start-day <select>'s
+       own dropdown list, scrollbars, etc.) default to the OS/browser's
+       light chrome regardless of our custom colors — a plain white
+       dropdown panel popping up over this otherwise all-dark app. */
+    color-scheme: dark;
     --bg:#000000;
     --bg-soft:#0D0D0D;
     --card:#14213D;
@@ -84,6 +89,7 @@
     --google-btn-text:#1F1F1F;
   }
   :root[data-theme="light"]{
+    color-scheme: light;
     --bg:#E5E5E5;
     --bg-soft:#EFEFEF;
     --card:#FFFFFF;
@@ -323,13 +329,27 @@
      menu). Native horizontal scroll-snap so touch swipe and trackpad both
      just work; attachDesktopPager() keeps the dots in sync and lets a dot
      click jump straight to a pane. */
-  .desktop-wrap{ overflow-x:auto; overflow-y:visible; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  /* .desktop-box is the fixed, bordered card: it never grows/shrinks
+     with whichever pane's content is tallest — each .desktop-pane
+     scrolls its own overflow internally instead (own overflow-y:auto),
+     so a tall pane's scroll stays inside the box, same "each section
+     scrolls its own section" rule the rest of the app follows. */
+  .desktop-box{
+    border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
+    overflow:hidden; height:520px; display:flex; flex-direction:column;
+  }
+  .desktop-wrap{ flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .desktop-wrap::-webkit-scrollbar{ display:none; }
-  .desktop-track{ display:flex; }
-  .desktop-pane{ flex:0 0 100%; min-width:100%; scroll-snap-align:start; }
-  .desktop-dots{ display:flex; justify-content:center; align-items:center; gap:6px; margin:4px 0 18px 0; }
+  .desktop-track{ display:flex; height:100%; }
+  .desktop-pane{ flex:0 0 100%; min-width:100%; height:100%; overflow-y:auto; scroll-snap-align:start; padding:16px; scrollbar-width:none; }
+  .desktop-pane::-webkit-scrollbar{ display:none; }
+  .desktop-dots{ flex:0 0 auto; display:flex; justify-content:center; align-items:center; gap:6px; padding:10px 0; border-top:1px solid var(--border); }
   .desktop-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); cursor:pointer; transition:background .2s ease, width .2s ease; }
   .desktop-dots span.active{ background:var(--primary); width:18px; border-radius:4px; }
+  @media (max-width:600px){ .desktop-box{ height:430px; } }
+  .occasion-row{ padding:12px 14px; border-radius:12px; background:var(--card); border:1px solid var(--border); margin-bottom:8px; font-size:13px; display:flex; align-items:center; gap:8px; }
+  .occasion-row.holiday{ color:var(--danger); border-color:var(--danger-soft); }
+  .occasion-holiday-dot{ width:6px; height:6px; border-radius:50%; background:var(--danger); flex:0 0 auto; }
 
   .section-title{ font-size:13px; font-weight:600; color:var(--text-muted); letter-spacing:.02em; margin:22px 2px 10px 2px; display:flex; align-items:center; justify-content:space-between; }
   .section-title .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; }
@@ -806,6 +826,12 @@
 
   .share-hero{ text-align:center; margin:10px 0 22px 0; }
   .share-app-icon{ width:64px; height:64px; border-radius:20px; background:var(--primary); color:var(--on-primary); font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 10px auto; }
+  /* Shared brand-mark image used wherever the old "آ" letter placeholder
+     was: same theme-aware invert logic as .app-banner-mark img (black
+     ink needs no filter against dark theme's black --on-primary, light
+     theme's white --on-primary inverts it to white). */
+  .brand-mark-img{ width:60%; height:60%; display:block; }
+  :root[data-theme="light"] .brand-mark-img{ filter:invert(1); }
   .share-app-name{ font-size:16px; font-weight:700; }
   .share-app-desc{ font-size:12px; color:var(--text-muted); margin-top:2px; }
   .share-options{ display:flex; gap:10px; }
@@ -815,6 +841,7 @@
   .share-option span{ font-size:12px; font-weight:600; }
 
   .about-logo{ width:64px; height:64px; border-radius:20px; background:var(--primary); color:var(--on-primary); font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:6px auto 10px auto; }
+  .about-desc-editor{ width:100%; min-height:120px; resize:vertical; font-family:inherit; font-size:14px; padding:10px; border-radius:12px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text); }
   .about-name{ text-align:center; font-size:17px; font-weight:700; }
   .about-version{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2px; margin-bottom:14px; }
   .about-links{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
@@ -1287,8 +1314,8 @@ function gregorianToJDN(y,m,d){
   const a = Math.floor((14-m)/12), y2 = y+4800-a, m2 = m+12*a-3;
   return d + Math.floor((153*m2+2)/5) + 365*y2 + Math.floor(y2/4) - Math.floor(y2/100) + Math.floor(y2/400) - 32045;
 }
+const ISLAMIC_EPOCH_JDN = 1948440;
 function toHijri(gy,gm,gd){
-  const ISLAMIC_EPOCH_JDN = 1948440;
   let l = gregorianToJDN(gy,gm,gd) - ISLAMIC_EPOCH_JDN + 10632;
   const n = Math.floor((l-1)/10631);
   l = l - 10631*n + 354;
@@ -1299,12 +1326,77 @@ function toHijri(gy,gm,gd){
   const hy = 30*n + j - 30;
   return { hy, hm, hd };
 }
+/* Inverse of the JDN<->Gregorian pair above (same well-known algorithm
+   family) plus the matching Hijri->JDN formula, so the tabular Hijri
+   calendar can be stepped/navigated like Jalali, not just printed as a
+   lone day number. */
+function jdnToGregorian(jdn){
+  const a = jdn + 32044, b = Math.floor((4*a+3)/146097), c = a - Math.floor((146097*b)/4);
+  const d = Math.floor((4*c+3)/1461), e = c - Math.floor((1461*d)/4), m = Math.floor((5*e+2)/153);
+  const day = e - Math.floor((153*m+2)/5) + 1, month = m + 3 - 12*Math.floor(m/10);
+  const year = 100*b + d - 4800 + Math.floor(m/10);
+  return { gy:year, gm:month, gd:day };
+}
+function hijriToGregorian(hy,hm,hd){
+  const jdn = hd + Math.ceil(29.5*(hm-1)) + (hy-1)*354 + Math.floor((3+11*hy)/30) + ISLAMIC_EPOCH_JDN - 1;
+  return jdnToGregorian(jdn);
+}
 
 const JALALI_MONTHS_FA = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 const JALALI_MONTHS_EN = ['Farvardin','Ordibehesht','Khordad','Tir','Mordad','Shahrivar','Mehr','Aban','Azar','Dey','Bahman','Esfand'];
-function isJalali(){ return state.settings.calendarSystem === 'jalali'; }
+const HIJRI_MONTHS_FA = ['محرم','صفر','ربیع‌الاول','ربیع‌الثانی','جمادی‌الاول','جمادی‌الثانی','رجب','شعبان','رمضان','شوال','ذیقعده','ذیحجه'];
+const HIJRI_MONTHS_EN = ['Muharram','Safar',"Rabi' I","Rabi' II","Jumada I","Jumada II",'Rajab',"Sha'ban",'Ramadan','Shawwal',"Dhu al-Qi'dah","Dhu al-Hijjah"];
+/* "Primary" = which system shows as the big day-cell number and drives
+   the month/year title + navigation; independent from which systems
+   are merely *enabled* (state.settings.calendarEnabled) and therefore
+   shown in a cell's small secondary line — see renderCalendarSettings
+   and dayCellDateHtml. Settings enforces "at least one enabled" and
+   that the primary is always itself enabled. */
+function primarySystem(){ return state.settings.calendarSystem; }
+function isJalali(){ return primarySystem() === 'jalali'; }
+function isHijriPrimary(){ return primarySystem() === 'hijri'; }
 function jalaliMonthName(i0){ return (lang()==='fa' ? JALALI_MONTHS_FA : JALALI_MONTHS_EN)[i0]; }
+function hijriMonthName(i0){ return (lang()==='fa' ? HIJRI_MONTHS_FA : HIJRI_MONTHS_EN)[i0]; }
+
+/* Daily occasions (مناسبت‌ها) — self-hosted static dataset, not a live
+   third-party API call: CLAUDE.md's hard rule is zero external requests
+   at runtime (the only standing exception is this app's own Supabase
+   backend), so assets/data/occasions.json is a one-time download of
+   BaseMax/persian-holidays-api's holidays.json (same self-hosting
+   pattern as the fonts), fetched once from this app's own origin and
+   cached in memory. Covers Jalali, Gregorian and Hijri occasions; the
+   month-name spellings below match that specific dataset's strings,
+   not necessarily this file's own display month-name arrays. */
+let OCCASIONS_DATA = null;
+const OCC_SHAMSI_MONTH = { 'فروردین':1,'اردیبهشت':2,'خرداد':3,'تیر':4,'مرداد':5,'اَمرداد':5,'شهریور':6,'مهر':7,'آبان':8,'آذر':9,'دی':10,'بهمن':11,'اسفند':12 };
+const OCC_GREGORIAN_MONTH = { January:1,February:2,March:3,April:4,May:5,June:6,July:7,August:8,September:9,October:10,November:11,December:12 };
+/* The dataset doesn't distinguish Rabi I/II or Jumada I/II (one shared
+   spelling for each pair) — mapped to the first of the pair as a
+   best-effort; a handful of entries may land a lunar month off. */
+const OCC_HIJRI_MONTH = { 'محرم':1,'صفر':2,'ربيع':3,'ربیع':3,'جمادي':5,'جمادی':5,'رجب':7,'شعبان':8,'رمضان':9,'شوال':10,'ذوالقعده':11,'ذیقعده':11,'ذوالحجه':12,'ذیحجه':12 };
+function loadOccasionsData(){
+  if(OCCASIONS_DATA) return;
+  fetch('../assets/data/occasions.json').then(r => r.json()).then(data => { OCCASIONS_DATA = data; render(); }).catch(() => { OCCASIONS_DATA = []; });
+}
+function occasionsForDate(d){
+  if(!OCCASIONS_DATA) return null;
+  const j = toJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
+  const h = toHijri(d.getFullYear(), d.getMonth()+1, d.getDate());
+  const gm = d.getMonth()+1, gd = d.getDate();
+  return OCCASIONS_DATA.filter(item => {
+    const [dayStr, monthStr] = item.date.date;
+    const day = Number(dayStr);
+    if(item.date.type === 'shamsi') return OCC_SHAMSI_MONTH[monthStr]===j.jm && day===j.jd;
+    if(item.date.type === 'gregorian') return OCC_GREGORIAN_MONTH[monthStr]===gm && day===gd;
+    if(item.date.type === 'hijri') return OCC_HIJRI_MONTH[monthStr]===h.hm && day===h.hd;
+    return false;
+  });
+}
 function displayMonthYear(d){
+  if(isHijriPrimary()){
+    const h = toHijri(d.getFullYear(), d.getMonth()+1, d.getDate());
+    return { monthLabel: hijriMonthName(h.hm-1), yearLabel: h.hy, hy:h.hy, hm:h.hm, hd:h.hd };
+  }
   if(isJalali()){
     const j = toJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
     return { monthLabel: jalaliMonthName(j.jm-1), yearLabel: j.jy, jy:j.jy, jm:j.jm, jd:j.jd };
@@ -1312,21 +1404,33 @@ function displayMonthYear(d){
   return { monthLabel: monthName(d.getMonth()), yearLabel: d.getFullYear() };
 }
 function displayDayNum(d){
+  if(isHijriPrimary()) return toHijri(d.getFullYear(), d.getMonth()+1, d.getDate()).hd;
   if(isJalali()) return toJalali(d.getFullYear(), d.getMonth()+1, d.getDate()).jd;
   return d.getDate();
 }
 /* Triple-date cell body: big primary day number (whichever system
-   Settings has active) plus the other two systems as a small secondary
-   line underneath — same idea as the calendar09.html reference's day
-   cells, re-themed to this app's own .day-cell markup instead of its
-   markup/CSS. */
+   Settings has as primary) plus every OTHER *enabled* system's day
+   number as a small secondary line underneath — same idea as the
+   calendar09.html reference's day cells, re-themed to this app's own
+   .day-cell markup instead of its markup/CSS. A system that's been
+   switched off in Settings (calendarEnabled) is left out entirely,
+   including from the secondary line — "disabled" means gone, not just
+   demoted. */
 function dayCellDateHtml(d){
   const primary = displayDayNum(d);
-  const sub = isJalali() ? d.getDate() : toJalali(d.getFullYear(), d.getMonth()+1, d.getDate()).jd;
-  const hd = toHijri(d.getFullYear(), d.getMonth()+1, d.getDate()).hd;
-  return `<span class="day-cell-num">${primary}</span><span class="day-cell-sub">${sub} / ${hd}</span>`;
+  const en = state.settings.calendarEnabled;
+  const nums = { gregorian: d.getDate, jalali: () => toJalali(d.getFullYear(),d.getMonth()+1,d.getDate()).jd, hijri: () => toHijri(d.getFullYear(),d.getMonth()+1,d.getDate()).hd };
+  const sysOrder = ['gregorian','jalali','hijri'];
+  const subVals = sysOrder.filter(s => s !== primarySystem() && en[s]).map(s => s==='gregorian' ? d.getDate() : nums[s]());
+  const sub = subVals.length ? `<span class="day-cell-sub">${subVals.join(' / ')}</span>` : '';
+  return `<span class="day-cell-num">${primary}</span>${sub}`;
 }
 function cellInCurrentMonth(cellDate, cursorDate){
+  if(isHijriPrimary()){
+    const hc = toHijri(cursorDate.getFullYear(), cursorDate.getMonth()+1, cursorDate.getDate());
+    const hd = toHijri(cellDate.getFullYear(), cellDate.getMonth()+1, cellDate.getDate());
+    return hc.hy===hd.hy && hc.hm===hd.hm;
+  }
   if(isJalali()){
     const jc = toJalali(cursorDate.getFullYear(), cursorDate.getMonth()+1, cursorDate.getDate());
     const jd = toJalali(cellDate.getFullYear(), cellDate.getMonth()+1, cellDate.getDate());
@@ -1335,6 +1439,13 @@ function cellInCurrentMonth(cellDate, cursorDate){
   return cellDate.getMonth() === cursorDate.getMonth();
 }
 function stepMonth(anchor, dir){
+  if(isHijriPrimary()){
+    const hc = toHijri(anchor.getFullYear(), anchor.getMonth()+1, anchor.getDate());
+    let hm = hc.hm + dir, hy = hc.hy;
+    if(hm > 12){ hm = 1; hy++; } else if(hm < 1){ hm = 12; hy--; }
+    const g = hijriToGregorian(hy, hm, 1);
+    return new Date(g.gy, g.gm-1, g.gd);
+  }
   if(isJalali()){
     const jc = toJalali(anchor.getFullYear(), anchor.getMonth()+1, anchor.getDate());
     let jm = jc.jm + dir, jy = jc.jy;
@@ -1345,6 +1456,11 @@ function stepMonth(anchor, dir){
   return new Date(anchor.getFullYear(), anchor.getMonth()+dir, 1);
 }
 function stepYear(anchor, dir){
+  if(isHijriPrimary()){
+    const hc = toHijri(anchor.getFullYear(), anchor.getMonth()+1, anchor.getDate());
+    const g = hijriToGregorian(hc.hy+dir, hc.hm, 1);
+    return new Date(g.gy, g.gm-1, g.gd);
+  }
   if(isJalali()){
     const jc = toJalali(anchor.getFullYear(), anchor.getMonth()+1, anchor.getDate());
     const g = toGregorian(jc.jy+dir, jc.jm, 1);
@@ -1353,6 +1469,11 @@ function stepYear(anchor, dir){
   return new Date(anchor.getFullYear()+dir, anchor.getMonth(), 1);
 }
 function setMonthOf(anchor, monthIndex0){
+  if(isHijriPrimary()){
+    const hc = toHijri(anchor.getFullYear(), anchor.getMonth()+1, anchor.getDate());
+    const g = hijriToGregorian(hc.hy, monthIndex0+1, 1);
+    return new Date(g.gy, g.gm-1, g.gd);
+  }
   if(isJalali()){
     const jc = toJalali(anchor.getFullYear(), anchor.getMonth()+1, anchor.getDate());
     const g = toGregorian(jc.jy, monthIndex0+1, 1);
@@ -1361,12 +1482,41 @@ function setMonthOf(anchor, monthIndex0){
   return new Date(anchor.getFullYear(), monthIndex0, 1);
 }
 function setYearOf(anchor, year){
+  if(isHijriPrimary()){
+    const hc = toHijri(anchor.getFullYear(), anchor.getMonth()+1, anchor.getDate());
+    const g = hijriToGregorian(year, hc.hm, 1);
+    return new Date(g.gy, g.gm-1, g.gd);
+  }
   if(isJalali()){
     const jc = toJalali(anchor.getFullYear(), anchor.getMonth()+1, anchor.getDate());
     const g = toGregorian(year, jc.jm, 1);
     return new Date(g.gy, g.gm-1, g.gd);
   }
   return new Date(year, anchor.getMonth(), 1);
+}
+function monthNameFor(i0){ return isHijriPrimary() ? hijriMonthName(i0) : isJalali() ? jalaliMonthName(i0) : monthName(i0); }
+function primaryYearOf(anchor){
+  if(isHijriPrimary()) return toHijri(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).hy;
+  if(isJalali()) return toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).jy;
+  return anchor.getFullYear();
+}
+function primaryMonthOf(anchor){
+  if(isHijriPrimary()) return toHijri(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).hm;
+  if(isJalali()) return toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).jm;
+  return anchor.getMonth()+1;
+}
+function yearRangeFor(){
+  const years = [];
+  if(isHijriPrimary()){
+    const curHY = toHijri(today.getFullYear(),today.getMonth()+1,today.getDate()).hy;
+    for(let y = curHY-60; y <= curHY+10; y++) years.push(y);
+  } else if(isJalali()){
+    const curJY = toJalali(today.getFullYear(), today.getMonth()+1, today.getDate()).jy;
+    for(let y = 1369; y <= curJY+10; y++) years.push(y);
+  } else {
+    for(let y = 1990; y <= today.getFullYear()+10; y++) years.push(y);
+  }
+  return years;
 }
 
 const STRINGS = {
@@ -1383,6 +1533,10 @@ const STRINGS = {
     notifications:'Notifications', notificationsSub:'Task, habit, and event reminders',
     weekStartsOn:'Week starts on', weekStartsSub:'Changes the calendar grid order',
     calendarSystem:'Calendar system', calendarSystemSub:'Gregorian or Jalali (Persian) dates', gregorian:'Gregorian', jalali:'Jalali', hijri:'Hijri',
+    calendarSystemsShown:'Calendars shown', calendarSystemsShownSub:'Turn systems on or off in day cells — at least one stays on',
+    primarySystemBadge:'Shown as the big number', primarySystem:'Primary calendar', primarySystemSub:'Which one shows as the big number',
+    atLeastOneCalendar:'At least one calendar has to stay on',
+    noOccasionsToday:'No occasions on this day.',
     hijriComingSoon:'Hijri calendar support is coming soon',
     showLabels:'Show labels', showLabelsSub:'Text under New Task / Habit / Event',
     sun:'Sun', mon:'Mon',
@@ -1393,9 +1547,9 @@ const STRINGS = {
     phoneNumber:'Phone number', gender:'Gender', male:'Male', female:'Female', genderOther:'Prefer not to say',
     dateOfBirth:'Date of birth', uniqueUserId:'Unique user ID', idCopied:'ID copied',
     connections:'Connections', connectionsSub:'View and manage',
-    friendsSearchPlaceholder:'Search by user ID or phone number',
+    friendsSearchPlaceholder:'Search by user ID',
     inviteLink:'Your invite link', inviteLinkCopied:'Invite link copied',
-    searchResults:'Search results', noSearchResults:'No user found with that ID or phone number',
+    searchResults:'Search results', noSearchResults:'No user found with that ID',
     incomingRequests:'Incoming requests', sentRequests:'Sent requests', myConnections:'My connections',
     noConnectionsYet:'No connections yet — search by user ID or phone number to add one',
     connect:'Connect', pending:'Pending', accept:'Accept', decline:'Decline',
@@ -1440,6 +1594,7 @@ const STRINGS = {
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
     aboutVersion:'Version 0.1 — MVP Prototype',
     aboutDesc:'Toojibee helps you manage tasks, habits, and events in one place — combining daily planning with long-term goals in a single, focused app.',
+    editAboutUs:'Edit "About us" text', editAboutUsSub:'Shown on the About us page, this language only',
     privacyPolicy:'Privacy Policy', termsOfService:'Terms of Service',
     saveChanges:'Save changes', add:'Add',
     task:'Task', habit:'Habit', event:'Event',
@@ -1476,6 +1631,10 @@ const STRINGS = {
     notifications:'نوتیفیکیشن‌ها', notificationsSub:'یادآوری کار، عادت و رویداد',
     weekStartsOn:'شروع هفته از', weekStartsSub:'ترتیب جدول تقویم رو عوض می‌کنه',
     calendarSystem:'نوع تقویم', calendarSystemSub:'میلادی یا شمسی', gregorian:'میلادی', jalali:'شمسی', hijri:'قمری',
+    calendarSystemsShown:'تقویم‌های نمایش‌داده‌شده', calendarSystemsShownSub:'هر تقویم رو جدا روشن/خاموش کن — حداقل یکی باید روشن بمونه',
+    primarySystemBadge:'به‌عنوان عدد بزرگ نشون داده می‌شه', primarySystem:'تقویم اصلی', primarySystemSub:'کدوم به‌عنوان عدد بزرگ نشون داده بشه',
+    atLeastOneCalendar:'حداقل یک تقویم باید روشن بمونه',
+    noOccasionsToday:'مناسبتی برای این روز ثبت نشده.',
     hijriComingSoon:'پشتیبانی از تقویم قمری به‌زودی اضافه می‌شه',
     showLabels:'نمایش برچسب', showLabelsSub:'متن زیر افزودن کار/عادت/رویداد',
     sun:'یک', mon:'دو',
@@ -1486,9 +1645,9 @@ const STRINGS = {
     phoneNumber:'شماره موبایل', gender:'جنسیت', male:'مرد', female:'زن', genderOther:'ترجیح می‌دم نگم',
     dateOfBirth:'تاریخ تولد', uniqueUserId:'شناسه‌ی یکتا', idCopied:'شناسه کپی شد',
     connections:'ارتباط‌ها', connectionsSub:'مشاهده و مدیریت',
-    friendsSearchPlaceholder:'جست‌وجو با شناسه‌ی کاربری یا شماره موبایل',
+    friendsSearchPlaceholder:'جست‌وجو با شناسه‌ی کاربری',
     inviteLink:'لینک دعوت تو', inviteLinkCopied:'لینک دعوت کپی شد',
-    searchResults:'نتیجه‌ی جست‌وجو', noSearchResults:'کاربری با این شناسه یا شماره پیدا نشد',
+    searchResults:'نتیجه‌ی جست‌وجو', noSearchResults:'کاربری با این شناسه پیدا نشد',
     incomingRequests:'درخواست‌های دریافتی', sentRequests:'درخواست‌های ارسالی', myConnections:'ارتباط‌های من',
     noConnectionsYet:'هنوز ارتباطی نداری — با شناسه‌ی کاربری یا شماره موبایل جست‌وجو کن',
     connect:'ارتباط', pending:'در انتظار', accept:'تأیید', decline:'رد',
@@ -1533,6 +1692,7 @@ const STRINGS = {
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
     aboutVersion:'نسخه‌ی ۰.۱ — پروتوتایپ MVP',
     aboutDesc:'توجیبی کمکت می‌کنه کارها، عادت‌ها و رویدادها رو یه‌جا مدیریت کنی — برنامه‌ریزی روزانه و اهداف بلندمدت، تو یه اپ ساده.',
+    editAboutUs:'ویرایش متن «درباره ما»', editAboutUsSub:'تو صفحه‌ی درباره‌ما نشون داده می‌شه، فقط برای همین زبان',
     privacyPolicy:'حریم خصوصی', termsOfService:'شرایط استفاده',
     saveChanges:'ذخیره‌ی تغییرات', add:'افزودن',
     task:'کار', habit:'عادت', event:'رویداد',
@@ -1607,7 +1767,11 @@ const state = {
     email: 'daniel@example.com', phone: '', gender: '', dob: '', photo: null,
     userId: genUserId('Daniel')
   },
-  settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali' },
+  settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali', calendarEnabled: { gregorian: true, jalali: true, hijri: true } },
+  /* Admin-editable "About us" text, per language. Empty string means
+     "use the default aboutDesc translation" — renderAboutPage() falls
+     back to t('aboutDesc') until an admin actually fills this in. */
+  aboutText: { fa: '', en: '' },
   tasks: [],
   habits: [],
   events: [],
@@ -1730,8 +1894,6 @@ function render(){
   document.getElementById('page-calendar').setAttribute('dir', lang()==='fa' ? 'rtl' : 'ltr');
   document.getElementById('page-home').innerHTML = renderHome();
   document.getElementById('page-menu').innerHTML =
-    `<button class="menu-panel-close" data-action="close-menu-overlay" aria-label="Close">${ICONS.close}</button>` +
-    `<button class="menu-maximize-btn" data-action="toggle-menu-maximize" aria-label="Maximize">${ICONS.chevronDown}</button>` +
     `<div class="menu-panel-content">${renderMenu()}</div>`;
   document.getElementById('page-menu').classList.toggle('leave-bottom-bar', state.menuSubView !== 'profile');
   document.getElementById('page-calendar').classList.toggle('no-scroll', state.calMode === 'month');
@@ -1769,9 +1931,17 @@ function renderHome(){
      rather than via CSS alone. */
   return renderDesktops(d, {tasks, habits, events});
 }
+/* "Today's occasions" pane for the "اصلی" desktop — real data now (see
+   occasionsForDate/OCCASIONS_DATA above), for the currently-viewed date
+   `d`, not hardcoded to today, so paging the home date updates it too. */
+function renderOccasionsPane(d){
+  if(OCCASIONS_DATA === null) return `<div class="empty-hint">…</div>`;
+  const items = occasionsForDate(d);
+  if(!items.length) return `<div class="empty-hint">${t('noOccasionsToday')}</div>`;
+  return items.map(it => `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}${escapeHtml(it.event_name)}</div>`).join('');
+}
 /* The three swipeable "desktops" described in the plan: occasions (the
-   "main" one, a simple placeholder for now — the reference's own
-   occasions/"مناسبت‌ها" panel was explicitly excluded from the port),
+   "main" one — daily occasions from the self-hosted dataset above),
    planning (the pre-existing home content, unchanged), and period
    (reuses renderPeriodPage()'s body, just with the banner header instead
    of the Settings back-button header) — shown only when the profile's
@@ -1779,9 +1949,7 @@ function renderHome(){
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = [
-    { key:'occasionsDesktop', html:`
-      <div class="empty-hint">${t('occasionsComingSoon')}</div>
-    ` },
+    { key:'occasionsDesktop', html: renderOccasionsPane(d) },
     { key:'planning', html:`
       ${renderHomeCalWidget()}
       ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
@@ -1792,13 +1960,15 @@ function renderDesktops(d, data){
     panes.push({ key:'periodDesktop', html: renderPeriodPage('') });
   }
   return `
-    <div class="desktop-wrap" id="desktop-wrap">
-      <div class="desktop-track" id="desktop-track">
-        ${panes.map(p => `<div class="desktop-pane">${p.html}</div>`).join('')}
+    <div class="desktop-box">
+      <div class="desktop-wrap" id="desktop-wrap">
+        <div class="desktop-track" id="desktop-track">
+          ${panes.map(p => `<div class="desktop-pane">${p.html}</div>`).join('')}
+        </div>
       </div>
-    </div>
-    <div class="desktop-dots" id="desktop-dots">
-      ${panes.map((p,i) => `<span class="${i===0?'active':''}" data-action="goto-desktop" data-i="${i}" aria-label="${t(p.key)}"></span>`).join('')}
+      <div class="desktop-dots" id="desktop-dots">
+        ${panes.map((p,i) => `<span class="${i===0?'active':''}" data-action="goto-desktop" data-i="${i}" aria-label="${t(p.key)}"></span>`).join('')}
+      </div>
     </div>
   `;
 }
@@ -1910,18 +2080,11 @@ function renderHomeCalWidget(){
   };
   const monthDropdown = state.monthDropdownOpen ? `
     <div class="cal-dropdown" id="home-month-dropdown">
-      ${Array.from({length:12},(_,i)=>i).map(i => `<div class="cal-dropdown-item ${isJalali() ? ((i+1)===disp.jm?'active':'') : (i===d.getMonth()?'active':'')}" data-action="home-pick-month" data-month="${i}">${isJalali()?jalaliMonthName(i):monthName(i)}</div>`).join('')}
+      ${Array.from({length:12},(_,i)=>i).map(i => `<div class="cal-dropdown-item ${(i+1)===primaryMonthOf(d)?'active':''}" data-action="home-pick-month" data-month="${i}">${monthNameFor(i)}</div>`).join('')}
     </div>` : '';
-  const years = [];
-  if(isJalali()){
-    const curJY = toJalali(today.getFullYear(), today.getMonth()+1, today.getDate()).jy;
-    for(let y = 1369; y <= curJY+10; y++) years.push(y);
-  } else {
-    for(let y = 1990; y <= today.getFullYear()+10; y++) years.push(y);
-  }
   const yearDropdown = state.yearDropdownOpen ? `
     <div class="cal-dropdown" id="home-year-dropdown">
-      ${years.map(y => `<div class="cal-dropdown-item ${(isJalali()?y===disp.jy:y===d.getFullYear())?'active':''}" data-action="home-pick-year" data-year="${y}">${y}</div>`).join('')}
+      ${yearRangeFor().map(y => `<div class="cal-dropdown-item ${y===primaryYearOf(d)?'active':''}" data-action="home-pick-year" data-year="${y}">${y}</div>`).join('')}
     </div>` : '';
   return `
     <div class="home-cal-widget" id="home-cal-widget" dir="${lang()==='fa'?'rtl':'ltr'}">
@@ -2386,6 +2549,9 @@ function renderAdminPanel(){
       ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
       : `<div class="empty-hint">${t('noPurchasedFeatures')}</div>`}
     ${state.profile.gender === 'female' ? renderPeriodTrackerSection() : ''}
+    <div class="section-title" style="margin-top:22px;">${t('editAboutUs')}</div>
+    <div class="sub" style="margin:-6px 2px 10px 2px;">${t('editAboutUsSub')}</div>
+    <textarea class="about-desc-editor" id="about-text-editor" placeholder="${t('aboutDesc')}">${escapeHtml(state.aboutText[lang()])}</textarea>
   `;
 }
 
@@ -2627,25 +2793,24 @@ function renderSharePage(){
   return `
     ${subHeader(t('shareToojibee'))}
     <div class="share-hero">
-      <div class="share-app-icon">آ</div>
+      <div class="share-app-icon"><img class="brand-mark-img" src="../assets/icons/logo-mark.png" alt=""></div>
       <div class="share-app-name">Toojibee</div>
       <div class="share-app-desc">${t('shareDesc')}</div>
     </div>
     <div class="share-options">
       <div class="share-option" data-action="share-copy"><div class="share-opt-icon">${ICONS.linkIcon}</div><span>${t('copyLink')}</span></div>
-      <div class="share-option" data-action="share-generic"><div class="share-opt-icon">${ICONS.messageIcon}</div><span>${t('messageOpt')}</span></div>
-      <div class="share-option" data-action="share-generic"><div class="share-opt-icon">${ICONS.mailIcon}</div><span>${t('emailOpt')}</span></div>
     </div>
     <div class="empty-hint" id="share-feedback" style="margin-top:14px; display:none;"></div>
   `;
 }
 function renderAboutPage(){
+  const customText = state.aboutText[lang()];
   return `
     ${subHeader(t('aboutUs'))}
-    <div class="about-logo">آ</div>
+    <div class="about-logo"><img class="brand-mark-img" src="../assets/icons/logo-mark.png" alt=""></div>
     <div class="about-name">Toojibee</div>
     <div class="about-version">${t('aboutVersion')}</div>
-    <div class="empty-hint" style="text-align:left;">${t('aboutDesc')}</div>
+    <div class="empty-hint" style="text-align:left;">${escapeHtml(customText || t('aboutDesc'))}</div>
     <div class="about-links">
       <div class="about-link-row">${t('privacyPolicy')}</div>
       <div class="about-link-row">${t('termsOfService')}</div>
@@ -2658,14 +2823,12 @@ function renderSettingsList(){
     <div class="menu-list">
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings-general"><div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('generalSettings')}</div>${ICONS.chevronRightSmall}</div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings-calendar"><div class="menu-item-icon">${ICONS.calendarIcon}</div><div class="menu-item-label">${t('calendarSettings')}</div>${ICONS.chevronRightSmall}</div>
-      <div class="menu-item-row" data-action="menu-nav" data-sub="settings-avandmenu"><div class="menu-item-icon">${ICONS.repeatIcon}</div><div class="menu-item-label">${t('avandMenuSettings')}</div>${ICONS.chevronRightSmall}</div>
     </div>
   `;
 }
 function renderGeneralSettings(){
   return `
     ${subHeader(t('generalSettings'))}
-    <div class="settings-row"><div><div class="lbl">${t('darkMode')}</div><div class="sub">${t('alwaysOnForNow')}</div></div><div class="switch on" style="pointer-events:none;"><div class="knob"></div></div></div>
     <div class="settings-row">
       <div><div class="lbl">${t('language')}</div><div class="sub">${t('languageSub')}</div></div>
       <div class="toggle-pair" style="width:120px;">
@@ -2673,20 +2836,26 @@ function renderGeneralSettings(){
         <button type="button" data-action="set-language" data-val="fa" class="${lang()==='fa'?'active':''}">فارسی</button>
       </div>
     </div>
-    <div class="settings-row"><div><div class="lbl">${t('notifications')}</div><div class="sub">${t('notificationsSub')}</div></div><div class="switch ${state.settings.notifications?'on':''}" data-action="toggle-setting" data-key="notifications"><div class="knob"></div></div></div>
+    <div class="settings-row" style="opacity:.5;"><div><div class="lbl">${t('notifications')}</div><div class="sub">${t('notificationsSub')}</div></div><div class="switch" style="pointer-events:none;"><div class="knob"></div></div></div>
   `;
 }
 function renderCalendarSettings(){
   const weekdayLabels = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
   return `
     ${subHeader(t('calendarSettings'))}
-    <div class="settings-row">
-      <div><div class="lbl">${t('calendarSystem')}</div><div class="sub">${t('calendarSystemSub')}</div></div>
-      <div class="toggle-pair" style="width:220px;">
-        <button type="button" data-action="set-calendar-system" data-val="gregorian" class="${!isJalali()?'active':''}">${t('gregorian')}</button>
-        <button type="button" data-action="set-calendar-system" data-val="jalali" class="${isJalali()?'active':''}">${t('jalali')}</button>
-        <button type="button" data-action="hijri-coming-soon">${t('hijri')}</button>
+    <div class="section-title">${t('calendarSystemsShown')}</div>
+    <div class="sub" style="margin:-6px 2px 10px 2px;">${t('calendarSystemsShownSub')}</div>
+    ${['gregorian','jalali','hijri'].map(sys => `
+      <div class="settings-row">
+        <div><div class="lbl">${t(sys)}</div>${primarySystem()===sys?`<div class="sub">${t('primarySystemBadge')}</div>`:''}</div>
+        <div class="switch ${state.settings.calendarEnabled[sys]?'on':''}" data-action="toggle-calendar-enabled" data-val="${sys}"><div class="knob"></div></div>
       </div>
+    `).join('')}
+    <div class="settings-row">
+      <div><div class="lbl">${t('primarySystem')}</div><div class="sub">${t('primarySystemSub')}</div></div>
+      <select class="settings-select" id="primary-calendar-select">
+        ${['gregorian','jalali','hijri'].filter(sys => state.settings.calendarEnabled[sys]).map(sys => `<option value="${sys}" ${primarySystem()===sys?'selected':''}>${t(sys)}</option>`).join('')}
+      </select>
     </div>
     <div class="settings-row">
       <div><div class="lbl">${t('weekStartsOn')}</div><div class="sub">${t('weekStartsSub')}</div></div>
@@ -2722,6 +2891,13 @@ function wireMenuInteractivity(){
   document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; scheduleProfileSave(); });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; Cloud.saveSettings(state.settings).catch(()=>{}); render(); });
+  document.getElementById('about-text-editor')?.addEventListener('input', e => { state.aboutText[lang()] = e.target.value; });
+  document.getElementById('primary-calendar-select')?.addEventListener('change', e => {
+    state.settings.calendarSystem = e.target.value;
+    state.monthDropdownOpen = false; state.yearDropdownOpen = false;
+    Cloud.saveSettings(state.settings).catch(()=>{});
+    render();
+  });
   document.getElementById('profile-photo-input')?.addEventListener('change', e => {
     const file = e.target.files && e.target.files[0];
     if(!file) return;
@@ -2780,7 +2956,11 @@ function showLanguageLoading(newLang){
 /* ============ CALENDAR ============ */
 function monthMatrix(cursor){
   let firstOfMonth;
-  if(isJalali()){
+  if(isHijriPrimary()){
+    const hc = toHijri(cursor.getFullYear(), cursor.getMonth()+1, cursor.getDate());
+    const g = hijriToGregorian(hc.hy, hc.hm, 1);
+    firstOfMonth = new Date(g.gy, g.gm-1, g.gd);
+  } else if(isJalali()){
     const jc = toJalali(cursor.getFullYear(), cursor.getMonth()+1, cursor.getDate());
     const g = toGregorian(jc.jy, jc.jm, 1);
     firstOfMonth = new Date(g.gy, g.gm-1, g.gd);
@@ -2832,18 +3012,11 @@ function renderCalendar(){
   const disp = displayMonthYear(c);
   const monthDropdown = state.monthDropdownOpen ? `
     <div class="cal-dropdown" id="month-dropdown">
-      ${Array.from({length:12},(_,i)=>i).map(i => `<div class="cal-dropdown-item ${isJalali() ? ((i+1)===disp.jm?'active':'') : (i===c.getMonth()?'active':'')}" data-action="pick-month" data-month="${i}">${isJalali()?jalaliMonthName(i):monthName(i)}</div>`).join('')}
+      ${Array.from({length:12},(_,i)=>i).map(i => `<div class="cal-dropdown-item ${(i+1)===primaryMonthOf(c)?'active':''}" data-action="pick-month" data-month="${i}">${monthNameFor(i)}</div>`).join('')}
     </div>` : '';
-  const years = [];
-  if(isJalali()){
-    const curJY = toJalali(today.getFullYear(), today.getMonth()+1, today.getDate()).jy;
-    for(let y = 1369; y <= curJY+10; y++) years.push(y);
-  } else {
-    for(let y = 1990; y <= today.getFullYear()+10; y++) years.push(y);
-  }
   const yearDropdown = state.yearDropdownOpen ? `
     <div class="cal-dropdown" id="year-dropdown">
-      ${years.map(y => `<div class="cal-dropdown-item ${(isJalali()?y===disp.jy:y===c.getFullYear())?'active':''}" data-action="pick-year" data-year="${y}">${y}</div>`).join('')}
+      ${yearRangeFor().map(y => `<div class="cal-dropdown-item ${y===primaryYearOf(c)?'active':''}" data-action="pick-year" data-year="${y}">${y}</div>`).join('')}
     </div>` : '';
 
   const showSideArrows = state.calMode === 'week' || state.calMode === 'day';
@@ -2912,17 +3085,15 @@ function updateNav(){
   backBtn.textContent = t('backToToday');
   backBtn.classList.toggle('show', !sameDay(state.homeDate, today));
   if(window.innerWidth >= 960){
-    /* #page-calendar itself stretches to the full grid-row height (it
-       has height:100%, and the row is as tall as the taller of the two
-       columns), so its own rect.bottom sits near the bottom of the
-       whole device, not "under the calendar" the way it looks — measure
-       the rendered month grid instead, which is the last visual piece
-       of the calendar itself. */
-    const gridEl = document.querySelector('#page-calendar .month-grid');
-    const calRect = document.getElementById('page-calendar').getBoundingClientRect();
-    const bottomRef = gridEl ? gridEl.getBoundingClientRect().bottom : calRect.bottom;
-    backBtn.style.left = (calRect.left + calRect.width / 2) + 'px';
-    backBtn.style.top = (bottomRef + 16) + 'px';
+    /* Anchored to the fixed desktop-box (the "میزکار" card) instead of
+       the calendar column — exactly centered on its bottom edge, the
+       button straddling the border like a pill, not floating below it. */
+    const boxEl = document.querySelector('#page-home .desktop-box');
+    if(boxEl){
+      const boxRect = boxEl.getBoundingClientRect();
+      backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
+      backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight / 2) + 'px';
+    }
 
     /* The quick-add popup is vertically centered by CSS default (matching
        the rail), but #fab-add isn't necessarily at the rail's own center
@@ -3389,6 +3560,14 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
   if(action === 'close-popup'){ closePopup(); return; }
   if(action === 'open-menu'){
+    /* Tapping the same nav button that's already open closes the panel
+       instead of re-opening to the same view — the only way to close it
+       on mobile now that the top-corner X/chevron buttons are gone (they
+       required scrolling back up on a long page to reach, and the
+       grow/shrink they drove isn't needed). */
+    if(state.menuPanelOpen && state.menuSubView === (el.dataset.sub || null)){
+      state.menuPanelOpen = false; render(); return;
+    }
     state.menuSubView = el.dataset.sub || null; state.menuPanelOpen = true; render();
     if(state.menuSubView === 'friends') refreshConnections();
     return;
@@ -3571,8 +3750,22 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'toggle-setting'){ state.settings[el.dataset.key] = !state.settings[el.dataset.key]; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
   if(action === 'set-week-start'){ state.settings.weekStartDay = el.dataset.val; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
-  if(action === 'hijri-coming-soon'){ showToast(t('hijriComingSoon')); return; }
-  if(action === 'set-calendar-system'){ state.settings.calendarSystem = el.dataset.val; state.monthDropdownOpen=false; state.yearDropdownOpen=false; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
+  if(action === 'toggle-calendar-enabled'){
+    const sys = el.dataset.val;
+    const en = state.settings.calendarEnabled;
+    const enabledCount = Object.values(en).filter(Boolean).length;
+    if(en[sys] && enabledCount <= 1){ showToast(t('atLeastOneCalendar')); return; }
+    en[sys] = !en[sys];
+    /* If the system that was primary just got switched off, fall back
+       to the first system that's still on. */
+    if(!en[sys] && primarySystem() === sys){
+      state.settings.calendarSystem = ['gregorian','jalali','hijri'].find(s => en[s]);
+    }
+    state.monthDropdownOpen = false; state.yearDropdownOpen = false;
+    Cloud.saveSettings(state.settings).catch(()=>{});
+    render();
+    return;
+  }
   if(action === 'set-language'){
     if(el.dataset.val === lang()) return;
     showLanguageLoading(el.dataset.val);
@@ -4230,6 +4423,7 @@ async function boot(){
   }
 }
 boot();
+loadOccasionsData();
 </script>
 </body>
 </html>
