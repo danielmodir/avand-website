@@ -933,6 +933,19 @@
     }
     .device.show-menu #page-menu{ transform:translateX(0); pointer-events:auto; }
     .device.menu-maximized #page-menu{ top:0; bottom:0; border-radius:0; }
+    /* Reclaims the closed position from the global .device.lang-fa
+       #page-menu rule above (mobile's hamburger panel flips sides by
+       language, but desktop's panel always slides from the right —
+       see the comment above #page-menu in this block). Without this,
+       that rule's higher specificity (two classes vs one id) wins even
+       here, leaving the fa panel sitting mid-screen, visible and with
+       pointer-events:none inherited from its own closed state, instead
+       of off past the right edge — a real bug, not just a cosmetic one:
+       nothing behind it is clickable either, since .device.show-menu
+       isn't set, so .menu-overlay (which would otherwise dismiss it)
+       never shows up. */
+    .device.lang-fa #page-menu{ transform:translateX(100%); }
+    .device.lang-fa.show-menu #page-menu{ transform:translateX(0); }
     .menu-overlay{
       display:block; position:fixed; inset:0; z-index:65; background:var(--overlay);
       opacity:0; pointer-events:none; transition:opacity .32s ease;
