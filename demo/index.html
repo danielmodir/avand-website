@@ -122,6 +122,7 @@
   .device{
     width:100%; height:100vh; height:100dvh; background:var(--bg);
     position:relative; overflow:hidden; border-radius:0; box-shadow:none;
+    display:flex; flex-direction:column;
   }
 
   /* ===== app body =====
@@ -129,8 +130,14 @@
      merged into it via .home-cal-widget (see below) and Menu is a
      hamburger-triggered overlay instead of a swiped page. At 960px+ the
      desktop media query turns this into a two-column grid showing
-     #page-calendar and #page-home side by side (see there). */
-  .pager-wrap{ position:absolute; inset:0; overflow:hidden; }
+     #page-calendar and #page-home side by side (see there).
+     #app-banner (a normal flex item, see its own CSS) sits above this as
+     a sibling in the body markup, so pager-wrap only needs to fill
+     whatever height is left — position:relative (not absolute/inset:0
+     like before #app-banner existed) plus flex:1 and min-height:0 (the
+     usual flexbox fix for a scrolling child not forcing its flex item
+     taller than the available space). */
+  .pager-wrap{ position:relative; flex:1 1 auto; min-height:0; overflow:hidden; }
   .pager{ position:absolute; inset:0; }
   /* Horizontal padding grows with viewport (capped) instead of letting
      cards stretch edge-to-edge on tablet-width screens, while the
@@ -270,9 +277,59 @@
   .desktop-avatar-btn{ display:none; }
   .rail-admin-btn{ display:none; }
 
-  .app-header{ margin-bottom:18px; }
-  .app-header h1{ font-size:24px; margin:0 0 2px 0; font-weight:700; letter-spacing:-0.3px; }
-  .app-header p{ margin:0; font-size:13px; color:var(--text-muted); }
+  /* ONE single persistent header for the calendar/planning/period
+     workspaces (not one per page/pane — see #app-banner's place in the
+     body markup, a sibling before #pager-wrap, outside every page's own
+     scroll, so it never duplicates and never scrolls away). Re-themed
+     from the t02.html header reference: that file had no real sticky
+     behavior and only a flat 4:1 ratio for every size, and this is a
+     fresh build instead — a normal flex item above the pager (so no
+     scroll-under tricks are even needed), 8:1 desktop / 4:1 mobile, with
+     an image layer (.app-banner-bg) for the "can show a photo" ability
+     the reference had (its own background image/video layer) — empty by
+     default until an image is actually set. Deliberately excludes the
+     admin-panel and dark-mode buttons the reference had next to its
+     header — those stay out for now. */
+  .app-banner{
+    position:relative; flex:0 0 auto; z-index:30; margin:14px 14px 10px 14px;
+    aspect-ratio:8/1; border-radius:24px; overflow:hidden;
+    background:var(--primary);
+    display:flex; align-items:center; gap:10px; padding:0 18px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.35);
+  }
+  .device.show-menu .app-banner{ display:none; }
+  .app-banner-bg{
+    position:absolute; inset:0; background-size:cover; background-position:center;
+    opacity:0; transition:opacity .25s ease;
+  }
+  .app-banner-bg.has-image{ opacity:1; }
+  .app-banner-mark{
+    position:relative; flex:0 0 auto; width:34px; height:34px; border-radius:50%;
+    background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;
+  }
+  .app-banner-mark img{ width:62%; height:62%; display:block; }
+  /* The mark is black-ink-on-transparent; dark theme's --on-primary is
+     black too (orange --primary needs black for contrast, same
+     accessible-pair reasoning as tokens.css/.day-cell.selected), so it
+     needs no filter there — only light theme (navy --primary, white
+     --on-primary) inverts it to white. */
+  :root[data-theme="light"] .app-banner-mark img{ filter:invert(1); }
+  .app-banner-title{ position:relative; color:var(--on-primary); font-weight:800; font-size:15px; letter-spacing:-0.2px; }
+  @media (max-width:600px){ .app-banner{ aspect-ratio:4/1; } }
+
+  /* Three swipeable "desktops" (occasions / planning / period) that live
+     inside #page-home — a little home-screen launcher, not a page-level
+     pager like .pager above (that one still only handles calendar/home/
+     menu). Native horizontal scroll-snap so touch swipe and trackpad both
+     just work; attachDesktopPager() keeps the dots in sync and lets a dot
+     click jump straight to a pane. */
+  .desktop-wrap{ overflow-x:auto; overflow-y:visible; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .desktop-wrap::-webkit-scrollbar{ display:none; }
+  .desktop-track{ display:flex; }
+  .desktop-pane{ flex:0 0 100%; min-width:100%; scroll-snap-align:start; }
+  .desktop-dots{ display:flex; justify-content:center; align-items:center; gap:6px; margin:4px 0 18px 0; }
+  .desktop-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); cursor:pointer; transition:background .2s ease, width .2s ease; }
+  .desktop-dots span.active{ background:var(--primary); width:18px; border-radius:4px; }
 
   .section-title{ font-size:13px; font-weight:600; color:var(--text-muted); letter-spacing:.02em; margin:22px 2px 10px 2px; display:flex; align-items:center; justify-content:space-between; }
   .section-title .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; }
@@ -404,11 +461,40 @@
   .weekday-header{display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:6px;}
   .weekday-header span{font-size:10px; color:var(--text-muted); font-weight:700;}
   .month-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
-  .day-cell{ aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); border:1px solid transparent; background:none; padding:0; font-family:inherit; -webkit-tap-highlight-color:transparent; }
+  .day-cell{ aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); border:1px solid transparent; background:none; padding:0; font-family:inherit; -webkit-tap-highlight-color:transparent; }
   .day-cell:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
   .day-cell.other-month{color:var(--text-muted); opacity:0.3;}
   .day-cell.today{border-color:var(--primary);}
   .day-cell.selected{background:var(--primary); color:var(--on-primary);}
+  /* Secondary line: the two non-primary calendar systems (Gregorian/
+     Jalali, whichever isn't the big number, plus Hijri), small and muted
+     so the primary number stays the visual focus — same idea as the
+     calendar09.html reference's triple-date cells. */
+  .day-cell-num{ line-height:1.1; }
+  .day-cell-sub{ font-size:8.5px; font-weight:500; line-height:1; opacity:.55; letter-spacing:-0.2px; }
+  .day-cell.selected .day-cell-sub{ opacity:.85; }
+  /* Density states driven by attachDensityGesture()'s scroll/touch state
+     machine (phone-only), set as data-density on the whole page
+     container (#page-calendar / #page-home) so it can also shrink the
+     grid's siblings (weekday header, month/year title row) — same idea
+     as the reference's "shrink title, hide nav arrows, shrink .occwrap"
+     compaction, re-themed to this app's own elements. "full" is the
+     default/untouched look above. */
+  .month-grid{ transition:gap .18s ease; }
+  [data-density] .cal-topbar, [data-density] .home-cal-topbar{ transition:font-size .18s ease, margin .18s ease, padding .18s ease; }
+  [data-density="mid"] .weekday-header{ margin-bottom:3px; }
+  [data-density="mid"] .weekday-header span{ font-size:9px; }
+  [data-density="mid"] .cal-topbar, [data-density="mid"] .home-cal-topbar{ font-size:13px; margin-bottom:8px; padding:2px 0; }
+  [data-density="mid"] .day-cell-sub{ display:none; }
+  [data-density="mid"] .day-cell{ font-size:12px; }
+  [data-density="compact"] .weekday-header{ margin-bottom:0; }
+  [data-density="compact"] .weekday-header span{ font-size:0; }
+  [data-density="compact"] .cal-topbar, [data-density="compact"] .home-cal-topbar{ font-size:11px; margin-bottom:4px; padding:0; }
+  [data-density="compact"] .cal-corner-arrow{ display:none; }
+  [data-density="compact"] .month-grid{ gap:2px; }
+  [data-density="compact"] .day-cell-sub{ display:none; }
+  [data-density="compact"] .day-cell{ font-size:10.5px; border-radius:7px; }
+  [data-density="compact"] .day-dots{ display:none; }
   .day-dots{display:flex; gap:2px; height:4px;}
   .day-dots span{width:4px; height:4px; border-radius:50%; background:var(--primary);}
   .day-cell.selected .day-dots span{background:#fff;}
@@ -420,7 +506,7 @@
   .week-row .wd .name{font-size:10px; color:var(--text-muted);}
   .week-row .counts{flex:1; font-size:12px; color:var(--text-muted);}
 
-  .day-sheet{ position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0; z-index:35; box-shadow:0 -8px 24px rgba(0,0,0,0.4); height:44%; transform:translateY(100%); transition:transform .28s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column; }
+  .day-sheet{ position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0; overflow:hidden; z-index:35; box-shadow:0 -8px 24px rgba(0,0,0,0.4); height:44%; transform:translateY(100%); transition:transform .28s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column; }
   .day-sheet.show{transform:translateY(0);}
   .sheet-handle{width:40px; height:4px; background:var(--border); border-radius:999px; margin:10px auto 4px auto;}
   .sheet-header{display:flex; align-items:center; justify-content:space-between; padding:8px 18px 12px 18px;}
@@ -452,7 +538,7 @@
   /* ===== add popup ===== */
   .popup-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:55; opacity:0; pointer-events:none; transition:opacity .25s ease; }
   .popup-overlay.show{ opacity:1; pointer-events:auto; }
-  .add-popup{ position:absolute; top:7%; left:5%; right:5%; bottom:9%; background:var(--card); border-radius:28px; z-index:56; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.05); opacity:0; pointer-events:none; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
+  .add-popup{ position:absolute; top:7%; left:5%; right:5%; bottom:9%; background:var(--card); border-radius:28px; overflow:hidden; z-index:56; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.05); opacity:0; pointer-events:none; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
   .add-popup.show{ transform:scale(1); opacity:1; pointer-events:auto; }
   .popup-topbar{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 6px 18px; flex:0 0 auto; }
   .popup-delete, .popup-close{ border:none; padding:0; font:inherit; }
@@ -665,7 +751,7 @@
   .period-quiz-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .25s ease; }
   .period-quiz-overlay.show{ opacity:1; pointer-events:auto; }
   .period-quiz-sheet{
-    position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0;
+    position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0; overflow:hidden;
     z-index:71; box-shadow:0 -8px 24px rgba(0,0,0,0.4); max-height:72%;
     transform:translateY(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
     display:flex; flex-direction:column;
@@ -807,7 +893,7 @@
       width:100%; max-width:1200px; height:100vh; max-height:none;
       border-radius:0; box-shadow:none; overflow:hidden;
     }
-    .pager-wrap{ position:static; overflow:visible; touch-action:auto; height:100%; }
+    .pager-wrap{ position:static; overflow:visible; touch-action:auto; flex:1 1 auto; min-height:0; }
     .pager{
       position:static; display:grid; grid-template-columns:minmax(320px,380px) 1fr;
       align-items:start; gap:24px; width:100%; height:100%;
@@ -823,11 +909,6 @@
     /* Desktop's #page-calendar column is Monthly-only (see render()'s
        guard that forces state.calMode='month' at this width). */
     .cal-mode-tabs{ display:none; }
-    /* Desktop's #page-calendar column doesn't need a generic "Calendar"
-       title — the month/year label already says what it is. (Home's own
-       header was removed entirely, both breakpoints — see Dashboard
-       cleanup in SPEC.md.) */
-    #page-calendar .app-header{ display:none; }
 
     /* Always rendered (not display:none) so open/close is a slide
        transition, not a sudden pop — same technique as the mobile
@@ -938,6 +1019,19 @@
 
   <div class="auth-screen" id="auth-screen"></div>
   <div class="boot-screen hidden" id="boot-screen"></div>
+
+  <!-- ONE single header for the calendar/planning/period workspaces — a
+       normal-flow flex item above #pager-wrap (see .device/.pager-wrap
+       CSS), not page content, so it's never duplicated per page and
+       never scrolls away. #app-banner-bg is an image layer (empty/no
+       "has-image" class until a photo is actually set — see the
+       .app-banner CSS comment) for the "can show a photo" ability.
+       Hidden via CSS while the Menu panel is open (.device.show-menu). -->
+  <div class="app-banner" id="app-banner">
+    <div class="app-banner-bg" id="app-banner-bg"></div>
+    <div class="app-banner-mark"><img src="../assets/icons/logo-mark.png" alt=""></div>
+    <div class="app-banner-title">Toojibee</div>
+  </div>
 
   <div class="pager-wrap" id="pager-wrap">
     <div class="pager" id="pager">
@@ -1170,6 +1264,29 @@ function d2j(jdn){
 function toJalali(gy,gm,gd){ return d2j(g2d(gy,gm,gd)); }
 function toGregorian(jy,jm,jd){ return d2g(j2d(jy,jm,jd)); }
 
+/* Standard tabular/civil Islamic calendar (not astronomical Umm al-Qura —
+   that needs a lookup table we don't have). Pure arithmetic, no external
+   calls, used only to print a secondary Hijri day number in each calendar
+   cell (see dayCellDateHtml) — distinct from Settings' "Hijri as the
+   primary calendar system" toggle, which stays unimplemented/"coming
+   soon" since that needs real month-length accuracy, not just a number. */
+function gregorianToJDN(y,m,d){
+  const a = Math.floor((14-m)/12), y2 = y+4800-a, m2 = m+12*a-3;
+  return d + Math.floor((153*m2+2)/5) + 365*y2 + Math.floor(y2/4) - Math.floor(y2/100) + Math.floor(y2/400) - 32045;
+}
+function toHijri(gy,gm,gd){
+  const ISLAMIC_EPOCH_JDN = 1948440;
+  let l = gregorianToJDN(gy,gm,gd) - ISLAMIC_EPOCH_JDN + 10632;
+  const n = Math.floor((l-1)/10631);
+  l = l - 10631*n + 354;
+  const j = Math.floor((10985-l)/5316)*Math.floor((50*l)/17719) + Math.floor(l/5670)*Math.floor((43*l)/15238);
+  l = l - Math.floor((30-j)/15)*Math.floor((17719*j)/50) - Math.floor(j/16)*Math.floor((15238*j)/43) + 29;
+  const hm = Math.floor((24*l)/709);
+  const hd = l - Math.floor((709*hm)/24);
+  const hy = 30*n + j - 30;
+  return { hy, hm, hd };
+}
+
 const JALALI_MONTHS_FA = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 const JALALI_MONTHS_EN = ['Farvardin','Ordibehesht','Khordad','Tir','Mordad','Shahrivar','Mehr','Aban','Azar','Dey','Bahman','Esfand'];
 function isJalali(){ return state.settings.calendarSystem === 'jalali'; }
@@ -1184,6 +1301,17 @@ function displayMonthYear(d){
 function displayDayNum(d){
   if(isJalali()) return toJalali(d.getFullYear(), d.getMonth()+1, d.getDate()).jd;
   return d.getDate();
+}
+/* Triple-date cell body: big primary day number (whichever system
+   Settings has active) plus the other two systems as a small secondary
+   line underneath — same idea as the calendar09.html reference's day
+   cells, re-themed to this app's own .day-cell markup instead of its
+   markup/CSS. */
+function dayCellDateHtml(d){
+  const primary = displayDayNum(d);
+  const sub = isJalali() ? d.getDate() : toJalali(d.getFullYear(), d.getMonth()+1, d.getDate()).jd;
+  const hd = toHijri(d.getFullYear(), d.getMonth()+1, d.getDate()).hd;
+  return `<span class="day-cell-num">${primary}</span><span class="day-cell-sub">${sub} / ${hd}</span>`;
 }
 function cellInCurrentMonth(cellDate, cursorDate){
   if(isJalali()){
@@ -1230,7 +1358,7 @@ function setYearOf(anchor, year){
 
 const STRINGS = {
   en: {
-    today:'Today', calendar:'Calendar', menu:'Menu', backToToday:'Back to today',
+    today:'Today', calendar:'Calendar', planning:'Planning', occasionsDesktop:'Occasions', periodDesktop:'Period', occasionsComingSoon:"Today's and this month's occasions are coming here soon.", menu:'Menu', backToToday:'Back to today',
     events:'Events', tasks:'Tasks', habits:'Habits',
     noEventsToday:'No events today', noTasksToday:'No tasks today', noHabitsYet:'No habits yet',
     noEvents:'No events', noTasks:'No tasks', noHabits:'No habits',
@@ -1323,7 +1451,7 @@ const STRINGS = {
     retryBtn:'Retry'
   },
   fa: {
-    today:'امروز', calendar:'تقویم', menu:'منو', backToToday:'بازگشت به امروز',
+    today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', occasionsDesktop:'مناسبت‌ها', periodDesktop:'پریودی', occasionsComingSoon:'مناسبت‌های امروز و این ماه به‌زودی اینجا اضافه می‌شن.', menu:'منو', backToToday:'بازگشت به امروز',
     events:'رویدادها', tasks:'کارها', habits:'عادت‌ها',
     noEventsToday:'رویدادی برای امروز نیست', noTasksToday:'کاری برای امروز نیست', noHabitsYet:'هنوز عادتی نیست',
     noEvents:'رویدادی نیست', noTasks:'کاری نیست', noHabits:'عادتی نیست',
@@ -1601,6 +1729,9 @@ function render(){
   renderDaySheet();
   attachCalendarGestures();
   attachHomeCalendarGestures();
+  attachDensityGesture(document.getElementById('cal-month-grid'), document.getElementById('page-calendar'));
+  attachDensityGesture(document.getElementById('home-cal-grid'), document.getElementById('page-home'));
+  attachDesktopPager();
   attachSwipeToDelete(document.getElementById('page-home'));
   attachSwipeToDelete(document.getElementById('page-calendar'));
   attachHomeHeaderSwipe();
@@ -1623,11 +1754,55 @@ function renderHome(){
      starts blank — see renderItemSections) — #page-home is shared markup
      between both breakpoints, so this has to branch on viewport here
      rather than via CSS alone. */
+  return renderDesktops(d, {tasks, habits, events});
+}
+/* The three swipeable "desktops" described in the plan: occasions (the
+   "main" one, a simple placeholder for now — the reference's own
+   occasions/"مناسبت‌ها" panel was explicitly excluded from the port),
+   planning (the pre-existing home content, unchanged), and period
+   (reuses renderPeriodPage()'s body, just with the banner header instead
+   of the Settings back-button header) — shown only when the profile's
+   gender is 'female', same gate Settings/Management already used. */
+function renderDesktops(d, data){
+  const {tasks, habits, events} = data;
+  const panes = [
+    { key:'occasionsDesktop', html:`
+      <div class="empty-hint">${t('occasionsComingSoon')}</div>
+    ` },
+    { key:'planning', html:`
+      ${renderHomeCalWidget()}
+      ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
+      ${renderItemSections(tasks, habits, events, d)}
+    ` },
+  ];
+  if(state.profile.gender === 'female'){
+    panes.push({ key:'periodDesktop', html: renderPeriodPage('') });
+  }
   return `
-    ${renderHomeCalWidget()}
-    ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
-    ${renderItemSections(tasks, habits, events, d)}
+    <div class="desktop-wrap" id="desktop-wrap">
+      <div class="desktop-track" id="desktop-track">
+        ${panes.map(p => `<div class="desktop-pane">${p.html}</div>`).join('')}
+      </div>
+    </div>
+    <div class="desktop-dots" id="desktop-dots">
+      ${panes.map((p,i) => `<span class="${i===0?'active':''}" data-action="goto-desktop" data-i="${i}" aria-label="${t(p.key)}"></span>`).join('')}
+    </div>
   `;
+}
+function attachDesktopPager(){
+  const wrap = document.getElementById('desktop-wrap');
+  const dots = document.getElementById('desktop-dots');
+  if(!wrap || !dots) return;
+  const dotEls = Array.from(dots.children);
+  let raf = null;
+  wrap.addEventListener('scroll', () => {
+    if(raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      const i = Math.round(wrap.scrollLeft / wrap.clientWidth);
+      dotEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
+    });
+  }, {passive:true});
 }
 
 /* Small dashboard-style stat card: a progress ring for the day's overall
@@ -1716,7 +1891,7 @@ function renderHomeCalWidget(){
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
     return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-home-day" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-      <span>${displayDayNum(day)}</span>
+      ${dayCellDateHtml(day)}
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
     </button>`;
   };
@@ -2281,12 +2456,16 @@ function renderPeriodTrackerSection(){
   `;
 }
 
-/* Dedicated full page (menuSubView 'period', parent 'admin'). */
-function renderPeriodPage(){
+/* Dedicated full page (menuSubView 'period', parent 'admin'), also
+   reused as-is for the period desktop pane (see renderDesktops) with a
+   different header — subHeader()'s back-arrow only makes sense inside
+   the Settings/Management navigation stack. */
+function renderPeriodPage(headerHtml){
+  if(headerHtml === undefined) headerHtml = subHeader(t('periodTracker'));
   const p = state.period;
   if(!p.enabled){
     return `
-      ${subHeader(t('periodTracker'))}
+      ${headerHtml}
       <div class="empty-hint">${t('periodOffHint')}</div>
       <div class="settings-row" style="margin-top:12px;">
         <div class="lbl">${t('periodTracker')}</div>
@@ -2322,7 +2501,7 @@ function renderPeriodPage(){
     `;
   })();
   return `
-    ${subHeader(t('periodTracker'))}
+    ${headerHtml}
     ${trackerBody}
     <div class="section-title">${t('articlesTitle')}</div>
     ${[1,2,3,4].map(i => `
@@ -2605,7 +2784,7 @@ function renderCalendar(){
     const cells = monthMatrix(c);
     body = `
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
-      <div class="month-grid">
+      <div class="month-grid" id="cal-month-grid">
         ${cells.map(d => {
           const inMonth = cellInCurrentMonth(d, c);
           const {tasks,events} = itemsForDate(d);
@@ -2613,7 +2792,7 @@ function renderCalendar(){
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
           return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-action="pick-day" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-            <span>${displayDayNum(d)}</span>
+            ${dayCellDateHtml(d)}
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
           </button>`;
         }).join('')}
@@ -2659,7 +2838,6 @@ function renderCalendar(){
   const nextAction = state.calMode === 'day' ? 'cal-next-day' : 'cal-next-week';
 
   return `
-    <div class="app-header"><h1>${t('calendar')}</h1></div>
     <div class="cal-topbar">
       ${showSideArrows ? `<div class="cal-corner-arrow left" data-action="${prevAction}">${ICONS.chevronLeft}</div>` : ''}
       <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
@@ -3312,6 +3490,11 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'connect-unblock'){ runConnectionAction(el, () => Cloud.unblockUser(el.dataset.id)); return; }
   if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
+  if(action === 'goto-desktop'){
+    const wrap = document.getElementById('desktop-wrap');
+    if(wrap) wrap.scrollTo({ left: Number(el.dataset.i) * wrap.clientWidth, behavior:'smooth' });
+    return;
+  }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }
   if(action === 'open-article'){ showToast(t('articlesUnavailable')); return; }
@@ -3583,6 +3766,55 @@ function attachDesktopContextMenu(){
 }
 
 /* ============ CALENDAR GESTURES: swipe-to-roll month/year, pinch to zoom ============ */
+/* "اسکرول درجا" — scroll/touch-driven density morph for the month grid,
+   phone-only (ported in spirit, not in code, from calendar09.html's
+   feed()/setMode state machine: a gesture-to-state-machine mapping with
+   hysteresis, not real page scrolling or CSS scroll-snap). Re-themed to
+   this app's own .month-grid/.day-cell markup rather than the
+   reference's. */
+const CAL_DENSITY_ORDER = ['full','mid','compact'];
+/* `el` is the gesture surface (the month grid); `scopeEl` is the page
+   container the data-density attribute is set on, so CSS can also
+   shrink siblings of the grid (weekday header, month/year title) —
+   matching the reference's broader "hide .goto, shrink title, hide nav
+   arrows, shrink .occwrap" compaction, not just the grid itself. Also
+   calls preventDefault on the wheel/touch handlers so this gesture
+   exclusively drives density instead of fighting with the page's own
+   vertical scroll underneath it, the way the reference's gesture was
+   the only thing listening (it wasn't embedded in a taller scrolling
+   page the way this app's calendar/home pages are). */
+function attachDensityGesture(el, scopeEl){
+  if(!el || !scopeEl) return;
+  if(window.innerWidth >= 768){ scopeEl.removeAttribute('data-density'); return; }
+  if(!state.calDensity) state.calDensity = 'full';
+  scopeEl.setAttribute('data-density', state.calDensity);
+  let acc = 0;
+  const step = (dir) => {
+    const i = CAL_DENSITY_ORDER.indexOf(state.calDensity);
+    const next = i + dir;
+    if(next < 0 || next > 2) return;
+    state.calDensity = CAL_DENSITY_ORDER[next];
+    acc = 0;
+    scopeEl.setAttribute('data-density', state.calDensity);
+  };
+  const feed = (dy) => {
+    acc = Math.max(0, Math.min(200, acc + Math.abs(dy)));
+    const i = CAL_DENSITY_ORDER.indexOf(state.calDensity);
+    if(dy > 0 && acc > (i === 0 ? 40 : 140)) step(1);
+    else if(dy < 0 && acc > (i === 2 ? 15 : 115)) step(-1);
+  };
+  el.addEventListener('wheel', e => { if(Math.abs(e.deltaY) > 1){ e.preventDefault(); feed(e.deltaY); } }, {passive:false});
+  let touchY = null;
+  el.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, {passive:true});
+  el.addEventListener('touchmove', e => {
+    if(touchY === null) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    feed(touchY - y);
+    touchY = y;
+  }, {passive:false});
+  el.addEventListener('touchend', () => { touchY = null; acc = 0; });
+}
 function attachCalendarGestures(){
   attachRollGesture(document.getElementById('cal-month-label'), (dir) => {
     if(dir === 'tap'){ state.yearDropdownOpen = false; state.monthDropdownOpen = !state.monthDropdownOpen; render(); }
