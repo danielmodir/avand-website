@@ -267,6 +267,20 @@
   .app-banner-title{ color:#fff; font-weight:800; font-size:15px; letter-spacing:-0.2px; }
   @media (max-width:600px){ .app-banner{ aspect-ratio:4/1; } }
 
+  /* Three swipeable "desktops" (occasions / planning / period) that live
+     inside #page-home — a little home-screen launcher, not a page-level
+     pager like .pager above (that one still only handles calendar/home/
+     menu). Native horizontal scroll-snap so touch swipe and trackpad both
+     just work; attachDesktopPager() keeps the dots in sync and lets a dot
+     click jump straight to a pane. */
+  .desktop-wrap{ overflow-x:auto; overflow-y:visible; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .desktop-wrap::-webkit-scrollbar{ display:none; }
+  .desktop-track{ display:flex; }
+  .desktop-pane{ flex:0 0 100%; min-width:100%; scroll-snap-align:start; }
+  .desktop-dots{ display:flex; justify-content:center; align-items:center; gap:6px; margin:4px 0 18px 0; }
+  .desktop-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); cursor:pointer; transition:background .2s ease, width .2s ease; }
+  .desktop-dots span.active{ background:var(--primary); width:18px; border-radius:4px; }
+
   .section-title{ font-size:13px; font-weight:600; color:var(--text-muted); letter-spacing:.02em; margin:22px 2px 10px 2px; display:flex; align-items:center; justify-content:space-between; }
   .section-title .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; }
   .empty-hint{ color:var(--text-muted); font-size:13px; background:var(--card); border:1px dashed var(--border); border-radius:16px; padding:16px; text-align:center; }
@@ -1254,7 +1268,7 @@ function setYearOf(anchor, year){
 
 const STRINGS = {
   en: {
-    today:'Today', calendar:'Calendar', planning:'Planning', menu:'Menu', backToToday:'Back to today',
+    today:'Today', calendar:'Calendar', planning:'Planning', occasionsDesktop:'Occasions', periodDesktop:'Period', occasionsComingSoon:"Today's and this month's occasions are coming here soon.", menu:'Menu', backToToday:'Back to today',
     events:'Events', tasks:'Tasks', habits:'Habits',
     noEventsToday:'No events today', noTasksToday:'No tasks today', noHabitsYet:'No habits yet',
     noEvents:'No events', noTasks:'No tasks', noHabits:'No habits',
@@ -1347,7 +1361,7 @@ const STRINGS = {
     retryBtn:'Retry'
   },
   fa: {
-    today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', menu:'منو', backToToday:'بازگشت به امروز',
+    today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', occasionsDesktop:'مناسبت‌ها', periodDesktop:'پریودی', occasionsComingSoon:'مناسبت‌های امروز و این ماه به‌زودی اینجا اضافه می‌شن.', menu:'منو', backToToday:'بازگشت به امروز',
     events:'رویدادها', tasks:'کارها', habits:'عادت‌ها',
     noEventsToday:'رویدادی برای امروز نیست', noTasksToday:'کاری برای امروز نیست', noHabitsYet:'هنوز عادتی نیست',
     noEvents:'رویدادی نیست', noTasks:'کاری نیست', noHabits:'عادتی نیست',
@@ -1638,6 +1652,7 @@ function render(){
   attachHomeCalendarGestures();
   attachDensityGesture(document.getElementById('cal-month-grid'));
   attachDensityGesture(document.getElementById('home-cal-grid'));
+  attachDesktopPager();
   attachSwipeToDelete(document.getElementById('page-home'));
   attachSwipeToDelete(document.getElementById('page-calendar'));
   attachHomeHeaderSwipe();
@@ -1660,12 +1675,57 @@ function renderHome(){
      starts blank — see renderItemSections) — #page-home is shared markup
      between both breakpoints, so this has to branch on viewport here
      rather than via CSS alone. */
+  return renderDesktops(d, {tasks, habits, events});
+}
+/* The three swipeable "desktops" described in the plan: occasions (the
+   "main" one, a simple placeholder for now — the reference's own
+   occasions/"مناسبت‌ها" panel was explicitly excluded from the port),
+   planning (the pre-existing home content, unchanged), and period
+   (reuses renderPeriodPage()'s body, just with the banner header instead
+   of the Settings back-button header) — shown only when the profile's
+   gender is 'female', same gate Settings/Management already used. */
+function renderDesktops(d, data){
+  const {tasks, habits, events} = data;
+  const panes = [
+    { key:'occasionsDesktop', html:`
+      ${renderAppBanner('occasionsDesktop')}
+      <div class="empty-hint">${t('occasionsComingSoon')}</div>
+    ` },
+    { key:'planning', html:`
+      ${renderAppBanner('planning')}
+      ${renderHomeCalWidget()}
+      ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
+      ${renderItemSections(tasks, habits, events, d)}
+    ` },
+  ];
+  if(state.profile.gender === 'female'){
+    panes.push({ key:'periodDesktop', html: renderPeriodPage(renderAppBanner('periodDesktop')) });
+  }
   return `
-    ${renderAppBanner('planning')}
-    ${renderHomeCalWidget()}
-    ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
-    ${renderItemSections(tasks, habits, events, d)}
+    <div class="desktop-wrap" id="desktop-wrap">
+      <div class="desktop-track" id="desktop-track">
+        ${panes.map(p => `<div class="desktop-pane">${p.html}</div>`).join('')}
+      </div>
+    </div>
+    <div class="desktop-dots" id="desktop-dots">
+      ${panes.map((p,i) => `<span class="${i===0?'active':''}" data-action="goto-desktop" data-i="${i}" aria-label="${t(p.key)}"></span>`).join('')}
+    </div>
   `;
+}
+function attachDesktopPager(){
+  const wrap = document.getElementById('desktop-wrap');
+  const dots = document.getElementById('desktop-dots');
+  if(!wrap || !dots) return;
+  const dotEls = Array.from(dots.children);
+  let raf = null;
+  wrap.addEventListener('scroll', () => {
+    if(raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      const i = Math.round(wrap.scrollLeft / wrap.clientWidth);
+      dotEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
+    });
+  }, {passive:true});
 }
 
 /* Small dashboard-style stat card: a progress ring for the day's overall
@@ -2299,12 +2359,16 @@ function renderPeriodTrackerSection(){
   `;
 }
 
-/* Dedicated full page (menuSubView 'period', parent 'admin'). */
-function renderPeriodPage(){
+/* Dedicated full page (menuSubView 'period', parent 'admin'), also
+   reused as-is for the period desktop pane (see renderDesktops) with a
+   different header — subHeader()'s back-arrow only makes sense inside
+   the Settings/Management navigation stack. */
+function renderPeriodPage(headerHtml){
+  if(headerHtml === undefined) headerHtml = subHeader(t('periodTracker'));
   const p = state.period;
   if(!p.enabled){
     return `
-      ${subHeader(t('periodTracker'))}
+      ${headerHtml}
       <div class="empty-hint">${t('periodOffHint')}</div>
       <div class="settings-row" style="margin-top:12px;">
         <div class="lbl">${t('periodTracker')}</div>
@@ -2340,7 +2404,7 @@ function renderPeriodPage(){
     `;
   })();
   return `
-    ${subHeader(t('periodTracker'))}
+    ${headerHtml}
     ${trackerBody}
     <div class="section-title">${t('articlesTitle')}</div>
     ${[1,2,3,4].map(i => `
@@ -3314,6 +3378,11 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'connect-unblock'){ runConnectionAction(el, () => Cloud.unblockUser(el.dataset.id)); return; }
   if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
+  if(action === 'goto-desktop'){
+    const wrap = document.getElementById('desktop-wrap');
+    if(wrap) wrap.scrollTo({ left: Number(el.dataset.i) * wrap.clientWidth, behavior:'smooth' });
+    return;
+  }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }
   if(action === 'open-article'){ showToast(t('articlesUnavailable')); return; }
