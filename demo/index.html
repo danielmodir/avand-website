@@ -224,8 +224,12 @@
     cursor:pointer; background-size:cover; background-position:center;
     box-shadow:0 6px 18px color-mix(in srgb, var(--primary) 45%, transparent);
   }
+  /* Sits right next to .profile-fab (36px left edge + 46px wide + 10px
+     gap) instead of independently centered, so the two read as one
+     grouped cluster rather than two unrelated controls scattered across
+     the bar — repo owner's request. */
   .nav-capsule{
-    position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:50;
+    position:absolute; bottom:28px; left:92px; z-index:50;
     display:flex; background:var(--card); border:1px solid var(--border); border-radius:999px;
     box-shadow:var(--shadow); overflow:hidden;
   }
@@ -1000,7 +1004,7 @@
        nothing behind it is clickable either, since .device.show-menu
        isn't set, so .menu-overlay (which would otherwise dismiss it)
        never shows up. */
-    .device.lang-fa #page-menu{ transform:translateX(100%); }
+    .device.lang-fa #page-menu{ transform:translateX(calc(100% + 14px)); }
     .device.lang-fa.show-menu #page-menu{ transform:translateX(0); }
     .menu-overlay{
       display:block; position:fixed; inset:0; z-index:65; background:var(--overlay);
@@ -1062,7 +1066,11 @@
       background:var(--card); border:1px solid var(--border); border-radius:999px;
       box-shadow:var(--shadow); padding:10px 0;
     }
-    #fab-add{ position:fixed; margin:0; width:44px; height:44px; bottom:auto; right:14px; left:auto; }
+    /* right:18px (not the rail's own 14px) centers it under the rail:
+       the rail is 52px wide (content + 1px border each side) vs this
+       button's 44px, so matching `right` would leave them off-center by
+       half that 8px difference. */
+    #fab-add{ position:fixed; margin:0; width:44px; height:44px; bottom:auto; right:18px; left:auto; }
     .desktop-rail .desktop-avatar-btn{
       display:flex; position:static; margin:0; align-items:center; justify-content:center;
       width:44px; height:44px; border-radius:50%; border:none;
@@ -2688,9 +2696,6 @@ function renderAdminPanel(){
       ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
       : `<div class="empty-hint">${t('noPurchasedFeatures')}</div>`}
     ${state.profile.gender === 'female' ? renderPeriodTrackerSection() : ''}
-    <div class="section-title" style="margin-top:22px;">${t('editAboutUs')}</div>
-    <div class="sub" style="margin:-6px 2px 10px 2px;">${t('editAboutUsSub')}</div>
-    <textarea class="about-desc-editor" id="about-text-editor" placeholder="${t('aboutDesc')}">${escapeHtml(state.aboutText[lang()])}</textarea>
   `;
 }
 
@@ -4676,6 +4681,18 @@ initCalendarWheelSwipe();
 attachCheckboxLongPress();
 attachDesktopContextMenu();
 attachDaySheetDrag();
+
+/* updateNav() measures real element positions (rail bottom edge, calendar
+   box edges, etc.) and writes them as inline styles — nothing else
+   re-runs that measurement when the viewport changes (resizing the
+   window, or a late font swap reflowing layout after boot), so those
+   positions go stale until the next click-driven render(). Debounced
+   since resize fires continuously while dragging. */
+let navResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(navResizeTimer);
+  navResizeTimer = setTimeout(updateNav, 120);
+});
 
 async function loadFromCloud(){
   const data = await Cloud.loadAll();
