@@ -693,6 +693,7 @@
   .swipe-wrap .item-card{ margin-bottom:0; border-radius:inherit; position:relative; background:var(--card); }
   .swipe-delete-bg{ position:absolute; inset:0; background:#D9534F; border-radius:inherit; display:flex; align-items:center; justify-content:center; }
   .swipe-delete-bg svg{ width:17px; height:17px; fill:#fff; }
+  .swipe-delete-bg.swipe-bg-done{ background:#2E7D32; }
 
   /* event cards */
   .events-scroll{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
@@ -1875,7 +1876,6 @@ const state = {
   navExpanded: false,   // true while the FAB's Task/Habit/Event mini-menu is open
   menuPanelOpen: false, // true while the Menu overlay/side-panel is open
   menuMaximized: false, // desktop-only: full-height panel vs the inset card
-  homeCalExpanded: false, // mobile merged widget: false = week strip, true = month grid
   popupOpen: false,
   popupType: null,
   monthDropdownOpen: false,
@@ -2047,6 +2047,8 @@ function render(){
   attachDensityGesture(document.getElementById('home-cal-grid'), document.getElementById('page-home'));
   attachDayCellGestures(document.getElementById('cal-month-grid'), false);
   attachDayCellGestures(document.getElementById('home-cal-grid'), true);
+  attachCalWheelMonthNav(document.getElementById('cal-month-grid'), dir => shiftMonthRoll(dir));
+  attachCalWheelMonthNav(document.getElementById('home-cal-grid'), dir => shiftHomeMonthRoll(dir));
   clampDropdowns();
   scrollYearDropdownActive();
   attachDesktopPager();
@@ -2130,6 +2132,22 @@ function attachDesktopPager(){
       dotEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
     });
   }, {passive:true});
+  /* A plain vertical mouse wheel (deltaY, no native horizontal support)
+     should still switch میزکار desktops, not just a trackpad's real
+     horizontal swipe — same "right=back, left=forward" convention as
+     the calendar's own scroll/arrows. Cooldown via `settling` avoids
+     one wheel gesture's burst of deltaY events queuing up many jumps. */
+  let settling = false;
+  wrap.addEventListener('wheel', e => {
+    if(Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; // real horizontal input: let it scroll natively
+    e.preventDefault();
+    if(settling) return;
+    const dir = e.deltaY > 0 ? 1 : -1;
+    const i = Math.max(0, Math.min(dotEls.length - 1, Math.round(wrap.scrollLeft / wrap.clientWidth) + dir));
+    settling = true;
+    wrap.scrollTo({ left: i * wrap.clientWidth, behavior: 'smooth' });
+    setTimeout(() => { settling = false; }, 350);
+  }, { passive:false });
 }
 
 /* Small dashboard-style stat card: a progress ring for the day's overall
@@ -3314,8 +3332,8 @@ function initFabAndMenuInteractions(){
 function initHomeScrollExpand(){
   const el = document.getElementById('page-home');
   el.addEventListener('scroll', () => {
-    if(el.scrollTop > 4 && state.homeCalExpanded){
-      setHomeCalExpanded(false);
+    if(el.scrollTop > 4 && state.calDensity !== 'compact'){
+      setCalDensity('compact');
     }
   }, { passive: true });
 
@@ -3332,8 +3350,8 @@ function initHomeScrollExpand(){
       }
       return;
     }
-    if(el.scrollTop <= 0 && e.deltaY < -10 && !state.homeCalExpanded){
-      setHomeCalExpanded(true);
+    if(el.scrollTop <= 0 && e.deltaY < -10 && state.calDensity !== 'full'){
+      setCalDensity('full');
     }
   }, { passive: true });
 
@@ -3343,9 +3361,9 @@ function initHomeScrollExpand(){
     pullStartY = e.clientY;
   }, { passive: true });
   el.addEventListener('pointermove', (e) => {
-    if(!pullActive || pullStartY === null || state.homeCalExpanded) return;
+    if(!pullActive || pullStartY === null || state.calDensity === 'full') return;
     if(e.clientY - pullStartY > 50){
-      setHomeCalExpanded(true);
+      setCalDensity('full');
       pullActive = false;
     }
   }, { passive: true });
@@ -4217,6 +4235,28 @@ if(!window.__densityBreakpointWatcher){
     render();
   });
 }
+/* Horizontal wheel/trackpad scroll over the month grid steps the month,
+   matching the arrow buttons' own right=previous/left=next convention —
+   scrolling "right" (deltaX>0) goes back, "left" (deltaX<0) goes
+   forward. Vertical scroll is left alone here (handled separately by
+   attachDensityGesture on mobile); only fires when the gesture is
+   clearly horizontal, so a vertical density scroll never also steps
+   the month by accident. Wheel-only (not touch) — the desktop grid has
+   no touch surface of its own, and the mobile home widget already has
+   its own horizontal touch-drag via attachHomeCalDrag(). */
+function attachCalWheelMonthNav(el, stepFn){
+  if(!el) return;
+  let settling = false;
+  el.addEventListener('wheel', e => {
+    if(Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+    e.preventDefault();
+    e.stopPropagation(); // don't also let it bubble into #page-home's own deltaX-dominant day-nav handler
+    if(settling) return;
+    settling = true;
+    stepFn(e.deltaX > 0 ? -1 : 1);
+    setTimeout(() => { settling = false; }, 350);
+  }, { passive:false });
+}
 function attachDensityGesture(el, scopeEl){
   if(!el || !scopeEl) return;
   if(window.innerWidth >= 768){ scopeEl.removeAttribute('data-density'); return; }
@@ -4235,6 +4275,7 @@ function attachDensityGesture(el, scopeEl){
     scopeEl.classList.add('density-fade');
     scopeEl.setAttribute('data-density', state.calDensity);
     setTimeout(() => scopeEl.classList.remove('density-fade'), 180);
+    positionHomeCalGrid();
   };
   const feed = (dy) => {
     acc = Math.max(0, Math.min(200, acc + Math.abs(dy)));
@@ -4242,12 +4283,24 @@ function attachDensityGesture(el, scopeEl){
     if(dy > 0 && acc > (i === 0 ? 40 : 140)) step(1);
     else if(dy < 0 && acc > (i === 2 ? 15 : 115)) step(-1);
   };
-  el.addEventListener('wheel', e => { if(!blocked() && Math.abs(e.deltaY) > 1){ e.preventDefault(); feed(e.deltaY); } }, {passive:false});
+  /* Wheel deltaY and touch's own dy (touchY-y, below) are opposite in
+     sign for the same physical "scroll up" gesture — a wheel scrolled
+     up is a *negative* deltaY by browser convention, while touch's dy
+     is already positive on an upward drag. Negate deltaY here so both
+     funnel into feed() with the same meaning: positive = scroll up =
+     step forward (full → 2 weeks → 1 week), matching the touch gesture
+     and the request this was built for. stopPropagation on both is
+     required, not optional — without it the event bubbles up to
+     #page-home's own pull-to-expand wheel/touch listeners
+     (initHomeScrollExpand), which read the very same gesture and
+     immediately stomp whatever density this just set. */
+  el.addEventListener('wheel', e => { if(!blocked() && Math.abs(e.deltaY) > 1 && Math.abs(e.deltaY) > Math.abs(e.deltaX)){ e.preventDefault(); e.stopPropagation(); feed(-e.deltaY); } }, {passive:false});
   let touchY = null;
   el.addEventListener('touchstart', e => { touchY = blocked() ? null : e.touches[0].clientY; }, {passive:true});
   el.addEventListener('touchmove', e => {
     if(touchY === null) return;
     e.preventDefault();
+    e.stopPropagation();
     const y = e.touches[0].clientY;
     feed(touchY - y);
     touchY = y;
@@ -4484,6 +4537,7 @@ function attachSwipeToDelete(container){
          never saw them. Only stop it once a drag is confirmed
          horizontal, below. */
     });
+    const bg = wrap.querySelector('.swipe-delete-bg');
     fg.addEventListener('pointermove', e => {
       if(!dragging) return;
       const ddx = e.clientX - startX;
@@ -4496,23 +4550,41 @@ function attachSwipeToDelete(container){
       e.stopPropagation();
       dx = ddx;
       fg.style.transform = `translateX(${dx}px)`;
+      /* Swiping toward screen-left previews "mark done" (green check);
+         toward screen-right previews delete (red trash) — only swaps
+         once the drag has a real direction, so a tiny jitter at
+         pointerdown doesn't flash the wrong one. */
+      if(bg && Math.abs(dx) > 4){
+        bg.classList.toggle('swipe-bg-done', dx < 0);
+        bg.innerHTML = dx < 0 ? ICONS.check : ICONS.trash;
+      }
     });
     const end = () => {
       if(!dragging) return;
       dragging = false;
       fg.style.transition = 'transform .22s ease';
+      const type = wrap.dataset.swipeType, id = wrap.dataset.swipeId;
       if(isHorizontal && Math.abs(dx) > 60){
-        fg.style.transform = `translateX(${dx < 0 ? '-100%' : '100%'})`;
-        fg.style.opacity = '0';
-        setTimeout(() => {
-          const type = wrap.dataset.swipeType, id = wrap.dataset.swipeId;
-          if(type === 'task') state.tasks = state.tasks.filter(x=>x.id!==id);
-          if(type === 'habit') state.habits = state.habits.filter(x=>x.id!==id);
-          render();
-        }, 190);
+        if(dx < 0){
+          /* Swipe left: toggle done in place, same as tapping the
+             checkbox — the row snaps back, it doesn't disappear. */
+          fg.style.transform = 'translateX(0)';
+          const cb = wrap.querySelector('.checkbox[data-action]');
+          if(cb) applyQuicksetState(cb, !cb.classList.contains('checked'));
+        } else {
+          /* Swipe right: delete, sliding the rest of the way off. */
+          fg.style.transform = 'translateX(100%)';
+          fg.style.opacity = '0';
+          setTimeout(() => {
+            if(type === 'task'){ state.tasks = state.tasks.filter(x=>x.id!==id); Cloud.deleteTask(id).catch(()=>{}); }
+            if(type === 'habit'){ state.habits = state.habits.filter(x=>x.id!==id); Cloud.deleteHabit(id).catch(()=>{}); }
+            render();
+          }, 190);
+        }
       } else {
         fg.style.transform = 'translateX(0)';
       }
+      if(bg){ bg.classList.remove('swipe-bg-done'); bg.innerHTML = ICONS.trash; }
     };
     fg.addEventListener('pointerup', end);
     fg.addEventListener('pointercancel', end);
@@ -4541,14 +4613,14 @@ function attachHomeCalDrag(){
       // swipe = forward.
       const dir = dx < 0 ? 1 : -1;
       slideHomeCalDate(dir, () => {
-        state.homeDate = state.homeCalExpanded ? stepMonth(state.homeDate, dir) : addDays(state.homeDate, dir*7);
+        state.homeDate = state.calDensity === 'full' ? stepMonth(state.homeDate, dir) : addDays(state.homeDate, dir*7);
       });
       startY = null;
       return;
     } else if(moved && Math.abs(dy) > 24){
-      setHomeCalExpanded(dy > 0);
+      setCalDensity(dy > 0 ? 'full' : 'compact');
     } else if(!moved && isHandle){
-      setHomeCalExpanded(!state.homeCalExpanded);
+      setCalDensity(state.calDensity === 'full' ? 'compact' : 'full');
     }
     startY = null;
   }
@@ -4604,17 +4676,22 @@ function slideHomeCalDate(dir, updateFn){
    calling positionHomeCalGrid() on the SAME, already-transitioning DOM
    node is what makes the grow/shrink animate properly — and also avoids
    re-attaching gesture listeners onto elements that never went away. */
-function setHomeCalExpanded(expanded){
-  state.homeCalExpanded = expanded;
+function setCalDensity(density){
+  state.calDensity = density;
   const widget = document.getElementById('home-cal-widget');
+  const scopeEl = document.getElementById('page-home');
+  if(scopeEl) scopeEl.setAttribute('data-density', density);
   if(!widget){ render(); return; }
   positionHomeCalGrid();
 }
 
-/* Sizes/positions the merged widget's month grid so only the row
-   containing state.homeDate shows when collapsed, and the full 6 rows
-   show when expanded — both via the same transform/height, so toggling
-   between them is a smooth animation instead of a content swap. */
+/* Sizes/positions the merged widget's month grid so only a window of
+   rows around state.homeDate shows, driven by state.calDensity (the
+   same full/mid/compact stages attachDensityGesture's scroll/touch
+   feed already steps through): full = all weeks, mid = a 2-week
+   window, compact = just the one week containing homeDate — all via
+   the same transform/height technique, so stepping between stages is
+   a smooth animation instead of a content swap. */
 let homeCalFirstPosition = true;
 function positionHomeCalGrid(){
   const clip = document.getElementById('home-cal-grid-clip');
@@ -4629,12 +4706,17 @@ function positionHomeCalGrid(){
   for(let i = 0; i < grid.children.length; i++){
     if(grid.children[i].dataset.date === key){ rowIndex = Math.floor(i / 7); break; }
   }
-  const expanded = state.homeCalExpanded;
-  const expandedHeight = totalRows * rowH + (totalRows - 1) * rowGap;
+  const density = state.calDensity || 'full';
+  const visibleRows = density === 'compact' ? 1 : density === 'mid' ? Math.min(2, totalRows) : totalRows;
+  // The window always starts at the row containing homeDate, except
+  // near the bottom of the grid where it instead ends there, so a
+  // 2-row (or 1-row) window never runs off the end of the month.
+  const startRow = Math.max(0, Math.min(rowIndex, totalRows - visibleRows));
+  const visibleHeight = visibleRows * rowH + Math.max(0, visibleRows - 1) * rowGap;
 
   if(homeCalFirstPosition){ clip.style.transition = 'none'; grid.style.transition = 'none'; }
-  clip.style.height = (expanded ? expandedHeight : rowH) + 'px';
-  grid.style.transform = expanded ? 'translateY(0)' : `translateY(-${rowIndex * (rowH + rowGap)}px)`;
+  clip.style.height = visibleHeight + 'px';
+  grid.style.transform = `translateY(-${startRow * (rowH + rowGap)}px)`;
   if(homeCalFirstPosition){
     requestAnimationFrame(() => {
       clip.style.transition = '';
