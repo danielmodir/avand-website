@@ -194,14 +194,36 @@
   .device.show-menu .menu-panel-content{ opacity:1; transform:translateY(0); }
   .menu-overlay{ display:none; }
 
-  /* ===== floating add button (replaces the old hold-to-open bottom nav) =====
-     Sits just past the Profile+Management cluster (left:92px, ~52px wide,
-     see .nav-capsule) with the same 10px gap desktop uses between its
-     rail and this button — one horizontal "toolbar" group on mobile,
-     same idea as the vertical one on desktop, per the repo owner's
-     request. */
+  /* ===== toolbar: Profile+Management (one connected pill) + Add =====
+     One wrapper, same three buttons on both breakpoints — mobile lays it
+     out as a row centered at the bottom; the desktop media query below
+     switches it to a column pinned to the right edge instead. Fixed in
+     place, never hidden — the only way into Profile/Management/Add. */
+  .toolbar{
+    position:fixed; z-index:50; display:flex; align-items:center; gap:10px;
+    bottom:28px; left:50%; transform:translateX(-50%);
+  }
+  .toolbar-pill{
+    display:flex; align-items:center;
+    background:var(--card); border:1px solid var(--border); border-radius:999px;
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .toolbar-avatar-btn{
+    position:relative; flex:0 0 auto; width:46px; height:46px; border-radius:50%; border:none;
+    background-color:var(--primary); background-size:cover; background-position:center;
+    color:var(--on-primary); font-weight:700; font-size:14px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .toolbar-admin-btn{
+    width:50px; height:46px; border:none; background:transparent; color:var(--text-muted);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .toolbar-admin-btn svg{ width:19px; height:19px; }
+  .toolbar-admin-btn:hover{ background:rgba(255,255,255,0.06); color:var(--primary); }
+
+  /* ===== floating add button (replaces the old hold-to-open bottom nav) ===== */
   .fab-add{
-    position:absolute; bottom:28px; left:154px; right:auto; z-index:50; width:46px; height:46px;
+    flex:0 0 auto; z-index:50; width:46px; height:46px;
     border-radius:50%; background:var(--primary); color:var(--on-primary); border:none;
     box-shadow:0 6px 18px color-mix(in srgb, var(--primary) 45%, transparent); display:flex; align-items:center;
     justify-content:center; cursor:pointer; transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
@@ -209,40 +231,14 @@
   .fab-add svg{ width:20px; height:20px; transition:transform .2s ease; }
   .fab-add.active svg{ transform:rotate(45deg); }
   .fab-menu{
-    position:absolute; bottom:80px; left:154px; right:auto; z-index:50; display:flex;
+    position:absolute; bottom:80px; left:50%; right:auto; z-index:50; display:flex;
     flex-direction:column; align-items:stretch; gap:8px; opacity:0; pointer-events:none;
-    transform:translateY(10px); transition:opacity .2s ease, transform .2s ease;
+    transform:translate(-50%,10px); transition:opacity .2s ease, transform .2s ease;
   }
-  .fab-menu.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  .fab-menu.show{ opacity:1; pointer-events:auto; transform:translate(-50%,0); }
   .fab-menu .nav-add-item{ width:auto; white-space:nowrap; background:var(--card); }
   .fab-menu.labels-hidden .nav-add-item{ justify-content:center; width:44px; padding:11px; }
   .fab-menu.labels-hidden .nav-add-item span{ display:none; }
-
-  /* ===== mobile-only bottom bar: Profile circle (left) + Store/Management
-     capsule (middle), alongside the Add FAB (right, above) — fixed in
-     place, never hidden. These three are the only way into
-     Profile/Store/Management on mobile now. ===== */
-  .profile-fab{
-    position:absolute; bottom:28px; left:36px; z-index:50; width:46px; height:46px;
-    border-radius:50%; background:var(--primary); color:var(--on-primary); border:none;
-    font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; background-size:cover; background-position:center;
-    box-shadow:0 6px 18px color-mix(in srgb, var(--primary) 45%, transparent);
-  }
-  /* Sits right next to .profile-fab (36px left edge + 46px wide + 10px
-     gap) instead of independently centered, so the two read as one
-     grouped cluster rather than two unrelated controls scattered across
-     the bar — repo owner's request. */
-  .nav-capsule{
-    position:absolute; bottom:28px; left:92px; z-index:50;
-    display:flex; background:var(--card); border:1px solid var(--border); border-radius:999px;
-    box-shadow:var(--shadow); overflow:hidden;
-  }
-  .nav-capsule button{
-    width:50px; height:46px; border:none; background:transparent; color:var(--text-muted);
-    display:flex; align-items:center; justify-content:center; cursor:pointer;
-  }
-  .nav-capsule button svg{ width:19px; height:19px; }
 
   /* ===== merged calendar+home widget (mobile only) =====
      Collapsed = this week as a 7-day strip. Expanded = full month grid,
@@ -281,16 +277,6 @@
   .menu-maximize-btn svg{ width:14px; height:14px; transition:transform .2s ease; }
   .device.menu-maximized .menu-maximize-btn svg{ transform:rotate(180deg); }
   .device.lang-fa .menu-maximize-btn{ right:auto; left:58px; }
-
-  /* ===== desktop-only right-edge rail (Add/Profile/Management) =====
-     On mobile the wrapper collapses to no box at all (not display:none)
-     so #fab-add and #desktop-avatar-btn, which it shares with mobile,
-     keep rendering via their own mobile rules below/elsewhere — only
-     .rail-admin-btn (desktop-only, no mobile equivalent) is truly hidden
-     here; .desktop-avatar-btn's own mobile-hide rule still applies too. */
-  .desktop-rail{ display:contents; }
-  .desktop-avatar-btn{ display:none; }
-  .rail-admin-btn{ display:none; }
 
   /* ONE single persistent header for the calendar/planning/period
      workspaces (not one per page/pane — see #app-banner's place in the
@@ -1044,10 +1030,17 @@
     }
     .period-quiz-sheet.show{ transform:translate(-50%,0); }
 
-    /* Bottom nav is mobile-only; desktop uses the right-edge .desktop-rail
-       capsule (Add/Profile/Management) instead. */
-    .profile-fab{ display:none; }
-    .nav-capsule{ display:none; }
+    /* Desktop: the same .toolbar flips from a bottom-center row to a
+       column pinned to the right edge — single source of truth, no
+       separate desktop-only elements to keep in sync with mobile's. */
+    .toolbar{
+      flex-direction:column; bottom:auto; left:auto; top:50%; right:14px;
+      transform:translateY(-50%); gap:10px;
+    }
+    .toolbar-pill{ flex-direction:column; }
+    .toolbar-avatar-btn{ width:44px; height:44px; }
+    .toolbar-admin-btn{ width:50px; height:50px; border-radius:50%; }
+    .fab-add{ width:44px; height:44px; }
     /* Shown below the calendar column instead of above a bottom bar (there
        isn't one on desktop) — position (left/top) is set in updateNav()
        from #page-calendar's measured rect, since the column sits inside a
@@ -1056,43 +1049,12 @@
     .back-today-btn{ bottom:auto; }
     /* The Task/Habit/Event quick-add list opens to #fab-add's left here
        instead of stacking above it — same card style, just the popup
-       direction changes. Vertically centered by default (matching the
-       rail), then updateNav() overrides `top` with #fab-add's real
-       measured center so it lines up with the button exactly rather than
-       a guessed offset. */
-    .fab-menu{ top:50%; bottom:auto; right:94px; transform:translateY(-50%) translateX(10px); }
+       direction changes. updateNav() sets `top`/`left` from #fab-add's
+       real measured rect so it lines up with the button exactly rather
+       than a guessed offset. */
+    .fab-menu{ top:50%; left:auto; right:94px; bottom:auto; transform:translateY(-50%) translateX(10px); }
     .fab-menu.show{ transform:translateY(-50%) translateX(0); }
     .menu-maximize-btn{ display:flex; align-items:center; justify-content:center; }
-    /* One capsule holding Profile (top, the only one that keeps a colored
-       circular look, same as before) and Management (bottom, plain icon).
-       Store lives in the Profile page instead. Add is its own separate
-       floating circle just below the capsule now (not grouped inside it
-       — repo owner's request), positioned in updateNav() from the rail's
-       real measured bottom edge rather than a guessed gap. */
-    .desktop-rail{
-      display:flex; flex-direction:column; align-items:center; gap:6px;
-      position:fixed; top:50%; right:14px; transform:translateY(-50%); z-index:42;
-      background:var(--card); border:1px solid var(--border); border-radius:999px;
-      box-shadow:var(--shadow); padding:10px 0;
-    }
-    /* right:18px (not the rail's own 14px) centers it under the rail:
-       the rail is 52px wide (content + 1px border each side) vs this
-       button's 44px, so matching `right` would leave them off-center by
-       half that 8px difference. */
-    #fab-add{ position:fixed; margin:0; width:44px; height:44px; bottom:auto; right:18px; left:auto; }
-    .desktop-rail .desktop-avatar-btn{
-      display:flex; position:static; margin:0; align-items:center; justify-content:center;
-      width:44px; height:44px; border-radius:50%; border:none;
-      background-color:var(--primary); background-size:cover; background-position:center;
-      color:var(--on-primary); font-weight:700; font-size:14px; cursor:pointer; box-shadow:none;
-    }
-    .rail-admin-btn{
-      display:flex; width:50px; height:50px; border:none; background:none;
-      border-radius:50%; color:var(--nav-icon); align-items:center; justify-content:center;
-      cursor:pointer; transition:color .2s ease, background .2s ease;
-    }
-    .rail-admin-btn svg{ width:19px; height:19px; }
-    .rail-admin-btn:hover{ background:rgba(255,255,255,0.06); color:var(--primary); }
 
     .auth-screen{
       position:fixed; inset:auto; top:50%; left:50%;
@@ -1156,55 +1118,33 @@
        is needed there — this stays hidden below 960px. -->
   <div class="menu-overlay" id="menu-overlay" data-action="close-menu-overlay"></div>
 
-  <!-- Mobile-only: bottom bar — Profile circle (left), Management button
-       (middle). The Add FAB (right) lives in its own block below. Store
-       moved into the Profile page (disabled, coming later — see item 2/4
-       of the 2026-10-09 toolbar rework). Content (avatar initials/photo)
-       is set in updateNav() since it's dynamic, same pattern as
-       #desktop-avatar-btn. -->
-  <button class="profile-fab" id="profile-fab" data-action="open-menu" data-sub="profile" aria-label="Profile"></button>
-  <div class="nav-capsule" id="nav-capsule">
-    <button type="button" data-action="open-menu" data-sub="admin" aria-label="Management">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>
+  <!-- One toolbar, same markup on both breakpoints — only flex-direction
+       and position flip in the desktop media query (column/right-edge vs
+       row/bottom-center). Profile+Management share one connected pill
+       (#toolbar-avatar-btn keeps its circular photo/initials look, set
+       in updateNav()); Add stays a visually separate circle but inside
+       the same wrapper div, with a gap handled by the wrapper's own
+       `gap`, not JS-measured positioning — repo owner's request: all
+       three belong to one "toolbar" group in the markup. Store moved
+       into the Profile page instead (disabled there, coming later). -->
+  <div class="toolbar" id="toolbar">
+    <div class="toolbar-pill" id="toolbar-pill">
+      <button class="toolbar-avatar-btn" id="toolbar-avatar-btn" data-action="open-menu" data-sub="profile" aria-label="Profile"></button>
+      <button type="button" class="toolbar-admin-btn" data-action="open-menu" data-sub="admin" title="Management" aria-label="Management">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>
+      </button>
+    </div>
+    <button class="fab-add" id="fab-add" data-action="toggle-add-menu" aria-label="Add">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
     </button>
   </div>
   <!-- Mobile-only: shown (slides up) only while a non-today day is
        selected — see render()'s toggle of the .show class below. -->
   <button type="button" class="back-today-btn" id="back-today-btn" data-action="go-today"></button>
 
-  <!-- Desktop-only: Profile and Management share one capsule — Profile
-       keeps its existing circular avatar look; Store moved into the
-       Profile page instead (disabled there, coming later). Add used to
-       be a third item inside this same pill, but a `transform` on this
-       element (the translateY(-50%) centering below) creates a new
-       containing block for any `position:fixed` descendant, so #fab-add
-       — which needs real fixed positioning to sit just below the pill
-       instead of inside it — has to live outside this element entirely,
-       not just be styled differently inside it (see its own position
-       below). #desktop-avatar-btn is the SAME element mobile uses (ids
-       are reused, not duplicated) — on mobile this wrapper is
-       display:contents (no box of its own), so it falls back to its own
-       mobile-only position/display rules untouched; the desktop media
-       query is what turns this into a real flex column pill. -->
-  <div class="desktop-rail" id="desktop-rail">
-    <button class="desktop-avatar-btn" id="desktop-avatar-btn" data-action="open-menu" data-sub="profile" aria-label="Profile"></button>
-    <button type="button" class="rail-admin-btn" data-action="open-menu" data-sub="admin" title="Management" aria-label="Management">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>
-    </button>
-  </div>
-
-  <!-- Mobile: positioned by the base .fab-add rule (bottom-right floating
-       circle). Desktop: its own fixed circle just below #desktop-rail,
-       not grouped inside it (repo owner's request) — position set in
-       updateNav() from the rail's real measured bottom edge. Also the
-       anchor the quick-add popup below (.fab-menu) aligns to. -->
-  <button class="fab-add" id="fab-add" data-action="toggle-add-menu" aria-label="Add">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
-  </button>
-
   <!-- Add Task/Habit/Event. Replaces the old "hold the bottom-nav logo"
        gesture — now a plain tap on a floating button, same on both
-       breakpoints. Its desktop position is computed in updateNav() from
+       breakpoints. Its position is computed in updateNav() from
        #fab-add's real measured rect. -->
   <div class="fab-menu" id="fab-menu">
     <div class="nav-add-item" data-action="open-popup" data-type="task">
@@ -3245,15 +3185,14 @@ function updateNav(){
   document.getElementById('fab-menu').classList.toggle('show', state.navExpanded);
   document.getElementById('fab-menu').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
 
-  [document.getElementById('desktop-avatar-btn'), document.getElementById('profile-fab')].forEach(avatarBtn => {
-    if(state.profile.photo){
-      avatarBtn.style.backgroundImage = `url('${state.profile.photo}')`;
-      avatarBtn.textContent = '';
-    } else {
-      avatarBtn.style.backgroundImage = 'none';
-      avatarBtn.textContent = initials(state.profile.name);
-    }
-  });
+  const avatarBtn = document.getElementById('toolbar-avatar-btn');
+  if(state.profile.photo){
+    avatarBtn.style.backgroundImage = `url('${state.profile.photo}')`;
+    avatarBtn.textContent = '';
+  } else {
+    avatarBtn.style.backgroundImage = 'none';
+    avatarBtn.textContent = initials(state.profile.name);
+  }
 
   /* Mobile-only: '+' doesn't make sense while browsing Store/Management
      (reached via the capsule next to this same button), so it swaps to a
@@ -3281,22 +3220,6 @@ function updateNav(){
       backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
       backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight / 2) + 'px';
     }
-
-    /* #fab-add sits just below the rail now (not grouped inside its
-       pill) — measured from the rail's own real bottom edge rather than
-       a guessed gap, since the rail's height depends on its content. */
-    const railEl = document.getElementById('desktop-rail');
-    if(railEl){
-      const railRect = railEl.getBoundingClientRect();
-      fab.style.top = (railRect.bottom + 10) + 'px';
-    }
-
-    /* The quick-add popup is vertically centered by CSS default (matching
-       the rail), but #fab-add isn't necessarily at the rail's own center
-       — measure its real center and use that instead of guessing the
-       offset from button sizes/gaps. */
-    const addRect = fab.getBoundingClientRect();
-    document.getElementById('fab-menu').style.top = (addRect.top + addRect.height / 2) + 'px';
   } else {
     /* Below 960px, the merged home widget IS the calendar (no separate
        #page-calendar column), so the same button anchors to its own
@@ -3308,8 +3231,21 @@ function updateNav(){
       backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
       backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight / 2) + 'px';
     }
-    document.getElementById('fab-menu').style.top = '';
-    fab.style.top = '';
+  }
+
+  /* Quick-add popup aligns to #fab-add's real measured center — desktop
+     via `top` (menu opens to the left, vertically centered), mobile via
+     `left` (menu opens upward, horizontally centered) — rather than a
+     guessed offset, since the toolbar's own size now depends on its
+     content (Profile+Management pill width/height). */
+  const addRect = fab.getBoundingClientRect();
+  const fabMenu = document.getElementById('fab-menu');
+  if(window.innerWidth >= 960){
+    fabMenu.style.top = (addRect.top + addRect.height / 2) + 'px';
+    fabMenu.style.left = '';
+  } else {
+    fabMenu.style.left = (addRect.left + addRect.width / 2) + 'px';
+    fabMenu.style.top = '';
   }
 }
 
