@@ -298,9 +298,9 @@
      header — those stay out for now. */
   .app-banner{
     position:relative; flex:0 0 auto; z-index:30; margin:14px 14px 10px 14px;
-    aspect-ratio:8/1; border-radius:24px; overflow:hidden;
+    aspect-ratio:13.3/1; border-radius:24px; overflow:hidden;
     background:var(--primary);
-    display:flex; align-items:center; gap:10px; padding:0 18px;
+    display:flex; align-items:center; gap:8px; padding:0 14px;
     box-shadow:0 8px 20px rgba(0,0,0,0.35);
   }
   .device.show-menu .app-banner{ display:none; }
@@ -310,7 +310,7 @@
   }
   .app-banner-bg.has-image{ opacity:1; }
   .app-banner-mark{
-    position:relative; flex:0 0 auto; width:34px; height:34px; border-radius:50%;
+    position:relative; flex:0 0 auto; width:22px; height:22px; border-radius:50%;
     background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;
   }
   .app-banner-mark img{ width:62%; height:62%; display:block; }
@@ -320,8 +320,13 @@
      needs no filter there — only light theme (navy --primary, white
      --on-primary) inverts it to white. */
   :root[data-theme="light"] .app-banner-mark img{ filter:invert(1); }
-  .app-banner-title{ position:relative; color:var(--on-primary); font-weight:800; font-size:15px; letter-spacing:-0.2px; }
-  @media (max-width:600px){ .app-banner{ aspect-ratio:4/1; } }
+  .app-banner-title{ position:relative; color:var(--on-primary); font-weight:800; font-size:13px; letter-spacing:-0.2px; }
+  /* Mobile: flush to the top/left/right edge (no gap, square top corners
+     since it's touching the device edge there) instead of floating with
+     a margin like desktop — only the bottom stays separated/rounded. */
+  @media (max-width:600px){
+    .app-banner{ aspect-ratio:6.7/1; margin:0 0 10px 0; border-radius:0 0 24px 24px; }
+  }
 
   /* Three swipeable "desktops" (occasions / planning / period) that live
      inside #page-home — a little home-screen launcher, not a page-level
@@ -969,16 +974,21 @@
        panel's animation (SPEC.md): scale+opacity read as a separate
        screen popping in on top, not a panel sliding into place. */
     #page-menu{
-      display:block; position:fixed; top:40px; bottom:40px; left:auto; right:0; z-index:70;
+      display:block; position:fixed; top:40px; bottom:40px; left:auto; right:14px; z-index:70;
       width:420px; max-width:90vw; height:auto; overflow-y:auto;
-      background:var(--card); box-shadow:var(--shadow); padding:64px 24px 28px 24px;
-      border-radius:20px 0 0 20px;
-      transform:translateX(100%);
-      transition:transform .32s cubic-bezier(.4,0,.2,1), top .25s ease, bottom .25s ease, border-radius .25s ease;
+      background:var(--card); box-shadow:var(--shadow); padding:48px 24px 28px 24px;
+      border-radius:20px;
+      transform:translateX(calc(100% + 14px));
+      transition:transform .32s cubic-bezier(.4,0,.2,1), top .25s ease, bottom .25s ease, right .25s ease, border-radius .25s ease;
       pointer-events:none;
     }
     .device.show-menu #page-menu{ transform:translateX(0); pointer-events:auto; }
-    .device.menu-maximized #page-menu{ top:0; bottom:0; border-radius:0; }
+    .device.menu-maximized #page-menu{ top:0; bottom:0; right:0; border-radius:0; }
+    /* leave-bottom-bar's mobile square-bottom-corners (it sits flush above
+       the bottom nav bar there) doesn't apply on desktop — there's no
+       bottom bar here, and the panel now has a gap on every side, so all
+       corners should stay rounded regardless of menuSubView. */
+    #page-menu.leave-bottom-bar{ height:auto; border-radius:20px; }
     /* Reclaims the closed position from the global .device.lang-fa
        #page-menu rule above (mobile's hamburger panel flips sides by
        language, but desktop's panel always slides from the right —
