@@ -303,14 +303,13 @@
     display:flex; align-items:center; gap:8px; padding:0 14px;
     box-shadow:0 8px 20px rgba(0,0,0,0.35);
   }
-  .device.show-menu .app-banner{ display:none; }
   .app-banner-bg{
     position:absolute; inset:0; background-size:cover; background-position:center;
     opacity:0; transition:opacity .25s ease;
   }
   .app-banner-bg.has-image{ opacity:1; }
   .app-banner-mark{
-    position:relative; flex:0 0 auto; width:22px; height:22px; border-radius:50%;
+    position:relative; flex:0 0 auto; width:35px; height:35px; border-radius:50%;
     background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;
   }
   .app-banner-mark img{ width:62%; height:62%; display:block; }
@@ -341,8 +340,9 @@
      scrolls its own section" rule the rest of the app follows. */
   .desktop-box{
     border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
-    overflow:hidden; height:520px; display:flex; flex-direction:column;
+    overflow:hidden; height:100%; display:flex; flex-direction:column;
   }
+  .desktop-box-title{ flex:0 0 auto; padding:14px 16px 0 16px; font-size:13px; font-weight:700; color:var(--text-muted); }
   .desktop-wrap{ flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .desktop-wrap::-webkit-scrollbar{ display:none; }
   .desktop-track{ display:flex; height:100%; }
@@ -1050,16 +1050,19 @@
     .fab-menu{ top:50%; bottom:auto; right:94px; transform:translateY(-50%) translateX(10px); }
     .fab-menu.show{ transform:translateY(-50%) translateX(0); }
     .menu-maximize-btn{ display:flex; align-items:center; justify-content:center; }
-    /* One capsule holding Add (top), Profile (middle — the only one that
-       keeps a colored circular look, same as before), and Management
-       (bottom, plain icon). Store lives in the Profile page instead. */
+    /* One capsule holding Profile (top, the only one that keeps a colored
+       circular look, same as before) and Management (bottom, plain icon).
+       Store lives in the Profile page instead. Add is its own separate
+       floating circle just below the capsule now (not grouped inside it
+       — repo owner's request), positioned in updateNav() from the rail's
+       real measured bottom edge rather than a guessed gap. */
     .desktop-rail{
       display:flex; flex-direction:column; align-items:center; gap:6px;
       position:fixed; top:50%; right:14px; transform:translateY(-50%); z-index:42;
       background:var(--card); border:1px solid var(--border); border-radius:999px;
       box-shadow:var(--shadow); padding:10px 0;
     }
-    .desktop-rail .fab-add{ position:static; margin:0; width:44px; height:44px; box-shadow:none; }
+    #fab-add{ position:fixed; margin:0; width:44px; height:44px; bottom:auto; right:14px; left:auto; }
     .desktop-rail .desktop-avatar-btn{
       display:flex; position:static; margin:0; align-items:center; justify-content:center;
       width:44px; height:44px; border-radius:50%; border:none;
@@ -1068,7 +1071,7 @@
     }
     .rail-admin-btn{
       display:flex; width:50px; height:50px; border:none; background:none;
-      color:var(--nav-icon); align-items:center; justify-content:center;
+      border-radius:50%; color:var(--nav-icon); align-items:center; justify-content:center;
       cursor:pointer; transition:color .2s ease, background .2s ease;
     }
     .rail-admin-btn svg{ width:19px; height:19px; }
@@ -1152,30 +1155,40 @@
        selected — see render()'s toggle of the .show class below. -->
   <button type="button" class="back-today-btn" id="back-today-btn" data-action="go-today"></button>
 
-  <!-- Desktop-only: Add, Profile and Management share one capsule now
-       (previously three separate floating elements) — Profile sits in
-       the middle, keeping its existing circular avatar look; Store moved
-       into the Profile page instead (disabled there, coming later).
-       #fab-add and #desktop-avatar-btn are the SAME elements mobile uses
-       (ids are reused, not duplicated) — on mobile this wrapper is
-       display:contents (no box of its own), so they fall back to their
-       own mobile-only position/display rules untouched; the desktop
-       media query is what turns this into a real flex column pill. -->
+  <!-- Desktop-only: Profile and Management share one capsule — Profile
+       keeps its existing circular avatar look; Store moved into the
+       Profile page instead (disabled there, coming later). Add used to
+       be a third item inside this same pill, but a `transform` on this
+       element (the translateY(-50%) centering below) creates a new
+       containing block for any `position:fixed` descendant, so #fab-add
+       — which needs real fixed positioning to sit just below the pill
+       instead of inside it — has to live outside this element entirely,
+       not just be styled differently inside it (see its own position
+       below). #desktop-avatar-btn is the SAME element mobile uses (ids
+       are reused, not duplicated) — on mobile this wrapper is
+       display:contents (no box of its own), so it falls back to its own
+       mobile-only position/display rules untouched; the desktop media
+       query is what turns this into a real flex column pill. -->
   <div class="desktop-rail" id="desktop-rail">
-    <button class="fab-add" id="fab-add" data-action="toggle-add-menu" aria-label="Add">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
-    </button>
     <button class="desktop-avatar-btn" id="desktop-avatar-btn" data-action="open-menu" data-sub="profile" aria-label="Profile"></button>
     <button type="button" class="rail-admin-btn" data-action="open-menu" data-sub="admin" title="Management" aria-label="Management">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>
     </button>
   </div>
 
+  <!-- Mobile: positioned by the base .fab-add rule (bottom-right floating
+       circle). Desktop: its own fixed circle just below #desktop-rail,
+       not grouped inside it (repo owner's request) — position set in
+       updateNav() from the rail's real measured bottom edge. Also the
+       anchor the quick-add popup below (.fab-menu) aligns to. -->
+  <button class="fab-add" id="fab-add" data-action="toggle-add-menu" aria-label="Add">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
+  </button>
+
   <!-- Add Task/Habit/Event. Replaces the old "hold the bottom-nav logo"
        gesture — now a plain tap on a floating button, same on both
-       breakpoints. Stays a sibling of .desktop-rail (it's a popup list,
-       not a rail button) — its desktop position is computed in
-       updateNav() from #fab-add's real measured rect. -->
+       breakpoints. Its desktop position is computed in updateNav() from
+       #fab-add's real measured rect. -->
   <div class="fab-menu" id="fab-menu">
     <div class="nav-add-item" data-action="open-popup" data-type="task">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"/></svg><span id="nav-add-task-label">New Task</span>
@@ -1631,7 +1644,7 @@ function secondaryLabelsFor(d, isHome){
 
 const STRINGS = {
   en: {
-    today:'Today', calendar:'Calendar', planning:'Planning', occasionsDesktop:'Occasions', periodDesktop:'Period', occasionsComingSoon:"Today's and this month's occasions are coming here soon.", menu:'Menu', backToToday:'Back to today',
+    today:'Today', calendar:'Calendar', planning:'Planning', occasionsDesktop:'Occasions', periodDesktop:'Period', occasionsComingSoon:"Today's and this month's occasions are coming here soon.", menu:'Menu', backToToday:'Back to today', workspace:'Workspace',
     events:'Events', tasks:'Tasks', habits:'Habits',
     noEventsToday:'No events today', noTasksToday:'No tasks today', noHabitsYet:'No habits yet',
     noEvents:'No events', noTasks:'No tasks', noHabits:'No habits',
@@ -1730,7 +1743,7 @@ const STRINGS = {
     retryBtn:'Retry'
   },
   fa: {
-    today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', occasionsDesktop:'مناسبت‌ها', periodDesktop:'پریودی', occasionsComingSoon:'مناسبت‌های امروز و این ماه به‌زودی اینجا اضافه می‌شن.', menu:'منو', backToToday:'بازگشت به امروز',
+    today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', occasionsDesktop:'مناسبت‌ها', periodDesktop:'پریودی', occasionsComingSoon:'مناسبت‌های امروز و این ماه به‌زودی اینجا اضافه می‌شن.', menu:'منو', backToToday:'بازگشت به امروز', workspace:'میزکار',
     events:'رویدادها', tasks:'کارها', habits:'عادت‌ها',
     noEventsToday:'رویدادی برای امروز نیست', noTasksToday:'کاری برای امروز نیست', noHabitsYet:'هنوز عادتی نیست',
     noEvents:'رویدادی نیست', noTasks:'کاری نیست', noHabits:'عادتی نیست',
@@ -2083,6 +2096,7 @@ function renderDesktops(d, data){
   }
   return `
     <div class="desktop-box">
+      <div class="desktop-box-title">${t('workspace')}</div>
       <div class="desktop-wrap" id="desktop-wrap">
         <div class="desktop-track" id="desktop-track">
           ${panes.map(p => `<div class="desktop-pane">${p.html}</div>`).join('')}
@@ -3170,7 +3184,6 @@ function renderCalendar(){
       <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="${nextAction}" aria-label="${t('next')}">${ICONS.chevronRight}</div>
       ${monthDropdown}${yearDropdown}
     </div>
-    ${secondaryLabelsFor(c, false)}
     <div class="cal-mode-tabs">
       <button class="${state.calMode==='day'?'active':''}" data-action="set-cal-mode" data-mode="day">${t('day')}</button>
       <button class="${state.calMode==='week'?'active':''}" data-action="set-cal-mode" data-mode="week">${t('week')}</button>
@@ -3238,10 +3251,19 @@ function updateNav(){
       backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight / 2) + 'px';
     }
 
+    /* #fab-add sits just below the rail now (not grouped inside its
+       pill) — measured from the rail's own real bottom edge rather than
+       a guessed gap, since the rail's height depends on its content. */
+    const railEl = document.getElementById('desktop-rail');
+    if(railEl){
+      const railRect = railEl.getBoundingClientRect();
+      fab.style.top = (railRect.bottom + 10) + 'px';
+    }
+
     /* The quick-add popup is vertically centered by CSS default (matching
        the rail), but #fab-add isn't necessarily at the rail's own center
-       (it's the top item of three) — measure its real center and use
-       that instead of guessing the offset from button sizes/gaps. */
+       — measure its real center and use that instead of guessing the
+       offset from button sizes/gaps. */
     const addRect = fab.getBoundingClientRect();
     document.getElementById('fab-menu').style.top = (addRect.top + addRect.height / 2) + 'px';
   } else {
@@ -3256,6 +3278,7 @@ function updateNav(){
       backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight / 2) + 'px';
     }
     document.getElementById('fab-menu').style.top = '';
+    fab.style.top = '';
   }
 }
 
