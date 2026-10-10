@@ -472,6 +472,10 @@
   .cal-corner-arrow svg{width:16px;height:16px;}
   .cal-subrow{ text-align:center; font-size:11px; color:var(--text-muted); margin:-6px 0 10px 0; }
   [data-density="compact"] .cal-subrow{ display:none; }
+  .cal-subrow-group{ position:relative; display:inline-block; }
+  .cal-subrow-item{ cursor:pointer; padding:2px 3px; border-radius:6px; }
+  .cal-subrow-item:active{ background:var(--bg-soft); }
+  .cal-subrow-sep{ padding:0 2px; }
   .cal-mode-tabs{display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; margin-bottom:16px;}
   .cal-mode-tabs button{flex:1; border:none; background:transparent; padding:8px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit;}
   .cal-mode-tabs button.active{background:var(--card); color:var(--primary);}
@@ -1365,6 +1369,20 @@ function isJalali(){ return primarySystem() === 'jalali'; }
 function isHijriPrimary(){ return primarySystem() === 'hijri'; }
 function jalaliMonthName(i0){ return (lang()==='fa' ? JALALI_MONTHS_FA : JALALI_MONTHS_EN)[i0]; }
 function hijriMonthName(i0){ return (lang()==='fa' ? HIJRI_MONTHS_FA : HIJRI_MONTHS_EN)[i0]; }
+/* Each calendar system always renders its own date numbers in its own
+   numeral script, independent of the app's general (Latin-digit) UI
+   language: Jalali numbers are always Persian digits, Hijri numbers
+   are always Arabic-Indic digits, Gregorian numbers are always Latin —
+   this is a deliberate exception to the rest of the UI staying Latin,
+   scoped to calendar date numbers specifically. */
+const PERSIAN_DIGITS = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+const ARABIC_INDIC_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+function toSysDigits(num, sys){
+  const str = String(num);
+  if(sys === 'jalali') return str.replace(/[0-9]/g, c => PERSIAN_DIGITS[c]);
+  if(sys === 'hijri') return str.replace(/[0-9]/g, c => ARABIC_INDIC_DIGITS[c]);
+  return str;
+}
 
 /* Daily occasions (مناسبت‌ها) — self-hosted static dataset, not a live
    third-party API call: CLAUDE.md's hard rule is zero external requests
@@ -1403,18 +1421,18 @@ function occasionsForDate(d){
 function displayMonthYear(d){
   if(isHijriPrimary()){
     const h = toHijri(d.getFullYear(), d.getMonth()+1, d.getDate());
-    return { monthLabel: hijriMonthName(h.hm-1), yearLabel: h.hy, hy:h.hy, hm:h.hm, hd:h.hd };
+    return { monthLabel: hijriMonthName(h.hm-1), yearLabel: toSysDigits(h.hy,'hijri'), hy:h.hy, hm:h.hm, hd:h.hd };
   }
   if(isJalali()){
     const j = toJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
-    return { monthLabel: jalaliMonthName(j.jm-1), yearLabel: j.jy, jy:j.jy, jm:j.jm, jd:j.jd };
+    return { monthLabel: jalaliMonthName(j.jm-1), yearLabel: toSysDigits(j.jy,'jalali'), jy:j.jy, jm:j.jm, jd:j.jd };
   }
-  return { monthLabel: monthName(d.getMonth()), yearLabel: d.getFullYear() };
+  return { monthLabel: monthName(d.getMonth()), yearLabel: toSysDigits(d.getFullYear(),'gregorian') };
 }
 function displayDayNum(d){
-  if(isHijriPrimary()) return toHijri(d.getFullYear(), d.getMonth()+1, d.getDate()).hd;
-  if(isJalali()) return toJalali(d.getFullYear(), d.getMonth()+1, d.getDate()).jd;
-  return d.getDate();
+  if(isHijriPrimary()) return toSysDigits(toHijri(d.getFullYear(), d.getMonth()+1, d.getDate()).hd, 'hijri');
+  if(isJalali()) return toSysDigits(toJalali(d.getFullYear(), d.getMonth()+1, d.getDate()).jd, 'jalali');
+  return toSysDigits(d.getDate(), 'gregorian');
 }
 /* Triple-date cell body: big primary day number (whichever system
    Settings has as primary) plus every OTHER *enabled* system's day
@@ -1427,9 +1445,13 @@ function displayDayNum(d){
 function dayCellDateHtml(d){
   const primary = displayDayNum(d);
   const en = state.settings.calendarEnabled;
-  const nums = { gregorian: d.getDate, jalali: () => toJalali(d.getFullYear(),d.getMonth()+1,d.getDate()).jd, hijri: () => toHijri(d.getFullYear(),d.getMonth()+1,d.getDate()).hd };
+  const nums = {
+    gregorian: () => toSysDigits(d.getDate(), 'gregorian'),
+    jalali: () => toSysDigits(toJalali(d.getFullYear(),d.getMonth()+1,d.getDate()).jd, 'jalali'),
+    hijri: () => toSysDigits(toHijri(d.getFullYear(),d.getMonth()+1,d.getDate()).hd, 'hijri'),
+  };
   const sysOrder = ['gregorian','jalali','hijri'];
-  const subVals = sysOrder.filter(s => s !== primarySystem() && en[s]).map(s => s==='gregorian' ? d.getDate() : nums[s]());
+  const subVals = sysOrder.filter(s => s !== primarySystem() && en[s]).map(s => nums[s]());
   const sub = subVals.length ? `<span class="day-cell-sub">${subVals.join(' / ')}</span>` : '';
   return `<span class="day-cell-num">${primary}</span>${sub}`;
 }
@@ -1503,21 +1525,6 @@ function setYearOf(anchor, year){
   return new Date(year, anchor.getMonth(), 1);
 }
 function monthNameFor(i0){ return isHijriPrimary() ? hijriMonthName(i0) : isJalali() ? jalaliMonthName(i0) : monthName(i0); }
-/* Subtitle row under the month/year title: every *enabled* non-primary
-   system's own month+year, so e.g. a Jalali-primary user still sees
-   "Mehr 1405" AND "Rabi' II 1448" / "October 2026" without opening a
-   dropdown — same idea as the reference's Gregorian/Hijri range
-   subtitle under the Jalali title. Forced LTR with isolate spans since
-   it's mixing scripts/digit systems inside a possibly-RTL page. */
-function secondaryLabelsFor(d){
-  const en = state.settings.calendarEnabled;
-  const labels = [];
-  if(en.gregorian && primarySystem() !== 'gregorian') labels.push(`${monthName(d.getMonth())} ${d.getFullYear()}`);
-  if(en.jalali && primarySystem() !== 'jalali'){ const j = toJalali(d.getFullYear(),d.getMonth()+1,d.getDate()); labels.push(`${jalaliMonthName(j.jm-1)} ${j.jy}`); }
-  if(en.hijri && primarySystem() !== 'hijri'){ const h = toHijri(d.getFullYear(),d.getMonth()+1,d.getDate()); labels.push(`${hijriMonthName(h.hm-1)} ${h.hy}`); }
-  if(!labels.length) return '';
-  return `<div class="cal-subrow" dir="ltr">${labels.map(l => `<span style="unicode-bidi:isolate;">${l}</span>`).join(' · ')}</div>`;
-}
 function primaryYearOf(anchor){
   if(isHijriPrimary()) return toHijri(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).hy;
   if(isJalali()) return toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).jy;
@@ -1528,18 +1535,81 @@ function primaryMonthOf(anchor){
   if(isJalali()) return toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).jm;
   return anchor.getMonth()+1;
 }
-function yearRangeFor(){
+function yearRangeFor(){ return yearRangeForSys(primarySystem()); }
+/* Same idea as monthNameFor/primaryYearOf/primaryMonthOf/yearRangeFor/
+   setMonthOf/setYearOf above, but parameterized by an explicit system
+   instead of always reading the current primary — used by the
+   secondary (non-primary) cal-subrow labels, which each need to act on
+   their OWN system regardless of which one is primary right now. */
+function monthNameForSys(sys, i0){ return sys==='hijri' ? hijriMonthName(i0) : sys==='jalali' ? jalaliMonthName(i0) : monthName(i0); }
+function yearOfSys(anchor, sys){
+  if(sys==='hijri') return toHijri(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).hy;
+  if(sys==='jalali') return toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).jy;
+  return anchor.getFullYear();
+}
+function monthOfSys(anchor, sys){
+  if(sys==='hijri') return toHijri(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).hm;
+  if(sys==='jalali') return toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()).jm;
+  return anchor.getMonth()+1;
+}
+function setMonthOfSys(anchor, sys, monthIndex0){
+  if(sys==='hijri'){ const hc = toHijri(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()); const g = hijriToGregorian(hc.hy, monthIndex0+1, 1); return new Date(g.gy,g.gm-1,g.gd); }
+  if(sys==='jalali'){ const jc = toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()); const g = toGregorian(jc.jy, monthIndex0+1, 1); return new Date(g.gy,g.gm-1,g.gd); }
+  return new Date(anchor.getFullYear(), monthIndex0, 1);
+}
+function setYearOfSys(anchor, sys, year){
+  if(sys==='hijri'){ const hc = toHijri(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()); const g = hijriToGregorian(year, hc.hm, 1); return new Date(g.gy,g.gm-1,g.gd); }
+  if(sys==='jalali'){ const jc = toJalali(anchor.getFullYear(),anchor.getMonth()+1,anchor.getDate()); const g = toGregorian(year, jc.jm, 1); return new Date(g.gy,g.gm-1,g.gd); }
+  return new Date(year, anchor.getMonth(), 1);
+}
+function yearRangeForSys(sys){
   const years = [];
-  if(isHijriPrimary()){
+  if(sys==='hijri'){
     const curHY = toHijri(today.getFullYear(),today.getMonth()+1,today.getDate()).hy;
     for(let y = curHY-60; y <= curHY+10; y++) years.push(y);
-  } else if(isJalali()){
+  } else if(sys==='jalali'){
     const curJY = toJalali(today.getFullYear(), today.getMonth()+1, today.getDate()).jy;
     for(let y = 1369; y <= curJY+10; y++) years.push(y);
   } else {
     for(let y = 1990; y <= today.getFullYear()+10; y++) years.push(y);
   }
   return years;
+}
+/* Subtitle row under the month/year title: every *enabled* non-primary
+   system's own month+year, so e.g. a Jalali-primary user still sees
+   "Mehr 1405" AND "Rabi' II 1448" / "October 2026" without opening a
+   dropdown — same idea as the reference's Gregorian/Hijri range
+   subtitle under the Jalali title. Forced LTR with isolate spans since
+   it's mixing scripts/digit systems inside a possibly-RTL page.
+   Each system's month/year is independently tappable, same as the
+   primary label, and opens a dropdown scoped to that one system
+   (state.secDropdown) rather than changing what's primary. */
+function secondaryLabelsFor(d, isHome){
+  const en = state.settings.calendarEnabled;
+  const systems = ['gregorian','jalali','hijri'].filter(s => en[s] && s !== primarySystem());
+  if(!systems.length) return '';
+  const sd = state.secDropdown;
+  const home = !!isHome;
+  const groups = systems.map(sys => {
+    const monthLabel = monthNameForSys(sys, monthOfSys(d, sys)-1);
+    const yearLabel = toSysDigits(yearOfSys(d, sys), sys);
+    const monthOpen = sd.home === home && sd.sys === sys && sd.kind === 'month';
+    const yearOpen = sd.home === home && sd.sys === sys && sd.kind === 'year';
+    const monthDD = monthOpen ? `
+      <div class="cal-dropdown" id="${home?'home-':''}sec-month-dropdown">
+        ${Array.from({length:12},(_,i)=>i).map(i => `<div class="cal-dropdown-item ${(i+1)===monthOfSys(d,sys)?'active':''}" data-action="pick-sec-month" data-sys="${sys}" data-month="${i}" data-home="${home?'1':'0'}">${monthNameForSys(sys,i)}</div>`).join('')}
+      </div>` : '';
+    const yearDD = yearOpen ? `
+      <div class="cal-dropdown" id="${home?'home-':''}sec-year-dropdown">
+        ${yearRangeForSys(sys).map(y => `<div class="cal-dropdown-item ${y===yearOfSys(d,sys)?'active':''}" data-action="pick-sec-year" data-sys="${sys}" data-year="${y}" data-home="${home?'1':'0'}">${toSysDigits(y,sys)}</div>`).join('')}
+      </div>` : '';
+    return `<span class="cal-subrow-group" style="unicode-bidi:isolate;">
+      <span class="cal-subrow-item" data-action="tap-sec-month" data-sys="${sys}" data-home="${home?'1':'0'}">${monthLabel}</span>
+      <span class="cal-subrow-item" data-action="tap-sec-year" data-sys="${sys}" data-home="${home?'1':'0'}">${yearLabel}</span>
+      ${monthDD}${yearDD}
+    </span>`;
+  });
+  return `<div class="cal-subrow" dir="ltr">${groups.join(' <span class="cal-subrow-sep">·</span> ')}</div>`;
 }
 
 const STRINGS = {
@@ -1772,6 +1842,12 @@ const state = {
   popupType: null,
   monthDropdownOpen: false,
   yearDropdownOpen: false,
+  /* Tapping a *secondary* (non-primary) calendar system's month/year in
+     the cal-subrow opens the same kind of dropdown the primary label
+     gets, but scoped to that one system — kind: 'month'|'year'|null,
+     sys: 'gregorian'|'jalali'|'hijri'|null, home: which widget (desktop
+     calendar vs. the mobile/home one) it belongs to. */
+  secDropdown: { kind: null, sys: null, home: false },
   editingId: null,
   sectionExpanded: { tasks:false, habits:false, events:false },
   /* Mobile-only (<960px): a non-empty section is shown by default, this
@@ -2113,7 +2189,7 @@ function renderHomeCalWidget(){
     </div>` : '';
   const yearDropdown = state.yearDropdownOpen ? `
     <div class="cal-dropdown" id="home-year-dropdown">
-      ${yearRangeFor().map(y => `<div class="cal-dropdown-item ${y===primaryYearOf(d)?'active':''}" data-action="home-pick-year" data-year="${y}">${y}</div>`).join('')}
+      ${yearRangeFor().map(y => `<div class="cal-dropdown-item ${y===primaryYearOf(d)?'active':''}" data-action="home-pick-year" data-year="${y}">${toSysDigits(y,primarySystem())}</div>`).join('')}
     </div>` : '';
   return `
     <div class="home-cal-widget" id="home-cal-widget" dir="${lang()==='fa'?'rtl':'ltr'}">
@@ -2124,7 +2200,7 @@ function renderHomeCalWidget(){
         <div class="cal-corner-arrow right" data-action="home-next-month" aria-label="${t('next')}">${ICONS.chevronRight}</div>
         ${monthDropdown}${yearDropdown}
       </div>
-      ${secondaryLabelsFor(d)}
+      ${secondaryLabelsFor(d, true)}
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
       <div class="home-cal-grid-clip" id="home-cal-grid-clip">
         <div id="home-cal-slide">
@@ -3048,7 +3124,7 @@ function renderCalendar(){
     </div>` : '';
   const yearDropdown = state.yearDropdownOpen ? `
     <div class="cal-dropdown" id="year-dropdown">
-      ${yearRangeFor().map(y => `<div class="cal-dropdown-item ${y===primaryYearOf(c)?'active':''}" data-action="pick-year" data-year="${y}">${y}</div>`).join('')}
+      ${yearRangeFor().map(y => `<div class="cal-dropdown-item ${y===primaryYearOf(c)?'active':''}" data-action="pick-year" data-year="${y}">${toSysDigits(y,primarySystem())}</div>`).join('')}
     </div>` : '';
 
   /* Icon-only prev/next arrows now show in every mode, not just week/
@@ -3067,7 +3143,7 @@ function renderCalendar(){
       <div class="cal-corner-arrow right" data-action="${nextAction}" aria-label="${t('next')}">${ICONS.chevronRight}</div>
       ${monthDropdown}${yearDropdown}
     </div>
-    ${secondaryLabelsFor(c)}
+    ${secondaryLabelsFor(c, false)}
     <div class="cal-mode-tabs">
       <button class="${state.calMode==='day'?'active':''}" data-action="set-cal-mode" data-mode="day">${t('day')}</button>
       <button class="${state.calMode==='week'?'active':''}" data-action="set-cal-mode" data-mode="week">${t('week')}</button>
@@ -3572,8 +3648,10 @@ function escapeAttr(s){ return escapeHtml(s); }
 
 /* ============ GLOBAL CLICK DELEGATION ============ */
 document.getElementById('device').addEventListener('click', (e) => {
-  if((state.monthDropdownOpen || state.yearDropdownOpen) && !e.target.closest('.cal-dropdown, .cal-label')){
-    state.monthDropdownOpen = false; state.yearDropdownOpen = false; render();
+  if((state.monthDropdownOpen || state.yearDropdownOpen || state.secDropdown.kind) && !e.target.closest('.cal-dropdown, .cal-label, .cal-subrow-item')){
+    state.monthDropdownOpen = false; state.yearDropdownOpen = false;
+    state.secDropdown = { kind:null, sys:null, home:false };
+    render();
   }
   const el = e.target.closest('[data-action]');
   if(!el) return;
@@ -3632,6 +3710,30 @@ document.getElementById('device').addEventListener('click', (e) => {
 
   if(action === 'pick-month'){ state.calCursor = setMonthOf(state.calCursor, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
   if(action === 'pick-year'){ state.calCursor = setYearOf(state.calCursor, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }
+  if(action === 'tap-sec-month' || action === 'tap-sec-year'){
+    const sys = el.dataset.sys;
+    const home = el.dataset.home === '1';
+    const kind = action === 'tap-sec-month' ? 'month' : 'year';
+    const sd = state.secDropdown;
+    state.secDropdown = (sd.home===home && sd.sys===sys && sd.kind===kind)
+      ? { kind:null, sys:null, home:false }
+      : { kind, sys, home };
+    state.monthDropdownOpen = false; state.yearDropdownOpen = false;
+    render();
+    return;
+  }
+  if(action === 'pick-sec-month' || action === 'pick-sec-year'){
+    const sys = el.dataset.sys;
+    const home = el.dataset.home === '1';
+    const anchor = home ? state.homeDate : state.calCursor;
+    const next = action === 'pick-sec-month'
+      ? setMonthOfSys(anchor, sys, Number(el.dataset.month))
+      : setYearOfSys(anchor, sys, Number(el.dataset.year));
+    if(home) state.homeDate = next; else state.calCursor = next;
+    state.secDropdown = { kind:null, sys:null, home:false };
+    render();
+    return;
+  }
   if(action === 'cal-prev-week'){ shiftWeek(-1); return; }
   if(action === 'cal-next-week'){ shiftWeek(1); return; }
   if(action === 'cal-prev-day'){ shiftDay(-1); return; }
@@ -4127,11 +4229,11 @@ function attachDayCellGestures(gridEl, isHome){
    which can overflow when the label sits near the card's left/right
    edge). */
 function clampDropdowns(){
-  ['month-dropdown','year-dropdown','home-month-dropdown','home-year-dropdown'].forEach(id => {
+  ['month-dropdown','year-dropdown','home-month-dropdown','home-year-dropdown','sec-month-dropdown','sec-year-dropdown','home-sec-month-dropdown','home-sec-year-dropdown'].forEach(id => {
     const el = document.getElementById(id);
     if(!el) return;
     el.style.transform = 'translateX(-50%)';
-    const card = el.closest('.card') || el.parentElement;
+    const card = el.closest('.desktop-box') || el.closest('.card') || el.parentElement;
     const bounds = card.getBoundingClientRect();
     const rect = el.getBoundingClientRect();
     const pad = 8;
@@ -4145,7 +4247,7 @@ function clampDropdowns(){
    dropdown when it opens, instead of leaving the list at its native
    top-scroll position (which can bury the current year many rows down). */
 function scrollYearDropdownActive(){
-  ['year-dropdown','home-year-dropdown'].forEach(id => {
+  ['year-dropdown','home-year-dropdown','sec-year-dropdown','home-sec-year-dropdown'].forEach(id => {
     const el = document.getElementById(id);
     if(!el) return;
     const active = el.querySelector('.cal-dropdown-item.active');
@@ -4154,11 +4256,11 @@ function scrollYearDropdownActive(){
 }
 function attachCalendarGestures(){
   attachRollGesture(document.getElementById('cal-month-label'), (dir) => {
-    if(dir === 'tap'){ state.yearDropdownOpen = false; state.monthDropdownOpen = !state.monthDropdownOpen; render(); }
+    if(dir === 'tap'){ state.yearDropdownOpen = false; state.monthDropdownOpen = !state.monthDropdownOpen; state.secDropdown = { kind:null, sys:null, home:false }; render(); }
     else shiftMonthRoll(dir);
   });
   attachRollGesture(document.getElementById('cal-year-label'), (dir) => {
-    if(dir === 'tap'){ state.monthDropdownOpen = false; state.yearDropdownOpen = !state.yearDropdownOpen; render(); }
+    if(dir === 'tap'){ state.monthDropdownOpen = false; state.yearDropdownOpen = !state.yearDropdownOpen; state.secDropdown = { kind:null, sys:null, home:false }; render(); }
     else shiftYearRoll(dir);
   });
 }
@@ -4200,11 +4302,11 @@ function shiftYearRoll(dir){
    desktop calendar's month/year labels, but driving state.homeDate. */
 function attachHomeCalendarGestures(){
   attachRollGesture(document.getElementById('home-cal-month-label'), (dir) => {
-    if(dir === 'tap'){ state.yearDropdownOpen = false; state.monthDropdownOpen = !state.monthDropdownOpen; render(); }
+    if(dir === 'tap'){ state.yearDropdownOpen = false; state.monthDropdownOpen = !state.monthDropdownOpen; state.secDropdown = { kind:null, sys:null, home:false }; render(); }
     else shiftHomeMonthRoll(dir);
   });
   attachRollGesture(document.getElementById('home-cal-year-label'), (dir) => {
-    if(dir === 'tap'){ state.monthDropdownOpen = false; state.yearDropdownOpen = !state.yearDropdownOpen; render(); }
+    if(dir === 'tap'){ state.monthDropdownOpen = false; state.yearDropdownOpen = !state.yearDropdownOpen; state.secDropdown = { kind:null, sys:null, home:false }; render(); }
     else shiftHomeYearRoll(dir);
   });
 }
