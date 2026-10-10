@@ -210,6 +210,7 @@
   }
   .toolbar-avatar-btn{
     position:relative; flex:0 0 auto; width:41px; height:41px; border-radius:50%; border:none;
+    margin-top:4px;
     background-color:var(--primary); background-size:cover; background-position:center;
     color:var(--on-primary); font-weight:700; font-size:14px; line-height:1;
     display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -624,8 +625,8 @@
      on focus (the border stays the same muted color always), repo
      owner's request. */
   .float-field{ position:relative; margin-bottom:14px; }
-  .float-field input{ width:100%; background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:20px 2px 10px 2px; font-size:16px; color:var(--text); font-family:inherit; text-align:center; transition:text-align .2s ease, padding .2s ease, border-color .2s ease, color .2s ease; }
-  .float-field input:focus{ outline:none; text-align:left; padding:24px 2px 6px 2px; border-bottom-color:var(--primary); color:var(--primary); }
+  .float-field input{ width:100%; background:transparent; border:none; border-radius:0; padding:20px 2px 10px 2px; font-size:16px; color:var(--text); font-family:inherit; text-align:center; transition:text-align .2s ease, padding .2s ease, color .2s ease; }
+  .float-field input:focus{ outline:none; text-align:left; padding:24px 2px 6px 2px; color:var(--primary); }
   .float-field input:not(:placeholder-shown){ text-align:left; padding:24px 2px 6px 2px; }
   .float-field label{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:15px; color:var(--text-muted); pointer-events:none; transition:all .2s ease; }
   .float-field input:focus + label,
@@ -635,6 +636,7 @@
      base rule above) scrolls RTL text oddly as you type, so mirror both
      the text and the floated label for this language, same pattern as
      the other .lang-fa overrides in this file. */
+  .device.lang-fa .float-field input{ text-align:right; direction:rtl; }
   .device.lang-fa .float-field input:focus,
   .device.lang-fa .float-field input:not(:placeholder-shown){ text-align:right; direction:rtl; }
   .device.lang-fa .float-field input:focus + label,
@@ -698,9 +700,11 @@
   .star-btn.active svg{ fill:#E0B95C; stroke:#E0B95C; }
   .subtasks-list{ display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
   .subtask-edit-row{ display:flex; align-items:center; gap:8px; }
-  .subtask-edit-row input{ flex:1; }
+  .field .subtask-edit-row input[type="text"]{ flex:1; width:auto; background:transparent; border:none; border-radius:0; padding:8px 2px; font-size:14px; color:var(--text); font-family:inherit; text-align:center; transition:color .2s ease; }
+  .subtask-edit-row input:focus{ outline:none; color:var(--primary); }
+  .device.lang-fa .subtask-edit-row input{ text-align:right; direction:rtl; }
   .remove-x{ width:26px; height:26px; border-radius:8px; border:none; background:rgba(197,113,113,0.18); color:#D98B8B; cursor:pointer; flex:0 0 auto; font-size:14px; }
-  .add-ghost-btn{ border:none; background:transparent; color:var(--primary); padding:6px 2px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .add-ghost-btn{ display:block; width:100%; text-align:center; border:none; background:transparent; color:var(--primary); padding:6px 2px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
   .photo-add-row{ display:flex; gap:8px; flex-wrap:wrap; }
   .photo-thumb{ position:relative; width:56px; height:56px; }
   .photo-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:10px; border:1px solid var(--border); }
@@ -741,7 +745,7 @@
 
   /* popup icon row + subviews */
   .popup-icon-row{ display:flex; gap:10px; margin-bottom:14px; }
-  .popup-icon-btn{ flex:1; height:46px; border-radius:14px; background:var(--bg-soft); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
+  .popup-icon-btn{ flex:1; height:46px; border-radius:14px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .popup-icon-btn svg{ width:18px; height:18px; }
   .popup-icon-btn.set{ color:var(--primary); background:var(--primary-soft); border-color:var(--primary); }
   .popup-subview-header{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
@@ -762,7 +766,7 @@
   .desc-wrap textarea{ width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:14px; padding:13px 40px 30px 14px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; min-height:70px; transition:border-color .2s ease, box-shadow .2s ease; }
   .desc-wrap textarea::placeholder{ color:var(--text-muted); }
   .desc-wrap textarea:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
-  .desc-clip-btn{ position:absolute; left:10px; bottom:10px; width:28px; height:28px; border-radius:9px; background:var(--card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
+  .desc-clip-btn{ position:absolute; left:10px; bottom:10px; width:28px; height:28px; border-radius:9px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .desc-clip-btn svg{ width:14px; height:14px; }
   .desc-clip-btn.has-files{ color:var(--primary); border-color:var(--primary); }
 
@@ -1733,7 +1737,7 @@ const STRINGS = {
     noReminder:'No reminder', atATime:'At a time', repeating:'Repeating', everyNHours:'Every how many hours?', customReminderText:'Custom reminder text (optional)',
     dateTitle:'Date', repeatTitle:'Repeat', reminderTitle:'Reminder', tapOrDrag:'Tap a day, or press and drag to select a range',
     day:'Day', week:'Week', month:'Month',
-    addSubtask:'+ Add subtask', subtaskTitle:'Subtask title',
+    addSubtask:'+ Add subtask', subtaskTitle:'Subtask',
     newTask:'New Task', newHabit:'New Habit', newEvent:'New Event',
     welcomeTitle:'Welcome to Toojibee', welcomeSub:'Tasks, habits, and events in one place.',
     logIn:'Log in', signUp:'Sign up', fullName:'Full name', password:'Password',
@@ -1832,7 +1836,7 @@ const STRINGS = {
     noReminder:'بدون یادآوری', atATime:'در ساعت مشخص', repeating:'تکرارشونده', everyNHours:'هر چند ساعت؟', customReminderText:'متن دلخواه یادآوری (اختیاری)',
     dateTitle:'تاریخ', repeatTitle:'تکرار', reminderTitle:'یادآوری', tapOrDrag:'یه روز رو بزن، یا بکش تا بازه انتخاب بشه',
     day:'روزانه', week:'هفتگی', month:'ماهانه',
-    addSubtask:'+ افزودن ریزتسک', subtaskTitle:'عنوان ریزتسک',
+    addSubtask:'+ افزودن ریزتسک', subtaskTitle:'ریزتسک',
     newTask:'کار جدید', newHabit:'عادت جدید', newEvent:'رویداد جدید',
     welcomeTitle:'به توجیبی خوش اومدی', welcomeSub:'کار، عادت و رویداد، همه یه‌جا.',
     logIn:'ورود', signUp:'ثبت‌نام', fullName:'نام و نام خانوادگی', password:'رمز عبور',
