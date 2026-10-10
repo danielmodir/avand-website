@@ -209,7 +209,7 @@
     box-shadow:var(--shadow); overflow:hidden;
   }
   .toolbar-avatar-btn{
-    position:relative; flex:0 0 auto; width:46px; height:46px; border-radius:50%; border:none;
+    position:relative; flex:0 0 auto; width:41px; height:41px; border-radius:50%; border:none;
     background-color:var(--primary); background-size:cover; background-position:center;
     color:var(--on-primary); font-weight:700; font-size:14px; line-height:1;
     display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -232,8 +232,8 @@
     box-shadow:0 6px 18px color-mix(in srgb, var(--primary) 45%, transparent); display:flex; align-items:center;
     justify-content:center; cursor:pointer; transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
   }
-  .fab-add svg{ width:20px; height:20px; transition:transform .2s ease; }
-  .fab-add.active svg{ transform:rotate(45deg); }
+  .fab-add svg{ width:20px; height:20px; transition:transform .32s cubic-bezier(.34,1.56,.64,1); }
+  .fab-add.active svg{ transform:rotate(135deg); }
   .fab-menu{
     position:absolute; bottom:80px; left:50%; right:auto; z-index:50; display:flex;
     flex-direction:column; align-items:stretch; gap:8px; opacity:0; pointer-events:none;
@@ -248,9 +248,13 @@
      Collapsed = this week as a 7-day strip. Expanded = full month grid,
      like Samsung Calendar. Drag the handle (or tap it) to switch; picking
      a date in the expanded grid also collapses back to the strip. */
+  /* Mobile: its own card above .desktop-box now, not merged into the
+     same swiper/box — repo owner's request. Card styling (border/radius/
+     bg) matches .desktop-box so the two read as siblings, not one
+     component split across different looks. */
   .home-cal-widget{
-    position:sticky; top:0; z-index:5; background:var(--bg);
-    margin:-4px -2px 16px -2px; padding:4px 2px 0 2px;
+    position:relative; background:var(--bg-soft); border:1px solid var(--border);
+    border-radius:20px; margin:0 0 14px 0; padding:14px 10px 10px 10px;
   }
   .home-cal-topbar{ margin-bottom:10px; }
   .home-cal-grid-clip{ overflow:hidden; transition:height .28s cubic-bezier(.4,0,.2,1); }
@@ -310,6 +314,7 @@
   .app-banner-mark{
     position:relative; flex:0 0 auto; width:46px; height:46px; border-radius:50%;
     background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
   }
   .app-banner-mark img{ width:62%; height:62%; display:block; }
   /* The mark is black-ink-on-transparent; dark theme's --on-primary is
@@ -584,7 +589,7 @@
   .nav-btn.logo span{ font-weight:800; font-size:17px; line-height:1; }
   .nav-btn.pressing{ transform:scale(0.88); }
 
-  .nav-add-item{ position:relative; z-index:2; width:100%; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:11px 14px; color:var(--text); cursor:pointer; }
+  .nav-add-item{ position:relative; z-index:2; width:100%; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:4px 14px; color:var(--text); cursor:pointer; }
   .nav-add-item svg{width:16px; height:16px; fill:var(--primary);}
   .nav-add-item span{font-size:13px; font-weight:600;}
   #nav-layer-add.labels-hidden .nav-add-item span{ display:none; }
@@ -593,10 +598,11 @@
   /* ===== add popup ===== */
   .popup-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:55; opacity:0; pointer-events:none; transition:opacity .25s ease; }
   .popup-overlay.show{ opacity:1; pointer-events:auto; }
-  /* Full-screen on mobile (edge-to-edge, no radius) instead of a
-     centered floating card with margins — repo owner's request; desktop
-     keeps the centered card below. */
-  .add-popup{ position:absolute; top:0; left:0; right:0; bottom:0; background:var(--card); border-radius:0; overflow:hidden; z-index:56; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.05); opacity:0; pointer-events:none; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
+  /* Full-screen on mobile (edge-to-edge sides/bottom) but with rounded
+     top corners, like a native bottom sheet, instead of a centered
+     floating card with margins — repo owner's request; desktop keeps
+     the fully-centered rounded card below. */
+  .add-popup{ position:absolute; top:0; left:0; right:0; bottom:0; background:var(--card); border-radius:24px 24px 0 0; overflow:hidden; z-index:56; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.05); opacity:0; pointer-events:none; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
   .add-popup.show{ transform:scale(1); opacity:1; pointer-events:auto; }
   .popup-topbar{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 6px 18px; flex:0 0 auto; }
   .popup-delete, .popup-close{ border:none; padding:0; font:inherit; }
@@ -605,25 +611,26 @@
   .popup-delete.invisible{ visibility:hidden; }
   .popup-close{ width:34px; height:34px; border-radius:50%; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .popup-close svg{width:14px; height:14px;}
-  .popup-body{ flex:1; padding:22px 22px 10px 22px; position:relative; overflow-y:auto; scrollbar-width:none; }
+  .popup-body{ flex:1; padding:22px 22px 90px 22px; position:relative; overflow-y:auto; scrollbar-width:none; }
   .popup-body::-webkit-scrollbar{ display:none; }
   .pop-field{ width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:16px; padding:16px 16px; font-size:16px; color:var(--text); font-family:inherit; transition:border-color .22s ease, box-shadow .22s ease; }
   .pop-field::placeholder{ color:var(--text-muted); }
   .pop-field:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--primary-soft); }
   .popup-footer{ position:relative; height:96px; flex:0 0 auto; }
-  .pop-submit{ position:absolute; left:50%; bottom:24px; transform:translate(-50%,140%); opacity:0; transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease; pointer-events:none; background:var(--primary); color:var(--on-primary); border:none; border-radius:999px; padding:14px 34px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; }
+  .pop-submit{ position:absolute; left:50%; bottom:24px; transform:translate(-50%,140%); opacity:0; transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease; pointer-events:none; background:var(--primary); color:var(--on-primary); border:none; border-radius:999px; padding:11px 27px; font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; }
   .pop-submit.visible{ transform:translate(-50%,0); opacity:1; pointer-events:auto; }
 
   /* Plain underline instead of a filled, bordered box — no color change
      on focus (the border stays the same muted color always), repo
      owner's request. */
   .float-field{ position:relative; margin-bottom:14px; }
-  .float-field input{ width:100%; background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:20px 2px 10px 2px; font-size:16px; color:var(--text); font-family:inherit; text-align:center; transition:text-align .2s ease, padding .2s ease; }
-  .float-field input:focus{ outline:none; text-align:left; padding:24px 2px 6px 2px; }
+  .float-field input{ width:100%; background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:20px 2px 10px 2px; font-size:16px; color:var(--text); font-family:inherit; text-align:center; transition:text-align .2s ease, padding .2s ease, border-color .2s ease, color .2s ease; }
+  .float-field input:focus{ outline:none; text-align:left; padding:24px 2px 6px 2px; border-bottom-color:var(--primary); color:var(--primary); }
   .float-field input:not(:placeholder-shown){ text-align:left; padding:24px 2px 6px 2px; }
   .float-field label{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:15px; color:var(--text-muted); pointer-events:none; transition:all .2s ease; }
   .float-field input:focus + label,
   .float-field input:not(:placeholder-shown) + label{ top:-2px; left:2px; transform:translate(0,0); font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--text-muted); }
+  .float-field input:focus + label{ color:var(--primary); }
   /* Typed titles are Persian in fa mode — force-left-aligning them (the
      base rule above) scrolls RTL text oddly as you type, so mirror both
      the text and the floated label for this language, same pattern as
@@ -693,7 +700,7 @@
   .subtask-edit-row{ display:flex; align-items:center; gap:8px; }
   .subtask-edit-row input{ flex:1; }
   .remove-x{ width:26px; height:26px; border-radius:8px; border:none; background:rgba(197,113,113,0.18); color:#D98B8B; cursor:pointer; flex:0 0 auto; font-size:14px; }
-  .add-ghost-btn{ width:100%; border:1.5px dashed var(--border); background:transparent; color:var(--text-muted); border-radius:12px; padding:10px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .add-ghost-btn{ border:none; background:transparent; color:var(--primary); padding:6px 2px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
   .photo-add-row{ display:flex; gap:8px; flex-wrap:wrap; }
   .photo-thumb{ position:relative; width:56px; height:56px; }
   .photo-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:10px; border:1px solid var(--border); }
@@ -1072,7 +1079,7 @@
       transform:translateY(-50%); gap:10px;
     }
     .toolbar-pill{ flex-direction:column; }
-    .toolbar-avatar-btn{ width:44px; height:44px; }
+    .toolbar-avatar-btn{ width:40px; height:40px; }
     .toolbar-admin-btn{ width:44px; height:44px; }
     .fab-add{ width:44px; height:44px; }
     /* Shown below the calendar column instead of above a bottom bar (there
@@ -1114,7 +1121,7 @@
        Hidden via CSS while the Menu panel is open (.device.show-menu). -->
   <div class="app-banner" id="app-banner">
     <div class="app-banner-bg" id="app-banner-bg"></div>
-    <div class="app-banner-mark"><img src="../assets/icons/logo-mark.png" alt=""></div>
+    <div class="app-banner-mark" data-action="go-landing" role="link" aria-label="Toojibee"><img src="../assets/icons/logo-mark.png" alt=""></div>
     <div class="app-banner-title">Toojibee</div>
   </div>
 
@@ -2086,7 +2093,7 @@ function renderDesktops(d, data){
   const panes = [
     { key:'occasionsDesktop', html: renderOccasionsPane(d) },
     { key:'planning', html:`
-      ${renderHomeCalWidget()}
+      ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
       ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
       ${renderItemSections(tasks, habits, events, d)}
     ` },
@@ -2095,6 +2102,7 @@ function renderDesktops(d, data){
     panes.push({ key:'periodDesktop', html: renderPeriodPage('') });
   }
   return `
+    ${window.innerWidth < 960 ? renderHomeCalWidget() : ''}
     <div class="desktop-box">
       <div class="desktop-box-title">${t('workspace')}</div>
       <div class="desktop-wrap" id="desktop-wrap">
@@ -2702,7 +2710,6 @@ function renderStorePage(){
 function renderAdminPanel(){
   return `
     ${subHeader(t('adminPanel'))}
-    <div class="section-title">${t('purchasedFeatures')}</div>
     ${state.store.length
       ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
       : `<div class="empty-hint">${t('noPurchasedFeatures')}</div>`}
@@ -3419,13 +3426,8 @@ function openPopup(type, originEl, existing){
   }
 
   popup.innerHTML = `
-    <div class="popup-topbar">
-      <button type="button" class="popup-delete ${existing?'':'invisible'}" data-action="delete-popup-item" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>
-    </div>
     <div class="popup-body"></div>
-    <div class="popup-footer">
-      <button class="pop-submit" id="popup-submit" data-action="submit-popup">${existing?t('saveChanges'):t('add') + ' ' + typeLabel(type)}</button>
-    </div>
+    <button class="pop-submit" id="popup-submit" data-action="submit-popup">${existing?t('saveChanges'):t('add') + ' ' + typeLabel(type)}</button>
   `;
   render();
   if(originStyle) popup.style.transformOrigin = originStyle;
@@ -3463,7 +3465,7 @@ function subtasksBlock(){
   return `
     <div class="field">
       <div class="subtasks-list" id="subtasks-list">${subtasksListHtml()}</div>
-      ${formSubtasks.length < 3 ? `<button type="button" class="add-ghost-btn" id="add-subtask-btn">${t('addSubtask')}</button>` : ''}
+      ${formSubtasks.length < 3 ? `<button type="button" class="add-ghost-btn" id="add-subtask-btn">${formSubtasks.length === 0 ? t('addSubtask') : '+'}</button>` : ''}
     </div>`;
 }
 function subtasksListHtml(){
@@ -3475,9 +3477,7 @@ function subtasksListHtml(){
 function formBody(type){
   const parts = [popupIconRow(type)];
   if(type === 'task'){
-    parts.push(`<div class="field"><input type="text" id="f-category" value="${escapeAttr(formDraft.category)}" placeholder="${t('categoryOptional')}"></div>`);
     parts.push(descriptionBlock());
-    parts.push(subtasksBlock());
   }
   return parts.join('');
 }
@@ -3606,6 +3606,7 @@ function renderPopupBody(){
   }
   body.innerHTML = `
     <div class="float-field"><input type="text" id="f-title" placeholder=" " value="${escapeAttr(formDraft.title)}" autocomplete="off"><label>${t('titleLabel')}</label></div>
+    ${state.popupType === 'task' ? subtasksBlock() : ''}
     ${formBody(state.popupType)}
   `;
   wireMainFormInteractivity();
@@ -3868,6 +3869,10 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'copy-user-id'){
     try{ navigator.clipboard.writeText(state.profile.userId); }catch(err){}
     showToast(t('idCopied'));
+    return;
+  }
+  if(action === 'go-landing'){
+    location.href = `../${lang()}/`;
     return;
   }
   if(action === 'toggle-app-theme'){
