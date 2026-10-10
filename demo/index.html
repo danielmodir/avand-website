@@ -214,12 +214,16 @@
     color:var(--on-primary); font-weight:700; font-size:14px; line-height:1;
     display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
+  /* The hover circle is smaller than the slot (margin on all sides) and
+     explicitly round, so it reads as a distinct circle with a gap from
+     the pill's own edge instead of a square hover fill flush against it. */
   .toolbar-admin-btn{
-    width:50px; height:46px; border:none; background:transparent; color:var(--text-muted);
+    width:44px; height:44px; margin:3px; border:none; border-radius:50%; background:transparent; color:var(--text-muted);
     display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:background .2s ease, color .2s ease;
   }
   .toolbar-admin-btn svg{ width:19px; height:19px; }
-  .toolbar-admin-btn:hover{ background:rgba(255,255,255,0.06); color:var(--primary); }
+  .toolbar-admin-btn:hover{ background:rgba(255,255,255,0.14); color:var(--primary); }
 
   /* ===== floating add button (replaces the old hold-to-open bottom nav) ===== */
   .fab-add{
@@ -304,7 +308,7 @@
   }
   .app-banner-bg.has-image{ opacity:1; }
   .app-banner-mark{
-    position:relative; flex:0 0 auto; width:35px; height:35px; border-radius:50%;
+    position:relative; flex:0 0 auto; width:46px; height:46px; border-radius:50%;
     background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;
   }
   .app-banner-mark img{ width:62%; height:62%; display:block; }
@@ -314,7 +318,7 @@
      needs no filter there — only light theme (navy --primary, white
      --on-primary) inverts it to white. */
   :root[data-theme="light"] .app-banner-mark img{ filter:invert(1); }
-  .app-banner-title{ position:relative; color:var(--on-primary); font-weight:800; font-size:13px; letter-spacing:-0.2px; }
+  .app-banner-title{ position:relative; color:var(--on-primary); font-weight:800; font-size:17px; letter-spacing:-0.2px; }
   /* Mobile: flush to the top/left/right edge (no gap, square top corners
      since it's touching the device edge there) instead of floating with
      a margin like desktop — only the bottom stays separated/rounded. */
@@ -610,13 +614,16 @@
   .pop-submit{ position:absolute; left:50%; bottom:24px; transform:translate(-50%,140%); opacity:0; transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease; pointer-events:none; background:var(--primary); color:var(--on-primary); border:none; border-radius:999px; padding:14px 34px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; }
   .pop-submit.visible{ transform:translate(-50%,0); opacity:1; pointer-events:auto; }
 
+  /* Plain underline instead of a filled, bordered box — no color change
+     on focus (the border stays the same muted color always), repo
+     owner's request. */
   .float-field{ position:relative; margin-bottom:14px; }
-  .float-field input{ width:100%; background:var(--bg-soft); border:2px solid transparent; border-radius:16px; padding:20px 16px 12px 16px; font-size:16px; color:var(--text); font-family:inherit; text-align:center; transition:border-color .2s ease, box-shadow .2s ease, text-align .2s ease, padding .2s ease; }
-  .float-field input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--primary-soft); text-align:left; padding:24px 16px 8px 16px; }
-  .float-field input:not(:placeholder-shown){ text-align:left; padding:24px 16px 8px 16px; }
+  .float-field input{ width:100%; background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:20px 2px 10px 2px; font-size:16px; color:var(--text); font-family:inherit; text-align:center; transition:text-align .2s ease, padding .2s ease; }
+  .float-field input:focus{ outline:none; text-align:left; padding:24px 2px 6px 2px; }
+  .float-field input:not(:placeholder-shown){ text-align:left; padding:24px 2px 6px 2px; }
   .float-field label{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:15px; color:var(--text-muted); pointer-events:none; transition:all .2s ease; }
   .float-field input:focus + label,
-  .float-field input:not(:placeholder-shown) + label{ top:9px; left:16px; transform:translate(0,0); font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--primary); }
+  .float-field input:not(:placeholder-shown) + label{ top:-2px; left:2px; transform:translate(0,0); font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--text-muted); }
   /* Typed titles are Persian in fa mode — force-left-aligning them (the
      base rule above) scrolls RTL text oddly as you type, so mirror both
      the text and the floated label for this language, same pattern as
@@ -624,7 +631,7 @@
   .device.lang-fa .float-field input:focus,
   .device.lang-fa .float-field input:not(:placeholder-shown){ text-align:right; direction:rtl; }
   .device.lang-fa .float-field input:focus + label,
-  .device.lang-fa .float-field input:not(:placeholder-shown) + label{ left:auto; right:16px; }
+  .device.lang-fa .float-field input:not(:placeholder-shown) + label{ left:auto; right:2px; }
 
   /* ===== rich form controls (MVP fields) ===== */
   .field{ margin-bottom:14px; }
@@ -1066,7 +1073,7 @@
     }
     .toolbar-pill{ flex-direction:column; }
     .toolbar-avatar-btn{ width:44px; height:44px; }
-    .toolbar-admin-btn{ width:50px; height:50px; border-radius:50%; }
+    .toolbar-admin-btn{ width:44px; height:44px; }
     .fab-add{ width:44px; height:44px; }
     /* Shown below the calendar column instead of above a bottom bar (there
        isn't one on desktop) — position (left/top) is set in updateNav()
@@ -3414,7 +3421,6 @@ function openPopup(type, originEl, existing){
   popup.innerHTML = `
     <div class="popup-topbar">
       <button type="button" class="popup-delete ${existing?'':'invisible'}" data-action="delete-popup-item" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>
-      <button type="button" class="popup-close" data-action="close-popup" aria-label="${t('closeBtn')}">${ICONS.close}</button>
     </div>
     <div class="popup-body"></div>
     <div class="popup-footer">
