@@ -1141,10 +1141,6 @@
   <!-- Mobile-only: shown (slides up) only while a non-today day is
        selected — see render()'s toggle of the .show class below. -->
   <button type="button" class="back-today-btn" id="back-today-btn" data-action="go-today"></button>
-  <!-- Desktop-only (>=960px) twin of the one above, anchored to the
-       #page-calendar column's own box instead of #page-home's
-       desktop-box — see updateNav(). -->
-  <button type="button" class="back-today-btn" id="back-today-btn-cal" data-action="cal-go-today"></button>
 
   <!-- Desktop-only: Add, Profile and Management share one capsule now
        (previously three separate floating elements) — Profile sits in
@@ -3217,12 +3213,15 @@ function updateNav(){
 
   const backBtn = document.getElementById('back-today-btn');
   backBtn.textContent = t('backToToday');
-  backBtn.classList.toggle('show', !sameDay(state.homeDate, today));
   if(window.innerWidth >= 960){
-    /* Anchored to the fixed desktop-box (the "میزکار" card) instead of
-       the calendar column — exactly centered on its bottom edge, the
-       button straddling the border like a pill, not floating below it. */
-    const boxEl = document.querySelector('#page-home .desktop-box');
+    /* Desktop: anchored only to #page-calendar's own bordered box — not
+       #page-home's — exactly centered on its bottom edge, straddling
+       the border like a pill. Shown whenever the calendar's cursor
+       isn't on today's month (not exact-day, since navigating always
+       lands on the 1st of a month). */
+    const onCurrentMonth = primaryMonthOf(state.calCursor) === primaryMonthOf(today) && primaryYearOf(state.calCursor) === primaryYearOf(today);
+    backBtn.classList.toggle('show', !onCurrentMonth);
+    const boxEl = document.getElementById('page-calendar');
     if(boxEl){
       const boxRect = boxEl.getBoundingClientRect();
       backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
@@ -3235,25 +3234,18 @@ function updateNav(){
        that instead of guessing the offset from button sizes/gaps. */
     const addRect = fab.getBoundingClientRect();
     document.getElementById('fab-menu').style.top = (addRect.top + addRect.height / 2) + 'px';
-
-    /* Same straddling-pill treatment for the calendar column's own box,
-       shown whenever its cursor isn't on today's month (not exact-day,
-       since navigating always lands on the 1st of a month). */
-    const calBackBtn = document.getElementById('back-today-btn-cal');
-    const calBoxEl = document.getElementById('page-calendar');
-    if(calBackBtn && calBoxEl){
-      calBackBtn.textContent = t('backToToday');
-      const onCurrentMonth = primaryMonthOf(state.calCursor) === primaryMonthOf(today) && primaryYearOf(state.calCursor) === primaryYearOf(today);
-      calBackBtn.classList.toggle('show', !onCurrentMonth);
-      const calRect = calBoxEl.getBoundingClientRect();
-      calBackBtn.style.left = (calRect.left + calRect.width / 2) + 'px';
-      calBackBtn.style.top = (calRect.bottom - calBackBtn.offsetHeight / 2) + 'px';
-    }
   } else {
-    backBtn.style.left = ''; backBtn.style.top = '';
+    /* Below 960px, the merged home widget IS the calendar (no separate
+       #page-calendar column), so the same button anchors to its own
+       desktop-box instead and tracks homeDate. */
+    backBtn.classList.toggle('show', !sameDay(state.homeDate, today));
+    const boxEl = document.querySelector('#page-home .desktop-box');
+    if(boxEl){
+      const boxRect = boxEl.getBoundingClientRect();
+      backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
+      backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight / 2) + 'px';
+    }
     document.getElementById('fab-menu').style.top = '';
-    const calBackBtn = document.getElementById('back-today-btn-cal');
-    if(calBackBtn){ calBackBtn.classList.remove('show'); calBackBtn.style.left = ''; calBackBtn.style.top = ''; }
   }
 }
 
@@ -3968,8 +3960,21 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'close-day-sheet'){ state.daySheetOpen = false; render(); return; }
   if(action === 'retry-boot'){ boot(); return; }
-  if(action === 'go-today'){ state.homeDate = new Date(today); render(); return; }
-  if(action === 'cal-go-today'){ state.calCursor = new Date(today); state.monthDropdownOpen = false; state.yearDropdownOpen = false; state.secDropdown = { kind:null, sys:null, home:false }; render(); return; }
+  if(action === 'go-today'){
+    /* Single shared button — on desktop it's anchored to #page-calendar's
+       box (see updateNav()), so it resets the calendar's own cursor;
+       below that breakpoint the merged home widget IS the calendar, so
+       it resets homeDate instead. */
+    if(window.innerWidth >= 960){
+      state.calCursor = new Date(today);
+      state.monthDropdownOpen = false; state.yearDropdownOpen = false;
+      state.secDropdown = { kind:null, sys:null, home:false };
+    } else {
+      state.homeDate = new Date(today);
+    }
+    render();
+    return;
+  }
 });
 /* role="checkbox" divs (task/habit toggles) have no native Enter/Space
    activation the way a <button> would, so wire it up manually. They can't
