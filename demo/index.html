@@ -625,8 +625,8 @@
      on focus (the border stays the same muted color always), repo
      owner's request. */
   .float-field{ position:relative; margin-bottom:14px; }
-  .float-field input{ width:100%; background:transparent; border:none; border-radius:0; padding:20px 2px 10px 2px; font-size:16px; color:var(--text); font-family:inherit; text-align:center; transition:text-align .2s ease, padding .2s ease, color .2s ease; }
-  .float-field input:focus{ outline:none; text-align:left; padding:24px 2px 6px 2px; color:var(--primary); }
+  .float-field input{ width:100%; background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:20px 2px 10px 2px; font-size:16px; color:var(--text); font-family:inherit; text-align:center; transition:text-align .2s ease, padding .2s ease, border-color .2s ease, color .2s ease; }
+  .float-field input:focus{ outline:none; text-align:left; padding:24px 2px 6px 2px; border-bottom-color:var(--primary); color:var(--primary); }
   .float-field input:not(:placeholder-shown){ text-align:left; padding:24px 2px 6px 2px; }
   .float-field label{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:15px; color:var(--text-muted); pointer-events:none; transition:all .2s ease; }
   .float-field input:focus + label,
