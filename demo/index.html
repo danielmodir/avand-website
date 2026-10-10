@@ -940,7 +940,14 @@
       padding:28px 32px 28px 32px;
     }
     .page{ width:auto; height:100%; overflow-y:auto; padding:0; touch-action:auto; }
-    #page-calendar{ display:block; }
+    /* Same bordered-card look as #page-home's .desktop-box, applied
+       directly to the column itself (it's already its own scroll
+       container at this width, so it doesn't need a nested wrapper). */
+    #page-calendar{
+      display:block; position:relative;
+      border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
+      padding:16px;
+    }
     #page-menu{ display:none; }
     /* Desktop shows the full #page-calendar column instead of this
        compact widget inside #page-home. */
@@ -1134,6 +1141,10 @@
   <!-- Mobile-only: shown (slides up) only while a non-today day is
        selected — see render()'s toggle of the .show class below. -->
   <button type="button" class="back-today-btn" id="back-today-btn" data-action="go-today"></button>
+  <!-- Desktop-only (>=960px) twin of the one above, anchored to the
+       #page-calendar column's own box instead of #page-home's
+       desktop-box — see updateNav(). -->
+  <button type="button" class="back-today-btn" id="back-today-btn-cal" data-action="cal-go-today"></button>
 
   <!-- Desktop-only: Add, Profile and Management share one capsule now
        (previously three separate floating elements) — Profile sits in
@@ -2194,10 +2205,10 @@ function renderHomeCalWidget(){
   return `
     <div class="home-cal-widget" id="home-cal-widget" dir="${lang()==='fa'?'rtl':'ltr'}">
       <div class="cal-topbar home-cal-topbar">
-        <div class="cal-corner-arrow left" data-action="home-prev-month" aria-label="${t('prev')}">${ICONS.chevronLeft}</div>
+        <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="home-prev-month" aria-label="${t('prev')}">${ICONS.chevronLeft}</div>
         <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
         <span class="cal-label" id="home-cal-year-label">${disp.yearLabel}</span>
-        <div class="cal-corner-arrow right" data-action="home-next-month" aria-label="${t('next')}">${ICONS.chevronRight}</div>
+        <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="home-next-month" aria-label="${t('next')}">${ICONS.chevronRight}</div>
         ${monthDropdown}${yearDropdown}
       </div>
       ${secondaryLabelsFor(d, true)}
@@ -3076,7 +3087,17 @@ function monthMatrix(cursor){
     firstOfMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   }
   const gridStart = startOfWeek(firstOfMonth);
-  return Array.from({length:42}, (_,i) => addDays(gridStart,i));
+  let cells = Array.from({length:42}, (_,i) => addDays(gridStart,i));
+  /* Drop a trailing week row only when it's entirely next-month filler —
+     e.g. if the month's last day falls on a Monday, the grid still
+     shows Tue-Sun of that same week as other-month (to complete the
+     row), but doesn't add a whole extra all-gray week on top of it. The
+     first row never needs this: it always contains day 1 by
+     construction, so it's never fully other-month. */
+  while(cells.length > 7 && cells.slice(-7).every(d => !cellInCurrentMonth(d, cursor))){
+    cells = cells.slice(0, -7);
+  }
+  return cells;
 }
 function renderCalendar(){
   const c = state.calCursor;
@@ -3137,10 +3158,10 @@ function renderCalendar(){
 
   return `
     <div class="cal-topbar">
-      <div class="cal-corner-arrow left" data-action="${prevAction}" aria-label="${t('prev')}">${ICONS.chevronLeft}</div>
+      <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="${prevAction}" aria-label="${t('prev')}">${ICONS.chevronLeft}</div>
       <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
       <span class="cal-label" id="cal-year-label" data-action="tap-year">${disp.yearLabel}</span>
-      <div class="cal-corner-arrow right" data-action="${nextAction}" aria-label="${t('next')}">${ICONS.chevronRight}</div>
+      <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="${nextAction}" aria-label="${t('next')}">${ICONS.chevronRight}</div>
       ${monthDropdown}${yearDropdown}
     </div>
     ${secondaryLabelsFor(c, false)}
@@ -3214,9 +3235,25 @@ function updateNav(){
        that instead of guessing the offset from button sizes/gaps. */
     const addRect = fab.getBoundingClientRect();
     document.getElementById('fab-menu').style.top = (addRect.top + addRect.height / 2) + 'px';
+
+    /* Same straddling-pill treatment for the calendar column's own box,
+       shown whenever its cursor isn't on today's month (not exact-day,
+       since navigating always lands on the 1st of a month). */
+    const calBackBtn = document.getElementById('back-today-btn-cal');
+    const calBoxEl = document.getElementById('page-calendar');
+    if(calBackBtn && calBoxEl){
+      calBackBtn.textContent = t('backToToday');
+      const onCurrentMonth = primaryMonthOf(state.calCursor) === primaryMonthOf(today) && primaryYearOf(state.calCursor) === primaryYearOf(today);
+      calBackBtn.classList.toggle('show', !onCurrentMonth);
+      const calRect = calBoxEl.getBoundingClientRect();
+      calBackBtn.style.left = (calRect.left + calRect.width / 2) + 'px';
+      calBackBtn.style.top = (calRect.bottom - calBackBtn.offsetHeight / 2) + 'px';
+    }
   } else {
     backBtn.style.left = ''; backBtn.style.top = '';
     document.getElementById('fab-menu').style.top = '';
+    const calBackBtn = document.getElementById('back-today-btn-cal');
+    if(calBackBtn){ calBackBtn.classList.remove('show'); calBackBtn.style.left = ''; calBackBtn.style.top = ''; }
   }
 }
 
@@ -3932,6 +3969,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'close-day-sheet'){ state.daySheetOpen = false; render(); return; }
   if(action === 'retry-boot'){ boot(); return; }
   if(action === 'go-today'){ state.homeDate = new Date(today); render(); return; }
+  if(action === 'cal-go-today'){ state.calCursor = new Date(today); state.monthDropdownOpen = false; state.yearDropdownOpen = false; state.secDropdown = { kind:null, sys:null, home:false }; render(); return; }
 });
 /* role="checkbox" divs (task/habit toggles) have no native Enter/Space
    activation the way a <button> would, so wire it up manually. They can't
@@ -4199,7 +4237,7 @@ function attachDayCellGestures(gridEl, isHome){
       const d = new Date(btn.dataset.date);
       state.selectedDate = d;
       state.homeDate = d;
-      if(!isHome) state.daySheetOpen = true;
+      if(!isHome){ state.daySheetDate = d; state.daySheetOpen = true; }
       render();
     }, 500);
   });
