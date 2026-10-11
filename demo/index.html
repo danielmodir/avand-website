@@ -668,6 +668,9 @@
     background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px;
   }
   .profile-edit-form .field input:focus{ outline:none; border-bottom-color:var(--primary); box-shadow:none; }
+  .dob-field-btn{ background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; font-size:14px; color:var(--text); cursor:pointer; transition:border-color .2s ease; }
+  .dob-field-btn:hover{ border-bottom-color:var(--primary); }
+  .dob-cal-popover{ margin-top:10px; padding:12px; background:var(--bg-soft); border:1px solid var(--border); border-radius:14px; }
   .toggle-pair{ display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; }
   .toggle-pair button{ flex:1; border:none; background:transparent; padding:9px 4px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit; }
   .toggle-pair button.active{ background:var(--primary); color:var(--on-primary); }
@@ -2731,6 +2734,38 @@ function renderProfilePage(){
     </button>
   `;
 }
+let dobCalCursor = new Date(today);
+function dobLabel(p){
+  if(!p.dob) return t('dateOfBirth');
+  const d = new Date(p.dob + 'T00:00:00');
+  if(isNaN(d)) return t('dateOfBirth');
+  const disp = displayMonthYear(d);
+  return `${displayDayNum(d)} ${disp.monthLabel} ${disp.yearLabel}`;
+}
+/* Same app-themed month grid as the add-popup's date subview
+   (miniCalendarHtml), but its own cursor/markup — that one is wired to
+   formDraft's single/range task-date selection, which doesn't apply
+   here (a birthdate is always a single pick), so reusing it directly
+   would mean threading an isHome-style flag through drag-range logic
+   that should never run for this field. */
+function dobCalendarHtml(p){
+  const cells = monthMatrix(dobCalCursor);
+  const disp = displayMonthYear(dobCalCursor);
+  return `
+    <div class="dob-cal-popover">
+      <div class="cal-topbar" style="margin-bottom:10px;">
+        <div class="cal-corner-arrow left" data-action="dob-cal-prev">${ICONS.chevronLeft}</div>
+        <span class="cal-label" style="font-size:16px; min-width:0;">${disp.monthLabel} ${disp.yearLabel}</span>
+        <div class="cal-corner-arrow right" data-action="dob-cal-next">${ICONS.chevronRight}</div>
+      </div>
+      <div class="mini-cal-weekday">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
+      <div class="mini-cal-grid" id="dob-cal-grid">${cells.map(d => {
+        const key = dateKey(d);
+        return `<div class="mini-cal-cell ${cellInCurrentMonth(d,dobCalCursor)?'':'other-month'} ${p.dob===key?'range-single':''}" data-action="pick-dob" data-date="${key}">${displayDayNum(d)}</div>`;
+      }).join('')}</div>
+    </div>
+  `;
+}
 function renderProfileEditPage(){
   const p = state.profile;
   return `
@@ -2747,7 +2782,10 @@ function renderProfileEditPage(){
       <div class="field"><input type="text" id="profile-last-name" value="${escapeAttr(p.lastName)}" placeholder="${t('lastName')}"></div>
     </div>
     <div class="field"><input type="text" id="profile-username" value="${escapeAttr(p.username)}" placeholder="${t('username')}"></div>
-    <div class="field"><input type="date" id="profile-dob" value="${escapeAttr(p.dob)}" placeholder="${t('dateOfBirth')}"></div>
+    <div class="field">
+      <div class="dob-field-btn" id="profile-dob-btn" data-action="toggle-dob-picker">${dobLabel(p)}</div>
+      ${state.dobPickerOpen ? dobCalendarHtml(p) : ''}
+    </div>
     <div class="field">
       <select class="settings-select" id="profile-gender-select" style="width:100%;">
         <option value="male" ${p.gender==='male'?'selected':''}>${t('male')}</option>
@@ -3231,7 +3269,6 @@ function wireMenuInteractivity(){
   document.getElementById('profile-first-name')?.addEventListener('input', e => { state.profile.firstName = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-username')?.addEventListener('input', e => { state.profile.username = e.target.value; syncProfileName(); scheduleProfileSave(); });
-  document.getElementById('profile-dob')?.addEventListener('input', e => { state.profile.dob = e.target.value; scheduleProfileSave(); });
   document.getElementById('profile-gender-select')?.addEventListener('change', e => { state.profile.gender = e.target.value; Cloud.saveProfile(state.profile).catch(()=>{}); render(); });
   document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; scheduleProfileSave(); });
@@ -4076,6 +4113,21 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }
   if(action === 'remove-profile-photo'){ state.profile.photo = null; Cloud.saveProfile(state.profile).catch(()=>{}); render(); return; }
+  if(action === 'toggle-dob-picker'){
+    state.dobPickerOpen = !state.dobPickerOpen;
+    if(state.dobPickerOpen) dobCalCursor = state.profile.dob ? new Date(state.profile.dob + 'T00:00:00') : new Date(today);
+    render();
+    return;
+  }
+  if(action === 'dob-cal-prev'){ dobCalCursor = stepMonth(dobCalCursor, -1); render(); return; }
+  if(action === 'dob-cal-next'){ dobCalCursor = stepMonth(dobCalCursor, 1); render(); return; }
+  if(action === 'pick-dob'){
+    state.profile.dob = el.dataset.date;
+    state.dobPickerOpen = false;
+    Cloud.saveProfile(state.profile).catch(()=>{});
+    render();
+    return;
+  }
   if(action === 'copy-user-id'){
     try{ navigator.clipboard.writeText(state.profile.userId); }catch(err){}
     showToast(t('idCopied'));
