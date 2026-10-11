@@ -495,7 +495,8 @@
   #cal-year-label, #home-cal-year-label{ min-width:64px; }
   .icon-btn{ width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--border); color:var(--text); cursor:pointer; }
   .icon-btn svg{width:16px; height:16px;}
-  .cal-corner-arrow{ position:absolute; top:2px; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--border); color:var(--text); cursor:pointer; }
+  .cal-corner-arrow{ position:absolute; top:2px; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; color:var(--text); cursor:pointer; transition:color .2s ease; }
+  .cal-corner-arrow:hover{ color:var(--primary); }
   .cal-corner-arrow.left{ left:0; }
   .cal-corner-arrow.right{ right:0; }
   .cal-corner-arrow svg{width:16px;height:16px;}
@@ -700,12 +701,12 @@
   .star-btn svg{ width:20px; height:20px; fill:none; stroke:var(--text-muted); stroke-width:2; }
   .star-btn.active svg{ fill:#E0B95C; stroke:#E0B95C; }
   .subtasks-list{ display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
-  .subtask-edit-row{ display:flex; align-items:center; gap:8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+  .subtask-edit-row{ display:flex; align-items:center; gap:5px; padding-bottom:4px; padding-inline-start:20px; border-bottom:1px solid var(--border); }
   .subtask-edit-row:last-child{ border-bottom:none; padding-bottom:0; }
-  .field .subtask-edit-row input[type="text"]{ flex:1; width:auto; background:transparent; border:none; border-radius:0; padding:8px 2px; font-size:14px; color:var(--text); font-family:inherit; text-align:center; transition:color .2s ease; }
-  .field .subtask-edit-row input[type="text"]:focus{ outline:none; border:none; box-shadow:0 2px 10px -2px var(--primary-soft); color:var(--primary); }
+  .field .subtask-edit-row input[type="text"]{ flex:1; width:auto; background:transparent; border:none; border-radius:0; padding:5px 2px; font-size:9px; color:var(--text); font-family:inherit; text-align:center; transition:color .2s ease; }
+  .field .subtask-edit-row input[type="text"]:focus{ outline:none; border:none; color:var(--primary); }
   .device.lang-fa .subtask-edit-row input{ text-align:right; direction:rtl; }
-  .remove-x{ order:-1; width:26px; height:26px; border-radius:0; border:none; background:transparent; color:#D98B8B; cursor:pointer; flex:0 0 auto; font-size:14px; }
+  .remove-x{ order:-1; width:16px; height:16px; border-radius:0; border:none; background:transparent; color:#D98B8B; cursor:pointer; flex:0 0 auto; font-size:9px; }
   .add-ghost-btn{ display:block; width:100%; text-align:center; border:none; background:transparent; color:var(--primary); padding:6px 2px; font-size:10px; font-weight:700; cursor:pointer; font-family:inherit; }
   .add-ghost-btn.plus-only{ font-size:18px; }
   .photo-add-row{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -751,6 +752,7 @@
   .popup-icon-btn{ flex:1; height:46px; border-radius:14px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .popup-icon-btn svg{ width:18px; height:18px; }
   .popup-icon-btn.set{ color:var(--primary); background:var(--primary-soft); border-color:var(--primary); }
+  .popup-icon-btn.disabled{ color:var(--text-muted); opacity:.45; }
   .popup-subview-header{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
   .popup-back{ width:32px; height:32px; border-radius:50%; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text); flex:0 0 auto; }
   .popup-back svg{ width:15px; height:15px; }
@@ -1767,7 +1769,7 @@ const STRINGS = {
     tip6:"If anything feels unusual, it's worth checking with a doctor.",
     shareToojibee:'Share Toojibee', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
-    editBtn:'Edit', copyBtn:'Copy', toggleTheme:'Toggle theme', editProfile:'Edit profile', saveChanges:'Save changes', holdToLogout:'Press and hold to log out',
+    editBtn:'Edit', copyBtn:'Copy', toggleTheme:'Toggle theme', editProfile:'Edit profile', saveChanges:'Save changes', holdToLogout:'Press and hold to log out', notificationComingSoon:'Not available yet',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
     aboutVersion:'Version 0.1 — MVP Prototype',
     aboutDesc:'Toojibee helps you manage tasks, habits, and events in one place — combining daily planning with long-term goals in a single, focused app.',
@@ -1867,7 +1869,7 @@ const STRINGS = {
     tip6:'اگه چیزی غیرعادی به‌نظر می‌رسه، بهتره با پزشک مشورت کنی.',
     shareToojibee:'اشتراک‌گذاری توجیبی', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
-    editBtn:'ویرایش', copyBtn:'کپی', toggleTheme:'تغییر تم', editProfile:'ویرایش پروفایل', saveChanges:'ذخیره تغییرات', holdToLogout:'برای خروج نگه دارید',
+    editBtn:'ویرایش', copyBtn:'کپی', toggleTheme:'تغییر تم', editProfile:'ویرایش پروفایل', saveChanges:'ذخیره تغییرات', holdToLogout:'برای خروج نگه دارید', notificationComingSoon:'هنوز فعال نشده',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
     aboutVersion:'نسخه‌ی ۰.۱ — پروتوتایپ MVP',
     aboutDesc:'توجیبی کمکت می‌کنه کارها، عادت‌ها و رویدادها رو یه‌جا مدیریت کنی — برنامه‌ریزی روزانه و اهداف بلندمدت، تو یه اپ ساده.',
@@ -3578,8 +3580,8 @@ function popupIconRow(type){
   const icons = [];
   if(type !== 'habit') icons.push({ key:'calendar', icon:ICONS.calendarIcon, set: formDraft.timeMode==='range' || formDraft.date !== dateKey(today) });
   icons.push({ key:'repeat', icon:ICONS.repeatIcon, set: !!formDraft.recurrence.mode });
-  icons.push({ key:'notification', icon:ICONS.bellIcon, set: !!formDraft.notification.type });
-  return `<div class="popup-icon-row">${icons.map(i => `<div class="popup-icon-btn ${i.set?'set':''}" data-action="open-subview" data-sub="${i.key}">${i.icon}</div>`).join('')}</div>`;
+  icons.push({ key:'notification', icon:ICONS.bellIcon, set: !!formDraft.notification.type, disabled:true });
+  return `<div class="popup-icon-row">${icons.map(i => `<div class="popup-icon-btn ${i.set?'set':''} ${i.disabled?'disabled':''}" data-action="${i.disabled?'notification-coming-soon':'open-subview'}" data-sub="${i.key}">${i.icon}</div>`).join('')}</div>`;
 }
 function descriptionBlock(){
   return `
@@ -3896,6 +3898,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'home-pick-month'){ state.homeDate = setMonthOf(state.homeDate, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
   if(action === 'home-pick-year'){ state.homeDate = setYearOf(state.homeDate, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }
   if(action === 'submit-popup'){ submitPopup(); return; }
+  if(action === 'notification-coming-soon'){ showToast(t('notificationComingSoon')); return; }
   if(action === 'open-subview'){ state.popupSubView = el.dataset.sub; if(el.dataset.sub==='calendar'){ miniCalCursor = new Date(formDraft.date); } renderPopupBody(); return; }
   if(action === 'close-subview'){ state.popupSubView = null; renderPopupBody(); return; }
   if(action === 'mini-cal-prev'){ miniCalCursor = stepMonth(miniCalCursor, -1); renderPopupBody(); return; }
