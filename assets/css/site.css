@@ -349,6 +349,13 @@ a { color: inherit; }
   width: 32px; height: 32px; border-radius: var(--radius-sm);
   line-height: 32px; text-align: center; margin-bottom: var(--space-3);
 }
+/* Digits follow the page language (SPEC.md: Persian in /fa/, Latin in
+   /en/) — the base rule above is the /en/ (decimal-leading-zero) case,
+   overridden here with the built-in CSS Counter Styles "persian"
+   keyword for /fa/ so step badges read ۰۱/۰۲/۰۳ instead of 01/02/03. */
+html[lang="fa"] .showcase-step::before {
+  content: counter(step, persian);
+}
 .showcase-step h3 { margin: 0 0 var(--space-2) 0; font-size: var(--font-size-md); font-weight: 700; }
 .showcase-step p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
 
@@ -430,9 +437,7 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .download-meta dt { font-size: var(--font-size-xs); color: var(--color-text-muted); margin: 0; }
 .download-meta dd { font-size: var(--font-size-sm); font-weight: 700; margin: var(--space-1) 0 0 0; word-break: break-all; }
 
-.install-steps { padding: 0; margin: var(--space-4) 0 0 0; max-width: 60ch; }
-[dir="ltr"] .install-steps { padding-inline-start: var(--space-5); }
-[dir="rtl"] .install-steps { padding-inline-start: var(--space-5); }
+.install-steps { padding: 0; padding-inline-start: var(--space-5); margin: var(--space-4) 0 0 0; max-width: 60ch; }
 .install-steps li { margin-bottom: var(--space-2); }
 
 .store-badges { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
