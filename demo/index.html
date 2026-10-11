@@ -500,7 +500,10 @@
   .cal-corner-arrow.right{ right:0; }
   .cal-corner-arrow svg{width:16px;height:16px;}
   .cal-subrow{ text-align:center; font-size:11px; color:var(--text-muted); margin:-6px 0 10px 0; }
-  [data-density="compact"] .cal-subrow{ display:none; }
+  /* All 3 calendar systems (big number + the two secondary lines below
+     it, plus the month/year subrow above the grid) stay visible in
+     every density stage now — compaction only shrinks sizing/spacing,
+     it no longer hides date systems. */
   .cal-subrow-group{ position:relative; display:inline-block; }
   .cal-subrow-item{ cursor:pointer; padding:2px 3px; border-radius:6px; }
   .cal-subrow-item:active{ background:var(--bg-soft); }
@@ -546,14 +549,12 @@
   [data-density="mid"] .weekday-header{ margin-bottom:3px; }
   [data-density="mid"] .weekday-header span{ font-size:9px; }
   [data-density="mid"] .cal-topbar, [data-density="mid"] .home-cal-topbar{ font-size:13px; margin-bottom:8px; padding:2px 0; }
-  [data-density="mid"] .day-cell-sub{ display:none; }
   [data-density="mid"] .day-cell{ font-size:12px; }
   [data-density="compact"] .weekday-header{ margin-bottom:0; }
   [data-density="compact"] .weekday-header span{ font-size:0; }
   [data-density="compact"] .cal-topbar, [data-density="compact"] .home-cal-topbar{ font-size:11px; margin-bottom:4px; padding:0; }
   [data-density="compact"] .cal-corner-arrow{ display:none; }
   [data-density="compact"] .month-grid{ gap:2px; }
-  [data-density="compact"] .day-cell-sub{ display:none; }
   [data-density="compact"] .day-cell{ font-size:10.5px; border-radius:7px; }
   [data-density="compact"] .day-dots{ display:none; }
   .day-dots{display:flex; gap:2px; height:4px;}
@@ -998,15 +999,13 @@
       display:block; position:relative;
       border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
       padding:16px;
-      /* Unlike #page-home (which stays height:100% to fill the column
-         for its scrollable task list), this card sizes to its own
-         content — the month grid is a fixed, bounded height (desktop
-         is always Monthly-only), so there's no reason for the card to
-         stretch the rest of the column's height with empty space below
-         it. This also keeps the "back to today" pill (anchored to this
-         card's own bottom edge in updateNav()) sitting right under the
-         grid instead of far below it. */
-      height:auto;
+      /* Same height:100%/frame treatment as #page-home's .desktop-box,
+         so the two cards read as a matched pair instead of one being a
+         short content-hugging box next to a tall one. The "back to
+         today" pill doesn't anchor to this card's own bottom edge
+         (which can sit far below the grid once this fills the column)
+         — it anchors to #cal-content's bottom instead, see
+         updateNav(). */
     }
     #page-menu{ display:none; }
     /* Desktop shows the full #page-calendar column instead of this
@@ -1891,6 +1890,10 @@ const state = {
   menuMaximized: false, // desktop-only: full-height panel vs the inset card
   popupOpen: false,
   popupType: null,
+  // Which میزکار desktop pane (occasions/planning/period) is currently
+  // shown — persisted so a re-render (which rebuilds the pager's whole
+  // DOM) doesn't snap it back to pane 0.
+  activeDesktopIndex: 0,
   monthDropdownOpen: false,
   yearDropdownOpen: false,
   /* Tapping a *secondary* (non-primary) calendar system's month/year in
@@ -2117,6 +2120,9 @@ function renderDesktops(d, data){
   if(state.profile.gender === 'female'){
     panes.push({ key:'periodDesktop', html: renderPeriodPage('') });
   }
+  // Clamp in case the pane count just shrank (e.g. gender toggled off,
+  // dropping the period pane) out from under whatever was active.
+  state.activeDesktopIndex = Math.max(0, Math.min(state.activeDesktopIndex || 0, panes.length - 1));
   return `
     ${window.innerWidth < 960 ? renderHomeCalWidget() : ''}
     <div class="desktop-box">
@@ -2127,7 +2133,7 @@ function renderDesktops(d, data){
         </div>
       </div>
       <div class="desktop-dots" id="desktop-dots">
-        ${panes.map((p,i) => `<span class="${i===0?'active':''}" data-action="goto-desktop" data-i="${i}" aria-label="${t(p.key)}"></span>`).join('')}
+        ${panes.map((p,i) => `<span class="${i===state.activeDesktopIndex?'active':''}" data-action="goto-desktop" data-i="${i}" aria-label="${t(p.key)}"></span>`).join('')}
       </div>
     </div>
   `;
@@ -2137,14 +2143,38 @@ function attachDesktopPager(){
   const dots = document.getElementById('desktop-dots');
   if(!wrap || !dots) return;
   const dotEls = Array.from(dots.children);
-  let raf = null;
+  /* render() rebuilds this whole pager from scratch on every call (any
+     action anywhere re-renders), which would otherwise reset a fresh
+     #desktop-wrap's scrollLeft to 0 — snapping the user back to the
+     first ("اصلی"/occasions) pane no matter which one they were
+     actually on. Restore the persisted pane instantly (no animation;
+     this isn't a user-initiated navigation) right after the fresh DOM
+     is wired up. */
+  wrap.scrollLeft = (state.activeDesktopIndex || 0) * wrap.clientWidth;
+  let raf = null, settleTimer = null;
   wrap.addEventListener('scroll', () => {
-    if(raf) return;
-    raf = requestAnimationFrame(() => {
-      raf = null;
-      const i = Math.round(wrap.scrollLeft / wrap.clientWidth);
-      dotEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
-    });
+    // Live dot highlight during the drag/animation — purely visual,
+    // never written to state here.
+    if(!raf){
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        const i = Math.round(wrap.scrollLeft / wrap.clientWidth);
+        dotEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
+      });
+    }
+    /* Only COMMIT the active pane to state once scroll events have
+       stopped arriving for a beat — not on every mid-animation frame.
+       A smooth-scroll (from goto-desktop/the wheel switcher) fires a
+       stream of scroll events while in flight; committing a mid-flight
+       frame's rounded position is a real race: if an unrelated render()
+       happens to land in that exact window, it rebuilds the pager and
+       instantly jumps to whatever (wrong, transient) index was last
+       committed, undoing the navigation the user just made. */
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      if(desktopPagerProgrammatic){ desktopPagerProgrammatic = false; return; }
+      state.activeDesktopIndex = Math.round(wrap.scrollLeft / wrap.clientWidth);
+    }, 120);
   }, {passive:true});
   /* A plain vertical mouse wheel (deltaY, no native horizontal support)
      should still switch میزکار desktops, not just a trackpad's real
@@ -2159,6 +2189,8 @@ function attachDesktopPager(){
     const dir = e.deltaY > 0 ? 1 : -1;
     const i = Math.max(0, Math.min(dotEls.length - 1, Math.round(wrap.scrollLeft / wrap.clientWidth) + dir));
     settling = true;
+    state.activeDesktopIndex = i;
+    desktopPagerProgrammatic = true;
     wrap.scrollTo({ left: i * wrap.clientWidth, behavior: 'smooth' });
     setTimeout(() => { settling = false; }, 350);
   }, { passive:false });
@@ -3216,19 +3248,22 @@ function renderCalendar(){
   const nextAction = state.calMode === 'day' ? 'cal-next-day' : state.calMode === 'week' ? 'cal-next-week' : 'cal-next-month';
 
   return `
-    <div class="cal-topbar">
-      <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="${prevAction}" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
-      <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
-      <span class="cal-label" id="cal-year-label" data-action="tap-year">${disp.yearLabel}</span>
-      <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="${nextAction}" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
-      ${monthDropdown}${yearDropdown}
+    <div id="cal-content">
+      <div class="cal-topbar">
+        <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="${prevAction}" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
+        <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
+        <span class="cal-label" id="cal-year-label" data-action="tap-year">${disp.yearLabel}</span>
+        <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="${nextAction}" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
+        ${monthDropdown}${yearDropdown}
+      </div>
+      ${secondaryLabelsFor(c, false)}
+      <div class="cal-mode-tabs">
+        <button class="${state.calMode==='day'?'active':''}" data-action="set-cal-mode" data-mode="day">${t('day')}</button>
+        <button class="${state.calMode==='week'?'active':''}" data-action="set-cal-mode" data-mode="week">${t('week')}</button>
+        <button class="${state.calMode==='month'?'active':''}" data-action="set-cal-mode" data-mode="month">${t('month')}</button>
+      </div>
+      <div id="cal-gesture-area">${body}</div>
     </div>
-    <div class="cal-mode-tabs">
-      <button class="${state.calMode==='day'?'active':''}" data-action="set-cal-mode" data-mode="day">${t('day')}</button>
-      <button class="${state.calMode==='week'?'active':''}" data-action="set-cal-mode" data-mode="week">${t('week')}</button>
-      <button class="${state.calMode==='month'?'active':''}" data-action="set-cal-mode" data-mode="month">${t('month')}</button>
-    </div>
-    <div id="cal-gesture-area">${body}</div>
   `;
 }
 function renderDaySheet(){
@@ -3275,14 +3310,17 @@ function updateNav(){
   const backBtn = document.getElementById('back-today-btn');
   backBtn.textContent = t('backToToday');
   if(window.innerWidth >= 960){
-    /* Desktop: anchored only to #page-calendar's own bordered box — not
-       #page-home's — exactly centered on its bottom edge, straddling
-       the border like a pill. Shown whenever the calendar's cursor
+    /* Desktop: #page-calendar itself is height:100% (matching #page-
+       home's .desktop-box, so the two cards read as a pair), but the
+       pill still needs to sit right under the actual grid, not floated
+       far down at the bottom of a tall mostly-empty card — so it
+       anchors to #cal-content (the calendar's own content wrapper)
+       instead of the outer card. Shown whenever the calendar's cursor
        isn't on today's month (not exact-day, since navigating always
        lands on the 1st of a month). */
     const onCurrentMonth = primaryMonthOf(state.calCursor) === primaryMonthOf(today) && primaryYearOf(state.calCursor) === primaryYearOf(today);
     backBtn.classList.toggle('show', !onCurrentMonth);
-    const boxEl = document.getElementById('page-calendar');
+    const boxEl = document.getElementById('cal-content');
     if(boxEl){
       const boxRect = boxEl.getBoundingClientRect();
       backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
@@ -3324,6 +3362,17 @@ function initFabAndMenuInteractions(){
       return;
     }
     state.navExpanded = !state.navExpanded;
+    if(state.navExpanded){
+      /* Opening the add menu should bring the میزکار pager to the
+         "planning" pane (index 1, always right after occasions) — the
+         one whatever you're about to add actually shows up on —
+         instead of leaving it wherever it happened to be scrolled.
+         render() rebuilds the pager right below, which restores to
+         whatever index is set here instantly (see attachDesktopPager),
+         so there's no point also animating a scroll on the old,
+         about-to-be-replaced wrap element. */
+      state.activeDesktopIndex = 1;
+    }
     render();
   });
   // tap outside the fab-menu collapses it
@@ -3914,8 +3963,9 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
   if(action === 'goto-desktop'){
+    state.activeDesktopIndex = Number(el.dataset.i);
     const wrap = document.getElementById('desktop-wrap');
-    if(wrap) wrap.scrollTo({ left: Number(el.dataset.i) * wrap.clientWidth, behavior:'smooth' });
+    if(wrap){ desktopPagerProgrammatic = true; wrap.scrollTo({ left: state.activeDesktopIndex * wrap.clientWidth, behavior:'smooth' }); }
     return;
   }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
@@ -4265,6 +4315,15 @@ function attachDesktopContextMenu(){
    this app's own .month-grid/.day-cell markup rather than the
    reference's. */
 const CAL_DENSITY_ORDER = ['full','mid','compact'];
+/* Set true by any code that programmatically drives #desktop-wrap's
+   scroll (goto-desktop, the wheel switcher) right before calling
+   scrollTo — attachDesktopPager()'s own scroll listener checks it so
+   it never "corrects" state.activeDesktopIndex from a mid-animation
+   scrollLeft reading back to the pane the user just navigated away
+   from. The index is already known synchronously at the moment of a
+   programmatic navigation; the scroll listener only needs to infer it
+   for organic touch-swipe/drag, which never sets this flag. */
+let desktopPagerProgrammatic = false;
 /* `el` is the gesture surface (the month grid); `scopeEl` is the page
    container the data-density attribute is set on, so CSS can also
    shrink siblings of the grid (weekday header, month/year title) —
