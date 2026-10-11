@@ -218,6 +218,7 @@
   /* The hover circle is smaller than the slot (margin on all sides) and
      explicitly round, so it reads as a distinct circle with a gap from
      the pill's own edge instead of a square hover fill flush against it. */
+  .toolbar-period-btn.off{ opacity:.35; }
   .toolbar-admin-btn{
     width:44px; height:44px; margin:3px; border:none; border-radius:50%; background:transparent; color:var(--text-muted);
     display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -787,7 +788,7 @@
   .menu-item-row:not(.disabled):hover{ transform:translateY(-3px); box-shadow:var(--shadow); border-color:var(--primary); }
   .menu-item-icon{ width:32px; height:32px; border-radius:10px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
   .menu-item-icon svg{ width:16px; height:16px; }
-  .menu-item-label{ flex:1; font-size:14px; font-weight:600; }
+  .menu-item-label{ flex:1; font-size:14px; font-weight:600; unicode-bidi:plaintext; }
   .menu-item-label .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; margin-inline-start:6px; }
 
   .store-grid{ display:flex; flex-direction:column; gap:10px; }
@@ -923,8 +924,14 @@
   .about-link-row{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:13px 15px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; }
 
   .settings-row{ display:flex; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px 16px; margin-bottom:10px; gap:10px; }
-  .settings-row .lbl{ font-size:14px; font-weight:600; }
-  .settings-row .sub{ font-size:12px; color:var(--text-muted); margin-top:2px; }
+  /* unicode-bidi:plaintext makes each row's own text decide its
+     direction/alignment by its own first strong character instead of
+     inheriting the page's dir — Persian labels stay right-aligned,
+     a Latin one (an email, a version string, "English") reads and
+     aligns left, even inside an RTL Settings page. Applied broadly
+     across Settings-style rows and menu list labels, not just here. */
+  .settings-row .lbl{ font-size:14px; font-weight:600; unicode-bidi:plaintext; }
+  .settings-row .sub{ font-size:12px; color:var(--text-muted); margin-top:2px; unicode-bidi:plaintext; }
   .switch{ width:46px; height:26px; border-radius:999px; background:var(--bg-soft); position:relative; cursor:pointer; border:1px solid var(--border); flex:0 0 auto; }
   .switch .knob{ position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; background:var(--text-muted); transition:right .2s ease, background .2s ease; }
   .switch.on{ background:var(--primary-soft); }
@@ -1199,6 +1206,14 @@
       <button class="toolbar-avatar-btn" id="toolbar-avatar-btn" data-action="open-menu" data-sub="profile" aria-label="Profile"></button>
       <button type="button" class="toolbar-admin-btn" data-action="open-menu" data-sub="admin" title="Management" aria-label="Management">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>
+      </button>
+      <!-- Hidden unless profile.gender is 'female' (see updateNav()); its
+           .off class (dimmed) mirrors state.period.enabled, present in
+           both states per the repo owner's request — it's a quick jump
+           to the period میزکار pane, not an on/off control itself
+           (that's in Management/Settings). -->
+      <button type="button" class="toolbar-admin-btn toolbar-period-btn hidden" id="toolbar-period-btn" data-action="goto-period-desktop" title="Period" aria-label="Period">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s7 8.1 7 12.5A7 7 0 0 1 5 14.5C5 10.1 12 2 12 2z"/></svg>
       </button>
     </div>
     <button class="fab-add" id="fab-add" data-action="toggle-add-menu" aria-label="Add">
@@ -1727,6 +1742,7 @@ const STRINGS = {
     storeEmpty:'New features will show up here soon',
     adminPanel:'Management', purchasedFeatures:'Purchased features',
     noPurchasedFeatures:"You haven't purchased anything from the Store yet",
+    enabledDesktops:'Workspace desktops', enabledDesktopsSub:'Turn each workspace desktop on or off here.',
     periodTracker:'Period tracking', periodTrackerDesc:"Answer a few quick questions and we'll estimate your period and PMS timing.",
     startBtn:'Start', nextBtn:'Next', finishBtn:'Finish',
     qsDone:'DONE', qsUndone:'UNDONE',
@@ -1826,6 +1842,7 @@ const STRINGS = {
     storeEmpty:'قابلیت‌های جدید به‌زودی اینجا اضافه می‌شن',
     adminPanel:'مدیریت', purchasedFeatures:'قابلیت‌های خریداری‌شده',
     noPurchasedFeatures:'هنوز چیزی از فروشگاه خریداری نکردی',
+    enabledDesktops:'میزکارهای فعال', enabledDesktopsSub:'هر میزکار رو از اینجا فعال یا غیرفعال کن.',
     periodTracker:'مدیریت دوره‌ی پریود', periodTrackerDesc:'به چند سؤال کوتاه جواب بده تا زمان تقریبی پریود و PMS‌ت رو تخمین بزنیم.',
     startBtn:'شروع', nextBtn:'بعدی', finishBtn:'پایان',
     qsDone:'DONE', qsUndone:'UNDONE',
@@ -1939,7 +1956,7 @@ const state = {
     email: 'daniel@example.com', phone: '', gender: '', dob: '', photo: null,
     userId: genUserId('Daniel')
   },
-  settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali', calendarEnabled: { gregorian: true, jalali: true, hijri: true } },
+  settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali', calendarEnabled: { gregorian: true, jalali: true, hijri: true }, planningEnabled: true },
   /* Admin-editable "About us" text, per language. Empty string means
      "use the default aboutDesc translation" — renderAboutPage() falls
      back to t('aboutDesc') until an admin actually fills this in. */
@@ -2142,13 +2159,15 @@ function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = [
     { key:'occasionsDesktop', html: renderOccasionsPane(d) },
-    { key:'planning', html:`
+  ];
+  if(state.settings.planningEnabled){
+    panes.push({ key:'planning', html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
       ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
       ${renderItemSections(tasks, habits, events, d)}
-    ` },
-  ];
-  if(state.profile.gender === 'female'){
+    ` });
+  }
+  if(state.profile.gender === 'female' && state.period.enabled){
     panes.push({ key:'periodDesktop', html: renderPeriodPage('') });
   }
   // Clamp in case the pane count just shrank (e.g. gender toggled off,
@@ -2164,7 +2183,7 @@ function renderDesktops(d, data){
         </div>
       </div>
       <div class="desktop-dots" id="desktop-dots">
-        ${panes.map((p,i) => `<span class="${i===state.activeDesktopIndex?'active':''}" data-action="goto-desktop" data-i="${i}" aria-label="${t(p.key)}"></span>`).join('')}
+        ${panes.map((p,i) => `<span class="${i===state.activeDesktopIndex?'active':''}" data-action="goto-desktop" data-i="${i}" data-key="${p.key}" aria-label="${t(p.key)}"></span>`).join('')}
       </div>
     </div>
   `;
@@ -2207,17 +2226,23 @@ function attachDesktopPager(){
       state.activeDesktopIndex = Math.round(wrap.scrollLeft / wrap.clientWidth);
     }, 120);
   }, {passive:true});
-  /* A plain vertical mouse wheel (deltaY, no native horizontal support)
-     should still switch میزکار desktops, not just a trackpad's real
-     horizontal swipe — same "right=back, left=forward" convention as
-     the calendar's own scroll/arrows. Cooldown via `settling` avoids
-     one wheel gesture's burst of deltaY events queuing up many jumps. */
+  /* Only a genuinely horizontal wheel/trackpad gesture switches
+     میزکار desktops — vertical scroll must always reach each pane's own
+     content underneath (.desktop-pane's overflow-y:auto) so a long
+     pane (e.g. period's wheel+tips+articles) can actually be scrolled
+     with a plain mouse wheel. An earlier version also treated a *plain*
+     vertical wheel as "switch panes" (reasoning that some mice have no
+     horizontal wheel at all), but that unconditionally called
+     preventDefault() on every vertical scroll over the pager — which
+     silently broke scrolling a tall pane's content entirely. Removed;
+     a mouse without horizontal scroll support just can't wheel-switch
+     panes here (the dots and swipe/drag still work). */
   let settling = false;
   wrap.addEventListener('wheel', e => {
-    if(Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; // real horizontal input: let it scroll natively
+    if(Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical (or ambiguous): let it scroll the pane's content natively
     e.preventDefault();
     if(settling) return;
-    const dir = e.deltaY > 0 ? 1 : -1;
+    const dir = e.deltaX > 0 ? -1 : 1;
     const i = Math.max(0, Math.min(dotEls.length - 1, Math.round(wrap.scrollLeft / wrap.clientWidth) + dir));
     settling = true;
     state.activeDesktopIndex = i;
@@ -2789,6 +2814,18 @@ function renderStorePage(){
 function renderAdminPanel(){
   return `
     ${subHeader(t('adminPanel'))}
+    <div class="section-title">${t('enabledDesktops')}</div>
+    <div class="sub" style="margin:-6px 2px 10px 2px;">${t('enabledDesktopsSub')}</div>
+    <div class="settings-row">
+      <div><div class="lbl">${t('planning')}</div></div>
+      <div class="switch ${state.settings.planningEnabled?'on':''}" data-action="toggle-planning-enabled"><div class="knob"></div></div>
+    </div>
+    ${state.profile.gender === 'female' ? `
+      <div class="settings-row">
+        <div><div class="lbl">${t('periodDesktop')}</div></div>
+        <div class="switch ${state.period.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
+      </div>
+    ` : ''}
     ${state.store.length
       ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
       : `<div class="empty-hint">${t('noPurchasedFeatures')}</div>`}
@@ -3311,7 +3348,14 @@ function renderDaySheet(){
 
 /* ============ FAB + MENU (static markup — only classes update, never rebuilt) ============ */
 function updateNav(){
+  /* The add menu only makes sense when the Planning desktop is on —
+     there'd be nowhere for a new task/habit/event to show up otherwise
+     (see Management's "Workspace desktops" toggles). */
+  document.getElementById('fab-add').classList.toggle('hidden', !state.settings.planningEnabled);
   document.getElementById('fab-add').classList.toggle('active', state.navExpanded);
+  const periodBtn = document.getElementById('toolbar-period-btn');
+  periodBtn.classList.toggle('hidden', state.profile.gender !== 'female');
+  periodBtn.classList.toggle('off', !state.period.enabled);
   document.getElementById('fab-menu').classList.toggle('show', state.navExpanded);
   document.getElementById('fab-menu').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
 
@@ -3981,6 +4025,10 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'connect-unblock'){ runConnectionAction(el, () => Cloud.unblockUser(el.dataset.id)); return; }
   if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
+  if(action === 'goto-period-desktop'){
+    document.querySelector('[data-action="goto-desktop"][data-key="periodDesktop"]')?.click();
+    return;
+  }
   if(action === 'goto-desktop'){
     state.activeDesktopIndex = Number(el.dataset.i);
     const wrap = document.getElementById('desktop-wrap');
@@ -3988,6 +4036,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
+  if(action === 'toggle-planning-enabled'){ state.settings.planningEnabled = !state.settings.planningEnabled; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }
   if(action === 'open-article'){ showToast(t('articlesUnavailable')); return; }
   if(action === 'period-settings' || action === 'period-quiz-start'){
