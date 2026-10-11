@@ -998,6 +998,15 @@
       display:block; position:relative;
       border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
       padding:16px;
+      /* Unlike #page-home (which stays height:100% to fill the column
+         for its scrollable task list), this card sizes to its own
+         content — the month grid is a fixed, bounded height (desktop
+         is always Monthly-only), so there's no reason for the card to
+         stretch the rest of the column's height with empty space below
+         it. This also keeps the "back to today" pill (anchored to this
+         card's own bottom edge in updateNav()) sitting right under the
+         grid instead of far below it. */
+      height:auto;
     }
     #page-menu{ display:none; }
     /* Desktop shows the full #page-calendar column instead of this
@@ -2256,10 +2265,10 @@ function renderHomeCalWidget(){
   return `
     <div class="home-cal-widget" id="home-cal-widget" dir="${lang()==='fa'?'rtl':'ltr'}">
       <div class="cal-topbar home-cal-topbar">
-        <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="home-prev-month" aria-label="${t('prev')}">${ICONS.chevronLeft}</div>
+        <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="home-prev-month" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
         <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
         <span class="cal-label" id="home-cal-year-label">${disp.yearLabel}</span>
-        <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="home-next-month" aria-label="${t('next')}">${ICONS.chevronRight}</div>
+        <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="home-next-month" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
         ${monthDropdown}${yearDropdown}
       </div>
       ${secondaryLabelsFor(d, true)}
@@ -3208,10 +3217,10 @@ function renderCalendar(){
 
   return `
     <div class="cal-topbar">
-      <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="${prevAction}" aria-label="${t('prev')}">${ICONS.chevronLeft}</div>
+      <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="${prevAction}" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
       <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
       <span class="cal-label" id="cal-year-label" data-action="tap-year">${disp.yearLabel}</span>
-      <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="${nextAction}" aria-label="${t('next')}">${ICONS.chevronRight}</div>
+      <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="${nextAction}" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
       ${monthDropdown}${yearDropdown}
     </div>
     <div class="cal-mode-tabs">
