@@ -347,8 +347,10 @@
     border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
     overflow:hidden; height:100%; display:flex; flex-direction:column;
   }
-  .desktop-box-topbar{ flex:0 0 auto; display:flex; align-items:center; gap:4px; padding:10px 10px 0 10px; }
-  .desktop-box-title{ flex:1 1 auto; text-align:left; font-size:13px; font-weight:700; color:var(--text-muted); }
+  .desktop-box-topbar{ flex:0 0 auto; display:flex; justify-content:flex-start; padding:10px 10px 0 10px; }
+  .device.lang-fa .desktop-box-topbar{ justify-content:flex-end; }
+  .desktop-box-title-group{ display:flex; align-items:center; gap:4px; }
+  .desktop-box-title{ flex:0 1 auto; text-align:left; font-size:13px; font-weight:700; color:var(--text-muted); }
   .device.lang-fa .desktop-box-title{ text-align:right; }
   .desktop-nav-arrow{ flex:0 0 auto; width:24px; height:24px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:color .2s ease; }
   .desktop-nav-arrow svg{ width:14px; height:14px; }
@@ -714,12 +716,13 @@
   .star-btn svg{ width:20px; height:20px; fill:none; stroke:var(--text-muted); stroke-width:2; }
   .star-btn.active svg{ fill:#E0B95C; stroke:#E0B95C; }
   .subtasks-list{ display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
-  .subtask-edit-row{ display:flex; align-items:center; gap:5px; padding-bottom:4px; padding-inline-start:20px; border-bottom:1px solid var(--border); }
-  .subtask-edit-row:last-child{ border-bottom:none; padding-bottom:0; }
-  .field .subtask-edit-row input[type="text"]{ flex:1; width:auto; background:transparent; border:none; border-radius:0; padding:5px 2px; font-size:9px; color:var(--text); font-family:inherit; text-align:center; transition:color .2s ease; }
+  .subtask-edit-row{ display:flex; align-items:center; gap:6px; padding-bottom:5px; padding-inline-start:20px; border-bottom:1px solid var(--border); transition:border-color .2s ease; }
+  .subtask-edit-row:last-child:not(:focus-within){ border-bottom:none; padding-bottom:0; }
+  .subtask-edit-row:focus-within{ border-bottom:1px solid var(--primary); padding-bottom:5px; }
+  .field .subtask-edit-row input[type="text"]{ flex:1; width:auto; background:transparent; border:none; border-radius:0; padding:6px 2px; font-size:11px; color:var(--text); font-family:inherit; text-align:center; transition:color .2s ease; }
   .field .subtask-edit-row input[type="text"]:focus{ outline:none; border:none; color:var(--primary); }
   .device.lang-fa .subtask-edit-row input{ text-align:right; direction:rtl; }
-  .remove-x{ order:-1; width:16px; height:16px; border-radius:0; border:none; background:transparent; color:#D98B8B; cursor:pointer; flex:0 0 auto; font-size:9px; }
+  .remove-x{ order:-1; width:19px; height:19px; border-radius:0; border:none; background:transparent; color:#D98B8B; cursor:pointer; flex:0 0 auto; font-size:11px; }
   .add-ghost-btn{ display:block; width:100%; text-align:center; border:none; background:transparent; color:var(--primary); padding:6px 2px; font-size:10px; font-weight:700; cursor:pointer; font-family:inherit; }
   .add-ghost-btn.plus-only{ font-size:18px; }
   .photo-add-row{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -2201,9 +2204,11 @@ function renderDesktops(d, data){
     ${window.innerWidth < 960 ? renderHomeCalWidget() : ''}
     <div class="desktop-box">
       <div class="desktop-box-topbar">
-        <button type="button" class="desktop-nav-arrow ${atStart?'disabled':''}" data-action="desktop-step" data-dir="-1" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</button>
-        <div class="desktop-box-title" id="desktop-box-title">${t(activeKey)}</div>
-        <button type="button" class="desktop-nav-arrow ${atEnd?'disabled':''}" data-action="desktop-step" data-dir="1" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</button>
+        <div class="desktop-box-title-group">
+          <button type="button" class="desktop-nav-arrow ${atStart?'disabled':''}" data-action="desktop-step" data-dir="-1" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</button>
+          <div class="desktop-box-title" id="desktop-box-title">${t(activeKey)}</div>
+          <button type="button" class="desktop-nav-arrow ${atEnd?'disabled':''}" data-action="desktop-step" data-dir="1" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</button>
+        </div>
       </div>
       <div class="desktop-wrap" id="desktop-wrap">
         <div class="desktop-track" id="desktop-track">
@@ -2292,7 +2297,7 @@ function attachDesktopPager(){
     if(Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical (or ambiguous): let it scroll the pane's content natively
     e.preventDefault();
     if(settling) return;
-    const dir = e.deltaX > 0 ? -1 : 1;
+    const dir = e.deltaX > 0 ? 1 : -1;
     const i = Math.max(0, Math.min(dotEls.length - 1, Math.round(wrap.scrollLeft / wrap.clientWidth) + dir));
     settling = true;
     state.activeDesktopIndex = i;
