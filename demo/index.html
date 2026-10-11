@@ -2893,7 +2893,7 @@ function renderAdminPanel(){
     ` : ''}
     ${state.store.length
       ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
-      : `<div class="empty-hint">${t('noPurchasedFeatures')}</div>`}
+      : ''}
   `;
 }
 
