@@ -350,12 +350,14 @@ a { color: inherit; }
   line-height: 32px; text-align: center; margin-bottom: var(--space-3);
 }
 /* Digits follow the page language (SPEC.md: Persian in /fa/, Latin in
-   /en/) — the base rule above is the /en/ (decimal-leading-zero) case,
-   overridden here with the built-in CSS Counter Styles "persian"
-   keyword for /fa/ so step badges read ۰۱/۰۲/۰۳ instead of 01/02/03. */
-html[lang="fa"] .showcase-step::before {
-  content: counter(step, persian);
-}
+   /en/) — the base rule above is the /en/ (decimal-leading-zero) case.
+   The built-in CSS Counter Styles "persian" keyword this used to rely
+   on isn't reliably supported everywhere, so these are hardcoded
+   Persian-digit strings instead (there are only ever 3 fixed steps, so
+   this isn't fragile the way it would be for a dynamic list). */
+html[lang="fa"] .showcase-step:nth-child(1)::before { content: "۱"; }
+html[lang="fa"] .showcase-step:nth-child(2)::before { content: "۲"; }
+html[lang="fa"] .showcase-step:nth-child(3)::before { content: "۳"; }
 .showcase-step h3 { margin: 0 0 var(--space-2) 0; font-size: var(--font-size-md); font-weight: 700; }
 .showcase-step p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
 
