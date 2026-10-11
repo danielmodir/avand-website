@@ -1956,6 +1956,7 @@ const state = {
      sys: 'gregorian'|'jalali'|'hijri'|null, home: which widget (desktop
      calendar vs. the mobile/home one) it belongs to. */
   secDropdown: { kind: null, sys: null, home: false },
+  dobPickerOpen: false,
   editingId: null,
   sectionExpanded: { tasks:false, habits:false, events:false },
   /* Mobile-only (<960px): a non-empty section is shown by default, this
@@ -2732,10 +2733,10 @@ function renderProfilePage(){
 }
 function renderProfileEditPage(){
   const p = state.profile;
-  const genderOpt = (val, label) => `<button type="button" data-action="set-gender" data-val="${val}" class="${p.gender===val?'active':''}">${label}</button>`;
   return `
     ${subHeader(t('editProfile'))}
     <div class="profile-edit-form">
+    <div class="profile-avatar-big" ${p.photo?`style="background-image:url('${p.photo}')"`:''}>${p.photo?'':initials(p.name)}</div>
     <div class="profile-photo-actions">
       <label class="link-btn">${t('changePhoto')}<input type="file" accept="image/*" id="profile-photo-input" class="hidden"></label>
       ${p.photo ? `<span class="link-btn" data-action="remove-profile-photo">${t('removePhoto')}</span>` : ''}
@@ -2747,8 +2748,12 @@ function renderProfileEditPage(){
     </div>
     <div class="field"><input type="text" id="profile-username" value="${escapeAttr(p.username)}" placeholder="${t('username')}"></div>
     <div class="field"><input type="date" id="profile-dob" value="${escapeAttr(p.dob)}" placeholder="${t('dateOfBirth')}"></div>
-    <div class="toggle-pair" style="margin-bottom:12px;">
-      ${genderOpt('male', t('male'))}${genderOpt('female', t('female'))}${genderOpt('other', t('genderOther'))}
+    <div class="field">
+      <select class="settings-select" id="profile-gender-select" style="width:100%;">
+        <option value="male" ${p.gender==='male'?'selected':''}>${t('male')}</option>
+        <option value="female" ${p.gender==='female'?'selected':''}>${t('female')}</option>
+        <option value="other" ${p.gender==='other'?'selected':''}>${t('genderOther')}</option>
+      </select>
     </div>
 
     <div class="section-title">${t('contactInfo')}</div>
@@ -3227,6 +3232,7 @@ function wireMenuInteractivity(){
   document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-username')?.addEventListener('input', e => { state.profile.username = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-dob')?.addEventListener('input', e => { state.profile.dob = e.target.value; scheduleProfileSave(); });
+  document.getElementById('profile-gender-select')?.addEventListener('change', e => { state.profile.gender = e.target.value; Cloud.saveProfile(state.profile).catch(()=>{}); render(); });
   document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; scheduleProfileSave(); });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; Cloud.saveSettings(state.settings).catch(()=>{}); render(); });
@@ -3450,16 +3456,15 @@ function updateNav(){
   backBtn.textContent = t('backToToday');
   if(window.innerWidth >= 960){
     /* Desktop: #page-calendar itself is height:100% (matching #page-
-       home's .desktop-box, so the two cards read as a pair), but the
-       pill still needs to sit right under the actual grid, not floated
-       far down at the bottom of a tall mostly-empty card — so it
-       anchors to #cal-content (the calendar's own content wrapper)
-       instead of the outer card. Shown whenever the calendar's cursor
-       isn't on today's actual day — not just a different month, since
+       home's .desktop-box, so the two cards read as a pair) — anchor
+       straddling its own visible bottom border, same as the mobile
+       home-widget pill below, rather than the shorter inner
+       #cal-content wrapper. Shown whenever the calendar's cursor isn't
+       on today's actual day — not just a different month, since
        tapping another day within the current month also moves the
        cursor off today. */
     backBtn.classList.toggle('show', !sameDay(state.calCursor, today));
-    const boxEl = document.getElementById('cal-content');
+    const boxEl = document.getElementById('page-calendar');
     if(boxEl){
       const boxRect = boxEl.getBoundingClientRect();
       backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
@@ -4071,7 +4076,6 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }
   if(action === 'remove-profile-photo'){ state.profile.photo = null; Cloud.saveProfile(state.profile).catch(()=>{}); render(); return; }
-  if(action === 'set-gender'){ state.profile.gender = el.dataset.val; Cloud.saveProfile(state.profile).catch(()=>{}); render(); return; }
   if(action === 'copy-user-id'){
     try{ navigator.clipboard.writeText(state.profile.userId); }catch(err){}
     showToast(t('idCopied'));
