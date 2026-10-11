@@ -824,6 +824,7 @@
   .article-row-title{ font-size:13.5px; font-weight:700; }
   .article-row-desc{ font-size:12px; color:var(--text-muted); margin-top:2px; }
   .article-row > svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
+  .settings-row > svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
   /* Horizontal card row for the period pane's articles — same scroll
      pattern as .events-scroll, used only when there are enough
      articles that a horizontal strip makes sense instead of a plain
@@ -1432,6 +1433,12 @@ const PERSIAN_DIGITS = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
 const ARABIC_INDIC_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
 function toSysDigits(num, sys){
   const str = String(num);
+  // The per-system numeral script (Persian for Jalali, Arabic-Indic for
+  // Hijri) only applies in the Persian UI — in English, every number
+  // stays Latin regardless of which calendar system it belongs to,
+  // same "everything follows the app language" rule dig() already
+  // applies to plain UI numbers elsewhere.
+  if(lang() !== 'fa') return str;
   if(sys === 'jalali') return str.replace(/[0-9]/g, c => PERSIAN_DIGITS[c]);
   if(sys === 'hijri') return str.replace(/[0-9]/g, c => ARABIC_INDIC_DIGITS[c]);
   return str;
@@ -2094,7 +2101,12 @@ function render(){
   positionHomeCalGrid();
   animateDayStats();
   wireMenuInteractivity();
-  if(state.menuSubView === 'period' && state.period.enabled){
+  /* #period-tip-text lives in the میزکار pane (renderDesktops), not
+     behind any menu navigation — it exists whenever the pane itself
+     does, regardless of which میزکار the pager is currently scrolled
+     to. (Previously gated on menuSubView==='period', a Management route
+     that no longer exists now that period settings moved to Settings.) */
+  if(state.profile.gender === 'female' && state.period.enabled){
     startPeriodTipsRotator();
   } else {
     stopPeriodTipsRotator();
@@ -2535,8 +2547,8 @@ function renderBootScreen(){
 
 /* ============ MENU ============ */
 const MENU_PARENT = {
-  'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null, 'period': 'admin',
-  'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings'
+  'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
+  'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings', 'settings-period': 'settings'
 };
 function initials(name){
   return (name||'').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '?';
@@ -2554,13 +2566,13 @@ function renderMenu(){
   if(sub === 'friends') return renderFriendsPage();
   if(sub === 'store') return renderStorePage();
   if(sub === 'admin') return renderAdminPanel();
-  if(sub === 'period') return renderPeriodPage();
   if(sub === 'share') return renderSharePage();
   if(sub === 'about') return renderAboutPage();
   if(sub === 'settings') return renderSettingsList();
   if(sub === 'settings-general') return renderGeneralSettings();
   if(sub === 'settings-calendar') return renderCalendarSettings();
   if(sub === 'settings-avandmenu') return renderToojibeeMenuSettings();
+  if(sub === 'settings-period') return renderPeriodSettings();
   /* No button opens the menu panel with no data-sub anymore (the
      hamburger entry point is gone — Profile/Store/Management each have
      their own bottom-bar button), so this is just a safe fallback. */
@@ -2780,7 +2792,6 @@ function renderAdminPanel(){
     ${state.store.length
       ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
       : `<div class="empty-hint">${t('noPurchasedFeatures')}</div>`}
-    ${state.profile.gender === 'female' ? renderPeriodTrackerSection() : ''}
   `;
 }
 
@@ -2845,40 +2856,41 @@ function periodWheelSvg(cats){
    gear (jumps straight into the quiz for editing), title/description,
    and an Open button into the full page below — the actual quiz, wheel,
    articles and tips all live in renderPeriodPage(), not here. */
-function renderPeriodTrackerSection(){
+/* Settings → Period: every actual *setting* (on/off, calendar reminder,
+   re-answering the quiz) lives here now, not in the میزکار pane itself
+   or in Management — renderPeriodPage() below is pure content/view. */
+function renderPeriodSettings(){
   const p = state.period;
   return `
-    <div class="section-title">${t('periodTracker')}</div>
-    <div class="store-card">
-      <div class="period-card-top">
-        <div class="store-card-icon">${ICONS.dropIcon}</div>
-        <div class="period-card-controls">
-          <button type="button" class="icon-btn" data-action="period-settings" aria-label="${t('editAnswers')}">${ICONS.gearIcon}</button>
-          <div class="switch ${p.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
-        </div>
-      </div>
-      <div class="store-card-name">${t('periodTracker')}</div>
-      <div class="store-card-desc">${t('periodTrackerDesc')}</div>
-      <button class="btn btn-primary" style="width:100%;" data-action="menu-nav" data-sub="period">${t('openBtn')}</button>
+    ${subHeader(t('periodTracker'))}
+    <div class="settings-row">
+      <div><div class="lbl">${t('periodTracker')}</div><div class="sub">${t('periodTrackerDesc')}</div></div>
+      <div class="switch ${p.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
     </div>
+    ${p.enabled ? `
+      <div class="settings-row">
+        <div><div class="lbl">${t('calendarReminderLabel')}</div><div class="sub">${t('calendarReminderSub')}</div></div>
+        <div class="switch ${p.calendarReminder?'on':''}" data-action="toggle-calendar-reminder"><div class="knob"></div></div>
+      </div>
+      <div class="settings-row" data-action="period-settings" style="cursor:pointer;">
+        <div class="lbl">${t('editAnswers')}</div>
+        ${ICONS.chevronRightSmall}
+      </div>
+    ` : ''}
   `;
 }
 
-/* Dedicated full page (menuSubView 'period', parent 'admin'), also
-   reused as-is for the period desktop pane (see renderDesktops) with a
-   different header — subHeader()'s back-arrow only makes sense inside
-   the Settings/Management navigation stack. */
+/* میزکار pane content only (see renderDesktops) — no settings controls
+   here at all (enable toggle, calendar reminder, edit-answers all moved
+   to Settings → Period / renderPeriodSettings() above); this just shows
+   the current status, tips and articles. */
 function renderPeriodPage(headerHtml){
-  if(headerHtml === undefined) headerHtml = subHeader(t('periodTracker'));
+  if(headerHtml === undefined) headerHtml = '';
   const p = state.period;
   if(!p.enabled){
     return `
       ${headerHtml}
       <div class="empty-hint">${t('periodOffHint')}</div>
-      <div class="settings-row" style="margin-top:12px;">
-        <div class="lbl">${t('periodTracker')}</div>
-        <div class="switch ${p.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
-      </div>
     `;
   }
   const trackerBody = p.step !== 'done' ? `
@@ -2900,11 +2912,6 @@ function renderPeriodPage(headerHtml){
           <span class="period-legend-item"><span class="dot" style="background:var(--secondary);"></span>${t('legendFertile')}</span>
         </div>
         <div class="empty-hint" style="margin-top:12px;">${t('periodDisclaimer')}</div>
-        <span class="link-btn" style="display:block; text-align:center; margin-top:12px;" data-action="period-settings">${t('editAnswers')}</span>
-      </div>
-      <div class="settings-row" style="margin-top:14px;">
-        <div><div class="lbl">${t('calendarReminderLabel')}</div><div class="sub">${t('calendarReminderSub')}</div></div>
-        <div class="switch ${p.calendarReminder?'on':''}" data-action="toggle-calendar-reminder"><div class="knob"></div></div>
       </div>
     `;
   })();
@@ -3052,6 +3059,7 @@ function renderSettingsList(){
     <div class="menu-list">
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings-general"><div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('generalSettings')}</div>${ICONS.chevronRightSmall}</div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings-calendar"><div class="menu-item-icon">${ICONS.calendarIcon}</div><div class="menu-item-label">${t('calendarSettings')}</div>${ICONS.chevronRightSmall}</div>
+      ${state.profile.gender === 'female' ? `<div class="menu-item-row" data-action="menu-nav" data-sub="settings-period"><div class="menu-item-icon">${ICONS.dropIcon}</div><div class="menu-item-label">${t('periodTracker')}</div>${ICONS.chevronRightSmall}</div>` : ''}
     </div>
   `;
 }
@@ -3417,19 +3425,11 @@ function initHomeScrollExpand(){
     }
   }, { passive: true });
 
-  let lastWheelDayNav = 0;
   el.addEventListener('wheel', (e) => {
-    /* Trackpad horizontal swipe (deltaX-dominant) shifts a day, same
-       gesture a touchpad/Magic Mouse user would reach for instinctively —
-       separate from the vertical pull-to-expand case below. Debounced so
-       one continuous swipe doesn't fire a dozen times. */
-    if(Math.abs(e.deltaX) > Math.abs(e.deltaY)){
-      if(Math.abs(e.deltaX) > 30 && Date.now() - lastWheelDayNav > 400){
-        lastWheelDayNav = Date.now();
-        shiftHomeDay(e.deltaX > 0 ? 1 : -1);
-      }
-      return;
-    }
+    // Horizontal scroll here no longer changes the day at all (removed
+    // per explicit request — it was firing on any left/right scroll
+    // over the page, which read as a bug, not a gesture).
+    if(Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
     if(el.scrollTop <= 0 && e.deltaY < -10 && state.calDensity !== 'full'){
       setCalDensity('full');
     }
@@ -3991,7 +3991,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }
   if(action === 'open-article'){ showToast(t('articlesUnavailable')); return; }
   if(action === 'period-settings' || action === 'period-quiz-start'){
-    state.menuSubView = 'period';
+    state.menuSubView = 'settings-period';
     render();
     openPeriodQuiz();
     return;
