@@ -531,8 +531,8 @@
   .day-cell{ aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); border:1px solid transparent; background:none; padding:0; font-family:inherit; -webkit-tap-highlight-color:transparent; }
   .day-cell:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
   .day-cell.other-month{color:var(--text-muted); opacity:0.3;}
-  .day-cell.today{border-color:var(--primary);}
-  .day-cell.selected{background:var(--primary); color:var(--on-primary);}
+  .day-cell.today{border-color:var(--primary); border-radius:50%;}
+  .day-cell.selected{background:var(--primary); color:var(--on-primary); border-radius:50%;}
   .day-cell.selected.today{ box-shadow:0 0 0 2px var(--on-primary) inset; }
   .day-cell{ transition:transform .1s ease; }
   .day-cell.press{ transform:scale(.94); }
@@ -720,8 +720,8 @@
   .subtask-edit-row:last-child:not(:focus-within){ border-bottom:none; padding-bottom:0; }
   .subtask-edit-row:focus-within{ border-bottom:1px solid var(--primary); padding-bottom:5px; }
   .field .subtask-edit-row input[type="text"]{ flex:1; width:auto; background:transparent; border:none; border-radius:0; padding:6px 2px; font-size:11px; color:var(--text); font-family:inherit; text-align:center; transition:color .2s ease; }
-  .field .subtask-edit-row input[type="text"]:focus{ outline:none; border:none; color:var(--primary); }
-  .device.lang-fa .subtask-edit-row input{ text-align:right; direction:rtl; }
+  .field .subtask-edit-row input[type="text"]:focus{ outline:none; border:none; box-shadow:none; color:var(--primary); }
+  .device.lang-fa .subtask-edit-row input{ text-align:right; direction:rtl; padding-right:20px; }
   .remove-x{ order:-1; width:19px; height:19px; border-radius:0; border:none; background:transparent; color:#D98B8B; cursor:pointer; flex:0 0 auto; font-size:11px; }
   .add-ghost-btn{ display:block; width:100%; text-align:center; border:none; background:transparent; color:var(--primary); padding:6px 2px; font-size:10px; font-weight:700; cursor:pointer; font-family:inherit; }
   .add-ghost-btn.plus-only{ font-size:18px; }
@@ -764,10 +764,10 @@
   .event-del svg{ width:10px; height:10px; }
 
   /* popup icon row + subviews */
-  .popup-icon-row{ display:flex; gap:10px; margin-bottom:14px; }
-  .popup-icon-btn{ flex:1; height:46px; border-radius:14px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
+  .popup-icon-row{ display:flex; justify-content:center; gap:4px; margin-bottom:14px; }
+  .popup-icon-btn{ flex:0 0 auto; width:46px; height:46px; border-radius:14px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .popup-icon-btn svg{ width:18px; height:18px; }
-  .popup-icon-btn.set{ color:var(--primary); background:var(--primary-soft); border-color:var(--primary); }
+  .popup-icon-btn.set{ color:var(--primary); background:transparent; border-color:transparent; }
   .popup-icon-btn.disabled{ color:var(--text-muted); opacity:.45; }
   .popup-subview-header{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
   .popup-back{ width:32px; height:32px; border-radius:50%; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text); flex:0 0 auto; }
@@ -1461,6 +1461,7 @@ function hijriMonthName(i0){ return (lang()==='fa' ? HIJRI_MONTHS_FA : HIJRI_MON
    are always Arabic-Indic digits, Gregorian numbers are always Latin —
    this is a deliberate exception to the rest of the UI staying Latin,
    scoped to calendar date numbers specifically. */
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const PERSIAN_DIGITS = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
 const ARABIC_INDIC_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
 function toSysDigits(num, sys){
@@ -1786,6 +1787,7 @@ const STRINGS = {
     shareToojibee:'Share Toojibee', shareDesc:'Tasks, habits, and events in one place.',
     copyLink:'Copy link', messageOpt:'Message', emailOpt:'Email',
     editBtn:'Edit', copyBtn:'Copy', toggleTheme:'Toggle theme', editProfile:'Edit profile', saveChanges:'Save changes', holdToLogout:'Press and hold to log out', notificationComingSoon:'Not available yet',
+    fileTooLarge:'File is larger than 50MB',
     linkCopied:'Link copied', sharingUnavailable:"Sharing isn't available in this prototype",
     aboutVersion:'Version 0.1 — MVP Prototype',
     aboutDesc:'Toojibee helps you manage tasks, habits, and events in one place — combining daily planning with long-term goals in a single, focused app.',
@@ -1886,6 +1888,7 @@ const STRINGS = {
     shareToojibee:'اشتراک‌گذاری توجیبی', shareDesc:'کار، عادت و رویداد، همه یه‌جا.',
     copyLink:'کپی لینک', messageOpt:'پیامک', emailOpt:'ایمیل',
     editBtn:'ویرایش', copyBtn:'کپی', toggleTheme:'تغییر تم', editProfile:'ویرایش پروفایل', saveChanges:'ذخیره تغییرات', holdToLogout:'برای خروج نگه دارید', notificationComingSoon:'هنوز فعال نشده',
+    fileTooLarge:'حجم فایل بیشتر از ۵۰ مگابایته',
     linkCopied:'لینک کپی شد', sharingUnavailable:'اشتراک‌گذاری تو این پروتوتایپ در دسترس نیست',
     aboutVersion:'نسخه‌ی ۰.۱ — پروتوتایپ MVP',
     aboutDesc:'توجیبی کمکت می‌کنه کارها، عادت‌ها و رویدادها رو یه‌جا مدیریت کنی — برنامه‌ریزی روزانه و اهداف بلندمدت، تو یه اپ ساده.',
@@ -2106,7 +2109,6 @@ function render(){
   document.getElementById('device').classList.toggle('show-menu', state.menuPanelOpen);
   document.getElementById('device').classList.toggle('menu-maximized', state.menuMaximized);
 
-  updateNav();
   renderDaySheet();
   attachCalendarGestures();
   attachHomeCalendarGestures();
@@ -2133,6 +2135,13 @@ function render(){
   attachHomeHeaderSwipe();
   attachHomeCalDrag();
   positionHomeCalGrid();
+  /* Runs after positionHomeCalGrid() specifically because the
+     back-to-today pill measures #home-cal-widget's own rendered
+     height to anchor itself to its bottom edge, and that height is
+     set by positionHomeCalGrid()'s clip-height write just above —
+     measuring any earlier caught the previous month's (stale) height
+     whenever a month change also changed the row count. */
+  updateNav();
   animateDayStats();
   wireMenuInteractivity();
   /* #period-tip-text lives in the میزکار pane (renderDesktops), not
@@ -2205,9 +2214,9 @@ function renderDesktops(d, data){
     <div class="desktop-box">
       <div class="desktop-box-topbar">
         <div class="desktop-box-title-group">
-          <button type="button" class="desktop-nav-arrow ${atStart?'disabled':''}" data-action="desktop-step" data-dir="-1" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</button>
+          <button type="button" class="desktop-nav-arrow ${atStart?'disabled':''}" data-action="desktop-step" data-dir="-1" aria-label="${t('prev')}">${ICONS.chevronLeft}</button>
           <div class="desktop-box-title" id="desktop-box-title">${t(activeKey)}</div>
-          <button type="button" class="desktop-nav-arrow ${atEnd?'disabled':''}" data-action="desktop-step" data-dir="1" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</button>
+          <button type="button" class="desktop-nav-arrow ${atEnd?'disabled':''}" data-action="desktop-step" data-dir="1" aria-label="${t('next')}">${ICONS.chevronRight}</button>
         </div>
       </div>
       <div class="desktop-wrap" id="desktop-wrap">
@@ -2414,7 +2423,6 @@ function renderHomeCalWidget(){
         <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="home-next-month" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
         ${monthDropdown}${yearDropdown}
       </div>
-      ${secondaryLabelsFor(d, true)}
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
       <div class="home-cal-grid-clip" id="home-cal-grid-clip">
         <div id="home-cal-slide">
@@ -3232,6 +3240,7 @@ function wireMenuInteractivity(){
   document.getElementById('profile-photo-input')?.addEventListener('change', e => {
     const file = e.target.files && e.target.files[0];
     if(!file) return;
+    if(file.size > MAX_UPLOAD_BYTES){ showToast(t('fileTooLarge')); e.target.value = ''; return; }
     const reader = new FileReader();
     reader.onload = () => { state.profile.photo = reader.result; Cloud.saveProfile(state.profile).catch(()=>{}); render(); };
     reader.readAsDataURL(file);
@@ -3446,10 +3455,10 @@ function updateNav(){
        far down at the bottom of a tall mostly-empty card — so it
        anchors to #cal-content (the calendar's own content wrapper)
        instead of the outer card. Shown whenever the calendar's cursor
-       isn't on today's month (not exact-day, since navigating always
-       lands on the 1st of a month). */
-    const onCurrentMonth = primaryMonthOf(state.calCursor) === primaryMonthOf(today) && primaryYearOf(state.calCursor) === primaryYearOf(today);
-    backBtn.classList.toggle('show', !onCurrentMonth);
+       isn't on today's actual day — not just a different month, since
+       tapping another day within the current month also moves the
+       cursor off today. */
+    backBtn.classList.toggle('show', !sameDay(state.calCursor, today));
     const boxEl = document.getElementById('cal-content');
     if(boxEl){
       const boxRect = boxEl.getBoundingClientRect();
@@ -3816,7 +3825,10 @@ function wireMainFormInteractivity(){
   document.getElementById('f-description')?.addEventListener('input', e => { formDraft.description = e.target.value; });
   document.getElementById('desc-clip-btn')?.addEventListener('click', () => document.getElementById('f-photo-input').click());
   document.getElementById('f-photo-input')?.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files).slice(0, 3 - formPhotos.length);
+    const picked = Array.from(e.target.files).slice(0, 3 - formPhotos.length);
+    const oversized = picked.some(f => f.size > MAX_UPLOAD_BYTES);
+    const files = picked.filter(f => f.size <= MAX_UPLOAD_BYTES);
+    if(oversized) showToast(t('fileTooLarge'));
     let remaining = files.length;
     if(remaining === 0) return;
     files.forEach(file => {
