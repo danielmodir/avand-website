@@ -347,7 +347,13 @@
     border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
     overflow:hidden; height:100%; display:flex; flex-direction:column;
   }
-  .desktop-box-title{ flex:0 0 auto; padding:14px 16px 0 16px; font-size:13px; font-weight:700; color:var(--text-muted); }
+  .desktop-box-topbar{ flex:0 0 auto; display:flex; align-items:center; gap:4px; padding:10px 10px 0 10px; }
+  .desktop-box-title{ flex:1 1 auto; text-align:left; font-size:13px; font-weight:700; color:var(--text-muted); }
+  .device.lang-fa .desktop-box-title{ text-align:right; }
+  .desktop-nav-arrow{ flex:0 0 auto; width:24px; height:24px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:color .2s ease; }
+  .desktop-nav-arrow svg{ width:14px; height:14px; }
+  .desktop-nav-arrow:hover{ color:var(--primary); }
+  .desktop-nav-arrow.disabled{ opacity:.3; pointer-events:none; }
   .desktop-wrap{ flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .desktop-wrap::-webkit-scrollbar{ display:none; }
   .desktop-track{ display:flex; height:100%; }
@@ -653,6 +659,13 @@
   .field input::placeholder, .field textarea::placeholder{ color:var(--text-muted); }
   .field textarea{ resize:vertical; min-height:64px; }
   .field input:focus, .field textarea:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
+  /* Profile-edit fields echo the add-popup title field's look (plain
+     underline, no filled box) per the repo owner's request, instead of
+     the filled .field box shared by every other form on the site. */
+  .profile-edit-form .field input[type=text], .profile-edit-form .field input[type=date], .profile-edit-form .field input[type=email], .profile-edit-form .field input[type=tel]{
+    background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px;
+  }
+  .profile-edit-form .field input:focus{ outline:none; border-bottom-color:var(--primary); box-shadow:none; }
   .toggle-pair{ display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; }
   .toggle-pair button{ flex:1; border:none; background:transparent; padding:9px 4px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit; }
   .toggle-pair button.active{ background:var(--primary); color:var(--on-primary); }
@@ -2144,11 +2157,18 @@ function renderHome(){
 /* "Today's occasions" pane for the "اصلی" desktop — real data now (see
    occasionsForDate/OCCASIONS_DATA above), for the currently-viewed date
    `d`, not hardcoded to today, so paging the home date updates it too. */
-function renderOccasionsPane(d){
-  if(OCCASIONS_DATA === null) return `<div class="empty-hint">…</div>`;
-  const items = occasionsForDate(d);
-  if(!items.length) return `<div class="empty-hint">${t('noOccasionsToday')}</div>`;
-  return items.map(it => `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}${escapeHtml(it.event_name)}</div>`).join('');
+function renderOccasionsPane(d, events){
+  const occasionsHtml = OCCASIONS_DATA === null ? `<div class="empty-hint">…</div>` : (() => {
+    const items = occasionsForDate(d);
+    return items.length ? items.map(it => `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}${escapeHtml(it.event_name)}</div>`).join('') : '';
+  })();
+  const dayEvents = events || [];
+  const eventsHtml = dayEvents.length ? `
+    <div class="section-title">${t('events')} <span class="count">${dig(dayEvents.length)}</span></div>
+    <div class="events-scroll">${sortEvents(dayEvents).map(e=>eventCard(e)).join('')}</div>
+  ` : '';
+  if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>`;
+  return occasionsHtml + eventsHtml;
 }
 /* The three swipeable "desktops" described in the plan: occasions (the
    "main" one — daily occasions from the self-hosted dataset above),
@@ -2159,7 +2179,7 @@ function renderOccasionsPane(d){
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = [
-    { key:'occasionsDesktop', html: renderOccasionsPane(d) },
+    { key:'occasionsDesktop', html: renderOccasionsPane(d, events) },
   ];
   if(state.settings.planningEnabled){
     panes.push({ key:'planning', html:`
@@ -2174,10 +2194,17 @@ function renderDesktops(d, data){
   // Clamp in case the pane count just shrank (e.g. gender toggled off,
   // dropping the period pane) out from under whatever was active.
   state.activeDesktopIndex = Math.max(0, Math.min(state.activeDesktopIndex || 0, panes.length - 1));
+  const activeKey = panes[state.activeDesktopIndex]?.key || 'workspace';
+  const atStart = state.activeDesktopIndex <= 0;
+  const atEnd = state.activeDesktopIndex >= panes.length - 1;
   return `
     ${window.innerWidth < 960 ? renderHomeCalWidget() : ''}
     <div class="desktop-box">
-      <div class="desktop-box-title">${t('workspace')}</div>
+      <div class="desktop-box-topbar">
+        <button type="button" class="desktop-nav-arrow ${atStart?'disabled':''}" data-action="desktop-step" data-dir="-1" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</button>
+        <div class="desktop-box-title" id="desktop-box-title">${t(activeKey)}</div>
+        <button type="button" class="desktop-nav-arrow ${atEnd?'disabled':''}" data-action="desktop-step" data-dir="1" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</button>
+      </div>
       <div class="desktop-wrap" id="desktop-wrap">
         <div class="desktop-track" id="desktop-track">
           ${panes.map(p => `<div class="desktop-pane">${p.html}</div>`).join('')}
@@ -2188,6 +2215,27 @@ function renderDesktops(d, data){
       </div>
     </div>
   `;
+}
+/* Updates the box title + prev/next arrow disabled state to match pane
+   `i`, without a full render() — used both for click navigation and for
+   the live drag/swipe sync below, neither of which should pay for a
+   full re-render just to keep this topbar in sync. */
+function syncDesktopTopbar(i){
+  const dots = document.getElementById('desktop-dots');
+  if(!dots) return;
+  const dotEls = Array.from(dots.children);
+  const key = dotEls[i]?.dataset.key;
+  const titleEl = document.getElementById('desktop-box-title');
+  if(titleEl && key) titleEl.textContent = t(key);
+  const arrows = document.querySelectorAll('.desktop-nav-arrow');
+  if(arrows[0]) arrows[0].classList.toggle('disabled', i <= 0);
+  if(arrows[1]) arrows[1].classList.toggle('disabled', i >= dotEls.length - 1);
+}
+function goToDesktopIndex(i){
+  state.activeDesktopIndex = i;
+  const wrap = document.getElementById('desktop-wrap');
+  if(wrap){ desktopPagerProgrammatic = true; wrap.scrollTo({ left: i * wrap.clientWidth, behavior:'smooth' }); }
+  syncDesktopTopbar(i);
 }
 function attachDesktopPager(){
   const wrap = document.getElementById('desktop-wrap');
@@ -2211,6 +2259,7 @@ function attachDesktopPager(){
         raf = null;
         const i = Math.round(wrap.scrollLeft / wrap.clientWidth);
         dotEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
+        syncDesktopTopbar(i);
       });
     }
     /* Only COMMIT the active pane to state once scroll events have
@@ -2673,6 +2722,7 @@ function renderProfileEditPage(){
   const genderOpt = (val, label) => `<button type="button" data-action="set-gender" data-val="${val}" class="${p.gender===val?'active':''}">${label}</button>`;
   return `
     ${subHeader(t('editProfile'))}
+    <div class="profile-edit-form">
     <div class="profile-photo-actions">
       <label class="link-btn">${t('changePhoto')}<input type="file" accept="image/*" id="profile-photo-input" class="hidden"></label>
       ${p.photo ? `<span class="link-btn" data-action="remove-profile-photo">${t('removePhoto')}</span>` : ''}
@@ -2691,6 +2741,7 @@ function renderProfileEditPage(){
     <div class="section-title">${t('contactInfo')}</div>
     <div class="field"><input type="email" id="profile-email" value="${escapeAttr(p.email)}" placeholder="${t('email')}"></div>
     <div class="field"><input type="tel" id="profile-phone" value="${escapeAttr(p.phone)}" placeholder="${t('phoneNumber')}"></div>
+    </div>
   `;
 }
 function friendRowActions(c){
@@ -4035,9 +4086,14 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'goto-desktop'){
-    state.activeDesktopIndex = Number(el.dataset.i);
-    const wrap = document.getElementById('desktop-wrap');
-    if(wrap){ desktopPagerProgrammatic = true; wrap.scrollTo({ left: state.activeDesktopIndex * wrap.clientWidth, behavior:'smooth' }); }
+    goToDesktopIndex(Number(el.dataset.i));
+    return;
+  }
+  if(action === 'desktop-step'){
+    const dots = document.getElementById('desktop-dots');
+    const count = dots ? dots.children.length : 1;
+    const i = Math.max(0, Math.min(count - 1, (state.activeDesktopIndex || 0) + Number(el.dataset.dir)));
+    goToDesktopIndex(i);
     return;
   }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
