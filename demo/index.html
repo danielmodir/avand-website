@@ -670,7 +670,12 @@
   .profile-edit-form .field input:focus{ outline:none; border-bottom-color:var(--primary); box-shadow:none; }
   .dob-field-btn{ background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; font-size:14px; color:var(--text); cursor:pointer; transition:border-color .2s ease; }
   .dob-field-btn:hover{ border-bottom-color:var(--primary); }
-  .dob-cal-popover{ margin-top:10px; padding:12px; background:var(--bg-soft); border:1px solid var(--border); border-radius:14px; }
+  .dob-field-wrap{ position:relative; }
+  .dob-cal-popover{ position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:20; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); font-size:12px; }
+  .dob-cal-popover .cal-label{ font-size:13px !important; }
+  .dob-cal-popover .mini-cal-cell{ font-size:11px; }
+  .dob-cal-popover .cal-corner-arrow{ width:26px; height:26px; }
+  .dob-cal-popover .cal-corner-arrow svg{ width:13px; height:13px; }
   .toggle-pair{ display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; }
   .toggle-pair button{ flex:1; border:none; background:transparent; padding:9px 4px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit; }
   .toggle-pair button.active{ background:var(--primary); color:var(--on-primary); }
@@ -2782,7 +2787,7 @@ function renderProfileEditPage(){
       <div class="field"><input type="text" id="profile-last-name" value="${escapeAttr(p.lastName)}" placeholder="${t('lastName')}"></div>
     </div>
     <div class="field"><input type="text" id="profile-username" value="${escapeAttr(p.username)}" placeholder="${t('username')}"></div>
-    <div class="field">
+    <div class="field dob-field-wrap">
       <div class="dob-field-btn" id="profile-dob-btn" data-action="toggle-dob-picker">${dobLabel(p)}</div>
       ${state.dobPickerOpen ? dobCalendarHtml(p) : ''}
     </div>
