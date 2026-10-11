@@ -824,6 +824,16 @@
   .article-row-title{ font-size:13.5px; font-weight:700; }
   .article-row-desc{ font-size:12px; color:var(--text-muted); margin-top:2px; }
   .article-row > svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
+  /* Horizontal card row for the period pane's articles — same scroll
+     pattern as .events-scroll, used only when there are enough
+     articles that a horizontal strip makes sense instead of a plain
+     vertical list. */
+  .articles-scroll{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+  .articles-scroll::-webkit-scrollbar{ display:none; }
+  .article-card{ flex:0 0 190px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px; cursor:pointer; }
+  .article-card .article-row-icon{ margin-bottom:10px; }
+  .article-card .article-row-title{ font-size:13.5px; font-weight:700; }
+  .article-card .article-row-desc{ font-size:12px; color:var(--text-muted); margin-top:4px; }
 
   .tips-card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; min-height:78px; display:flex; flex-direction:column; justify-content:center; }
   .tips-card-title{ font-size:12px; font-weight:700; color:var(--primary); margin-bottom:6px; }
@@ -2064,7 +2074,16 @@ function render(){
   attachDayCellGestures(document.getElementById('cal-month-grid'), false);
   attachDayCellGestures(document.getElementById('home-cal-grid'), true);
   attachCalWheelMonthNav(document.getElementById('cal-month-grid'), dir => shiftMonthRoll(dir));
-  attachCalWheelMonthNav(document.getElementById('home-cal-grid'), dir => shiftHomeMonthRoll(dir));
+  /* Only when home-cal-grid is standalone (<960px, above the میزکار
+     pager — see renderDesktops()) does a horizontal scroll over it mean
+     "change month". At >=960px this same widget is embedded *inside*
+     the pager's "planning" pane, where horizontal scroll must mean
+     "switch میزکار desktops" and nothing else — attaching month-nav
+     there too made the same gesture do two different, conflicting
+     things depending on exactly where the pointer sat. */
+  if(window.innerWidth < 960){
+    attachCalWheelMonthNav(document.getElementById('home-cal-grid'), dir => shiftHomeMonthRoll(dir));
+  }
   clampDropdowns();
   scrollYearDropdownActive();
   attachDesktopPager();
@@ -2889,23 +2908,23 @@ function renderPeriodPage(headerHtml){
       </div>
     `;
   })();
+  const articleCount = 4;
   return `
     ${headerHtml}
     ${trackerBody}
-    <div class="section-title">${t('articlesTitle')}</div>
-    ${[1,2,3,4].map(i => `
-      <div class="article-row" data-action="open-article">
-        <div class="article-row-icon">${ICONS.infoIcon}</div>
-        <div class="article-row-text">
-          <div class="article-row-title">${t('article'+i+'Title')}</div>
-          <div class="article-row-desc">${t('article'+i+'Desc')}</div>
-        </div>
-        ${ICONS.chevronRightSmall}
-      </div>
-    `).join('')}
     <div class="section-title">${t('tipsTitle')}</div>
     <div class="tips-card">
       <div class="tips-card-text" id="period-tip-text"></div>
+    </div>
+    <div class="section-title">${t('articlesTitle')}</div>
+    <div class="articles-scroll">
+      ${Array.from({length: articleCount}, (_, idx) => idx + 1).map(i => `
+        <div class="article-card" data-action="open-article">
+          <div class="article-row-icon">${ICONS.infoIcon}</div>
+          <div class="article-row-title">${t('article'+i+'Title')}</div>
+          <div class="article-row-desc">${t('article'+i+'Desc')}</div>
+        </div>
+      `).join('')}
     </div>
   `;
 }
@@ -4355,15 +4374,29 @@ if(!window.__densityBreakpointWatcher){
    its own horizontal touch-drag via attachHomeCalDrag(). */
 function attachCalWheelMonthNav(el, stepFn){
   if(!el) return;
-  let settling = false;
+  // A single trackpad swipe fires many deltaX events in a row — the old
+  // "step on the first event, then ignore for 350ms" version still let
+  // several of those through before the cooldown caught up, so one
+  // physical swipe could jump 2-3 months. Now it requires the
+  // accumulated distance to cross a real threshold (same idea as
+  // attachDensityGesture's own acc/feed), and locks out further steps
+  // for longer afterward so trailing trackpad inertia can't sneak in
+  // an extra jump once the swipe has already been "spent".
+  let acc = 0, settling = false, resetTimer = null;
   el.addEventListener('wheel', e => {
     if(Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
     e.preventDefault();
     e.stopPropagation(); // don't also let it bubble into #page-home's own deltaX-dominant day-nav handler
     if(settling) return;
-    settling = true;
-    stepFn(e.deltaX > 0 ? -1 : 1);
-    setTimeout(() => { settling = false; }, 350);
+    acc += Math.abs(e.deltaX);
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => { acc = 0; }, 200);
+    if(acc > 140){
+      acc = 0;
+      settling = true;
+      stepFn(e.deltaX > 0 ? -1 : 1);
+      setTimeout(() => { settling = false; }, 500);
+    }
   }, { passive:false });
 }
 function attachDensityGesture(el, scopeEl){
@@ -4698,7 +4731,7 @@ function attachSwipeToDelete(container){
     fg.addEventListener('pointerup', end);
     fg.addEventListener('pointercancel', end);
   });
-  container.querySelectorAll('.events-scroll').forEach(el => {
+  container.querySelectorAll('.events-scroll, .articles-scroll').forEach(el => {
     el.addEventListener('pointerdown', e => e.stopPropagation());
   });
 }
