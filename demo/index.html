@@ -218,7 +218,6 @@
   /* The hover circle is smaller than the slot (margin on all sides) and
      explicitly round, so it reads as a distinct circle with a gap from
      the pill's own edge instead of a square hover fill flush against it. */
-  .toolbar-period-btn.off{ opacity:.35; }
   .toolbar-admin-btn{
     width:44px; height:44px; margin:3px; border:none; border-radius:50%; background:transparent; color:var(--text-muted);
     display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -1207,11 +1206,11 @@
       <button type="button" class="toolbar-admin-btn" data-action="open-menu" data-sub="admin" title="Management" aria-label="Management">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9zm0 2h6v2H9V4zM6 8h12v12H6V8zm2 3v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>
       </button>
-      <!-- Hidden unless profile.gender is 'female' (see updateNav()); its
-           .off class (dimmed) mirrors state.period.enabled, present in
-           both states per the repo owner's request — it's a quick jump
-           to the period میزکار pane, not an on/off control itself
-           (that's in Management/Settings). -->
+      <!-- Hidden unless profile.gender is 'female' AND state.period.enabled
+           (see updateNav()) — fully appears/disappears with the
+           Management toggle, not dimmed. A quick jump to the period
+           میزکار pane, not an on/off control itself (that's in
+           Management/Settings). -->
       <button type="button" class="toolbar-admin-btn toolbar-period-btn hidden" id="toolbar-period-btn" data-action="goto-period-desktop" title="Period" aria-label="Period">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s7 8.1 7 12.5A7 7 0 0 1 5 14.5C5 10.1 12 2 12 2z"/></svg>
       </button>
@@ -3353,9 +3352,12 @@ function updateNav(){
      (see Management's "Workspace desktops" toggles). */
   document.getElementById('fab-add').classList.toggle('hidden', !state.settings.planningEnabled);
   document.getElementById('fab-add').classList.toggle('active', state.navExpanded);
+  // Fully appears/disappears with the Management toggle — not just
+  // dimmed — per explicit correction: gender gates it the same as the
+  // pane itself, but state.period.enabled now controls its very
+  // presence here too, not a muted opacity state.
   const periodBtn = document.getElementById('toolbar-period-btn');
-  periodBtn.classList.toggle('hidden', state.profile.gender !== 'female');
-  periodBtn.classList.toggle('off', !state.period.enabled);
+  periodBtn.classList.toggle('hidden', state.profile.gender !== 'female' || !state.period.enabled);
   document.getElementById('fab-menu').classList.toggle('show', state.navExpanded);
   document.getElementById('fab-menu').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
 
