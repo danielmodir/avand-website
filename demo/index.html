@@ -928,6 +928,13 @@
   .about-link-row{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:13px 15px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; }
 
   .settings-row{ display:flex; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px 16px; margin-bottom:10px; gap:10px; }
+  .desktop-manage-card{ position:relative; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px 46px 14px 16px; margin-bottom:10px; }
+  .device.lang-fa .desktop-manage-card{ padding:14px 16px 14px 46px; }
+  .desktop-manage-title{ font-size:14px; font-weight:700; margin-bottom:3px; }
+  .desktop-manage-desc{ font-size:12px; color:var(--text-muted); margin-bottom:10px; }
+  .desktop-manage-gear{ position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; border:none; background:var(--bg-soft); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .device.lang-fa .desktop-manage-gear{ right:auto; left:12px; }
+  .desktop-manage-gear svg{ width:14px; height:14px; }
   /* unicode-bidi:plaintext makes each row's own text decide its
      direction/alignment by its own first strong character instead of
      inheriting the page's dir — Persian labels stay right-aligned,
@@ -1750,6 +1757,7 @@ const STRINGS = {
     adminPanel:'Management', purchasedFeatures:'Purchased features',
     noPurchasedFeatures:"You haven't purchased anything from the Store yet",
     enabledDesktops:'Workspace desktops', enabledDesktopsSub:'Turn each workspace desktop on or off here.',
+    planningDesktopSub:'Tasks, habits and events for the day.', periodDesktopSub:'Period and PMS tracking.', desktopSettingsSoon:'Settings for this workspace are coming soon',
     periodTracker:'Period tracking', periodTrackerDesc:"Answer a few quick questions and we'll estimate your period and PMS timing.",
     startBtn:'Start', nextBtn:'Next', finishBtn:'Finish',
     qsDone:'DONE', qsUndone:'UNDONE',
@@ -1851,6 +1859,7 @@ const STRINGS = {
     adminPanel:'مدیریت', purchasedFeatures:'قابلیت‌های خریداری‌شده',
     noPurchasedFeatures:'هنوز چیزی از فروشگاه خریداری نکردی',
     enabledDesktops:'میزکارهای فعال', enabledDesktopsSub:'هر میزکار رو از اینجا فعال یا غیرفعال کن.',
+    planningDesktopSub:'کارها، عادت‌ها و رویدادهای روز.', periodDesktopSub:'پیگیری پریود و PMS.', desktopSettingsSoon:'تنظیمات این میزکار به‌زودی اضافه می‌شه',
     periodTracker:'مدیریت دوره‌ی پریود', periodTrackerDesc:'به چند سؤال کوتاه جواب بده تا زمان تقریبی پریود و PMS‌ت رو تخمین بزنیم.',
     startBtn:'شروع', nextBtn:'بعدی', finishBtn:'پایان',
     qsDone:'DONE', qsUndone:'UNDONE',
@@ -2935,13 +2944,17 @@ function renderAdminPanel(){
     ${subHeader(t('adminPanel'))}
     <div class="section-title">${t('enabledDesktops')}</div>
     <div class="sub" style="margin:-6px 2px 10px 2px;">${t('enabledDesktopsSub')}</div>
-    <div class="settings-row">
-      <div><div class="lbl">${t('planning')}</div></div>
+    <div class="desktop-manage-card">
+      <button type="button" class="desktop-manage-gear" data-action="desktop-settings-soon" aria-label="${t('settings')}">${ICONS.gearIcon}</button>
+      <div class="desktop-manage-title">${t('planning')}</div>
+      <div class="desktop-manage-desc">${t('planningDesktopSub')}</div>
       <div class="switch ${state.settings.planningEnabled?'on':''}" data-action="toggle-planning-enabled"><div class="knob"></div></div>
     </div>
     ${state.profile.gender === 'female' ? `
-      <div class="settings-row">
-        <div><div class="lbl">${t('periodDesktop')}</div></div>
+      <div class="desktop-manage-card">
+        <button type="button" class="desktop-manage-gear" data-action="desktop-settings-soon" aria-label="${t('settings')}">${ICONS.gearIcon}</button>
+        <div class="desktop-manage-title">${t('periodDesktop')}</div>
+        <div class="desktop-manage-desc">${t('periodDesktopSub')}</div>
         <div class="switch ${state.period.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
       </div>
     ` : ''}
@@ -4197,6 +4210,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     goToDesktopIndex(i);
     return;
   }
+  if(action === 'desktop-settings-soon'){ showToast(t('desktopSettingsSoon')); return; }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
   if(action === 'toggle-planning-enabled'){ state.settings.planningEnabled = !state.settings.planningEnabled; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }
