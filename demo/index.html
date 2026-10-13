@@ -640,6 +640,7 @@
   .device.lang-fa .search-capsule{ padding:4px 16px 4px 4px; }
   .search-capsule:focus-within{ border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
   .search-capsule input{ flex:1; min-width:0; border:none; background:transparent; padding:9px 0; font-size:14px; color:var(--text); font-family:inherit; }
+  .device.lang-fa .search-capsule input{ text-align:right; direction:rtl; }
   .search-capsule input::placeholder{ color:var(--text-muted); }
   .search-capsule-btn{ flex:0 0 auto; width:36px; height:36px; border-radius:50%; border:none; background:var(--primary); color:var(--on-primary); display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .search-capsule-btn svg{ width:16px; height:16px; }
@@ -650,6 +651,7 @@
   .field input::placeholder, .field textarea::placeholder{ color:var(--text-muted); }
   .field textarea{ resize:vertical; min-height:64px; }
   .field input:focus, .field textarea:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
+  .device.lang-fa .field input[type=text], .device.lang-fa .field input[type=date], .device.lang-fa .field input[type=time], .device.lang-fa .field input[type=number], .device.lang-fa .field input[type=tel], .device.lang-fa .field textarea{ text-align:right; direction:rtl; }
   /* Profile-edit fields echo the add-popup title field's look (plain
      underline, no filled box) per the repo owner's request, instead of
      the filled .field box shared by every other form on the site. */
@@ -658,6 +660,7 @@
   }
   .profile-edit-form .field input:focus{ outline:none; border-bottom-color:var(--primary); box-shadow:none; }
   .dob-field-btn{ background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; font-size:14px; color:var(--text); cursor:pointer; transition:border-color .2s ease; }
+  .device.lang-fa .dob-field-btn{ text-align:right; }
   .dob-field-btn:hover{ border-bottom-color:var(--primary); }
   .dob-field-wrap{ position:relative; }
   .dob-cal-popover{ position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:20; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); font-size:12px; }
@@ -989,6 +992,7 @@
   .auth-tabs button.active{ background:var(--card); color:var(--primary); }
   .auth-form .field{ margin-bottom:12px; }
   .auth-form input{ width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:14px; padding:14px 16px; font-size:14px; color:var(--text); font-family:inherit; transition:border-color .2s ease, box-shadow .2s ease; }
+  .device.lang-fa .auth-form input[type=text]{ text-align:right; direction:rtl; }
   .auth-form input::placeholder{ color:var(--text-muted); }
   .auth-form input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--primary-soft); }
   .auth-form .field.has-error input{ border-color:var(--danger); }
