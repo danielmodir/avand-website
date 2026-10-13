@@ -3466,11 +3466,12 @@ function updateNav(){
        home's .desktop-box, so the two cards read as a pair) — anchor
        straddling its own visible bottom border, same as the mobile
        home-widget pill below, rather than the shorter inner
-       #cal-content wrapper. Shown whenever the calendar's cursor isn't
-       on today's actual day — not just a different month, since
-       tapping another day within the current month also moves the
-       cursor off today. */
-    backBtn.classList.toggle('show', !sameDay(state.calCursor, today));
+       #cal-content wrapper. Shown whenever the viewed month (calCursor)
+       or the highlighted day (homeDate — the month grid's own "selected"
+       class is keyed off this, not calCursor; see renderCalendar())
+       isn't today, since tapping a day within the current month moves
+       homeDate off today without touching calCursor at all. */
+    backBtn.classList.toggle('show', !sameDay(state.calCursor, today) || !sameDay(state.homeDate, today));
     const boxEl = document.getElementById('page-calendar');
     if(boxEl){
       const boxRect = boxEl.getBoundingClientRect();
@@ -3738,7 +3739,8 @@ function miniCalCellHtml(d){
   } else if(key === formDraft.date){
     rangeClass = 'range-single';
   }
-  return `<div class="mini-cal-cell ${inMonth?'':'other-month'} ${rangeClass}" data-date="${key}">${displayDayNum(d)}</div>`;
+  const isToday = sameDay(d, today);
+  return `<div class="mini-cal-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${rangeClass}" data-date="${key}">${dayCellDateHtml(d)}</div>`;
 }
 function refreshMiniCalGrid(){
   const grid = document.getElementById('mini-cal-grid');
@@ -3778,9 +3780,9 @@ function repeatSubviewHtml(type){
   const options = type === 'habit' ? ['interval','weekdays'] : ['none','interval','weekdays'];
   const labelMap = { none:t('noRepeat'), interval:t('everyNDays'), weekdays:t('specificDays') };
   return `
-    <div class="toggle-pair" id="rec-mode-toggle">
-      ${options.map(o => `<button type="button" data-rec="${o}" class="${(mode===o || (o==='none' && !mode)) ? 'active':''}">${labelMap[o]}</button>`).join('')}
-    </div>
+    <select class="settings-select" id="rec-mode-select" style="width:100%;">
+      ${options.map(o => `<option value="${o}" ${(mode===o || (o==='none' && !mode)) ? 'selected':''}>${labelMap[o]}</option>`).join('')}
+    </select>
     <div id="rec-interval-panel" class="${mode==='interval'?'':'hidden'}" style="margin-top:10px;">
       <input type="number" id="f-interval" min="1" max="7" value="${formDraft.recurrence.interval}" placeholder="${t('repeatEveryDays')}">
     </div>
@@ -3858,10 +3860,10 @@ function wireSubviewInteractivity(){
   if(sub === 'calendar'){
     attachMiniCalGesture();
   } else if(sub === 'repeat'){
-    document.querySelectorAll('#rec-mode-toggle button').forEach(b => b.addEventListener('click', () => {
-      formDraft.recurrence.mode = b.dataset.rec === 'none' ? null : b.dataset.rec;
+    document.getElementById('rec-mode-select')?.addEventListener('change', e => {
+      formDraft.recurrence.mode = e.target.value === 'none' ? null : e.target.value;
       renderPopupBody();
-    }));
+    });
     document.getElementById('f-interval')?.addEventListener('input', e => { formDraft.recurrence.interval = Number(e.target.value||1); });
     document.querySelectorAll('.weekday-picker button').forEach(b => b.addEventListener('click', () => {
       const i = Number(b.dataset.wd);
@@ -4239,6 +4241,7 @@ document.getElementById('device').addEventListener('click', (e) => {
        it resets homeDate instead. */
     if(window.innerWidth >= 960){
       state.calCursor = new Date(today);
+      state.homeDate = new Date(today);
       state.monthDropdownOpen = false; state.yearDropdownOpen = false;
       state.secDropdown = { kind:null, sys:null, home:false };
     } else {
