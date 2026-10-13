@@ -840,6 +840,14 @@
   .tips-card-text .caret{ display:inline-block; width:2px; height:1em; background:var(--primary); margin-inline-start:2px; vertical-align:-2px; animation:caret-blink 1s step-end infinite; }
   @keyframes caret-blink{ 50%{ opacity:0; } }
 
+  /* Period میزکار gets its own accent instead of the app's global orange
+     --primary — a muted rose, distinct from --danger (the wheel chart's
+     literal "period day" red) so an active/selected UI control never
+     reads as a data color. Scoped by re-pointing --primary/--primary-
+     soft/--on-primary at this one value for everything inside
+     .period-themed (the tracker card, quiz sheet, buttons, links), so
+     existing components don't need their own period-specific classes. */
+  .period-themed{ --primary:#D46A82; --primary-soft:rgba(212,106,130,0.16); --on-primary:#000000; }
   /* ===== period setup quiz (bottom sheet, slides up) ===== */
   .period-quiz-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .25s ease; }
   .period-quiz-overlay.show{ opacity:1; pointer-events:auto; }
@@ -1176,7 +1184,7 @@
   <div class="add-popup" id="add-popup"></div>
 
   <div class="period-quiz-overlay" id="period-quiz-overlay" data-action="close-period-quiz"></div>
-  <div class="period-quiz-sheet" id="period-quiz-sheet">
+  <div class="period-quiz-sheet period-themed" id="period-quiz-sheet">
     <div class="popup-topbar">
       <span></span>
       <button type="button" class="popup-close" data-action="close-period-quiz" aria-label="Close"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.7l-1.41-1.41L9.17 12 2.89 5.71 4.3 4.29 10.59 10.6l6.29-6.3z"/></svg></button>
@@ -2283,18 +2291,34 @@ function attachDesktopPager(){
      silently broke scrolling a tall pane's content entirely. Removed;
      a mouse without horizontal scroll support just can't wheel-switch
      panes here (the dots and swipe/drag still work). */
-  let settling = false;
+  /* A single physical trackpad swipe fires a whole burst of wheel events
+     (a ramp-up then an inertial decelerating tail), not one atomic
+     event — reacting to the first event in that burst and then only
+     locking out new ones for a fixed 350ms let a slow/long swipe's
+     later tail events slip past the lockout and trigger a *second*
+     step change, so one swipe could jump two panes instead of one.
+     Instead, treat the whole burst as a single gesture: accumulate
+     deltaX and only act once, after wheel events stop arriving for a
+     beat (gestureIdleTimer) — exactly one step per physical swipe,
+     regardless of how long its tail runs. */
+  let gestureDeltaX = 0, gestureIdleTimer = null, navigating = false;
   wrap.addEventListener('wheel', e => {
     if(Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical (or ambiguous): let it scroll the pane's content natively
     e.preventDefault();
-    if(settling) return;
-    const dir = e.deltaX > 0 ? 1 : -1;
-    const i = Math.max(0, Math.min(dotEls.length - 1, Math.round(wrap.scrollLeft / wrap.clientWidth) + dir));
-    settling = true;
-    state.activeDesktopIndex = i;
-    desktopPagerProgrammatic = true;
-    wrap.scrollTo({ left: i * wrap.clientWidth, behavior: 'smooth' });
-    setTimeout(() => { settling = false; }, 350);
+    if(navigating) return;
+    gestureDeltaX += e.deltaX;
+    clearTimeout(gestureIdleTimer);
+    gestureIdleTimer = setTimeout(() => {
+      const dir = gestureDeltaX > 0 ? 1 : -1;
+      gestureDeltaX = 0;
+      const i = Math.max(0, Math.min(dotEls.length - 1, Math.round(wrap.scrollLeft / wrap.clientWidth) + dir));
+      if(i === state.activeDesktopIndex){ return; }
+      navigating = true;
+      state.activeDesktopIndex = i;
+      desktopPagerProgrammatic = true;
+      wrap.scrollTo({ left: i * wrap.clientWidth, behavior: 'smooth' });
+      setTimeout(() => { navigating = false; }, 350);
+    }, 60);
   }, { passive:false });
 }
 
@@ -3015,8 +3039,10 @@ function renderPeriodPage(headerHtml){
   const p = state.period;
   if(!p.enabled){
     return `
+      <div class="period-themed">
       ${headerHtml}
       <div class="empty-hint">${t('periodOffHint')}</div>
+      </div>
     `;
   }
   const trackerBody = p.step !== 'done' ? `
@@ -3043,6 +3069,7 @@ function renderPeriodPage(headerHtml){
   })();
   const articleCount = 4;
   return `
+    <div class="period-themed">
     ${headerHtml}
     ${trackerBody}
     <div class="section-title">${t('tipsTitle')}</div>
@@ -3058,6 +3085,7 @@ function renderPeriodPage(headerHtml){
           <div class="article-row-desc">${t('article'+i+'Desc')}</div>
         </div>
       `).join('')}
+    </div>
     </div>
   `;
 }
