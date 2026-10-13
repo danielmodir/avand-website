@@ -307,6 +307,10 @@
     display:flex; align-items:center; gap:8px; padding:0 14px;
     box-shadow:0 8px 20px rgba(0,0,0,0.35);
   }
+  /* RTL: logo+name reads right-to-left like the marketing header does
+     (logo on the right), instead of staying pinned to the physical
+     left regardless of language. */
+  .device.lang-fa .app-banner{ flex-direction:row-reverse; }
   .app-banner-bg{
     position:absolute; inset:0; background-size:cover; background-position:center;
     opacity:0; transition:opacity .25s ease;
@@ -897,7 +901,8 @@
   :root[data-theme="light"] .theme-toggle-btn .icon-sun{ opacity:0; transform:translate(-50%,-50%) rotate(90deg) scale(.4); }
   :root[data-theme="light"] .theme-toggle-btn .icon-moon{ opacity:1; transform:translate(-50%,-50%) rotate(0deg) scale(1); }
   .profile-photo-actions{ display:flex; gap:14px; justify-content:center; margin-bottom:4px; }
-  .link-btn{ font-size:12px; font-weight:600; color:var(--primary); cursor:pointer; }
+  .link-btn{ flex:0 0 auto; font-size:12px; font-weight:600; color:var(--primary); cursor:pointer; }
+  .link-btn svg{ width:14px; height:14px; display:block; }
   .profile-field-row{ display:flex; gap:10px; }
   .profile-field-row .field{ flex:1; }
   .profile-stats{ display:flex; gap:10px; margin-top:16px; }
