@@ -454,7 +454,6 @@
   .task-row .item-title{ font-size:14px; font-weight:500; }
   .item-card.done .item-title{ text-decoration:line-through; color:var(--text-muted); }
   .item-card.skipped .item-title{ text-decoration:line-through; color:var(--danger); }
-  .item-actions{display:flex; gap:6px;}
   .mini-btn{ width:28px; height:28px; border-radius:9px; border:1px solid var(--border); background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .mini-btn svg{width:14px; height:14px;}
 
@@ -484,7 +483,7 @@
   .logout-hold-btn.holding .logout-hold-label{ color:#fff; }
 
   /* calendar */
-  .cal-topbar{ position:relative; display:flex; align-items:baseline; justify-content:center; gap:10px; margin-bottom:18px; padding:6px 0; }
+  .cal-topbar{ position:relative; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:18px; padding:6px 0; }
   /* Mobile-only: sits just above the bottom bar (FAB/profile/capsule) —
      static markup like the rest of that bar, so it can slide up into
      place with a transition instead of just appearing/disappearing. */
@@ -585,26 +584,9 @@
   .day-sheet-body{overflow-y:auto; padding:0 18px 30px 18px;}
   .day-sheet-body::-webkit-scrollbar{display:none;}
 
-  /* ===== bottom nav ===== */
-  .bottom-nav-wrap{ position:absolute; bottom:3px; left:52px; right:52px; z-index:40; }
-  .bottom-nav{ position:relative; background:var(--nav-bg); border-radius:35px; box-shadow:var(--shadow); height:70px; transition:height .32s cubic-bezier(.4,0,.2,1); }
-  .bottom-nav.expanded{ height:196px; }
-  .nav-layer{ position:absolute; inset:0; display:flex; align-items:center; justify-content:space-around; padding:0 8px; opacity:0; pointer-events:none; transition:opacity .32s cubic-bezier(.4,0,.2,1); }
-  .nav-layer.show{ opacity:1; pointer-events:auto; transition:opacity .32s cubic-bezier(.4,0,.2,1) .08s; }
-  #nav-layer-add{ flex-direction:column; justify-content:center; gap:10px; padding:16px 18px; }
-
-  .nav-slider{ position:absolute; top:50%; width:46px; height:46px; border-radius:50%; background:var(--primary); box-shadow:0 4px 14px color-mix(in srgb, var(--primary) 45%, transparent); transform:translate(-50%,-50%); transition:left .3s cubic-bezier(.4,0,.2,1); z-index:1; }
-  .nav-btn{ position:relative; z-index:2; background:none; border:none; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--nav-icon); user-select:none; transition:color .2s ease, transform .18s ease; transform-origin:center; }
-  .nav-btn.active{ color:#fff; }
-  .nav-btn svg{width:19px; height:19px;}
-  .nav-btn.logo span{ font-weight:800; font-size:17px; line-height:1; }
-  .nav-btn.pressing{ transform:scale(0.88); }
-
   .nav-add-item{ position:relative; z-index:2; width:100%; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:4px 14px; color:var(--text); cursor:pointer; }
   .nav-add-item svg{width:16px; height:16px; fill:var(--primary);}
   .nav-add-item span{font-size:13px; font-weight:600;}
-  #nav-layer-add.labels-hidden .nav-add-item span{ display:none; }
-  #nav-layer-add.labels-hidden .nav-add-item{ justify-content:center; }
 
   /* ===== add popup ===== */
   .popup-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:55; opacity:0; pointer-events:none; transition:opacity .25s ease; }
@@ -616,18 +598,13 @@
   .add-popup{ position:absolute; top:0; left:0; right:0; bottom:0; background:var(--card); border-radius:24px 24px 0 0; overflow:hidden; z-index:56; display:flex; flex-direction:column; box-shadow:0 25px 70px -15px var(--primary-soft), 0 10px 40px rgba(0,0,0,0.35); transform:scale(0.05); opacity:0; pointer-events:none; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
   .add-popup.show{ transform:scale(1); opacity:1; pointer-events:auto; }
   .popup-topbar{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 6px 18px; flex:0 0 auto; }
-  .popup-delete, .popup-close{ border:none; padding:0; font:inherit; }
-  .popup-delete{ width:34px; height:34px; border-radius:50%; background:rgba(217,139,139,0.16); color:#D98B8B; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-  .popup-delete svg{ width:14px; height:14px; }
-  .popup-delete.invisible{ visibility:hidden; }
-  .popup-close{ width:34px; height:34px; border-radius:50%; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
+  .popup-close{ border:none; padding:0; font:inherit; width:34px; height:34px; border-radius:50%; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .popup-close svg{width:14px; height:14px;}
   .popup-body{ flex:1; padding:22px 22px 90px 22px; position:relative; overflow-y:auto; scrollbar-width:none; }
   .popup-body::-webkit-scrollbar{ display:none; }
   .pop-field{ width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:16px; padding:16px 16px; font-size:16px; color:var(--text); font-family:inherit; transition:border-color .22s ease, box-shadow .22s ease; }
   .pop-field::placeholder{ color:var(--text-muted); }
   .pop-field:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--primary-soft); }
-  .popup-footer{ position:relative; height:96px; flex:0 0 auto; }
   .pop-submit{ position:absolute; left:50%; bottom:24px; transform:translate(-50%,140%); opacity:0; transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease; pointer-events:none; background:var(--primary); color:var(--on-primary); border:none; border-radius:999px; padding:11px 27px; font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; }
   .pop-submit.visible{ transform:translate(-50%,0); opacity:1; pointer-events:auto; }
 
@@ -737,9 +714,9 @@
   .photo-thumb{ position:relative; width:56px; height:56px; }
   .photo-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:10px; border:1px solid var(--border); }
   .photo-thumb .rm{ position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#D98B8B; color:#1B262C; border:none; font-size:11px; cursor:pointer; line-height:1; }
+  .device.lang-fa .photo-thumb .rm{ right:auto; left:-6px; }
   .photo-add-btn{ width:56px; height:56px; border-radius:10px; border:1.5px dashed var(--border); background:var(--bg-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
   .photo-add-btn svg{ width:18px; height:18px; }
-  .pin-badge{ width:13px; height:13px; fill:#E0B95C; flex:0 0 auto; }
   .task-title-wrap{ display:flex; align-items:center; gap:5px; flex:1; min-width:0; }
   .task-title-wrap .item-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .star-mini{ position:relative; background:none; border:none; cursor:pointer; padding:2px; flex:0 0 auto; display:flex; }
@@ -768,6 +745,7 @@
   .event-time{ font-size:11px; font-weight:700; color:var(--primary); margin-bottom:4px; }
   .event-title{ font-size:12px; font-weight:600; margin:0; line-height:1.3; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .event-del{ position:absolute; top:6px; right:6px; width:20px; height:20px; border-radius:7px; background:rgba(0,0,0,0.25); border:none; }
+  .device.lang-fa .event-del{ right:auto; left:6px; }
   .event-del::before{ content:''; position:absolute; inset:-5px; }
   .event-del svg{ width:10px; height:10px; }
 
@@ -796,16 +774,12 @@
   .desc-wrap textarea::placeholder{ color:var(--text-muted); }
   .desc-wrap textarea:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
   .desc-clip-btn{ position:absolute; left:10px; bottom:10px; width:28px; height:28px; border-radius:9px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
+  .device.lang-fa .desc-clip-btn{ left:auto; right:10px; }
   .desc-clip-btn svg{ width:14px; height:14px; }
   .desc-clip-btn.has-files{ color:var(--primary); border-color:var(--primary); }
 
   /* ===== Menu page ===== */
-  .menu-row{ display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--border); border-radius:18px; padding:14px 16px; margin-bottom:16px; cursor:pointer; }
   .menu-avatar{ width:48px; height:48px; border-radius:50%; background:var(--primary); color:var(--on-primary); font-weight:700; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
-  .menu-row-text{ flex:1; min-width:0; }
-  .menu-row-title{ font-size:15px; font-weight:700; }
-  .menu-row-sub{ font-size:12px; color:var(--text-muted); margin-top:1px; }
-  .menu-row svg{ width:16px; height:16px; fill:var(--text-muted); flex:0 0 auto; }
   .menu-list{ display:flex; flex-direction:column; gap:12px; }
   .menu-item-row.disabled{ cursor:default; opacity:.55; }
   .menu-item-row .soon-badge{ font-size:11px; font-weight:700; color:var(--text-muted); background:var(--bg-soft); padding:3px 10px; border-radius:999px; white-space:nowrap; flex:0 0 auto; }
@@ -839,17 +813,10 @@
   .period-legend-item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); }
   .period-legend-item .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
 
-  .period-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-  .period-card-controls{ display:flex; align-items:center; gap:10px; }
-  .period-off-hint{ font-size:12.5px; color:var(--text-muted); padding:10px 0 2px 0; }
-
-  .article-row{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:13px 15px; cursor:pointer; margin-bottom:8px; }
   .article-row-icon{ width:32px; height:32px; border-radius:10px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
   .article-row-icon svg{ width:16px; height:16px; }
-  .article-row-text{ flex:1; min-width:0; }
   .article-row-title{ font-size:13.5px; font-weight:700; }
   .article-row-desc{ font-size:12px; color:var(--text-muted); margin-top:2px; }
-  .article-row > svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
   .settings-row > svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
   /* Horizontal card row for the period pane's articles — same scroll
      pattern as .events-scroll, used only when there are enough
@@ -863,7 +830,6 @@
   .article-card .article-row-desc{ font-size:12px; color:var(--text-muted); margin-top:4px; }
 
   .tips-card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; min-height:78px; display:flex; flex-direction:column; justify-content:center; }
-  .tips-card-title{ font-size:12px; font-weight:700; color:var(--primary); margin-bottom:6px; }
   .tips-card-text{ font-size:13px; line-height:1.6; color:var(--text); }
   .tips-card-text .caret{ display:inline-block; width:2px; height:1em; background:var(--primary); margin-inline-start:2px; vertical-align:-2px; animation:caret-blink 1s step-end infinite; }
   @keyframes caret-blink{ 50%{ opacity:0; } }
@@ -942,7 +908,6 @@
   .share-option span{ font-size:12px; font-weight:600; }
 
   .about-logo{ width:64px; height:64px; border-radius:20px; background:var(--primary); color:var(--on-primary); font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:6px auto 10px auto; }
-  .about-desc-editor{ width:100%; min-height:120px; resize:vertical; font-family:inherit; font-size:14px; padding:10px; border-radius:12px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text); }
   .about-name{ text-align:center; font-size:17px; font-weight:700; }
   .about-version{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2px; margin-bottom:14px; }
   .about-links{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
@@ -961,6 +926,8 @@
   .switch .knob{ position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; background:var(--text-muted); transition:right .2s ease, background .2s ease; }
   .switch.on{ background:var(--primary-soft); }
   .switch.on .knob{ right:22px; background:var(--primary); }
+  .device.lang-fa .switch .knob{ right:auto; left:2px; }
+  .device.lang-fa .switch.on .knob{ right:auto; left:22px; }
 
   /* ===== auth screen ===== */
   .btn-primary{ background:var(--primary); color:var(--on-primary); }
@@ -1050,7 +1017,6 @@
          — it anchors to #cal-content's bottom instead, see
          updateNav(). */
     }
-    #page-menu{ display:none; }
     /* Desktop shows the full #page-calendar column instead of this
        compact widget inside #page-home. */
     .home-cal-widget{ display:none; }
@@ -3278,7 +3244,6 @@ function wireMenuInteractivity(){
   document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; scheduleProfileSave(); });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; Cloud.saveSettings(state.settings).catch(()=>{}); render(); });
-  document.getElementById('about-text-editor')?.addEventListener('input', e => { state.aboutText[lang()] = e.target.value; });
   document.getElementById('primary-calendar-select')?.addEventListener('change', e => {
     state.settings.calendarSystem = e.target.value;
     state.monthDropdownOpen = false; state.yearDropdownOpen = false;
@@ -3490,7 +3455,7 @@ function updateNav(){
      the click handler in initFabAndMenuInteractions() for the behavior. */
   const fab = document.getElementById('fab-add');
   const inStoreOrAdmin = state.menuPanelOpen && (state.menuSubView === 'store' || state.menuSubView === 'admin');
-  fab.setAttribute('aria-label', inStoreOrAdmin ? 'Calendar' : 'Add');
+  fab.setAttribute('aria-label', inStoreOrAdmin ? t('calendar') : t('add'));
   fab.innerHTML = inStoreOrAdmin ? ICONS.calendarIcon
     : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>';
 
@@ -3868,7 +3833,6 @@ function renderPopupBody(){
   });
 }
 function wireMainFormInteractivity(){
-  document.getElementById('f-category')?.addEventListener('input', e => { formDraft.category = e.target.value; });
   document.getElementById('f-description')?.addEventListener('input', e => { formDraft.description = e.target.value; });
   document.getElementById('desc-clip-btn')?.addEventListener('click', () => document.getElementById('f-photo-input').click());
   document.getElementById('f-photo-input')?.addEventListener('change', (e) => {
@@ -3984,17 +3948,18 @@ document.getElementById('device').addEventListener('click', (e) => {
   const action = el.dataset.action;
 
   if(action === 'toggle-task'){
-    const t = state.tasks.find(x=>x.id===el.dataset.id);
-    applyQuicksetState(el, !t.done);
+    const task = state.tasks.find(x=>x.id===el.dataset.id);
+    if(!task) return;
+    applyQuicksetState(el, !task.done);
     return;
   }
   if(action === 'toggle-habit'){
     const dk = el.dataset.date;
-    const h = state.habits.find(x=>x.id===el.dataset.id);
-    applyQuicksetState(el, !h.completedDates.includes(dk));
+    const habit = state.habits.find(x=>x.id===el.dataset.id);
+    if(!habit) return;
+    applyQuicksetState(el, !habit.completedDates.includes(dk));
     return;
   }
-  if(action === 'delete-habit'){ state.habits = state.habits.filter(x=>x.id!==el.dataset.id); Cloud.deleteHabit(el.dataset.id).catch(()=>{}); render(); return; }
   if(action === 'delete-event'){ state.events = state.events.filter(x=>x.id!==el.dataset.id); Cloud.deleteEvent(el.dataset.id).catch(()=>{}); render(); return; }
 
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
@@ -4023,17 +3988,6 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'close-subview'){ state.popupSubView = null; renderPopupBody(); return; }
   if(action === 'mini-cal-prev'){ miniCalCursor = stepMonth(miniCalCursor, -1); renderPopupBody(); return; }
   if(action === 'mini-cal-next'){ miniCalCursor = stepMonth(miniCalCursor, 1); renderPopupBody(); return; }
-  if(action === 'delete-popup-item'){
-    if(!state.editingId) return;
-    const type = state.popupType;
-    const id = state.editingId;
-    if(type === 'task'){ state.tasks = state.tasks.filter(x=>x.id!==id); Cloud.deleteTask(id).catch(()=>{}); }
-    if(type === 'habit'){ state.habits = state.habits.filter(x=>x.id!==id); Cloud.deleteHabit(id).catch(()=>{}); }
-    if(type === 'event'){ state.events = state.events.filter(x=>x.id!==id); Cloud.deleteEvent(id).catch(()=>{}); }
-    closePopup();
-    render();
-    return;
-  }
 
   if(action === 'pick-month'){ state.calCursor = setMonthOf(state.calCursor, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
   if(action === 'pick-year'){ state.calCursor = setYearOf(state.calCursor, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }
@@ -4239,7 +4193,6 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'toggle-setting'){ state.settings[el.dataset.key] = !state.settings[el.dataset.key]; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
-  if(action === 'set-week-start'){ state.settings.weekStartDay = el.dataset.val; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
   if(action === 'toggle-calendar-enabled'){
     const sys = el.dataset.val;
     const en = state.settings.calendarEnabled;
@@ -4264,12 +4217,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'share-copy'){
     try{ navigator.clipboard.writeText('https://avand.app'); }catch(err){}
     const fb = document.getElementById('share-feedback');
-    if(fb){ fb.textContent = 'Link copied'; fb.style.display = 'block'; setTimeout(()=>{ fb.style.display='none'; }, 1500); }
-    return;
-  }
-  if(action === 'share-generic'){
-    const fb = document.getElementById('share-feedback');
-    if(fb){ fb.textContent = "Sharing isn't available in this prototype"; fb.style.display = 'block'; setTimeout(()=>{ fb.style.display='none'; }, 1800); }
+    if(fb){ fb.textContent = t('linkCopied'); fb.style.display = 'block'; setTimeout(()=>{ fb.style.display='none'; }, 1500); }
     return;
   }
   if(action === 'pick-day'){
@@ -4495,8 +4443,8 @@ function showRowContextMenu(x, y, type, id, wrap){
     else if(action === 'undone' && cb) applyQuicksetState(cb, false, true);
     else if(action === 'edit') openPopup(type, wrap, findItem(type, id));
     else if(action === 'delete'){
-      if(type === 'task') state.tasks = state.tasks.filter(x => x.id !== id);
-      if(type === 'habit') state.habits = state.habits.filter(x => x.id !== id);
+      if(type === 'task'){ state.tasks = state.tasks.filter(x => x.id !== id); Cloud.deleteTask(id).catch(()=>{}); }
+      if(type === 'habit'){ state.habits = state.habits.filter(x => x.id !== id); Cloud.deleteHabit(id).catch(()=>{}); }
       render();
     }
     closeRowContextMenu();
@@ -5144,6 +5092,7 @@ async function boot(){
     render();
     return;
   }
+  Cloud.consumeOAuthRedirect();
   state.booting = Cloud.hasSession();
   state.bootError = null;
   sessionJustExpired = false;
