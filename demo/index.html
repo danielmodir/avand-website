@@ -348,8 +348,8 @@
   }
   .desktop-box-topbar{ flex:0 0 auto; display:flex; justify-content:flex-start; padding:10px 10px 0 10px; }
   .device.lang-fa .desktop-box-topbar{ justify-content:flex-end; }
-  .desktop-box-title-group{ display:flex; align-items:center; gap:4px; }
-  .desktop-box-title{ flex:0 1 auto; text-align:left; font-size:13px; font-weight:700; color:var(--text-muted); }
+  .desktop-box-title-group{ position:relative; display:flex; align-items:center; gap:4px; }
+  .desktop-box-title{ flex:0 1 auto; text-align:left; font-size:13px; font-weight:700; color:var(--text-muted); cursor:pointer; }
   .device.lang-fa .desktop-box-title{ text-align:right; }
   .desktop-nav-arrow{ flex:0 0 auto; width:24px; height:24px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:color .2s ease; }
   .desktop-nav-arrow svg{ width:14px; height:14px; }
@@ -1946,6 +1946,7 @@ const state = {
      calendar vs. the mobile/home one) it belongs to. */
   secDropdown: { kind: null, sys: null, home: false },
   dobPickerOpen: false,
+  desktopTitleMenuOpen: false,
   editingId: null,
   sectionExpanded: { tasks:false, habits:false, events:false },
   /* Mobile-only (<960px): a non-empty section is shown by default, this
@@ -2205,8 +2206,13 @@ function renderDesktops(d, data){
       <div class="desktop-box-topbar">
         <div class="desktop-box-title-group">
           <button type="button" class="desktop-nav-arrow ${atStart?'disabled':''}" data-action="desktop-step" data-dir="-1" aria-label="${t('prev')}">${ICONS.chevronLeft}</button>
-          <div class="desktop-box-title" id="desktop-box-title">${t(activeKey)}</div>
+          <div class="desktop-box-title" id="desktop-box-title" data-action="toggle-desktop-title-menu">${t(activeKey)}</div>
           <button type="button" class="desktop-nav-arrow ${atEnd?'disabled':''}" data-action="desktop-step" data-dir="1" aria-label="${t('next')}">${ICONS.chevronRight}</button>
+          ${state.desktopTitleMenuOpen ? `
+            <div class="cal-dropdown" id="desktop-title-menu" style="top:calc(100% + 6px);">
+              ${panes.map((p,i) => `<div class="cal-dropdown-item ${i===state.activeDesktopIndex?'active':''}" data-action="goto-desktop" data-i="${i}">${t(p.key)}</div>`).join('')}
+            </div>
+          ` : ''}
         </div>
       </div>
       <div class="desktop-wrap" id="desktop-wrap">
@@ -4175,7 +4181,13 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'goto-desktop'){
+    state.desktopTitleMenuOpen = false;
     goToDesktopIndex(Number(el.dataset.i));
+    return;
+  }
+  if(action === 'toggle-desktop-title-menu'){
+    state.desktopTitleMenuOpen = !state.desktopTitleMenuOpen;
+    render();
     return;
   }
   if(action === 'desktop-step'){
