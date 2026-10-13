@@ -314,16 +314,15 @@
   .app-banner-bg.has-image{ opacity:1; }
   .app-banner-mark{
     position:relative; flex:0 0 auto; width:46px; height:46px; border-radius:50%;
-    background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;
+    display:flex; align-items:center; justify-content:center;
     cursor:pointer;
   }
-  .app-banner-mark img{ width:62%; height:62%; display:block; }
-  /* The mark is black-ink-on-transparent; dark theme's --on-primary is
-     black too (orange --primary needs black for contrast, same
-     accessible-pair reasoning as tokens.css/.day-cell.selected), so it
-     needs no filter there — only light theme (navy --primary, white
-     --on-primary) inverts it to white. */
-  :root[data-theme="light"] .app-banner-mark img{ filter:invert(1); }
+  /* Same navy-circle/orange-mark badge as the marketing site's header
+     (assets/icons/logo.svg) — fills the slot completely instead of a
+     CSS-drawn translucent circle behind a flat, circle-less mark, and
+     needs no theme-swap filter since the banner itself is always
+     orange regardless of app theme. */
+  .app-banner-mark img{ width:100%; height:100%; display:block; }
   .app-banner-title{ position:relative; color:var(--on-primary); font-weight:800; font-size:17px; letter-spacing:-0.2px; }
   /* Mobile: flush to the top/left/right edge (no gap, square top corners
      since it's touching the device edge there) instead of floating with
@@ -1152,7 +1151,7 @@
        Hidden via CSS while the Menu panel is open (.device.show-menu). -->
   <div class="app-banner" id="app-banner">
     <div class="app-banner-bg" id="app-banner-bg"></div>
-    <div class="app-banner-mark" data-action="go-landing" role="link" aria-label="Toojibee"><img src="../assets/icons/logo-mark.png" alt=""></div>
+    <div class="app-banner-mark" data-action="go-landing" role="link" aria-label="Toojibee"><img src="../assets/icons/logo.svg" alt=""></div>
     <div class="app-banner-title">Toojibee</div>
   </div>
 
