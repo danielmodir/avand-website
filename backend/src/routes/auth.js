@@ -1,80 +1,64 @@
+const crypto = require('crypto');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../db/pool');
+const env = require('../config/env');
+const { query, transaction } = require('../db/pool');
 const { hashToken, requireAuth } = require('../middleware/auth');
+const { HttpError } = require('../utils/http');
 
 const router = express.Router();
-const SESSION_DAYS = 30;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 12);
 
-function issueSession(userId) {
-  const token = jwt.sign({ sub: userId }, process.env.JWT_SECRET, { expiresIn: `${SESSION_DAYS}d` });
+async function createSession(conn, userId, userAgent) {
+  const token = jwt.sign({ sub: userId }, env.jwtSecret, { expiresIn: `${env.sessionDays}d` });
+  await conn.execute(
+    `INSERT INTO sessions (id, user_id, token_hash, user_agent, expires_at)
+     VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? DAY))`,
+    [crypto.randomUUID(), userId, hashToken(token), (userAgent || '').slice(0, 255) || null, env.sessionDays]
+  );
   return token;
 }
 
 router.post('/register', async (req, res) => {
-  const { email, password, name } = req.body || {};
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: 'email, password, and name are required' });
-  }
-  if (password.length < 8) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters' });
-  }
+  const { email, password, firstName = '', lastName = '' } = req.body || {};
+  if (typeof email !== 'string' || !EMAIL_RE.test(email)) throw new HttpError(400, 'A valid email is required');
+  if (typeof password !== 'string' || password.length < 8) throw new HttpError(400, 'Password must be at least 8 characters');
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const client = await pool.connect();
+  const userId = crypto.randomUUID();
   try {
-    await client.query('begin');
-    const { rows } = await client.query(
-      `insert into users (email, password_hash, name) values ($1, $2, $3)
-       returning id, email, name, avatar_url`,
-      [email.toLowerCase(), passwordHash, name]
-    );
-    const user = rows[0];
-    await client.query('insert into user_settings (user_id) values ($1)', [user.id]);
-
-    const token = issueSession(user.id);
-    await client.query(
-      `insert into sessions (user_id, token_hash, user_agent, expires_at)
-       values ($1, $2, $3, now() + interval '${SESSION_DAYS} days')`,
-      [user.id, hashToken(token), req.headers['user-agent'] || null]
-    );
-    await client.query('commit');
-    res.status(201).json({ token, user });
+    const token = await transaction(async (conn) => {
+      await conn.execute('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)', [userId, email.trim(), passwordHash]);
+      await conn.execute('INSERT INTO profiles (user_id, first_name, last_name) VALUES (?, ?, ?)', [userId, String(firstName).slice(0, 100), String(lastName).slice(0, 100)]);
+      await conn.execute('INSERT INTO user_settings (user_id) VALUES (?)', [userId]);
+      return createSession(conn, userId, req.headers['user-agent']);
+    });
+    res.status(201).json({ token, userId });
   } catch (err) {
-    await client.query('rollback');
-    if (err.code === '23505') return res.status(409).json({ error: 'Email already registered' });
+    if (err.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'Email already registered');
     throw err;
-  } finally {
-    client.release();
   }
 });
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'email and password are required' });
+  if (typeof email !== 'string' || typeof password !== 'string') throw new HttpError(400, 'email and password are required');
 
-  const { rows } = await pool.query(
-    'select id, email, name, avatar_url, password_hash from users where email = $1',
-    [email.toLowerCase()]
-  );
-  const user = rows[0];
-  const valid = user && (await bcrypt.compare(password, user.password_hash));
-  if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+  const rows = await query('SELECT id, password_hash FROM users WHERE email = ?', [email.trim()]);
+  // Compare against a dummy hash when the email is unknown, so response
+  // time does not reveal which emails are registered.
+  const hash = rows[0]?.password_hash || DUMMY_HASH;
+  const valid = await bcrypt.compare(password, hash);
+  if (!rows[0] || !valid) throw new HttpError(401, 'Invalid email or password');
 
-  const token = issueSession(user.id);
-  await pool.query(
-    `insert into sessions (user_id, token_hash, user_agent, expires_at)
-     values ($1, $2, $3, now() + interval '${SESSION_DAYS} days')`,
-    [user.id, hashToken(token), req.headers['user-agent'] || null]
-  );
-  delete user.password_hash;
-  res.json({ token, user });
+  const token = await transaction((conn) => createSession(conn, rows[0].id, req.headers['user-agent']));
+  res.json({ token, userId: rows[0].id });
 });
 
 router.post('/logout', requireAuth, async (req, res) => {
-  const token = req.headers.authorization.slice(7);
-  await pool.query('delete from sessions where token_hash = $1', [hashToken(token)]);
+  await query('DELETE FROM sessions WHERE token_hash = ?', [hashToken(req.token)]);
   res.status(204).end();
 });
 

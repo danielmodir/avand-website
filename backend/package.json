@@ -1,14 +1,15 @@
 {
-  "name": "avand-backend",
+  "name": "toojibee-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "REST API for Avand. Not deployed or wired to the static site yet — see README.md.",
+  "description": "REST API for Toojibee on MySQL. Not deployed yet; the demo still uses Supabase. See README.md.",
   "type": "commonjs",
-  "main": "src/app.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "node --watch src/app.js",
-    "migrate": "node scripts/migrate.js"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,6 +18,9 @@
     "express": "^4.19.2",
     "express-async-errors": "^3.1.1",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.12.0"
+    "mysql2": "^3.24.6"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

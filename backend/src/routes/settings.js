@@ -1,31 +1,40 @@
 const express = require('express');
-const { pool } = require('../db/pool');
+const { query } = require('../db/pool');
 const { requireAuth } = require('../middleware/auth');
+const { toColumns, fromRow } = require('../utils/mapper');
+const { HttpError } = require('../utils/http');
 
 const router = express.Router();
 router.use(requireAuth);
 
-const FIELDS = [
-  'language', 'calendar_system', 'week_start_day',
-  'notifications_enabled', 'show_add_menu_labels', 'theme'
-];
+const fields = {
+  language:          { col: 'language', oneOf: ['fa', 'en'] },
+  calendarSystem:    { col: 'calendar_system', oneOf: ['jalali', 'gregorian', 'hijri'] },
+  weekStartDay:      { col: 'week_start_day', oneOf: ['saturday', 'sunday', 'monday'] },
+  notifications:     { col: 'notifications', type: 'bool' },
+  showAddMenuLabels: { col: 'show_add_menu_labels', type: 'bool' },
+  theme:             { col: 'theme', oneOf: ['dark', 'light'] },
+};
 
 router.get('/', async (req, res) => {
-  const { rows } = await pool.query('select * from user_settings where user_id = $1', [req.userId]);
-  res.json(rows[0]);
+  const rows = await query(
+    `SELECT user_id AS id, ${Object.values(fields).map((f) => f.col).join(', ')} FROM user_settings WHERE user_id = ?`,
+    [req.userId]
+  );
+  if (!rows[0]) throw new HttpError(404, 'Settings not found');
+  const { id, ...settings } = fromRow(rows[0], fields);
+  res.json(settings);
 });
 
 router.patch('/', async (req, res) => {
-  const updates = Object.keys(req.body || {}).filter((k) => FIELDS.includes(k));
-  if (updates.length === 0) return res.status(400).json({ error: 'No valid settings fields provided' });
-
-  const setClause = updates.map((field, i) => `${field} = $${i + 2}`).join(', ');
-  const values = updates.map((field) => req.body[field]);
-  const { rows } = await pool.query(
-    `update user_settings set ${setClause}, updated_at = now() where user_id = $1 returning *`,
-    [req.userId, ...values]
+  const cols = toColumns(req.body || {}, fields);
+  const names = Object.keys(cols);
+  if (names.length === 0) throw new HttpError(400, 'No valid settings fields provided');
+  await query(
+    `UPDATE user_settings SET ${names.map((c) => `${c} = ?`).join(', ')} WHERE user_id = ?`,
+    [...names.map((c) => cols[c]), req.userId]
   );
-  res.json(rows[0]);
+  res.status(204).end();
 });
 
 module.exports = router;

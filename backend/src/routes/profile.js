@@ -1,37 +1,51 @@
 const express = require('express');
-const { pool } = require('../db/pool');
+const { query } = require('../db/pool');
 const { requireAuth } = require('../middleware/auth');
+const { toColumns, fromRow } = require('../utils/mapper');
+const { HttpError } = require('../utils/http');
 
 const router = express.Router();
 router.use(requireAuth);
 
+const fields = {
+  firstName: { col: 'first_name', max: 100 },
+  lastName:  { col: 'last_name', max: 100 },
+  username:  { col: 'username', max: 50 },
+  phone:     { col: 'phone', max: 30 },
+  gender:    { col: 'gender', oneOf: ['male', 'female'] },
+  dob:       { col: 'dob', type: 'date' },
+  photo:     { col: 'photo_url' },
+};
+
 router.get('/', async (req, res) => {
-  const { rows } = await pool.query(
-    `select
-       u.id, u.email, u.name, u.avatar_url,
-       (select count(*) from tasks where user_id = u.id and done) as tasks_done,
-       (select count(*) from habits where user_id = u.id) as habit_count,
-       (select count(*) from habit_completions hc
-          join habits h on h.id = hc.habit_id where h.user_id = u.id) as checkins
-     from users u where u.id = $1`,
+  const rows = await query(
+    `SELECT p.user_id AS id, u.email, ${Object.values(fields).map((f) => 'p.' + f.col).join(', ')}
+     FROM profiles p JOIN users u ON u.id = p.user_id WHERE p.user_id = ?`,
     [req.userId]
   );
-  res.json(rows[0]);
+  if (!rows[0]) throw new HttpError(404, 'Profile not found');
+  res.json({ ...fromRow(rows[0], fields), email: rows[0].email });
 });
 
 router.patch('/', async (req, res) => {
-  const { name, avatar_url } = req.body || {};
-  const { rows } = await pool.query(
-    `update users set name = coalesce($2, name), avatar_url = coalesce($3, avatar_url)
-     where id = $1 returning id, email, name, avatar_url`,
-    [req.userId, name ?? null, avatar_url ?? null]
-  );
-  res.json(rows[0]);
-});
-
-// avatar_url = null explicitly removes the photo (falls back to initials in the UI)
-router.delete('/avatar', async (req, res) => {
-  await pool.query('update users set avatar_url = null where id = $1', [req.userId]);
+  const body = { ...(req.body || {}) };
+  if (body.gender === '') body.gender = null;       // client uses '' for "not set"
+  if (body.username === '') body.username = null;
+  if (body.username && !/^[a-z0-9_.]{3,50}$/i.test(body.username)) {
+    throw new HttpError(400, 'Username may only contain letters, digits, _ and .');
+  }
+  const cols = toColumns(body, fields);
+  const names = Object.keys(cols);
+  if (names.length === 0) throw new HttpError(400, 'No valid fields provided');
+  try {
+    await query(
+      `UPDATE profiles SET ${names.map((c) => `${c} = ?`).join(', ')} WHERE user_id = ?`,
+      [...names.map((c) => cols[c]), req.userId]
+    );
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'Username is taken');
+    throw err;
+  }
   res.status(204).end();
 });
 

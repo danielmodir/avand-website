@@ -1,37 +1,30 @@
-require('dotenv').config();
-require('express-async-errors'); // lets the async route handlers below just `throw`/reject
+// Builds the Express app without listening, so tests can mount it
+// directly. src/server.js is the process entry point.
+require('express-async-errors'); // lets async handlers just throw
 
 const express = require('express');
 const cors = require('cors');
-
-const authRoutes = require('./routes/auth');
-const profileRoutes = require('./routes/profile');
-const settingsRoutes = require('./routes/settings');
-const taskRoutes = require('./routes/tasks');
-const habitRoutes = require('./routes/habits');
-const eventRoutes = require('./routes/events');
+const env = require('./config/env');
+const { notFound, errorHandler } = require('./middleware/errors');
 
 const app = express();
 
-app.use(cors({ origin: (process.env.CORS_ORIGIN || '').split(',').filter(Boolean) }));
-app.use(express.json({ limit: '1mb' }));
+app.disable('x-powered-by');
+app.use(cors({ origin: env.corsOrigins }));
+// 6 MB: a task can carry up to three photos as data URLs.
+app.use(express.json({ limit: '6mb' }));
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/habits', habitRoutes);
-app.use('/api/events', eventRoutes);
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/profile', require('./routes/profile'));
+app.use('/api/settings', require('./routes/settings'));
+app.use('/api/tasks', require('./routes/tasks'));
+app.use('/api/habits', require('./routes/habits'));
+app.use('/api/events', require('./routes/events'));
+app.use('/api/connections', require('./routes/connections'));
 
-app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+app.use(notFound);
+app.use(errorHandler);
 
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`Avand API listening on :${port}`));
+module.exports = app;

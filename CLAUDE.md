@@ -7,6 +7,19 @@ a time-based personal-development app.
 Two primary CTAs: web app and "Download for Android". Project docs are in /docs.
 Read the relevant doc before any big change.
 
+## Repo layout (2026-10-14)
+- frontend/ — everything that is published (GitHub Pages deploys only this
+  folder via .github/workflows/pages.yml). Site-root paths below such as
+  /assets/ or /demo/ mean frontend/assets/, frontend/demo/.
+  - frontend/demo/ — the app prototype, split into css/, js/core/,
+    js/services/cloud.js, js/app.js and components/<name>/ (html partial +
+    css + js per component). See frontend/demo/README.md before editing.
+- backend/ — Express + MySQL API (mysql2), not deployed; see backend/README.md.
+- database/ — MySQL schema: migrations/ (source of truth), seeds/, schema.sql.
+- docs/ — product docs, SPEC.md, DEPLOY.md.
+- The "no npm packages" rule below is about the published frontend only;
+  backend/ is a normal Node project with its own package.json.
+
 ## Hard rules
 - Plain HTML, CSS and vanilla JS. No frameworks, no npm packages, no build step.
 - ZERO external requests at runtime: no CDNs, no Google Fonts, no analytics, no
@@ -23,7 +36,7 @@ Read the relevant doc before any big change.
   dataset, /assets/data/occasions.json — a one-time download of
   github.com/BaseMax/persian-holidays-api's holidays.json (238 entries, Jalali/
   Gregorian/Hijri), fetched once from this app's own origin at boot and cached in
-  memory (loadOccasionsData() in demo/index.html). Not a live third-party API call —
+  memory (loadOccasionsData() in demo/js/core/occasions.js). Not a live third-party API call —
   that would break the zero-external-requests rule above.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.
   Never hardcode colors anywhere else.
@@ -35,10 +48,10 @@ Read the relevant doc before any big change.
   marketing site (outside /demo/) must still never describe it as the finished product.
   The visible "this is a preview" banner was removed by explicit product decision (SPEC.md §11.9).
   Status (conscious exception, 2026-10-06): /demo/ now makes real requests to the project's
-  own Supabase backend (demo/cloud.js — plain fetch, no SDK, no CDN) for auth, profile,
+  own Supabase backend (demo/js/services/cloud.js — plain fetch, no SDK, no CDN) for auth, profile,
   settings, tasks, habits and events, so the prototype is a real, usable, multi-device app
   instead of in-memory fake data. This was a deliberate decision made with the repo owner,
-  not a drift — see backend/README.md for why the old /backend/ Express+pg code is now
+  not a drift — see backend/README.md: /backend/ (now Express+MySQL, see database/) is still
   superseded by Supabase rather than ever being deployed itself. Store/Period still have
   no backend and stay demo-only fakes. Connections (2026-10-08) is also real now — a
   `connections` table + SECURITY DEFINER RPCs (search_user, send_connection_request,
