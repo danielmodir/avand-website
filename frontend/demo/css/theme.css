@@ -220,12 +220,8 @@ body{
 .section-title{ letter-spacing:-0.01em; }
 .section-title .count{ background:var(--primary-soft); color:var(--primary); }
 
-/* ---- entrance motion ---- */
-@keyframes theme-rise{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
-.desktop-box, .stat-card{ animation:theme-rise .55s var(--ease-spring) both; }
-.desktop-box{ animation-delay:.06s; }
-.stat-card{ animation-delay:.12s; }
+/* No entrance animation on panels: render() rebuilds them on every click,
+   so it replayed each time and the workspace looked like it reloaded. */
 @media (prefers-reduced-motion:reduce){
-  .desktop-box, .stat-card{ animation:none; }
   .fab-add:hover, .btn-primary:hover, .pop-submit:hover, .day-cell:hover{ transform:none; }
 }
