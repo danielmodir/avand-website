@@ -4,6 +4,12 @@ REST API for the data the `/demo/` app keeps: auth, profile, settings,
 tasks, habits, events and connections (friends). The schema lives in
 `../database/`.
 
+> **Status (2026-10-15):** the databases were redesigned as one MySQL
+> database per module (see `../database/README.md`) and `scripts/db.js`
+> (`npm run db:setup / db:migrate / db:status / db:seed`) manages them.
+> The route code in `src/` still targets the earlier single-database schema
+> and is being rewritten module by module (`src/modules/<module>/`).
+
 **Not deployed and not wired to the demo yet.** The demo still talks to
 Supabase through `frontend/demo/js/services/cloud.js`. Switching it over
 means pointing those `Cloud.*` functions at this API; the request and
@@ -33,16 +39,15 @@ backend/
       tasks.js habits.js events.js
       connections.js     friends: list, search, request, respond, remove, block
   scripts/
-    migrate.js           applies ../database/migrations
-    seed.js              loads ../database/seeds (refuses in production)
+    db.js                setup / migrate / status / seed for every database in ../database
 ```
 
 ## Running locally
 
-1. MySQL 8.0.16+ with an empty database (see `../database/README.md`).
-2. `cp .env.example .env`, then fill in `DATABASE_URL` and a 32+ character `JWT_SECRET`.
+1. MySQL 8.0.19+.
+2. `cp .env.example .env` and fill in the database passwords and secrets.
 3. `npm install`
-4. `npm run migrate`, and optionally `npm run seed`
+4. `npm run db:setup` (once per server), `npm run db:migrate`, optionally `npm run db:seed`
 5. `npm run dev` (or `npm start`), then `curl http://localhost:4000/health`
 
 ## Endpoints

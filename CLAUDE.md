@@ -15,7 +15,9 @@ Read the relevant doc before any big change.
     js/services/cloud.js, js/app.js and components/<name>/ (html partial +
     css + js per component). See frontend/demo/README.md before editing.
 - backend/ — Express + MySQL API (mysql2), not deployed; see backend/README.md.
-- database/ — MySQL schema: migrations/ (source of truth), seeds/, schema.sql.
+- database/ — one MySQL database per module (core, planning, period, social,
+  notifications), each folder with migrations/ and seeds/; see database/README.md
+  and docs/DATABASE-PLAN.md. Managed by backend/scripts/db.js.
 - docs/ — product docs, SPEC.md, DEPLOY.md.
 - The "no npm packages" rule below is about the published frontend only;
   backend/ is a normal Node project with its own package.json.

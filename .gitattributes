@@ -1,0 +1,3 @@
+# SQL migrations are checksummed once applied; keep their bytes identical
+# on every machine.
+*.sql text eol=lf
