@@ -1,0 +1,231 @@
+/* ============ THEME: landing-page look for the app ============
+   Loaded LAST (after every component stylesheet) and only changes
+   surfaces, not layout: backgrounds, borders, shadows, glass blur and
+   motion. Same brand colors as before; what it adds is the marketing
+   site's soft-UI layer (frontend/assets/css/tokens.css: --gradient-glow,
+   --shadow-soft-*, --shadow-glow, spring easing), so the app and the
+   landing read as one product. Remove this one <link> to get the old
+   flat look back. */
+
+:root{
+  --ease-spring:cubic-bezier(.22,1,.36,1);
+  --ease-standard:cubic-bezier(.4,0,.2,1);
+
+  /* Dark (default) */
+  --glow-orange:rgba(252,163,17,0.20);
+  --glow-navy:rgba(40,66,122,0.45);
+  --surface-1:linear-gradient(160deg, rgba(28,44,80,0.92) 0%, rgba(16,26,48,0.92) 100%);
+  --surface-2:linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%);
+  --surface-solid:linear-gradient(165deg, #1C2C50 0%, #121D36 60%, #0E172B 100%);
+  --surface-panel:linear-gradient(170deg, rgba(26,42,78,0.78) 0%, rgba(14,22,42,0.82) 55%, rgba(10,15,28,0.88) 100%);
+  --edge:rgba(255,255,255,0.09);
+  --edge-strong:rgba(255,255,255,0.16);
+  --edge-highlight:inset 0 1px 0 rgba(255,255,255,0.07);
+  --shadow-soft-sm:0 2px 10px rgba(0,0,0,0.30);
+  --shadow-soft-lg:0 28px 70px -18px rgba(0,0,0,0.60);
+  --shadow-glow:0 0 0 1px rgba(252,163,17,0.24), 0 14px 36px -12px rgba(252,163,17,0.55);
+  --gradient-brand:linear-gradient(135deg, #FCA311 0%, #E8890A 100%);
+  --banner-bg:
+    radial-gradient(120% 180% at 100% 0%, rgba(252,163,17,0.38) 0%, transparent 55%),
+    linear-gradient(135deg, #1C2C52 0%, #14213D 55%, #0B1326 100%);
+  --glass:rgba(13,17,28,0.62);
+  --glow-accent:0 4px 12px -2px rgba(252,163,17,0.55);
+  --glow-today:0 0 0 1px rgba(252,163,17,0.35), 0 10px 24px -10px rgba(252,163,17,0.75);
+  --glow-switch:0 6px 16px -6px rgba(252,163,17,0.7);
+  --glow-mark:0 0 0 3px rgba(252,163,17,0.35), 0 8px 20px -6px rgba(252,163,17,0.6);
+  --shadow-hover:0 10px 26px -12px rgba(0,0,0,0.55);
+  --banner-edge:rgba(255,255,255,0.10);
+  --on-banner:#FFFFFF;
+}
+:root[data-theme="light"]{
+  --glow-orange:rgba(252,163,17,0.22);
+  --glow-navy:rgba(20,33,61,0.10);
+  --surface-1:linear-gradient(160deg, #FFFFFF 0%, #F7F8FB 100%);
+  --surface-2:linear-gradient(160deg, rgba(20,33,61,0.04) 0%, rgba(20,33,61,0.015) 100%);
+  --surface-solid:linear-gradient(165deg, #FFFFFF 0%, #F6F7FA 100%);
+  --surface-panel:linear-gradient(170deg, rgba(255,255,255,0.92) 0%, rgba(246,247,250,0.92) 100%);
+  --edge:rgba(20,33,61,0.10);
+  --edge-strong:rgba(20,33,61,0.18);
+  --edge-highlight:inset 0 1px 0 rgba(255,255,255,0.9);
+  --shadow-soft-sm:0 2px 8px rgba(20,33,61,0.08);
+  --shadow-soft-lg:0 24px 60px -16px rgba(20,33,61,0.25);
+  --shadow-glow:0 0 0 1px rgba(20,33,61,0.10), 0 14px 32px -12px rgba(20,33,61,0.45);
+  --gradient-brand:linear-gradient(135deg, #1C2C52 0%, #14213D 100%);
+  --glass:rgba(255,255,255,0.72);
+  --glow-accent:0 4px 12px -2px rgba(20,33,61,0.4);
+  --glow-switch:0 6px 16px -6px rgba(20,33,61,0.5);
+  --shadow-hover:0 10px 24px -12px rgba(20,33,61,0.28);
+}
+
+/* ---- page background: the landing hero's warm glow ---- */
+body{
+  background:
+    radial-gradient(900px 600px at 85% -10%, var(--glow-orange), transparent 60%),
+    radial-gradient(800px 600px at -10% 110%, var(--glow-navy), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+.device{ background:transparent; }
+
+/* ---- header banner ---- */
+.app-banner{
+  background:var(--banner-bg);
+  border:1px solid var(--banner-edge);
+  box-shadow:var(--shadow-soft-lg), inset 0 1px 0 var(--banner-edge);
+  color:var(--on-banner);
+}
+.app-banner.has-image{ background:var(--card); }
+.app-banner-title{ color:var(--on-banner); letter-spacing:-0.01em; }
+.app-banner-mark{ box-shadow:var(--glow-mark); }
+
+/* ---- big panels (desktop calendar box, workspace box, menu, sheets) ---- */
+#page-calendar.page,
+.home-cal-widget,
+.desktop-box,
+#page-menu,
+.day-sheet{
+  background:var(--surface-panel);
+  border:1px solid var(--edge);
+  box-shadow:var(--shadow-soft-lg), var(--edge-highlight);
+}
+/* Blur only on panels that stay put. The menu and day sheet slide in with
+   transforms, and a backdrop-filter on an off-screen transformed element
+   flashes on screen for a frame in Chromium. */
+#page-calendar.page,
+.home-cal-widget,
+.desktop-box{
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+  backdrop-filter:blur(18px) saturate(140%);
+}
+#page-menu,
+.day-sheet{ background:var(--surface-solid); }
+
+/* ---- cards ---- */
+.stat-card,
+.desktop-manage-card,
+.store-card,
+.settings-row,
+.menu-item-row,
+.profile-stat,
+.share-option,
+.about-link-row,
+.occasion-row{
+  background:var(--surface-2);
+  border:1px solid var(--edge);
+  box-shadow:var(--edge-highlight);
+  transition:border-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard), transform .25s var(--ease-spring);
+}
+.stat-card{ background:var(--surface-1); box-shadow:var(--shadow-soft-sm), var(--edge-highlight); }
+.menu-item-row:not(.disabled):hover,
+.settings-row:hover,
+.store-card:hover,
+.desktop-manage-card:hover,
+.share-option:hover,
+.about-link-row:hover{
+  border-color:var(--edge-strong);
+  box-shadow:var(--shadow-soft-sm), var(--edge-highlight);
+  transform:translateY(-1px);
+}
+
+/* Task / habit rows. No transform here: the swipe-to-delete gesture
+   drives .item-card's transform itself. */
+.item-card{
+  background:var(--surface-1);
+  border:1px solid var(--edge);
+  box-shadow:var(--shadow-soft-sm), var(--edge-highlight);
+  transition:border-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard), opacity .2s var(--ease-standard);
+}
+@media (hover:hover){
+  .item-card:hover{ border-color:var(--edge-strong); box-shadow:var(--shadow-hover), var(--edge-highlight); }
+}
+.event-card{
+  background:var(--surface-1);
+  border:1px solid var(--edge);
+  box-shadow:var(--shadow-soft-sm), var(--edge-highlight);
+}
+.checkbox.checked{ box-shadow:0 0 0 4px var(--primary-soft), var(--glow-accent); }
+.subtask-row{ background:var(--surface-2); border-color:var(--edge); }
+
+/* ---- calendar ---- */
+.day-cell{ transition:background-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard), transform .2s var(--ease-spring); }
+@media (hover:hover){ .day-cell:hover{ transform:translateY(-1px); } }
+.day-cell.today{ box-shadow:var(--glow-today); }
+.day-cell.selected{ background-image:var(--gradient-brand); box-shadow:var(--shadow-glow); }
+.cal-mode-tabs{ background:var(--surface-2); border:1px solid var(--edge); }
+.cal-mode-tabs button.active{ background-image:var(--gradient-brand); box-shadow:var(--shadow-glow); }
+
+/* ---- toolbar: glass pill + glowing add button ---- */
+.toolbar-pill{
+  background:var(--glass);
+  border:1px solid var(--edge);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+  backdrop-filter:blur(16px) saturate(150%);
+  box-shadow:var(--shadow-soft-lg), var(--edge-highlight);
+}
+.fab-add{
+  background-image:var(--gradient-brand);
+  box-shadow:var(--shadow-glow);
+  transition:transform .25s var(--ease-spring), box-shadow .25s var(--ease-standard);
+}
+.fab-add:hover{ transform:translateY(-2px) scale(1.04); }
+.fab-add:active{ transform:scale(0.95); }
+.fab-menu .nav-add-item{
+  background:var(--glass);
+  border:1px solid var(--edge);
+  -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);
+  box-shadow:var(--shadow-soft-lg);
+}
+
+/* ---- buttons & fields ---- */
+.btn-primary,
+.pop-submit{
+  background-image:var(--gradient-brand);
+  box-shadow:var(--shadow-glow);
+  transition:transform .2s var(--ease-spring), box-shadow .2s var(--ease-standard), opacity .2s;
+}
+.btn-primary:hover,
+.pop-submit:hover{ transform:translateY(-2px); }
+.btn-primary:active,
+.pop-submit:active{ transform:scale(0.97); }
+.btn-outline,
+.icon-btn,
+.popup-icon-btn{ background:var(--surface-2); border-color:var(--edge); }
+.toggle-pair button.active,
+.weekday-picker button.active{ background-image:var(--gradient-brand); box-shadow:var(--shadow-glow); }
+.switch.on{ box-shadow:0 0 0 3px var(--primary-soft), var(--glow-switch); }
+.pop-field,
+.desc-wrap textarea,
+.search-capsule,
+.settings-select{ background:var(--surface-2); border-color:var(--edge); }
+
+/* ---- popups & overlays ---- */
+.popup-overlay,
+.menu-overlay,
+.period-quiz-overlay{
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
+}
+.add-popup,
+.period-quiz-sheet,
+.cal-dropdown,
+.dob-cal-popover,
+.row-context-menu{
+  background:var(--surface-solid);
+  border:1px solid var(--edge-strong);
+  box-shadow:var(--shadow-soft-lg), var(--edge-highlight);
+}
+
+/* ---- section titles: small accent bar like the landing's eyebrows ---- */
+.section-title{ letter-spacing:-0.01em; }
+.section-title .count{ background:var(--primary-soft); color:var(--primary); }
+
+/* ---- entrance motion ---- */
+@keyframes theme-rise{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+.desktop-box, .stat-card{ animation:theme-rise .55s var(--ease-spring) both; }
+.desktop-box{ animation-delay:.06s; }
+.stat-card{ animation-delay:.12s; }
+@media (prefers-reduced-motion:reduce){
+  .desktop-box, .stat-card{ animation:none; }
+  .fab-add:hover, .btn-primary:hover, .pop-submit:hover, .day-cell:hover{ transform:none; }
+}
