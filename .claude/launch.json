@@ -8,9 +8,9 @@
       "port": 8080
     },
     {
-      "name": "toojibee-api-sqlite",
+      "name": "toojibee-api",
       "runtimeExecutable": "backend/.venv/Scripts/python.exe",
-      "runtimeArgs": ["backend/manage.py", "runserver", "127.0.0.1:8000", "--settings=config.settings.test", "--noreload"],
+      "runtimeArgs": ["backend/manage.py", "runserver", "127.0.0.1:8000", "--noreload"],
       "port": 8000
     }
   ]

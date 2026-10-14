@@ -23,14 +23,26 @@ backend/
 
 ## Run locally
 
+Zero setup: no MySQL, no `.env` (SQLite in `local_data/`, development-only
+secrets from `config/settings/local.py`, the default for `manage.py`):
+
 ```
-python -m venv .venv && .venv/Scripts/activate      # Windows; source .venv/bin/activate elsewhere
-pip install -r requirements.txt
-cp .env.example .env                                  # fill it in, see database/README.md
-DJANGO_DB_ROLE=migrator python manage.py migrate_all
-python manage.py createsuperuser
-python manage.py runserver
+powershell -ExecutionPolicy Bypass -File backend\start-local.ps1
 ```
+
+The first run creates `.venv` and installs the requirements; then it
+migrates and serves http://127.0.0.1:8000 (`/health`, `/api/v1/…`,
+`/admin/`). Admin login: `.venv\Scripts\python.exe manage.py createsuperuser`.
+To use it from the demo, set `apiBase: 'http://127.0.0.1:8000/api/v1'` in
+`frontend/demo/js/config.js` (don't commit that) and serve the frontend on
+port 8080.
+
+Always use the project's Python (`.venv\Scripts\python.exe`); the system
+`python` has no Django installed.
+
+Against MySQL instead (as on the server): fill `.env` from `.env.example`,
+then `DJANGO_DB_ROLE=migrator python manage.py migrate_all --settings=config.settings.dev`
+and `python manage.py runserver --settings=config.settings.dev`.
 
 Tests (no MySQL needed, one SQLite file per module database):
 

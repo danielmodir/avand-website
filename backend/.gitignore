@@ -6,3 +6,4 @@ media/
 *.sqlite3
 staticfiles/
 test_media/
+local_data/
