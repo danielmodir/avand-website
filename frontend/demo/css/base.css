@@ -1,0 +1,155 @@
+/*
+  Self-hosted fonts (hard rule: no Google Fonts/CDN — CLAUDE.md). The
+  original prototype loaded Inter + Vazirmatn from fonts.googleapis.com;
+  that link was removed early on, but this file never actually declared
+  its own @font-face either (see tokens.css for the site's copy), so
+  'Inter' below was silently falling back to system-ui the whole time.
+  SG Kara (fa) replaced Vazirmatn at the repo owner's request — only one
+  weight (Light) exists, so bold/heading fa text is browser-synthesized
+  faux-bold; see assets/fonts/sg-kara/NOTE.txt for provenance.
+*/
+@font-face {
+  font-family: 'Inter';
+  src: url('../../assets/fonts/inter/Inter-Regular.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../../assets/fonts/inter/Inter-Medium.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../../assets/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../../assets/fonts/inter/Inter-Bold.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../../assets/fonts/inter/Inter-ExtraBold.woff2') format('woff2');
+  font-weight: 800; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'SG Kara';
+  src: url('../../assets/fonts/sg-kara/SGKara-Light.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+/*
+  Brand palette: https://coolors.co/palette/000000-14213d-fca311-e5e5e5-ffffff
+  — same tokens as the marketing site's tokens.css, swapped in here too so
+  the demo matches it graphically (repo owner's request). --primary flips
+  per theme for contrast, same accessible-pair pattern as tokens.css'
+  --color-accent: navy-on-white in light, orange-on-black in dark (plain
+  orange text/bg fails WCAG against both white and black). --on-primary is
+  the text color for anything with background:var(--primary).
+*/
+:root{
+  /* Without this, native form controls (the week-start-day <select>'s
+     own dropdown list, scrollbars, etc.) default to the OS/browser's
+     light chrome regardless of our custom colors — a plain white
+     dropdown panel popping up over this otherwise all-dark app. */
+  color-scheme: dark;
+  --bg:#000000;
+  --bg-soft:#0D0D0D;
+  --card:#14213D;
+  --primary:#FCA311;
+  --primary-soft:rgba(252,163,17,0.16);
+  --on-primary:#000000;
+  --secondary:#FFFFFF;
+  --text:#FFFFFF;
+  --text-muted:rgba(255,255,255,0.6);
+  --border:rgba(255,255,255,0.12);
+  --nav-bg:#0D0D0D;
+  --nav-icon:rgba(255,255,255,0.45);
+  --overlay:rgba(0,0,0,0.55);
+  --shadow:0 10px 30px rgba(0,0,0,0.45);
+  --danger:#E08578;
+  --danger-soft:rgba(224,133,120,0.16);
+  --pms:#E0A458;
+  --pms-soft:rgba(224,164,88,0.16);
+  /* Google's brand button is fixed white/dark-grey by their own brand
+     guidelines, independent of app theme — not a themed surface. */
+  --google-btn-bg:#FFFFFF;
+  --google-btn-text:#1F1F1F;
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg:#E5E5E5;
+  --bg-soft:#EFEFEF;
+  --card:#FFFFFF;
+  --primary:#14213D;
+  --primary-soft:rgba(20,33,61,0.12);
+  --on-primary:#FFFFFF;
+  --secondary:#FCA311;
+  --text:#000000;
+  --text-muted:rgba(0,0,0,0.6);
+  --border:rgba(20,33,61,0.16);
+  --nav-bg:#FFFFFF;
+  --nav-icon:rgba(0,0,0,0.45);
+  --overlay:rgba(0,0,0,0.35);
+  --shadow:0 10px 30px rgba(20,33,61,0.18);
+  /* The dark-theme coral/amber are too pale for text on white (~2-2.6:1);
+     darker shades of the same hues reach ~4.5:1. */
+  --danger:#C0492F;
+  --danger-soft:rgba(192,73,47,0.14);
+  --pms:#A86A12;
+  --pms-soft:rgba(168,106,18,0.14);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  display:flex; align-items:center; justify-content:center;
+  min-height:100vh; min-height:100dvh; color:var(--text);
+  box-sizing:border-box;
+}
+/* Base text-align default for fa — inherited, so plain paragraphs,
+   card descriptions and labels read right-aligned like Persian text
+   expects, without touching layout/flex-direction at all (unlike dir
+   or the `direction` property, which would re-trigger the same
+   flex-reordering domino this file already hit once — see the fixes
+   above this). Anything that needs to stay centered or left (empty-
+   hint, URLs, numeric/LTR fields) already sets its own explicit
+   text-align, which wins over this inherited default regardless. */
+.device.lang-fa{ font-family:'SG Kara','Inter',system-ui,Tahoma,sans-serif; text-align:right; }
+/* Full-bleed at every width — no phone-bezel chrome, no visible frame
+   around the app, matching body background so there's no seam even
+   when centered under the desktop max-width below. Exactly the real
+   viewport height so the page itself never needs to scroll — 100vh on
+   a real mobile browser is the height with the address bar collapsed,
+   taller than what's actually visible on load, which pushed the
+   bottom-fixed nav (FAB/profile/capsule, all positioned relative to
+   this element) below the fold until the user scrolled once. 100dvh
+   tracks the real visible height instead; the 100vh above it is just
+   the fallback for browsers that don't support dvh yet. */
+.device{
+  width:100%; height:100vh; height:100dvh; background:var(--bg);
+  position:relative; overflow:hidden; border-radius:0; box-shadow:none;
+  display:flex; flex-direction:column;
+}
+.hidden{ display:none !important; }
+:root[data-theme="light"] .theme-toggle-btn .icon-sun{ opacity:0; transform:translate(-50%,-50%) rotate(90deg) scale(.4); }
+:root[data-theme="light"] .theme-toggle-btn .icon-moon{ opacity:1; transform:translate(-50%,-50%) rotate(0deg) scale(1); }
+:root[data-theme="light"] .brand-mark-img{ filter:invert(1); }
+/* ===== Desktop layout (>=960px): calendar + home side by side =====
+   Below 960px, #page-home is the single merged Calendar+Home page (see
+   .home-cal-widget), Menu opens from the hamburger as a full-screen
+   overlay, and Add is a floating button. At 960px+ the phone chrome
+   drops, #page-calendar reappears as its own column next to #page-home,
+   Menu becomes a right-edge icon rail + slide-in panel, and Add stays a
+   floating button. Both breakpoints render everything into the DOM on
+   every render() call — only CSS decides what's visible where. */
+@media (min-width: 960px){
+/* The whole app shell is viewport-locked here too (no outer scroll) —
+   each column scrolls internally, same principle as the phone frame. */
+body{ align-items:flex-start; }
+.device{
+  width:100%; max-width:1200px; height:100vh; max-height:none;
+  border-radius:0; box-shadow:none; overflow:hidden;
+}
+}

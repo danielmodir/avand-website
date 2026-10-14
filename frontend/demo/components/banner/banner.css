@@ -1,0 +1,47 @@
+/* ONE single persistent header for the calendar/planning/period
+   workspaces (not one per page/pane — see #app-banner's place in the
+   body markup, a sibling before #pager-wrap, outside every page's own
+   scroll, so it never duplicates and never scrolls away). Re-themed
+   from the t02.html header reference: that file had no real sticky
+   behavior and only a flat 4:1 ratio for every size, and this is a
+   fresh build instead — a normal flex item above the pager (so no
+   scroll-under tricks are even needed), 8:1 desktop / 4:1 mobile, with
+   an image layer (.app-banner-bg) for the "can show a photo" ability
+   the reference had (its own background image/video layer) — empty by
+   default until an image is actually set. Deliberately excludes the
+   admin-panel and dark-mode buttons the reference had next to its
+   header — those stay out for now. */
+.app-banner{
+  position:relative; flex:0 0 auto; z-index:30; margin:14px 14px 10px 14px;
+  aspect-ratio:13.3/1; border-radius:24px; overflow:hidden;
+  background:var(--primary);
+  display:flex; align-items:center; gap:8px; padding:0 14px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.35);
+}
+/* RTL: logo+name reads right-to-left like the marketing header does
+   (logo on the right), instead of staying pinned to the physical
+   left regardless of language. */
+.device.lang-fa .app-banner{ flex-direction:row-reverse; }
+.app-banner-bg{
+  position:absolute; inset:0; background-size:cover; background-position:center;
+  opacity:0; transition:opacity .25s ease;
+}
+.app-banner-bg.has-image{ opacity:1; }
+.app-banner-mark{
+  position:relative; flex:0 0 auto; width:46px; height:46px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+/* Same navy-circle/orange-mark badge as the marketing site's header
+   (assets/icons/logo.svg) — fills the slot completely instead of a
+   CSS-drawn translucent circle behind a flat, circle-less mark, and
+   needs no theme-swap filter since the banner itself is always
+   orange regardless of app theme. */
+.app-banner-mark img{ width:100%; height:100%; display:block; }
+.app-banner-title{ position:relative; color:var(--on-primary); font-weight:800; font-size:17px; letter-spacing:-0.2px; }
+/* Mobile: flush to the top/left/right edge (no gap, square top corners
+   since it's touching the device edge there) instead of floating with
+   a margin like desktop — only the bottom stays separated/rounded. */
+@media (max-width:600px){
+.app-banner{ aspect-ratio:6.7/1; margin:0 0 10px 0; border-radius:0 0 24px 24px; }
+}

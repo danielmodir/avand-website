@@ -1,0 +1,32 @@
+/* ===== rich form controls (MVP fields) ===== */
+.field{ margin-bottom:14px; }
+.field input[type=text], .field input[type=date], .field input[type=time], .field input[type=number], .field input[type=email], .field input[type=tel], .field textarea{
+  width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:14px; padding:13px 14px;
+  font-size:14px; color:var(--text); font-family:inherit; transition:border-color .2s ease, box-shadow .2s ease;
+}
+.field input::placeholder, .field textarea::placeholder{ color:var(--text-muted); }
+.field textarea{ resize:vertical; min-height:64px; }
+.field input:focus, .field textarea:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
+.toggle-pair{ display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; }
+.toggle-pair button{ flex:1; border:none; background:transparent; padding:9px 4px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit; }
+.toggle-pair button.active{ background:var(--primary); color:var(--on-primary); }
+.settings-select{
+  background-color:var(--bg-soft); color:var(--text); border:1px solid var(--border);
+  border-radius:10px; padding:8px 30px 8px 12px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer;
+  appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a93a6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 8px center; background-size:16px;
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+.settings-select:hover{ border-color:var(--primary); }
+.settings-select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }
+.device.lang-fa .settings-select{ padding:8px 12px 8px 30px; background-position:left 8px center; }
+.field .subtask-edit-row input[type="text"]{ flex:1; width:auto; background:transparent; border:none; border-radius:0; padding:6px 2px; font-size:11px; color:var(--text); font-family:inherit; text-align:center; transition:color .2s ease; }
+.field .subtask-edit-row input[type="text"]:focus{ outline:none; border:none; box-shadow:none; color:var(--primary); }
+.field-label{ display:block; font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:7px; }
+.switch{ width:46px; height:26px; border-radius:999px; background:var(--bg-soft); position:relative; cursor:pointer; border:1px solid var(--border); flex:0 0 auto; }
+.switch .knob{ position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; background:var(--text-muted); transition:right .2s ease, background .2s ease; }
+.switch.on{ background:var(--primary-soft); }
+.switch.on .knob{ right:22px; background:var(--primary); }
+.device.lang-fa .switch .knob{ right:auto; left:2px; }
+.device.lang-fa .switch.on .knob{ right:auto; left:22px; }

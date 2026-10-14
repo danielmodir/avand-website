@@ -1,0 +1,58 @@
+/* Three swipeable "desktops" (occasions / planning / period) that live
+   inside #page-home — a little home-screen launcher, not a page-level
+   pager like .pager above (that one still only handles calendar/home/
+   menu). Native horizontal scroll-snap so touch swipe and trackpad both
+   just work; attachDesktopPager() keeps the dots in sync and lets a dot
+   click jump straight to a pane. */
+/* .desktop-box is the fixed, bordered card: it never grows/shrinks
+   with whichever pane's content is tallest — each .desktop-pane
+   scrolls its own overflow internally instead (own overflow-y:auto),
+   so a tall pane's scroll stays inside the box, same "each section
+   scrolls its own section" rule the rest of the app follows. */
+.desktop-box{
+  border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
+  overflow:hidden; height:100%; display:flex; flex-direction:column;
+}
+.desktop-box-topbar{ flex:0 0 auto; display:flex; justify-content:flex-start; padding:10px 10px 0 10px; }
+.device.lang-fa .desktop-box-topbar{ justify-content:flex-end; }
+.desktop-box-title-group{ position:relative; display:flex; align-items:center; gap:4px; }
+.desktop-box-title{ flex:0 1 auto; text-align:left; font-size:13px; font-weight:700; color:var(--text-muted); cursor:pointer; }
+.device.lang-fa .desktop-box-title{ text-align:right; }
+.desktop-nav-arrow{ flex:0 0 auto; width:24px; height:24px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:color .2s ease; }
+.desktop-nav-arrow svg{ width:14px; height:14px; }
+.desktop-nav-arrow:hover{ color:var(--primary); }
+.desktop-nav-arrow.disabled{ opacity:.3; pointer-events:none; }
+.desktop-wrap{ flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.desktop-wrap::-webkit-scrollbar{ display:none; }
+.desktop-track{ display:flex; height:100%; }
+.desktop-pane{ flex:0 0 100%; min-width:100%; height:100%; overflow-y:auto; scroll-snap-align:start; padding:16px; scrollbar-width:none; }
+.desktop-pane::-webkit-scrollbar{ display:none; }
+.desktop-dots{ flex:0 0 auto; display:flex; justify-content:center; align-items:center; gap:6px; padding:10px 0; border-top:1px solid var(--border); }
+.desktop-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); cursor:pointer; transition:background .2s ease, width .2s ease; }
+.desktop-dots span.active{ background:var(--primary); width:18px; border-radius:4px; }
+@media (max-width:600px){
+.desktop-box{ height:430px; }
+}
+.occasion-row{ padding:12px 14px; border-radius:12px; background:var(--card); border:1px solid var(--border); margin-bottom:8px; font-size:13px; display:flex; align-items:center; gap:8px; }
+.occasion-row.holiday{ color:var(--danger); border-color:var(--danger-soft); }
+.occasion-holiday-dot{ width:6px; height:6px; border-radius:50%; background:var(--danger); flex:0 0 auto; }
+/* ===== dashboard-style stat card (reference: colorful ring + mini stats) ===== */
+.stat-card{
+  display:flex; align-items:center; gap:18px; background:var(--card);
+  border:1px solid var(--border); border-radius:20px; padding:16px 18px; margin-bottom:20px;
+}
+.stat-ring-wrap{ position:relative; width:76px; height:76px; flex:0 0 auto; }
+.stat-ring{ width:76px; height:76px; transform:rotate(-90deg); }
+.stat-ring-track{ fill:none; stroke:var(--bg-soft); stroke-width:9; }
+.stat-ring-progress{
+  fill:none; stroke:var(--primary); stroke-width:9; stroke-linecap:round;
+  transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1);
+}
+.stat-ring-label{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:15px; font-weight:800;
+}
+.stat-mini-list{ display:flex; flex-direction:column; gap:7px; flex:1; min-width:0; }
+.stat-mini{ font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:7px; }
+.stat-mini b{ color:var(--text); font-weight:700; margin-inline-start:auto; }
+.stat-dot{ width:8px; height:8px; border-radius:50%; flex:0 0 auto; }

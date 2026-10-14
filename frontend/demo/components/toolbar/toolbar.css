@@ -1,0 +1,72 @@
+/* ===== toolbar: Profile+Management (one connected pill) + Add =====
+   One wrapper, same three buttons on both breakpoints — mobile lays it
+   out as a row centered at the bottom; the desktop media query below
+   switches it to a column pinned to the right edge instead. Fixed in
+   place, never hidden — the only way into Profile/Management/Add. */
+.toolbar{
+  position:fixed; z-index:50; display:flex; align-items:center; gap:10px;
+  bottom:28px; left:50%; transform:translateX(-50%);
+}
+.toolbar-pill{
+  display:flex; align-items:center;
+  background:var(--card); border:1px solid var(--border); border-radius:999px;
+  box-shadow:var(--shadow); overflow:hidden;
+}
+.toolbar-avatar-btn{
+  position:relative; flex:0 0 auto; width:41px; height:41px; border-radius:50%; border:none;
+  margin-top:4px;
+  background-color:var(--primary); background-size:cover; background-position:center;
+  color:var(--on-primary); font-weight:700; font-size:14px; line-height:1;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+/* The hover circle is smaller than the slot (margin on all sides) and
+   explicitly round, so it reads as a distinct circle with a gap from
+   the pill's own edge instead of a square hover fill flush against it. */
+.toolbar-admin-btn{
+  width:44px; height:44px; margin:3px; border:none; border-radius:50%; background:transparent; color:var(--text-muted);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:background .2s ease, color .2s ease;
+}
+.toolbar-admin-btn svg{ width:19px; height:19px; }
+.toolbar-admin-btn:hover{ background:rgba(255,255,255,0.14); color:var(--primary); }
+/* ===== floating add button (replaces the old hold-to-open bottom nav) ===== */
+.fab-add{
+  flex:0 0 auto; z-index:50; width:46px; height:46px;
+  border-radius:50%; background:var(--primary); color:var(--on-primary); border:none;
+  box-shadow:0 6px 18px color-mix(in srgb, var(--primary) 45%, transparent); display:flex; align-items:center;
+  justify-content:center; cursor:pointer; transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
+}
+.fab-add svg{ width:20px; height:20px; transition:transform .32s cubic-bezier(.34,1.56,.64,1); }
+.fab-add.active svg{ transform:rotate(135deg); }
+.fab-menu{
+  position:absolute; bottom:80px; left:50%; right:auto; z-index:50; display:flex;
+  flex-direction:column; align-items:stretch; gap:8px; opacity:0; pointer-events:none;
+  transform:translate(-50%,10px); transition:opacity .2s ease, transform .2s ease;
+}
+.fab-menu.show{ opacity:1; pointer-events:auto; transform:translate(-50%,0); }
+.fab-menu .nav-add-item{ width:auto; white-space:nowrap; background:var(--card); }
+.fab-menu.labels-hidden .nav-add-item{ justify-content:center; width:44px; padding:11px; }
+.fab-menu.labels-hidden .nav-add-item span{ display:none; }
+.nav-add-item{ position:relative; z-index:2; width:100%; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:4px 14px; color:var(--text); cursor:pointer; }
+.nav-add-item svg{width:16px; height:16px; fill:var(--primary);}
+.nav-add-item span{font-size:13px; font-weight:600;}
+@media (min-width: 960px){
+/* Desktop: the same .toolbar flips from a bottom-center row to a
+   column pinned to the right edge — single source of truth, no
+   separate desktop-only elements to keep in sync with mobile's. */
+.toolbar{
+  flex-direction:column; bottom:auto; left:auto; top:50%; right:14px;
+  transform:translateY(-50%); gap:10px;
+}
+.toolbar-pill{ flex-direction:column; }
+.toolbar-avatar-btn{ width:40px; height:40px; }
+.toolbar-admin-btn{ width:44px; height:44px; }
+.fab-add{ width:44px; height:44px; }
+/* The Task/Habit/Event quick-add list opens to #fab-add's left here
+   instead of stacking above it — same card style, just the popup
+   direction changes. updateNav() sets `top`/`left` from #fab-add's
+   real measured rect so it lines up with the button exactly rather
+   than a guessed offset. */
+.fab-menu{ top:50%; left:auto; right:94px; bottom:auto; transform:translateY(-50%) translateX(10px); }
+.fab-menu.show{ transform:translateY(-50%) translateX(0); }
+}

@@ -1,0 +1,57 @@
+/* ===== app body =====
+   Below 960px, #page-home is the only visible page — Calendar is
+   merged into it via .home-cal-widget (see below) and Menu is a
+   hamburger-triggered overlay instead of a swiped page. At 960px+ the
+   desktop media query turns this into a two-column grid showing
+   #page-calendar and #page-home side by side (see there).
+   #app-banner (a normal flex item, see its own CSS) sits above this as
+   a sibling in the body markup, so pager-wrap only needs to fill
+   whatever height is left — position:relative (not absolute/inset:0
+   like before #app-banner existed) plus flex:1 and min-height:0 (the
+   usual flexbox fix for a scrolling child not forcing its flex item
+   taller than the available space). */
+.pager-wrap{ position:relative; flex:1 1 auto; min-height:0; overflow:hidden; }
+.pager{ position:absolute; inset:0; }
+/* Horizontal padding grows with viewport (capped) instead of letting
+   cards stretch edge-to-edge on tablet-width screens, while the
+   scrollable box itself stays full-width (so touch-scroll works
+   right up to the screen edge). */
+/* overflow-x explicit, not left to its 'visible' default — with only
+   overflow-y set, the spec silently promotes the unset x-axis to
+   'auto' too, so any inner content even a px too wide (or a touch
+   that starts on the horizontal .events-scroll strip) could drag the
+   whole page sideways on a real phone. */
+.page{ width:100%; height:100%; overflow-y:auto; overflow-x:hidden; padding:22px max(18px, calc((100% - 640px)/2)) 100px; scrollbar-width:none; }
+/* Without this, the browser's own rubber-band bounce at the top of
+   #page-home fights the pull-to-expand-calendar gesture in
+   initHomeScrollExpand() — the native bounce eats the first chunk of
+   the drag before our pointermove handler sees enough delta. */
+#page-home{ overscroll-behavior-y:contain; }
+.page::-webkit-scrollbar{display:none;}
+.page.no-scroll{ overflow-y:hidden; }
+#page-calendar{ display:none; }
+@media (min-width: 960px){
+.pager-wrap{ position:static; overflow:visible; touch-action:auto; flex:1 1 auto; min-height:0; }
+.pager{
+  position:static; display:grid; grid-template-columns:minmax(320px,380px) 1fr;
+  align-items:start; gap:24px; width:100%; height:100%;
+  transform:none !important; transition:none;
+  padding:8px 32px 28px 32px;
+}
+.page{ width:auto; height:100%; overflow-y:auto; padding:0; touch-action:auto; }
+/* Same bordered-card look as #page-home's .desktop-box, applied
+   directly to the column itself (it's already its own scroll
+   container at this width, so it doesn't need a nested wrapper). */
+#page-calendar{
+  display:block; position:relative;
+  border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
+  padding:16px;
+  /* Same height:100%/frame treatment as #page-home's .desktop-box,
+     so the two cards read as a matched pair instead of one being a
+     short content-hugging box next to a tall one. The "back to
+     today" pill doesn't anchor to this card's own bottom edge
+     (which can sit far below the grid once this fills the column)
+     — it anchors to #cal-content's bottom instead, see
+     updateNav(). */
+}
+}

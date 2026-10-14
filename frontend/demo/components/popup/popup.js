@@ -1,0 +1,369 @@
+function typeLabel(type){ return t(type); }
+
+let formPhotos = [];
+
+let formSubtasks = [];
+
+let formWeekdays = new Set();
+
+let formDraft = {};
+
+let miniCalCursor = new Date(today);
+
+function findItem(type, id){
+  const key = type === 'task' ? 'tasks' : type === 'habit' ? 'habits' : 'events';
+  return state[key].find(x => x.id === id);
+}
+
+function resetFormDraft(type, existing){
+  formDraft = {
+    title: existing ? existing.title : '',
+    category: existing ? (existing.category || '') : '',
+    description: existing ? (existing.description || '') : '',
+    timeMode: existing ? (existing.timeMode || 'single') : 'single',
+    date: existing ? existing.date : dateKey(state.selectedDate || today),
+    endDate: existing ? (existing.endDate || existing.date) : dateKey(state.selectedDate || today),
+    recurrence: {
+      mode: existing ? (existing.recurrence?.mode || null) : (type === 'habit' ? 'interval' : null),
+      interval: existing ? (existing.recurrence?.interval || 1) : 1
+    },
+    notification: {
+      type: existing ? (existing.notification?.type || null) : null,
+      time: existing ? (existing.notification?.time || '09:00') : '09:00',
+      repeatHours: existing ? (existing.notification?.repeatHours || 1) : 1,
+      text: existing ? (existing.notification?.text || '') : ''
+    }
+  };
+  formPhotos = existing ? [...(existing.photos||[])] : [];
+  formSubtasks = existing ? existing.subtasks.map(s => ({...s})) : [];
+  formWeekdays = new Set(existing ? (existing.recurrence?.weekdays||[]) : []);
+  miniCalCursor = new Date(formDraft.date);
+}
+
+function openPopup(type, originEl, existing){
+  state.popupOpen = true; state.popupType = type; state.navExpanded = false;
+  state.editingId = existing ? existing.id : null;
+  state.popupSubView = null;
+  resetFormDraft(type, existing);
+
+  const popup = document.getElementById('add-popup');
+  const overlay = document.getElementById('popup-overlay');
+
+  let originStyle = '';
+  if(originEl){
+    const deviceRect = document.getElementById('device').getBoundingClientRect();
+    const originRect = originEl.getBoundingClientRect();
+    const ox = originRect.left + originRect.width/2 - deviceRect.left;
+    const oy = originRect.top + originRect.height/2 - deviceRect.top;
+    originStyle = `${ox}px ${oy}px`;
+  } else {
+    popup.style.transformOrigin = '50% 90%';
+  }
+
+  popup.innerHTML = `
+    <div class="popup-body"></div>
+    <button class="pop-submit" id="popup-submit" data-action="submit-popup">${existing?t('saveChanges'):t('add') + ' ' + typeLabel(type)}</button>
+  `;
+  render();
+  if(originStyle) popup.style.transformOrigin = originStyle;
+  overlay.classList.add('show');
+  requestAnimationFrame(() => popup.classList.add('show'));
+
+  renderPopupBody();
+  setTimeout(() => { if(!existing) document.getElementById('f-title')?.focus(); }, 200);
+}
+
+function closePopup(){
+  state.popupOpen = false; state.editingId = null; state.popupSubView = null;
+  document.getElementById('add-popup').classList.remove('show');
+  document.getElementById('popup-overlay').classList.remove('show');
+}
+
+/* ---- main form body (per type) ---- */
+function popupIconRow(type){
+  const icons = [];
+  if(type !== 'habit') icons.push({ key:'calendar', icon:ICONS.calendarIcon, set: formDraft.timeMode==='range' || formDraft.date !== dateKey(today) });
+  icons.push({ key:'repeat', icon:ICONS.repeatIcon, set: !!formDraft.recurrence.mode });
+  icons.push({ key:'notification', icon:ICONS.bellIcon, set: !!formDraft.notification.type, disabled:true });
+  return `<div class="popup-icon-row">${icons.map(i => `<div class="popup-icon-btn ${i.set?'set':''} ${i.disabled?'disabled':''}" data-action="${i.disabled?'notification-coming-soon':'open-subview'}" data-sub="${i.key}">${i.icon}</div>`).join('')}</div>`;
+}
+
+function descriptionBlock(){
+  return `
+    <div class="field desc-wrap">
+      <textarea id="f-description" placeholder="${t('description')}">${escapeHtml(formDraft.description||'')}</textarea>
+      <div class="desc-clip-btn ${formPhotos.length?'has-files':''}" id="desc-clip-btn">${ICONS.paperclip}</div>
+      <input type="file" id="f-photo-input" accept="image/*" multiple style="display:none;">
+    </div>
+    ${formPhotos.length ? `<div class="photo-add-row" style="margin-top:8px;">${formPhotos.map((p,i) => `<div class="photo-thumb"><img src="${p}"><button type="button" class="rm" data-rmphoto="${i}">×</button></div>`).join('')}</div>` : ''}
+  `;
+}
+
+function subtasksBlock(){
+  return `
+    <div class="field">
+      <div class="subtasks-list" id="subtasks-list">${subtasksListHtml()}</div>
+      ${formSubtasks.length < 3 ? `<button type="button" class="add-ghost-btn${formSubtasks.length > 0 ? ' plus-only' : ''}" id="add-subtask-btn">${formSubtasks.length === 0 ? t('addSubtask') : '+'}</button>` : ''}
+    </div>`;
+}
+
+function subtasksListHtml(){
+  return formSubtasks.map((s,i) => `<div class="subtask-edit-row">
+    <input type="text" value="${escapeAttr(s.text)}" data-subidx="${i}" placeholder="${t('subtaskTitle')}">
+    <button type="button" class="remove-x" data-rmsubtask="${i}">×</button>
+  </div>`).join('');
+}
+
+function formBody(type){
+  const parts = [popupIconRow(type)];
+  if(type === 'task'){
+    parts.push(descriptionBlock());
+  }
+  return parts.join('');
+}
+
+/* ---- subviews ---- */
+function renderPopupSubView(){
+  const sub = state.popupSubView;
+  const type = state.popupType;
+  let title = '', content = '';
+  if(sub === 'calendar'){ title = t('dateTitle'); content = miniCalendarHtml(); }
+  else if(sub === 'repeat'){ title = t('repeatTitle'); content = repeatSubviewHtml(type); }
+  else if(sub === 'notification'){ title = t('reminderTitle'); content = notificationSubviewHtml(); }
+  return `
+    <div class="popup-subview-header">
+      <div class="popup-back" data-action="close-subview">${ICONS.arrowBack}</div>
+      <div class="popup-subview-title">${title}</div>
+    </div>
+    ${content}
+  `;
+}
+
+function miniCalendarHtml(){
+  const cells = monthMatrix(miniCalCursor);
+  const disp = displayMonthYear(miniCalCursor);
+  return `
+    <div class="cal-topbar" style="margin-bottom:10px;">
+      <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="mini-cal-prev" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
+      <span class="cal-label" style="font-size:16px; min-width:0;">${disp.monthLabel} ${disp.yearLabel}</span>
+      <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="mini-cal-next" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
+    </div>
+    <div class="mini-cal-weekday">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
+    <div class="mini-cal-grid" id="mini-cal-grid">${cells.map(d => miniCalCellHtml(d)).join('')}</div>
+    <div class="mini-cal-hint">${t('tapOrDrag')}</div>
+  `;
+}
+
+function miniCalCellHtml(d){
+  const inMonth = cellInCurrentMonth(d, miniCalCursor);
+  const key = dateKey(d);
+  let rangeClass = '';
+  if(formDraft.timeMode === 'range'){
+    if(key === formDraft.date && key === formDraft.endDate) rangeClass = 'range-single';
+    else if(key === formDraft.date) rangeClass = 'range-start';
+    else if(key === formDraft.endDate) rangeClass = 'range-end';
+    else if(key > formDraft.date && key < formDraft.endDate) rangeClass = 'in-range';
+  } else if(key === formDraft.date){
+    rangeClass = 'range-single';
+  }
+  const isToday = sameDay(d, today);
+  return `<div class="mini-cal-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${rangeClass}" data-date="${key}">${dayCellDateHtml(d)}</div>`;
+}
+
+function refreshMiniCalGrid(){
+  const grid = document.getElementById('mini-cal-grid');
+  if(!grid) return;
+  grid.innerHTML = monthMatrix(miniCalCursor).map(d => miniCalCellHtml(d)).join('');
+  attachMiniCalGesture();
+}
+
+function attachMiniCalGesture(){
+  const grid = document.getElementById('mini-cal-grid');
+  if(!grid) return;
+  let dragStartKey = null, dragging = false;
+  grid.addEventListener('pointerdown', e => {
+    const cell = e.target.closest('.mini-cal-cell');
+    if(!cell) return;
+    dragStartKey = cell.dataset.date; dragging = true;
+    formDraft.timeMode = 'single'; formDraft.date = dragStartKey; formDraft.endDate = dragStartKey;
+    refreshMiniCalGrid();
+    e.stopPropagation();
+  });
+  grid.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    const cell = e.target.closest('.mini-cal-cell');
+    if(!cell) return;
+    const key = cell.dataset.date;
+    if(key === dragStartKey) return;
+    formDraft.timeMode = 'range';
+    if(key < dragStartKey){ formDraft.date = key; formDraft.endDate = dragStartKey; }
+    else { formDraft.date = dragStartKey; formDraft.endDate = key; }
+    refreshMiniCalGrid();
+  });
+  const end = () => { dragging = false; };
+  grid.addEventListener('pointerup', end);
+  grid.addEventListener('pointercancel', end);
+}
+
+function repeatSubviewHtml(type){
+  const mode = formDraft.recurrence.mode;
+  const options = type === 'habit' ? ['interval','weekdays'] : ['none','interval','weekdays'];
+  const labelMap = { none:t('noRepeat'), interval:t('everyNDays'), weekdays:t('specificDays') };
+  return `
+    <select class="settings-select" id="rec-mode-select" style="width:100%;">
+      ${options.map(o => `<option value="${o}" ${(mode===o || (o==='none' && !mode)) ? 'selected':''}>${labelMap[o]}</option>`).join('')}
+    </select>
+    <div id="rec-interval-panel" class="${mode==='interval'?'':'hidden'}" style="margin-top:10px;">
+      <input type="number" id="f-interval" min="1" max="7" value="${formDraft.recurrence.interval}" placeholder="${t('repeatEveryDays')}">
+    </div>
+    <div id="rec-weekdays-panel" class="${mode==='weekdays'?'':'hidden'}" style="margin-top:10px;">
+      <div class="weekday-picker">${weekdayOrder().map(i => `<button type="button" data-wd="${i}" class="${formWeekdays.has(i)?'active':''}">${weekdayShort(i)}</button>`).join('')}</div>
+    </div>
+  `;
+}
+
+function notificationSubviewHtml(){
+  const n = formDraft.notification;
+  return `
+    <div class="toggle-pair" id="notif-mode-toggle">
+      <button type="button" data-notif="none" class="${!n.type?'active':''}">${t('noReminder')}</button>
+      <button type="button" data-notif="time" class="${n.type==='time'?'active':''}">${t('atATime')}</button>
+      <button type="button" data-notif="repeat" class="${n.type==='repeat'?'active':''}">${t('repeating')}</button>
+    </div>
+    <div id="notif-time-panel" class="${n.type==='time'?'':'hidden'}" style="margin-top:10px;">
+      <input type="time" id="f-notif-time" value="${n.time}">
+    </div>
+    <div id="notif-repeat-panel" class="${n.type==='repeat'?'':'hidden'}" style="margin-top:10px;">
+      <input type="number" id="f-notif-hours" min="1" max="12" value="${n.repeatHours}" placeholder="${t('everyNHours')}">
+    </div>
+    <div style="margin-top:10px;">
+      <input type="text" id="f-notif-text" placeholder="${t('customReminderText')}" value="${escapeAttr(n.text)}">
+    </div>
+  `;
+}
+
+/* ---- master body renderer + wiring ---- */
+function renderPopupBody(){
+  const body = document.querySelector('#add-popup .popup-body');
+  if(!body) return;
+  if(state.popupSubView){
+    body.innerHTML = renderPopupSubView();
+    wireSubviewInteractivity();
+    return;
+  }
+  body.innerHTML = `
+    <div class="float-field"><input type="text" id="f-title" placeholder=" " value="${escapeAttr(formDraft.title)}" autocomplete="off"><label>${t('titleLabel')}</label></div>
+    ${state.popupType === 'task' ? subtasksBlock() : ''}
+    ${formBody(state.popupType)}
+  `;
+  wireMainFormInteractivity();
+  const titleInput = document.getElementById('f-title');
+  const submitBtn = document.getElementById('popup-submit');
+  submitBtn.classList.toggle('visible', titleInput.value.trim().length > 0);
+  titleInput.addEventListener('input', () => {
+    formDraft.title = titleInput.value;
+    submitBtn.classList.toggle('visible', titleInput.value.trim().length > 0);
+  });
+}
+
+function wireMainFormInteractivity(){
+  document.getElementById('f-description')?.addEventListener('input', e => { formDraft.description = e.target.value; });
+  document.getElementById('desc-clip-btn')?.addEventListener('click', () => document.getElementById('f-photo-input').click());
+  document.getElementById('f-photo-input')?.addEventListener('change', (e) => {
+    const picked = Array.from(e.target.files).slice(0, 3 - formPhotos.length);
+    const oversized = picked.some(f => f.size > MAX_UPLOAD_BYTES);
+    const files = picked.filter(f => f.size <= MAX_UPLOAD_BYTES);
+    if(oversized) showToast(t('fileTooLarge'));
+    let remaining = files.length;
+    if(remaining === 0) return;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => { formPhotos.push(reader.result); remaining--; if(remaining===0) renderPopupBody(); };
+      reader.readAsDataURL(file);
+    });
+  });
+  document.querySelectorAll('[data-rmphoto]').forEach(b => b.addEventListener('click', () => { formPhotos.splice(Number(b.dataset.rmphoto),1); renderPopupBody(); }));
+  document.getElementById('add-subtask-btn')?.addEventListener('click', () => { if(formSubtasks.length>=3) return; formSubtasks.push({id:uid(), text:'', done:false}); renderPopupBody(); });
+  document.querySelectorAll('[data-rmsubtask]').forEach(b => b.addEventListener('click', () => { formSubtasks.splice(Number(b.dataset.rmsubtask),1); renderPopupBody(); }));
+  document.querySelectorAll('[data-subidx]').forEach(inp => inp.addEventListener('input', e => { formSubtasks[Number(e.target.dataset.subidx)].text = e.target.value; }));
+}
+
+function wireSubviewInteractivity(){
+  const sub = state.popupSubView;
+  if(sub === 'calendar'){
+    attachMiniCalGesture();
+  } else if(sub === 'repeat'){
+    document.getElementById('rec-mode-select')?.addEventListener('change', e => {
+      formDraft.recurrence.mode = e.target.value === 'none' ? null : e.target.value;
+      renderPopupBody();
+    });
+    document.getElementById('f-interval')?.addEventListener('input', e => { formDraft.recurrence.interval = Number(e.target.value||1); });
+    document.querySelectorAll('.weekday-picker button').forEach(b => b.addEventListener('click', () => {
+      const i = Number(b.dataset.wd);
+      if(formWeekdays.has(i)){ formWeekdays.delete(i); b.classList.remove('active'); } else { formWeekdays.add(i); b.classList.add('active'); }
+    }));
+  } else if(sub === 'notification'){
+    document.querySelectorAll('#notif-mode-toggle button').forEach(b => b.addEventListener('click', () => {
+      formDraft.notification.type = b.dataset.notif === 'none' ? null : b.dataset.notif;
+      renderPopupBody();
+    }));
+    document.getElementById('f-notif-time')?.addEventListener('input', e => { formDraft.notification.time = e.target.value; });
+    document.getElementById('f-notif-hours')?.addEventListener('input', e => { formDraft.notification.repeatHours = Number(e.target.value||1); });
+    document.getElementById('f-notif-text')?.addEventListener('input', e => { formDraft.notification.text = e.target.value; });
+  }
+}
+
+function submitPopup(){
+  const title = (formDraft.title||'').trim();
+  if(!title) return;
+  const type = state.popupType;
+  const recurrence = { mode: formDraft.recurrence.mode, interval: formDraft.recurrence.interval, weekdays: Array.from(formWeekdays) };
+  const notification = { ...formDraft.notification };
+  if(type === 'task'){
+    const obj = {
+      id: state.editingId || uid(),
+      title,
+      category: (formDraft.category||'').trim(),
+      description: (formDraft.description||'').trim(),
+      photos: [...formPhotos],
+      pinned: state.editingId ? findItem('task', state.editingId).pinned : false,
+      done: state.editingId ? findItem('task', state.editingId).done : false,
+      subtasks: formSubtasks.filter(s => s.text.trim()).slice(0,3),
+      timeMode: formDraft.timeMode,
+      date: formDraft.date,
+      endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
+      recurrence, notification
+    };
+    upsert('tasks', obj);
+  } else if(type === 'habit'){
+    const obj = {
+      id: state.editingId || uid(),
+      title,
+      recurrence, notification,
+      startDate: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(today),
+      completedDates: state.editingId ? findItem('habit', state.editingId).completedDates : []
+    };
+    upsert('habits', obj);
+  } else if(type === 'event'){
+    const obj = {
+      id: state.editingId || uid(),
+      title,
+      timeMode: formDraft.timeMode,
+      date: formDraft.date,
+      endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
+      recurrence, notification
+    };
+    upsert('events', obj);
+  }
+  closePopup();
+  render();
+}
+
+const CLOUD_SAVE_BY_ARRKEY = { tasks: Cloud.saveTask, habits: Cloud.saveHabit, events: Cloud.saveEvent };
+
+function upsert(arrKey, obj){
+  const arr = state[arrKey];
+  const idx = arr.findIndex(x => x.id === obj.id);
+  if(idx >= 0) arr[idx] = obj; else arr.push(obj);
+  CLOUD_SAVE_BY_ARRKEY[arrKey](obj).catch(()=>{});
+}

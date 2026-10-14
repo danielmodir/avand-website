@@ -1,0 +1,12 @@
+<!-- ONE single header for the calendar/planning/period workspaces — a
+     normal-flow flex item above #pager-wrap (see .device/.pager-wrap
+     CSS), not page content, so it's never duplicated per page and
+     never scrolls away. #app-banner-bg is an image layer (empty/no
+     "has-image" class until a photo is actually set — see the
+     .app-banner CSS comment) for the "can show a photo" ability.
+     Hidden via CSS while the Menu panel is open (.device.show-menu). -->
+<div class="app-banner" id="app-banner">
+  <div class="app-banner-bg" id="app-banner-bg"></div>
+  <div class="app-banner-mark" data-action="go-landing" role="link" aria-label="Toojibee"><img src="../assets/icons/logo.svg" alt=""></div>
+  <div class="app-banner-title" id="app-banner-title">Toojibee</div>
+</div>

@@ -1,0 +1,220 @@
+/* Always in the layout (not display:none) so the slide-in/out can be a
+   transform transition instead of an instant display swap. */
+/* Plain slide from the side — no scale/opacity, so it reads as the
+   panel itself being dragged in rather than a separate page
+   popping/fading in on top. */
+#page-menu{
+  display:block; position:absolute; inset:0; z-index:70; background:var(--card);
+  overflow-y:auto; padding:64px 18px 40px 18px;
+  transform:translateX(100%);
+  transition:transform .32s cubic-bezier(.4,0,.2,1), bottom .32s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.device.lang-fa #page-menu{ transform:translateX(-100%); }
+.device.show-menu #page-menu{ transform:translateX(0); pointer-events:auto; }
+/* Bottom bar (FAB/profile/capsule) stays visible behind the panel for
+   every section except Profile, which still covers the full screen —
+   set via JS (render()) since it depends on state.menuSubView. */
+/* height, not bottom: #page-menu also carries the shared .page class,
+   which sets height:100% — with top/height/bottom all non-auto at
+   once the box is over-constrained and the browser recomputes bottom
+   from top+height anyway, silently ignoring a bottom override here. */
+#page-menu.leave-bottom-bar{ height:calc(100% - 96px); border-radius:0 0 24px 24px; }
+/* Content settles in just after the panel shape itself does — "shell
+   first, then content", instead of everything appearing at once. */
+.menu-panel-content{
+  opacity:0; transform:translateY(10px);
+  transition:opacity .22s ease .1s, transform .22s ease .1s;
+}
+.device.show-menu .menu-panel-content{ opacity:1; transform:translateY(0); }
+.menu-overlay{ display:none; }
+/* ===== menu panel close (shared mobile overlay / desktop side panel) ===== */
+.menu-panel-close{
+  position:absolute; top:14px; right:14px; z-index:2; width:34px; height:34px;
+  border-radius:50%; background:var(--bg-soft); color:var(--text-muted); border:none;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.menu-panel-close svg{ width:14px; height:14px; }
+.device.lang-fa .menu-panel-close{ right:auto; left:14px; }
+/* Desktop-only: toggles #page-menu between the inset (equal top/bottom
+   margin) card and the old full-height panel. Mobile's panel is
+   already full-screen, so this stays hidden there. */
+.menu-maximize-btn{
+  display:none; position:absolute; top:14px; right:58px; z-index:2; width:34px; height:34px;
+  border-radius:50%; background:var(--bg-soft); color:var(--text-muted); border:none;
+  cursor:pointer;
+}
+.menu-maximize-btn svg{ width:14px; height:14px; transition:transform .2s ease; }
+.device.menu-maximized .menu-maximize-btn svg{ transform:rotate(180deg); }
+.device.lang-fa .menu-maximize-btn{ right:auto; left:58px; }
+/* Press-and-hold logout (3s) instead of a plain tap, so it can't be
+   triggered by accident — a quick tap just toasts a hint instead (see
+   attachLogoutHold()). The fill is a circle that scales up from 0 at
+   the button's own center, growing past the corners so it fully
+   covers the (rounded) button by the time the hold completes; label
+   color transitions to white over the same gesture so it stays
+   readable once the red fill reaches it. */
+.logout-hold-btn{ position:relative; overflow:hidden; isolation:isolate; }
+.logout-hold-fill{
+  position:absolute; top:50%; left:50%; width:300%; aspect-ratio:1;
+  background:var(--danger); border-radius:50%; z-index:-1;
+  transform:translate(-50%,-50%) scale(0);
+  transition:transform 3s linear;
+  pointer-events:none;
+}
+.logout-hold-btn.holding .logout-hold-fill{ transform:translate(-50%,-50%) scale(1); }
+.logout-hold-label{ transition:color .3s ease; }
+.logout-hold-btn.holding .logout-hold-label{ color:#fff; }
+.search-capsule{ display:flex; align-items:center; gap:4px; background:var(--bg-soft); border:2px solid transparent; border-radius:999px; padding:4px 4px 4px 16px; transition:border-color .2s ease, box-shadow .2s ease; }
+.device.lang-fa .search-capsule{ padding:4px 16px 4px 4px; }
+.search-capsule:focus-within{ border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
+.search-capsule input{ flex:1; min-width:0; border:none; background:transparent; padding:9px 0; font-size:14px; color:var(--text); font-family:inherit; }
+.search-capsule input::placeholder{ color:var(--text-muted); }
+.search-capsule-btn{ flex:0 0 auto; width:36px; height:36px; border-radius:50%; border:none; background:var(--primary); color:var(--on-primary); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.search-capsule-btn svg{ width:16px; height:16px; }
+/* Profile-edit fields echo the add-popup title field's look (plain
+   underline, no filled box) per the repo owner's request, instead of
+   the filled .field box shared by every other form on the site. */
+.profile-edit-form .field input[type=text], .profile-edit-form .field input[type=date], .profile-edit-form .field input[type=email], .profile-edit-form .field input[type=tel]{
+  background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px;
+}
+.profile-edit-form .field input:focus{ outline:none; border-bottom-color:var(--primary); box-shadow:none; }
+.dob-field-btn{ background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; font-size:14px; color:var(--text); cursor:pointer; transition:border-color .2s ease; }
+.dob-field-btn:hover{ border-bottom-color:var(--primary); }
+.dob-field-wrap{ position:relative; }
+.dob-cal-popover{ position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:20; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); font-size:12px; }
+.dob-cal-popover .cal-label{ font-size:13px !important; }
+.dob-cal-popover .mini-cal-cell{ font-size:11px; }
+.dob-cal-popover .cal-corner-arrow{ width:26px; height:26px; }
+.dob-cal-popover .cal-corner-arrow svg{ width:13px; height:13px; }
+/* ===== Menu page ===== */
+.menu-avatar{ width:48px; height:48px; border-radius:50%; background:var(--primary); color:var(--on-primary); font-weight:700; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.menu-list{ display:flex; flex-direction:column; gap:12px; }
+.menu-item-row.disabled{ cursor:default; opacity:.55; }
+.menu-item-row .soon-badge{ font-size:11px; font-weight:700; color:var(--text-muted); background:var(--bg-soft); padding:3px 10px; border-radius:999px; white-space:nowrap; flex:0 0 auto; }
+.menu-item-row{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:13px 15px; cursor:pointer; transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.device.lang-fa .menu-item-row{ flex-direction:row-reverse; }
+.menu-item-row:not(.disabled):hover{ transform:translateY(-3px); box-shadow:var(--shadow); border-color:var(--primary); }
+.menu-item-icon{ width:32px; height:32px; border-radius:10px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
+.menu-item-icon svg{ width:16px; height:16px; }
+.menu-item-label{ flex:1; font-size:14px; font-weight:600; unicode-bidi:plaintext; }
+.menu-item-label .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; margin-inline-start:6px; }
+.store-grid{ display:flex; flex-direction:column; gap:10px; }
+.store-card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; }
+.store-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.device.lang-fa .store-card-top{ flex-direction:row-reverse; }
+.store-card-icon{ width:40px; height:40px; border-radius:12px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
+.store-card-icon svg{ width:20px; height:20px; }
+.store-badge{ font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+.store-badge-enabled{ background:var(--primary-soft); color:var(--primary); }
+.store-badge-available, .store-badge-locked{ background:var(--bg-soft); color:var(--text-muted); }
+.store-badge-premium{ background:var(--primary); color:var(--on-primary); }
+.store-card-name{ font-size:14px; font-weight:700; margin-bottom:3px; }
+.store-card-desc{ font-size:12.5px; color:var(--text-muted); line-height:1.5; margin-bottom:14px; }
+.store-card-action{ display:flex; justify-content:flex-end; align-items:center; }
+.store-card-hint{ font-size:12px; color:var(--text-muted); }
+.menu-item-row svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
+.settings-row > svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
+.profile-avatar-big{ width:84px; height:84px; border-radius:50%; background:var(--primary); color:var(--on-primary); font-weight:700; font-size:28px; line-height:1; display:flex; align-items:center; justify-content:center; margin:6px auto 4px auto; background-size:cover; background-position:center; }
+/* New profile header: photo top-start, username+edit pencil above the
+   user id+copy button, instead of a centered big avatar with the id
+   buried in a settings row further down. */
+.profile-header-new{ display:flex; align-items:center; gap:14px; }
+.profile-avatar-sm{ flex:0 0 auto; width:56px; height:56px; border-radius:50%; background:var(--primary); color:var(--on-primary); font-weight:700; font-size:19px; line-height:1; display:flex; align-items:center; justify-content:center; background-size:cover; background-position:center; }
+.profile-header-text{ min-width:0; flex:1; }
+.profile-username-row{ display:flex; align-items:center; gap:8px; }
+.profile-username{ font-size:16px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.profile-id-row{ display:flex; align-items:center; gap:6px; margin-top:4px; }
+.profile-id-text{ font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.profile-photo-actions{ display:flex; gap:14px; justify-content:center; margin-bottom:4px; }
+.profile-field-row{ display:flex; gap:10px; }
+.profile-field-row .field{ flex:1; }
+.profile-stats{ display:flex; gap:10px; margin-top:16px; }
+.profile-stat{ flex:1; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center; }
+.profile-stat .num{ font-size:18px; font-weight:800; color:var(--primary); }
+.profile-stat .lbl{ font-size:11px; color:var(--text-muted); margin-top:2px; }
+.share-hero{ text-align:center; margin:10px 0 22px 0; }
+.share-app-icon{ width:64px; height:64px; border-radius:20px; background:var(--primary); color:var(--on-primary); font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 10px auto; }
+/* Shared brand-mark image used wherever the old "آ" letter placeholder
+   was: same theme-aware invert logic as .app-banner-mark img (black
+   ink needs no filter against dark theme's black --on-primary, light
+   theme's white --on-primary inverts it to white). */
+.brand-mark-img{ width:60%; height:60%; display:block; }
+.share-app-name{ font-size:16px; font-weight:700; }
+.share-app-desc{ font-size:12px; color:var(--text-muted); margin-top:2px; }
+.share-options{ display:flex; gap:10px; }
+.share-option{ flex:1; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px 8px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; }
+.share-opt-icon{ width:36px; height:36px; border-radius:50%; background:var(--bg-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; }
+.share-opt-icon svg{ width:16px; height:16px; }
+.share-option span{ font-size:12px; font-weight:600; }
+.about-logo{ width:64px; height:64px; border-radius:20px; background:var(--primary); color:var(--on-primary); font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:6px auto 10px auto; }
+.about-name{ text-align:center; font-size:17px; font-weight:700; }
+.about-version{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2px; margin-bottom:14px; }
+.about-links{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
+.about-link-row{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:13px 15px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; }
+.settings-row{ display:flex; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px 16px; margin-bottom:10px; gap:10px; }
+.device.lang-fa .settings-row{ flex-direction:row-reverse; }
+.desktop-manage-card{ position:relative; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px 46px 14px 16px; margin-bottom:10px; }
+.device.lang-fa .desktop-manage-card{ padding:14px 16px 14px 46px; }
+.desktop-manage-title{ font-size:14px; font-weight:700; margin-bottom:3px; }
+.desktop-manage-desc{ font-size:12px; color:var(--text-muted); margin-bottom:10px; }
+.desktop-manage-gear{ position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; border:none; background:var(--bg-soft); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.device.lang-fa .desktop-manage-gear{ right:auto; left:12px; }
+.desktop-manage-gear svg{ width:14px; height:14px; }
+/* unicode-bidi:plaintext makes each row's own text decide its
+   direction/alignment by its own first strong character instead of
+   inheriting the page's dir — Persian labels stay right-aligned,
+   a Latin one (an email, a version string, "English") reads and
+   aligns left, even inside an RTL Settings page. Applied broadly
+   across Settings-style rows and menu list labels, not just here. */
+.settings-row .lbl{ font-size:14px; font-weight:600; unicode-bidi:plaintext; }
+.settings-row .sub{ font-size:12px; color:var(--text-muted); margin-top:2px; unicode-bidi:plaintext; }
+@media (min-width: 960px){
+/* Always rendered (not display:none) so open/close is a slide
+   transition, not a sudden pop — same technique as the mobile
+   hamburger overlay. Feels like it extends out from the rail.
+   Desktop's panel always slides from the right regardless of
+   language (unlike the mobile hamburger, which flips sides) — the
+   .lang-fa override here reclaims that from the base rule, which
+   has higher specificity because it carries two classes. */
+/* Equal top/bottom margin by default (not flush edge-to-edge) — a
+   maximize toggle (menu-maximize-btn) switches to the old full-height
+   behavior. Plain slide, no scale — same reasoning as the mobile
+   panel's animation (SPEC.md): scale+opacity read as a separate
+   screen popping in on top, not a panel sliding into place. */
+#page-menu{
+  display:block; position:fixed; top:40px; bottom:40px; left:auto; right:14px; z-index:70;
+  width:420px; max-width:90vw; height:auto; overflow-y:auto;
+  background:var(--card); box-shadow:var(--shadow); padding:48px 24px 28px 24px;
+  border-radius:20px;
+  transform:translateX(calc(100% + 14px));
+  transition:transform .32s cubic-bezier(.4,0,.2,1), top .25s ease, bottom .25s ease, right .25s ease, border-radius .25s ease;
+  pointer-events:none;
+}
+.device.show-menu #page-menu{ transform:translateX(0); pointer-events:auto; }
+.device.menu-maximized #page-menu{ top:0; bottom:0; right:0; border-radius:0; }
+/* leave-bottom-bar's mobile square-bottom-corners (it sits flush above
+   the bottom nav bar there) doesn't apply on desktop — there's no
+   bottom bar here, and the panel now has a gap on every side, so all
+   corners should stay rounded regardless of menuSubView. */
+#page-menu.leave-bottom-bar{ height:auto; border-radius:20px; }
+/* Reclaims the closed position from the global .device.lang-fa
+   #page-menu rule above (mobile's hamburger panel flips sides by
+   language, but desktop's panel always slides from the right —
+   see the comment above #page-menu in this block). Without this,
+   that rule's higher specificity (two classes vs one id) wins even
+   here, leaving the fa panel sitting mid-screen, visible and with
+   pointer-events:none inherited from its own closed state, instead
+   of off past the right edge — a real bug, not just a cosmetic one:
+   nothing behind it is clickable either, since .device.show-menu
+   isn't set, so .menu-overlay (which would otherwise dismiss it)
+   never shows up. */
+.device.lang-fa #page-menu{ transform:translateX(calc(100% + 14px)); }
+.device.lang-fa.show-menu #page-menu{ transform:translateX(0); }
+.menu-overlay{
+  display:block; position:fixed; inset:0; z-index:65; background:var(--overlay);
+  opacity:0; pointer-events:none; transition:opacity .32s ease;
+}
+.device.show-menu .menu-overlay{ opacity:1; pointer-events:auto; }
+.menu-maximize-btn{ display:flex; align-items:center; justify-content:center; }
+}
