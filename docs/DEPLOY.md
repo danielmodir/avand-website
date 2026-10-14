@@ -7,23 +7,16 @@
 
 ## ۱. چی روی هاست بره
 
-فقط این‌ها (خروجی اسکریپت `scripts/build-dist.ps1` در پوشه‌ی `dist/`):
+فقط محتوای پوشه‌ی `frontend/` — همون‌طور که هست، بدون build:
 
 ```
-index.html
-robots.txt
-sitemap.xml
-en/
-fa/
-demo/
-assets/
+frontend/
+  index.html  robots.txt  sitemap.xml
+  en/  fa/  demo/  assets/
 ```
 
-**این‌ها روی هاست نرن:**
-- `docs/` (اسناد داخلی، نه بخشی از سایت)
-- `SPEC.md`, `DEPLOY.md`, `CLAUDE.md` (مستندات مخزن)
-- `.git/`, `.gitignore`
-- هر فایل QA/dev موقت (مثل `styleguide.html` اگه بعداً ساخته بشه)
+**این‌ها روی هاست نرن:** `backend/`، `database/`، `docs/`، `CLAUDE.md`،
+`.git/` و `.github/`.
 
 ---
 
@@ -114,14 +107,10 @@ location /assets/ {
 
 ---
 
-## ۷. اسکریپت ساخت dist/
+## ۷. انتشار خودکار (GitHub Pages)
 
-`scripts/build-dist.ps1` یه کپی تمیز از فایل‌های واقعی سایت (بدون
-`docs/`, `SPEC.md`, `CLAUDE.md`, `DEPLOY.md`, `.git`) رو داخل `dist/`
-می‌سازه. بدون npm، فقط PowerShell:
+`.github/workflows/pages.yml` با هر push روی `master` فقط پوشه‌ی
+`frontend/` رو روی GitHub Pages منتشر می‌کنه. پیش‌نیاز: در
+Settings → Pages، گزینه‌ی Source روی **GitHub Actions** باشه.
 
-```powershell
-./scripts/build-dist.ps1
-```
-
-خروجی توی `dist/` همون چیزیه که باید روی هاست آپلود بشه (بخش ۱).
+برای هاست دیگه (مثلاً سرور ایرانی)، کافیه محتوای `frontend/` آپلود بشه.

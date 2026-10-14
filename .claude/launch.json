@@ -4,7 +4,7 @@
     {
       "name": "avand-site",
       "runtimeExecutable": "npx.cmd",
-      "runtimeArgs": ["-y", "http-server", "-p", "8080", "-c-1"],
+      "runtimeArgs": ["-y", "http-server", "frontend", "-p", "8080", "-c-1"],
       "port": 8080
     }
   ]
