@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx.cmd",
       "runtimeArgs": ["-y", "http-server", "frontend", "-p", "8080", "-c-1"],
       "port": 8080
+    },
+    {
+      "name": "toojibee-api-sqlite",
+      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["backend/manage.py", "runserver", "127.0.0.1:8000", "--settings=config.settings.test", "--noreload"],
+      "port": 8000
     }
   ]
 }

@@ -1,5 +1,9 @@
 import re
 from datetime import timedelta
+from unittest import mock
+from urllib.parse import parse_qs, urlparse
+
+from django.test import override_settings
 
 from django.db import connections
 from django.utils import timezone
@@ -137,3 +141,68 @@ class AccountDeletionTests(ApiTestCase):
         login = APIClient().post("/api/v1/auth/login", {"email": "user@example.com", "password": PASSWORD}, format="json")
         self.assertEqual(login.status_code, 200)
         self.assertEqual(User.objects.get(email="user@example.com").status, "active")
+
+
+@override_settings(GOOGLE_WEB_CLIENT_ID="web-client", GOOGLE_WEB_CLIENT_SECRET="secret",
+                   GOOGLE_REDIRECT_URI="https://api.example/api/v1/auth/google/callback",
+                   CORS_ALLOWED_ORIGINS=["http://localhost:8080"])
+class GoogleRedirectFlowTests(ApiTestCase):
+    def test_start_callback_exchange(self):
+        start = APIClient().get("/api/v1/auth/google/start", {"next": "http://localhost:8080/demo/"})
+        self.assertEqual(start.status_code, 302)
+        query = parse_qs(urlparse(start["Location"]).query)
+        self.assertEqual(query["client_id"], ["web-client"])
+
+        claims = {"sub": "g-123", "email": "g@example.com", "email_verified": True, "given_name": "Gol", "nonce": "x"}
+        with mock.patch("apps.core.google_oauth.claims_from_code", return_value=claims):
+            back = APIClient().get("/api/v1/auth/google/callback", {"code": "c", "state": query["state"][0]})
+        self.assertEqual(back.status_code, 302)
+        location = back["Location"]
+        self.assertTrue(location.startswith("http://localhost:8080/demo/#login_code="))
+        self.assertNotIn("access_token", location)  # tokens never travel in the URL
+
+        code = location.split("login_code=")[1]
+        tokens = APIClient().post("/api/v1/auth/google/exchange", {"code": code}, format="json")
+        self.assertEqual(tokens.status_code, 200)
+        self.assertIn("refresh_token", tokens.json())
+        again = APIClient().post("/api/v1/auth/google/exchange", {"code": code}, format="json")
+        self.assertEqual(again.status_code, 401)  # one-time code
+        self.assertTrue(User.objects.filter(email="g@example.com", email_verified_at__isnull=False).exists())
+
+    def test_rejects_foreign_redirect_and_tampered_state(self):
+        evil = APIClient().get("/api/v1/auth/google/start", {"next": "https://evil.example/"})
+        self.assertEqual(evil.status_code, 400)
+        tampered = APIClient().get("/api/v1/auth/google/callback", {"code": "c", "state": "forged"})
+        self.assertEqual(tampered.status_code, 400)
+
+
+class FileTests(ApiTestCase):
+    def test_upload_reencodes_and_only_the_owner_can_read(self):
+        import io
+
+        from PIL import Image
+
+        buf = io.BytesIO()
+        Image.new("RGB", (64, 48), "orange").save(buf, format="PNG")
+        buf.seek(0)
+        buf.name = "photo.png"
+        owner = self.register()
+        uploaded = owner.post("/api/v1/files", {"file": buf, "module": "planning"}, format="multipart")
+        self.assertEqual(uploaded.status_code, 201, uploaded.content)
+        file_id = uploaded.json()["id"]
+
+        got = owner.get(f"/api/v1/files/{file_id}")
+        self.assertEqual(got.status_code, 200)
+        self.assertEqual(got["Content-Type"], "image/webp")
+        self.assertIn("no-store", got["Cache-Control"])
+        self.assertEqual(APIClient().get(f"/api/v1/files/{file_id}").status_code, 401)
+        other = self.register("other@example.com", "Ali")
+        self.assertEqual(other.get(f"/api/v1/files/{file_id}").status_code, 404)
+
+    def test_non_images_are_rejected(self):
+        import io
+
+        fake = io.BytesIO(b"<script>alert(1)</script>")
+        fake.name = "x.png"
+        client = self.register()
+        self.assertEqual(client.post("/api/v1/files", {"file": fake}, format="multipart").status_code, 400)

@@ -136,7 +136,12 @@ REFRESH_TOKEN_LIFETIME = timedelta(days=int(env("REFRESH_TOKEN_DAYS", "30")))
 ACCOUNT_DELETION_GRACE = timedelta(days=30)
 EMAIL_TOKEN_LIFETIME = timedelta(hours=24)
 PASSWORD_RESET_TOKEN_LIFETIME = timedelta(hours=1)
-GOOGLE_CLIENT_IDS = [c.strip() for c in env("GOOGLE_CLIENT_IDS", "").split(",") if c.strip()]
+GOOGLE_CLIENT_IDS = [c.strip() for c in env("GOOGLE_CLIENT_IDS", "").split(",") if c.strip()]  # mobile ID tokens
+# Web redirect flow (apps/core/google_oauth.py). The redirect URI is this
+# API's /api/v1/auth/google/callback, registered in Google Cloud Console.
+GOOGLE_WEB_CLIENT_ID = env("GOOGLE_WEB_CLIENT_ID", "")
+GOOGLE_WEB_CLIENT_SECRET = env("GOOGLE_WEB_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI = env("GOOGLE_REDIRECT_URI", "")
 
 # Links inside emails point at the web app.
 FRONTEND_URL = env("FRONTEND_URL", "http://localhost:8080/demo/")

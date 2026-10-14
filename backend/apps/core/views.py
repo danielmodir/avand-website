@@ -65,6 +65,33 @@ class GoogleLoginView(PublicView):
         return Response(accounts.start_session(user, request, data.validated_data))
 
 
+class GoogleStartView(PublicView):
+    throttle_scope = "login"
+
+    def get(self, request):
+        from . import google_oauth
+
+        return google_oauth.start(request)
+
+
+class GoogleCallbackView(PublicView):
+    throttle_scope = "login"
+
+    def get(self, request):
+        from . import google_oauth
+
+        return google_oauth.callback(request)
+
+
+class GoogleExchangeView(PublicView):
+    throttle_scope = "login"
+
+    def post(self, request):
+        from . import google_oauth
+
+        return google_oauth.exchange(request)
+
+
 class RefreshView(PublicView):
     throttle_scope = "refresh"
 
@@ -313,7 +340,10 @@ class FileDetailView(APIView):
         if stored is None or not file_path(stored).exists():
             raise Http404
         response = FileResponse(open(file_path(stored), "rb"), content_type=stored.mime)
-        response["Cache-Control"] = "private, max-age=86400"
+        # Never cached: browsers don't key their cache on Authorization, so a
+        # cached copy would be shown to the next person using the same browser.
+        response["Cache-Control"] = "private, no-store"
+        response["Vary"] = "Authorization"
         response["X-Content-Type-Options"] = "nosniff"
         return response
 

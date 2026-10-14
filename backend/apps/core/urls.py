@@ -6,7 +6,10 @@ urlpatterns = [
     # auth
     path("auth/register", v.RegisterView.as_view()),
     path("auth/login", v.LoginView.as_view()),
-    path("auth/google", v.GoogleLoginView.as_view()),
+    path("auth/google", v.GoogleLoginView.as_view()),  # mobile: posts a Google ID token
+    path("auth/google/start", v.GoogleStartView.as_view()),  # web: redirect flow
+    path("auth/google/callback", v.GoogleCallbackView.as_view()),
+    path("auth/google/exchange", v.GoogleExchangeView.as_view()),
     path("auth/refresh", v.RefreshView.as_view()),
     path("auth/logout", v.LogoutView.as_view()),
     path("auth/logout-all", v.LogoutAllView.as_view()),
