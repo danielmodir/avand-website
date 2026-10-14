@@ -1,3 +1,42 @@
+/* ============ TASK RANGES ON THE CALENDAR ============
+   Every task or subtask with a date range is drawn across its days as a
+   light, theme-colored capsule, with an orange circle on its start day
+   and on its deadline. Overlapping ranges merge into one band; the band
+   is capped (rounded) wherever the day before/after is not covered, and at week-row edges. */
+const MAX_RANGE_DAYS = 400;
+
+function taskRangeMap(){
+  const map = new Map(); // dateKey -> { mark: true when a range starts or ends here }
+  const add = item => {
+    if(item.timeMode !== 'range' || !item.endDate || item.endDate <= item.date) return;
+    let d = parseDateKey(item.date);
+    for(let i = 0; i < MAX_RANGE_DAYS; i++){
+      const key = dateKey(d);
+      const entry = map.get(key) || { mark: false };
+      if(key === item.date || key === item.endDate) entry.mark = true;
+      map.set(key, entry);
+      if(key >= item.endDate) break;
+      d = addDays(d, 1);
+    }
+  };
+  state.tasks.forEach(task => { add(task); (task.subtasks || []).forEach(add); });
+  return map;
+}
+
+// col = the cell's column (0-6): a range crossing into the next week row
+// is rounded off at the row edge, so each row shows its own capsule.
+function rangeCellClass(day, map, col){
+  const entry = map.get(dateKey(day));
+  if(!entry) return '';
+  return [
+    'rng',
+    (col === 0 || !map.has(dateKey(addDays(day, -1)))) && 'rng-cap-s',
+    (col === 6 || !map.has(dateKey(addDays(day, 1)))) && 'rng-cap-e',
+    entry.mark && 'rng-mark',
+  ].filter(Boolean).join(' ');
+}
+
+const rangeDotHtml = cls => cls.includes('rng-mark') ? '<span class="rng-dot" aria-hidden="true"></span>' : '';
 /* ============ MERGED CALENDAR WIDGET (mobile only — see
    .home-cal-widget{display:none} in the >=960px block, where the full
    #page-calendar column is used instead) ============
@@ -8,14 +47,16 @@ function renderHomeCalWidget(){
   const d = state.homeDate;
   const disp = displayMonthYear(d);
   const cells = monthMatrix(d);
-  const cellHtml = (day) => {
+  const ranges = taskRangeMap();
+  const cellHtml = (day, i) => {
     const inMonth = cellInCurrentMonth(day, d);
     const {tasks, events} = itemsForDate(day);
     const hasAny = tasks.length || events.length;
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
-    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-      ${dayCellDateHtml(day)}
+    const rng = rangeCellClass(day, ranges, i % 7);
+    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+      ${rangeDotHtml(rng)}${dayCellDateHtml(day)}
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
     </button>`;
   };
@@ -79,17 +120,19 @@ function renderCalendar(){
   let body = '';
   if(state.calMode === 'month'){
     const cells = monthMatrix(c);
+    const ranges = taskRangeMap();
     body = `
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
       <div class="month-grid" id="cal-month-grid">
-        ${cells.map(d => {
+        ${cells.map((d, i) => {
           const inMonth = cellInCurrentMonth(d, c);
           const {tasks,events} = itemsForDate(d);
           const hasAny = tasks.length || events.length;
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
-          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-            ${dayCellDateHtml(d)}
+          const rng = rangeCellClass(d, ranges, i % 7);
+          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+            ${rangeDotHtml(rng)}${dayCellDateHtml(d)}
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
           </button>`;
         }).join('')}

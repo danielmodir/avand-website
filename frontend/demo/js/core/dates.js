@@ -14,6 +14,10 @@ const pad = n => String(n).padStart(2, '0');
 
 const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
+// 'YYYY-MM-DD' -> local midnight. new Date('YYYY-MM-DD') would parse it as
+// UTC and land on the previous day west of Greenwich.
+const parseDateKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+
 const sameDay = (a,b) => dateKey(a) === dateKey(b);
 
 const addDays = (d,n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };

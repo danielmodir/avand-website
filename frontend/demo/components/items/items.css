@@ -5,24 +5,10 @@
 /* Below WCAG's 24x24 minimum touch target as drawn — grow the tap area
    invisibly instead of the visible circle, to keep the compact look. */
 .checkbox::before{ content:''; position:absolute; inset:-5px; }
-.checkbox-quickset{
-  position:absolute; top:50%; left:calc(100% + 8px); z-index:5;
-  display:flex; gap:6px; opacity:0; pointer-events:none;
-  transform:translateY(-50%) scale(.85); transform-origin:left center;
-  transition:opacity .15s ease, transform .15s cubic-bezier(.34,1.56,.64,1);
-}
-.checkbox-quickset.show{ opacity:1; pointer-events:auto; transform:translateY(-50%) scale(1); }
-/* fa: task/habit rows read right-to-left (checkbox at the right,
-   reading-start edge), so the quickset popover opens toward the left. */
+/* fa: task/habit rows read right-to-left (checkbox at the right). */
 .device.lang-fa .item-card{ flex-direction:row-reverse; }
-.device.lang-fa .checkbox-quickset{ left:auto; right:calc(100% + 8px); transform-origin:right center; }
-.checkbox-quickset button{ font-size:10.5px; font-weight:700; padding:6px 11px; border-radius:999px; cursor:pointer; font-family:inherit; white-space:nowrap; box-shadow:var(--shadow); }
-.checkbox-quickset .qs-done{ background:var(--primary); color:var(--on-primary); border:none; }
-.checkbox-quickset .qs-undone{ background:var(--card); color:var(--text-muted); border:1px solid var(--border); }
-/* Desktop-only: right-click on a task/habit checkbox or row (see
-   attachDesktopContextMenu) — Done/Undone/Edit/Delete, the mouse-driven
-   equivalent of the mobile long-press quickset, plus the two actions
-   that popover doesn't have room for. */
+/* Menu of a selected row (right-click or long-press, see
+   attachItemSelection): Done / Not done / Edit / Delete. */
 .row-context-menu{
   position:fixed; z-index:200; background:var(--card); border:1px solid var(--border);
   border-radius:14px; box-shadow:var(--shadow); padding:6px; min-width:160px;
@@ -39,8 +25,8 @@
 .checkbox:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
 .checkbox:active{ transform:scale(0.85); }
 .checkbox.checked{background:var(--primary); animation:checkbox-pop .3s cubic-bezier(.34,1.56,.64,1); }
-/* Explicitly marked "not done" via the long-press quickset (see
-   applyQuicksetState) — distinct from the plain empty/untouched state. */
+/* Explicitly marked "not done" from the selection menu (see
+   applyQuicksetState), distinct from the plain empty/untouched state. */
 .checkbox.skipped{background:var(--danger); border-color:var(--danger); animation:checkbox-pop .3s cubic-bezier(.34,1.56,.64,1); }
 .checkbox.skipped svg{width:12px; height:12px; fill:#fff;}
 @keyframes checkbox-pop{ 0%{ transform:scale(0.7); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
@@ -71,23 +57,65 @@
 .swipe-delete-bg svg{ width:17px; height:17px; fill:#fff; }
 .swipe-delete-bg.swipe-bg-done{ background:#2E7D32; }
 /* subtasks: small down-arrow at the bottom-center of a task card that
-   has subtasks; the expanded list sits under it, indented one tab on
-   the checkbox side, each row a smaller copy of a task row. */
+   has subtasks. Open, the subtasks hang under the card as one connected
+   block (not separate cards): tucked under the card's bottom edge,
+   inset from both sides, rows divided by hairlines and joined by a
+   cascade line on the checkbox side. */
 .item-card.task-row.has-subtasks{ padding-bottom:14px; }
 .subtask-toggle{ position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:28px; height:14px; border:none; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
 .subtask-toggle svg{ width:14px; height:14px; transition:transform .2s ease; }
 .subtask-toggle:hover{ color:var(--primary); }
 .subtask-toggle.open svg{ transform:rotate(180deg); }
-.subtask-children{ padding-left:28px; margin:-2px 0 8px 0; display:flex; flex-direction:column; gap:6px; }
-.device.lang-fa .subtask-children{ padding-left:0; padding-right:28px; }
-.subtask-row{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:18px; padding:7px 12px; }
-.device.lang-fa .subtask-row{ flex-direction:row-reverse; }
-.subtask-row .checkbox{ width:18px; height:18px; }
-.subtask-row .checkbox.checked svg{ width:10px; height:10px; }
-.subtask-row .item-title{ font-size:12.5px; font-weight:500; }
-.subtask-row.done{ opacity:.5; }
+.swipe-wrap.task-wrap.subs-open{ z-index:1; }
+.subtask-children{
+  position:relative; margin:-22px 14px 10px; padding:18px 0 4px;
+  background:var(--bg-soft); border:1px solid var(--border); border-top:none;
+  border-radius:0 0 18px 18px;
+  display:flex; flex-direction:column;
+}
+.subtask-row{
+  position:relative; display:flex; align-items:center; gap:10px;
+  padding:8px 14px 8px 34px; cursor:default;
+  transition:background-color .15s ease;
+}
+.device.lang-fa .subtask-row{ flex-direction:row-reverse; padding:8px 34px 8px 14px; }
+.subtask-row + .subtask-row{ border-top:1px solid var(--border); }
+/* cascade line: a vertical rule down the block plus an elbow into each
+   row; the last row gets a rounded L. Physical sides, mirrored for fa
+   like the rest of the rows (fa mirrors with row-reverse, not dir=rtl). */
+.subtask-row::before{ content:''; position:absolute; left:18px; top:0; bottom:0; border-left:1.5px solid var(--border); }
+.subtask-row:not(:last-child)::after{ content:''; position:absolute; left:18px; top:50%; width:10px; border-top:1.5px solid var(--border); }
+.subtask-row:last-child::before{ bottom:50%; width:10px; border-bottom:1.5px solid var(--border); border-bottom-left-radius:8px; }
+.device.lang-fa .subtask-row::before{ left:auto; right:18px; border-left:none; border-right:1.5px solid var(--border); }
+.device.lang-fa .subtask-row:not(:last-child)::after{ left:auto; right:18px; }
+.device.lang-fa .subtask-row:last-child::before{ border-bottom-left-radius:0; border-bottom-right-radius:8px; }.subtask-row .checkbox{ width:18px; height:18px; }
+.subtask-row .checkbox.checked svg, .subtask-row .checkbox.skipped svg{ width:10px; height:10px; }
+.subtask-row .item-title{ font-size:12.5px; font-weight:500; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .subtask-row.done .item-title{ text-decoration:line-through; color:var(--text-muted); }
-/* event cards */
+.subtask-row.skipped .item-title{ text-decoration:line-through; color:var(--danger); }
+.subtask-row.done .checkbox{ opacity:.6; }
+@media (hover:hover){ .subtask-row:hover{ background:var(--primary-soft); } }
+.subtask-row:last-child{ border-radius:0 0 17px 17px; }
+
+/* ---- selected row (long-press / right-click) ----
+   Lifts out of the page: scales up with a colored glow. Uses the
+   standalone `scale` property so it composes with the swipe gesture's
+   inline transform instead of fighting it. The swipe wrapper stops
+   clipping while selected so the glow can spill outside the card. */
+[data-select-type]{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.swipe-wrap.is-selected{ overflow:visible; z-index:6; }
+.swipe-wrap.is-selected .swipe-delete-bg{ visibility:hidden; }
+.swipe-wrap .item-card.is-selected,
+.subtask-children .subtask-row.is-selected{
+  scale:1.035; z-index:2;
+  box-shadow:0 0 0 2px var(--select-ring), 0 0 26px 2px var(--select-glow), var(--select-lift);
+  transition:scale .28s cubic-bezier(.22,1,.36,1), box-shadow .28s ease;
+}
+.subtask-children .subtask-row.is-selected{ background:var(--card); border-radius:14px; border-top-color:transparent; }
+.subtask-children .subtask-row.is-selected + .subtask-row{ border-top-color:transparent; }
+@media (prefers-reduced-motion:reduce){
+  .swipe-wrap .item-card.is-selected, .subtask-children .subtask-row.is-selected{ scale:1; }
+}/* event cards */
 .events-scroll{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
 .events-scroll::-webkit-scrollbar{ display:none; }
 .event-card{ position:relative; flex:0 0 auto; width:96px; height:116px; background:var(--card); border:1px solid var(--border); border-radius:18px; padding:12px 12px 10px 12px; display:flex; flex-direction:column; justify-content:flex-end; cursor:pointer; }

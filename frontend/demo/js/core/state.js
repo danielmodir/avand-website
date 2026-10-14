@@ -24,7 +24,9 @@ const state = {
   dobPickerOpen: false,
   desktopTitleMenuOpen: false,
   expandedTasks: {}, // task id -> true while its subtask list is shown
+  selection: null,   // { type: 'task'|'subtask'|'habit', id } while a row is selected (glow + menu)
   editingId: null,
+  editingParentId: null, // parent task id while the popup edits a subtask
   sectionExpanded: { tasks:false, habits:false, events:false },
   /* Mobile-only (<960px): a non-empty section is shown by default, this
      only tracks the user manually collapsing it — opposite default from
@@ -91,24 +93,27 @@ const state = {
    subtask expand / auto-check behavior is visible right away. */
 function sampleSubtaskTask(){
   const fa = lang() === 'fa';
-  return {
+  const task = {
     id: uid(), title: fa ? 'آماده کردن ارائه' : 'Prepare the presentation',
     category:'', description:'', photos:[], pinned:false, done:false, skipped:false,
-    subtasks: [
-      { id: uid(), text: fa ? 'جمع کردن منابع' : 'Gather sources', done: true },
-      { id: uid(), text: fa ? 'ساختن اسلایدها' : 'Build the slides', done: false },
-      { id: uid(), text: fa ? 'تمرین ارائه' : 'Rehearse', done: false },
-    ],
+    subtasks: [],
     timeMode:'single', date: dateKey(today), endDate:null,
     recurrence:{mode:null, interval:1, weekdays:[]}, notification:{type:null}
   };
+  task.subtasks = [
+    Object.assign(newSubtask(task, fa ? 'جمع کردن منابع' : 'Gather sources'), { done: true }),
+    newSubtask(task, fa ? 'ساختن اسلایدها' : 'Build the slides'),
+    // A subtask with its own date range, so the calendar capsule shows up.
+    Object.assign(newSubtask(task, fa ? 'تمرین ارائه' : 'Rehearse'), { timeMode: 'range', endDate: dateKey(addDays(today, 3)) }),
+  ];
+  return task;
 }
 
 function seed(){
   state.tasks = [
     { id: uid(), title:'Review math notes', category:'Study', description:'Go over the derivatives chapter and do 10 practice problems.',
       photos:[], pinned:true, done:false,
-      subtasks:[{id:uid(), text:'Review notes', done:true},{id:uid(), text:'Solve practice set', done:false}],
+      subtasks:[],
       timeMode:'single', date: dateKey(today), endDate:null,
       recurrence:{mode:null, interval:1, weekdays:[]},
       notification:{type:'time', time:'18:00', repeatHours:2, text:''} },

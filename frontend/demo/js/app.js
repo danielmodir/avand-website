@@ -38,7 +38,7 @@ async function loadFromCloud(){
   state.profile = Object.assign({}, state.profile, data.profile);
   syncProfileName();
   state.settings = Object.assign({}, state.settings, data.settings);
-  state.tasks = data.tasks;
+  state.tasks = data.tasks.map(t => ({ ...t, subtasks: (t.subtasks || []).map(s => normalizeSubtask(s, t)) }));
   state.habits = data.habits;
   state.events = data.events;
 }
@@ -97,8 +97,7 @@ async function start(){
   initFabAndMenuInteractions();
   initHomeScrollExpand();
   initCalendarWheelSwipe();
-  attachCheckboxLongPress();
-  attachDesktopContextMenu();
+  attachItemSelection();
   attachDaySheetDrag();
   attachLogoutHold();
   boot();

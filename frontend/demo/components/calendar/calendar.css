@@ -134,3 +134,23 @@
    CSS alone. */
 .back-today-btn{ bottom:auto; }
 }
+
+/* ---- task date ranges (see taskRangeMap in calendar.js) ----
+   A light capsule behind every day a task/subtask range covers, extended
+   over half the grid gap on each side so neighbouring days join up, and
+   rounded where the range starts/ends. Start and deadline days get a
+   solid orange circle. Logical sides: both grids are dir=rtl in fa. */
+.day-cell{ position:relative; isolation:isolate; }
+.day-cell.rng::before{
+  content:''; position:absolute; z-index:-2; top:20%; bottom:20%; inset-inline:-2px;
+  background:var(--range-band);
+}
+.day-cell.rng-cap-s::before{ inset-inline-start:4%; border-start-start-radius:999px; border-end-start-radius:999px; }
+.day-cell.rng-cap-e::before{ inset-inline-end:4%; border-start-end-radius:999px; border-end-end-radius:999px; }
+.rng-dot{
+  position:absolute; z-index:-1; top:50%; left:50%; height:66%; aspect-ratio:1;
+  transform:translate(-50%,-50%); border-radius:50%;
+  background:var(--range-mark); box-shadow:0 4px 12px -4px var(--range-mark);
+}
+.day-cell.rng-mark:not(.selected){ color:var(--on-range-mark); }
+.day-cell.rng-mark .day-cell-sub{ opacity:.75; }

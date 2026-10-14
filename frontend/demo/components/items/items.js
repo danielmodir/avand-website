@@ -1,20 +1,49 @@
-/* Small DONE/UNDONE popover, revealed by holding a checkbox (see
-   attachCheckboxLongPress) — an explicit alternative to the normal tap-
-   to-toggle, independent of the row's own swipe-to-delete gesture. */
-function checkboxQuicksetHtml(){
-  return `<div class="checkbox-quickset">
-    <button type="button" class="qs-done" data-qs="done" tabindex="-1">${t('qsDone')}</button>
-    <button type="button" class="qs-undone" data-qs="undone" tabindex="-1">${t('qsUndone')}</button>
-  </div>`;
+/* ============ SUBTASKS AS FULL TASKS ============
+   A subtask is stored inside its parent's `subtasks` array (that's the
+   shape the Supabase row and the demo already use), but it carries the
+   same fields as a task: its own date or date range, description,
+   photos, reminder and done / not-done state. Editing one opens the
+   normal task popup. Subtasks never repeat on their own and never have
+   subtasks of their own (one level, same rule as the MySQL schema). */
+function subTitle(s){ return s.title ?? s.text ?? ''; }
+
+function newSubtask(parent, title){
+  return {
+    id: uid(), title, text: title, done: false, skipped: false,
+    description: '', photos: [], timeMode: 'single',
+    date: parent?.date || dateKey(today), endDate: null,
+    notification: { type: null }
+  };
+}
+
+/* Older rows only have { id, text, done }; fill in the task fields. */
+function normalizeSubtask(s, parent){
+  const title = subTitle(s);
+  return Object.assign(newSubtask(parent, title), s, { title, text: title });
+}
+
+/* Finds a task or a subtask by id. parent is null for top-level tasks. */
+function findTaskOrSub(id){
+  for(const task of state.tasks){
+    if(task.id === id) return { item: task, parent: null };
+    const sub = (task.subtasks || []).find(s => s.id === id);
+    if(sub) return { item: sub, parent: task };
+  }
+  return { item: null, parent: null };
+}
+
+function isSelected(type, id){
+  return !!state.selection && state.selection.type === type && state.selection.id === id;
 }
 
 function taskRow(task){
   const subs = task.subtasks || [];
   const open = subs.length > 0 && !!state.expandedTasks[task.id];
-  return `<div class="swipe-wrap task-wrap" data-swipe-type="task" data-swipe-id="${task.id}">
+  const sel = isSelected('task', task.id);
+  return `<div class="swipe-wrap task-wrap ${open?'subs-open':''} ${sel?'is-selected':''}" data-swipe-type="task" data-swipe-id="${task.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
-    <div class="item-card task-row ${subs.length?'has-subtasks':''} ${task.done?'done':''} ${task.skipped?'skipped':''}">
-      <div class="checkbox ${task.done?'checked':''} ${task.skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" role="checkbox" aria-checked="${task.done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${task.done?ICONS.check:task.skipped?ICONS.close:''}${checkboxQuicksetHtml()}</div>
+    <div class="item-card task-row ${subs.length?'has-subtasks':''} ${task.done?'done':''} ${task.skipped?'skipped':''} ${sel?'is-selected':''}" data-select-type="task" data-select-id="${task.id}">
+      <div class="checkbox ${task.done?'checked':''} ${task.skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" role="checkbox" aria-checked="${task.done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${task.done?ICONS.check:task.skipped?ICONS.close:''}</div>
       <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${task.id}">
         <p class="item-title">${escapeHtml(task.title)}</p>
       </div>
@@ -22,16 +51,19 @@ function taskRow(task){
       ${subs.length ? `<button type="button" class="subtask-toggle ${open?'open':''}" data-action="toggle-subtasks" data-id="${task.id}" aria-label="${t('subtasksLabel')}" aria-expanded="${open}">${ICONS.chevronDown}</button>` : ''}
     </div>
   </div>
-  ${open ? `<div class="subtask-children">${subs.map(s => subtaskRow(task, s)).join('')}</div>` : ''}`;
+  ${open ? `<div class="subtask-children" role="group" aria-label="${t('subtasksLabel')}">${subs.map(s => subtaskRow(task, s)).join('')}</div>` : ''}`;
 }
 
-/* Same checkbox + title as a task row, just smaller and indented under
-   its parent's checkbox — toggled via toggle-subtask, which keeps the
-   parent's done state in sync both ways (see syncTaskFromSubtasks). */
+/* One row of the cascading block under an open task: same checkbox and
+   title as a task row, smaller, joined to its siblings by the cascade
+   line. Tap the title to edit it like any task; long-press or
+   right-click to select it. */
 function subtaskRow(task, s){
-  return `<div class="subtask-row ${s.done?'done':''}" data-task-id="${task.id}" data-sub-id="${s.id}">
-    <div class="checkbox ${s.done?'checked':''}" data-action="toggle-subtask" data-task-id="${task.id}" data-sub-id="${s.id}" role="checkbox" aria-checked="${!!s.done}" aria-label="${escapeAttr(s.text)}" tabindex="0">${s.done?ICONS.check:''}</div>
-    <p class="item-title">${escapeHtml(s.text)}</p>
+  const title = subTitle(s);
+  const sel = isSelected('subtask', s.id);
+  return `<div class="subtask-row ${s.done?'done':''} ${s.skipped?'skipped':''} ${sel?'is-selected':''}" data-task-id="${task.id}" data-sub-id="${s.id}" data-select-type="subtask" data-select-id="${s.id}">
+    <div class="checkbox ${s.done?'checked':''} ${s.skipped?'skipped':''}" data-action="toggle-subtask" data-task-id="${task.id}" data-sub-id="${s.id}" role="checkbox" aria-checked="${!!s.done}" aria-label="${escapeAttr(title)}" tabindex="0">${s.done?ICONS.check:s.skipped?ICONS.close:''}</div>
+    <p class="item-title" data-action="edit-item" data-type="task" data-id="${s.id}">${escapeHtml(title)}</p>
   </div>`;
 }
 
@@ -39,10 +71,10 @@ function habitRow(h, date){
   const key = dateKey(date);
   const checked = h.completedDates.includes(key);
   const skipped = !checked && (h.skippedDates||[]).includes(key);
-  return `<div class="swipe-wrap" data-swipe-type="habit" data-swipe-id="${h.id}">
+  return `<div class="swipe-wrap ${isSelected('habit', h.id)?'is-selected':''}" data-swipe-type="habit" data-swipe-id="${h.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
-    <div class="item-card ${checked?'done':''} ${skipped?'skipped':''}">
-      <div class="checkbox square ${checked?'checked':''} ${skipped?'skipped':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}" role="checkbox" aria-checked="${checked}" aria-label="${escapeAttr(h.title)}" tabindex="0">${checked?ICONS.check:skipped?ICONS.close:''}${checkboxQuicksetHtml()}</div>
+    <div class="item-card ${checked?'done':''} ${skipped?'skipped':''} ${isSelected('habit', h.id)?'is-selected':''}" data-select-type="habit" data-select-id="${h.id}">
+      <div class="checkbox square ${checked?'checked':''} ${skipped?'skipped':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}" role="checkbox" aria-checked="${checked}" aria-label="${escapeAttr(h.title)}" tabindex="0">${checked?ICONS.check:skipped?ICONS.close:''}</div>
       <p class="item-title" data-action="edit-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}</p>
     </div>
   </div>`;
@@ -133,196 +165,216 @@ function renderItemSections(tasks, habits, events, date){
   return `${renderEventsSection(events)}${renderTasksSection(tasks)}${renderHabitsSection(habits, date)}`;
 }
 
-/* Holding a checkbox (task or habit) reveals a small DONE/UNDONE popover
-   next to it — an explicit alternative to the normal tap-to-toggle,
-   separate from the row's own swipe-to-delete gesture. Delegated once on
-   #device (not per-row) so it keeps working after the scoped DOM patches
-   in the toggle-task/habit handlers, which never re-render the row. */
-/* markSkipped is only ever true from the quickset's UNDONE button — an
-   explicit "not done" (red X + strikethrough), distinct from the plain
-   tap-to-toggle empty state. The three states this gives a task/habit:
-   done, explicitly-not-done, and (via swipe) deleted. */
+/* ============ DONE / NOT DONE ============
+   One entry point for every checkbox (task, subtask, habit), used by a
+   plain tap, swipe-left and the selection menu. markSkipped is only true
+   from the menu's "not done": an explicit red X + strikethrough, distinct
+   from the untouched state.
+   Parent and subtasks stay consistent both ways: checking a parent
+   checks all of its subtasks, and a parent is done exactly when every
+   subtask is done. */
 function applyQuicksetState(cb, wantDone, markSkipped){
   const action = cb.dataset.action;
   const isSkipped = !!markSkipped && !wantDone;
-  let isDone, toggledTask = null;
   if(action === 'toggle-task'){
-    const item = state.tasks.find(x => x.id === cb.dataset.id);
-    if(!item) return;
-    item.done = wantDone; item.skipped = isSkipped; isDone = wantDone;
-    // Checking/unchecking the parent cascades to every subtask, so the
-    // "all subtasks done <=> parent done" rule never ends up violated.
-    (item.subtasks || []).forEach(s => { s.done = wantDone; });
-    toggledTask = item;
-    cloudSync(() => Cloud.saveTask(item));
+    const task = state.tasks.find(x => x.id === cb.dataset.id);
+    if(!task) return;
+    task.done = wantDone; task.skipped = isSkipped;
+    (task.subtasks || []).forEach(s => { s.done = wantDone; s.skipped = isSkipped; });
+    cloudSync(() => Cloud.saveTask(task));
+    syncTaskDom(task);
+  } else if(action === 'toggle-subtask'){
+    const task = state.tasks.find(x => x.id === cb.dataset.taskId);
+    const sub = task?.subtasks?.find(s => s.id === cb.dataset.subId);
+    if(!sub) return;
+    sub.done = wantDone; sub.skipped = isSkipped;
+    task.done = task.subtasks.every(s => s.done);
+    if(task.done) task.skipped = false;
+    cloudSync(() => Cloud.saveTask(task));
+    syncTaskDom(task);
   } else if(action === 'toggle-habit'){
-    const item = state.habits.find(x => x.id === cb.dataset.id);
-    if(!item) return;
+    const habit = state.habits.find(x => x.id === cb.dataset.id);
+    if(!habit) return;
     const dk = cb.dataset.date;
-    const i = item.completedDates.indexOf(dk);
-    if(wantDone && i < 0) item.completedDates.push(dk);
-    else if(!wantDone && i >= 0) item.completedDates.splice(i, 1);
-    item.skippedDates = item.skippedDates || [];
-    const si = item.skippedDates.indexOf(dk);
-    if(isSkipped && si < 0) item.skippedDates.push(dk);
-    else if(!isSkipped && si >= 0) item.skippedDates.splice(si, 1);
-    isDone = wantDone;
-    cloudSync(() => Cloud.saveHabit(item));
+    const i = habit.completedDates.indexOf(dk);
+    if(wantDone && i < 0) habit.completedDates.push(dk);
+    else if(!wantDone && i >= 0) habit.completedDates.splice(i, 1);
+    habit.skippedDates = habit.skippedDates || [];
+    const si = habit.skippedDates.indexOf(dk);
+    if(isSkipped && si < 0) habit.skippedDates.push(dk);
+    else if(!isSkipped && si >= 0) habit.skippedDates.splice(si, 1);
+    cloudSync(() => Cloud.saveHabit(habit));
+    paintCheckbox(cb, wantDone, isSkipped);
   } else return;
-  cb.classList.toggle('checked', isDone);
-  cb.classList.toggle('skipped', isSkipped);
-  cb.setAttribute('aria-checked', isDone);
-  const qs = cb.querySelector('.checkbox-quickset');
-  qs?.classList.remove('show'); // always closes the popover, even when set via a qs button
-  cb.innerHTML = (isDone ? ICONS.check : isSkipped ? ICONS.close : '') + (qs ? qs.outerHTML : '');
-  cb.closest('.item-card')?.classList.toggle('done', isDone);
-  cb.closest('.item-card')?.classList.toggle('skipped', isSkipped);
-  if(toggledTask) syncSubtaskRowsDom(toggledTask);
   updateDayStatsInPlace();
 }
 
-/* In-place DOM patch (no full render(), same reasoning as above — keeps
-   the pane's scroll position) for a task's subtask rows, and optionally
-   its own parent checkbox. */
-function syncSubtaskRowsDom(task){
-  (task.subtasks || []).forEach(s => {
-    document.querySelectorAll(`.subtask-row[data-task-id="${CSS.escape(task.id)}"][data-sub-id="${CSS.escape(s.id)}"]`).forEach(row => {
-      row.classList.toggle('done', !!s.done);
-      const scb = row.querySelector('.checkbox');
-      if(!scb) return;
-      scb.classList.toggle('checked', !!s.done);
-      scb.setAttribute('aria-checked', !!s.done);
-      scb.innerHTML = s.done ? ICONS.check : '';
-    });
-  });
-}
-
-function syncTaskCheckboxDom(task){
-  document.querySelectorAll(`.checkbox[data-action="toggle-task"][data-id="${CSS.escape(task.id)}"]`).forEach(cb => {
-    const qs = cb.querySelector('.checkbox-quickset');
-    cb.classList.toggle('checked', !!task.done);
-    cb.classList.toggle('skipped', !!task.skipped);
-    cb.setAttribute('aria-checked', !!task.done);
-    cb.innerHTML = (task.done ? ICONS.check : task.skipped ? ICONS.close : '') + (qs ? qs.outerHTML : '');
-    cb.closest('.item-card')?.classList.toggle('done', !!task.done);
-    cb.closest('.item-card')?.classList.toggle('skipped', !!task.skipped);
-  });
-}
-
-/* Toggling one subtask: the parent becomes done exactly when every
-   subtask is done (and loses any explicit "skipped" mark), and goes back
-   to not-done as soon as one subtask is unchecked. */
 function toggleSubtask(taskId, subId){
-  const task = state.tasks.find(x => x.id === taskId);
-  const sub = task?.subtasks?.find(s => s.id === subId);
-  if(!sub) return;
-  sub.done = !sub.done;
-  task.done = task.subtasks.every(s => s.done);
-  if(task.done) task.skipped = false;
-  cloudSync(() => Cloud.saveTask(task));
-  syncSubtaskRowsDom(task);
-  syncTaskCheckboxDom(task);
-  updateDayStatsInPlace();
+  const cb = document.querySelector(`.checkbox[data-action="toggle-subtask"][data-sub-id="${CSS.escape(subId)}"]`);
+  const sub = state.tasks.find(x => x.id === taskId)?.subtasks?.find(s => s.id === subId);
+  if(cb && sub) applyQuicksetState(cb, !sub.done);
 }
 
-function attachCheckboxLongPress(){
-  const root = document.getElementById('device');
-  if(!root) return;
-  let timer = null, startX = 0, startY = 0;
-  const closeAllQuicksets = () => {
-    document.querySelectorAll('.checkbox-quickset.show').forEach(el => el.classList.remove('show'));
-  };
-  root.addEventListener('pointerdown', e => {
-    const cb = e.target.closest('.checkbox[data-action]');
-    if(!cb){ closeAllQuicksets(); return; }
-    if(e.target.closest('.checkbox-quickset')) return;
-    startX = e.clientX; startY = e.clientY;
-    e.stopPropagation(); // keep the row's own swipe-to-delete from tracking this drag
-    timer = setTimeout(() => {
-      timer = null;
-      closeAllQuicksets();
-      cb.dataset.suppressClick = '1';
-      cb.querySelector('.checkbox-quickset')?.classList.add('show');
-      if(navigator.vibrate) navigator.vibrate(12);
-    }, 450);
-  }, true);
-  root.addEventListener('pointermove', e => {
-    if(!timer) return;
-    if(Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8){ clearTimeout(timer); timer = null; }
-  }, true);
-  root.addEventListener('pointerup', () => { clearTimeout(timer); timer = null; }, true);
-  root.addEventListener('pointercancel', () => { clearTimeout(timer); timer = null; }, true);
-  root.addEventListener('click', e => {
-    const qsBtn = e.target.closest('[data-qs]');
-    if(qsBtn){
-      e.stopPropagation();
-      const cb = qsBtn.closest('.checkbox');
-      if(cb) applyQuicksetState(cb, qsBtn.dataset.qs === 'done', true);
-      return;
-    }
-    const cb = e.target.closest('.checkbox[data-action]');
-    if(cb && cb.dataset.suppressClick){
-      delete cb.dataset.suppressClick;
-      e.stopPropagation();
-      return; // the long-press already opened the popover; swallow this tap
-    }
-    closeAllQuicksets();
-  }, true);
+/* In-place DOM patches instead of a full render(), so the pane keeps its
+   scroll position while ticking things off. */
+function paintCheckbox(cb, done, skipped){
+  cb.classList.toggle('checked', !!done);
+  cb.classList.toggle('skipped', !!skipped);
+  cb.setAttribute('aria-checked', !!done);
+  cb.innerHTML = done ? ICONS.check : skipped ? ICONS.close : '';
+  const row = cb.closest('.item-card, .subtask-row');
+  row?.classList.toggle('done', !!done);
+  row?.classList.toggle('skipped', !!skipped);
 }
 
-/* ============ DESKTOP: right-click context menu for task/habit rows ======
-   Mouse equivalent of the mobile long-press quickset, plus Edit/Delete
-   which that popover has no room for. Mobile has no reliable right-click,
-   so this only arms at >=960px. */
+function syncTaskDom(task){
+  document.querySelectorAll(`.checkbox[data-action="toggle-task"][data-id="${CSS.escape(task.id)}"]`)
+    .forEach(cb => paintCheckbox(cb, task.done, task.skipped));
+  (task.subtasks || []).forEach(s => {
+    document.querySelectorAll(`.checkbox[data-action="toggle-subtask"][data-sub-id="${CSS.escape(s.id)}"]`)
+      .forEach(cb => paintCheckbox(cb, s.done, s.skipped));
+  });
+}
+
+/* ============ SELECTION ============
+   Right-click (mouse) or press-and-hold (touch) on a task, subtask or
+   habit selects it: the row glows and lifts (.is-selected) and the
+   Done / Not done / Edit / Delete menu opens next to it. Tapping
+   anywhere else, scrolling or Escape clears it. */
+const LONG_PRESS_MS = 450;
+
+function selectableFrom(target){
+  if(target.closest('.star-mini, .subtask-toggle, .row-context-menu')) return null;
+  return target.closest('[data-select-type]');
+}
+
 function closeRowContextMenu(){ document.getElementById('row-context-menu')?.remove(); }
 
-function showRowContextMenu(x, y, type, id, wrap){
+function clearSelection(){
+  closeRowContextMenu();
+  if(!state.selection) return;
+  state.selection = null;
+  document.querySelectorAll('.is-selected').forEach(el => el.classList.remove('is-selected'));
+}
+
+function selectItem(el, point){
+  clearSelection();
+  state.selection = { type: el.dataset.selectType, id: el.dataset.selectId };
+  el.classList.add('is-selected');
+  el.closest('.swipe-wrap')?.classList.add('is-selected');
+  showRowContextMenu(el, point);
+  if(navigator.vibrate && navigator.userActivation?.hasBeenActive) navigator.vibrate(12);
+}
+
+function showRowContextMenu(el, point){
   closeRowContextMenu();
   const menu = document.createElement('div');
   menu.id = 'row-context-menu';
   menu.className = 'row-context-menu';
+  menu.setAttribute('role', 'menu');
   menu.innerHTML = `
-    <button type="button" data-ctx="done">${ICONS.check}${t('qsDone')}</button>
-    <button type="button" data-ctx="undone">${ICONS.close}${t('qsUndone')}</button>
-    <button type="button" data-ctx="edit">${ICONS.pencilIcon}${t('editBtn')}</button>
-    <button type="button" data-ctx="delete" class="danger">${ICONS.trash}${t('deleteBtn')}</button>
+    <button type="button" role="menuitem" data-ctx="done">${ICONS.check}${t('qsDone')}</button>
+    <button type="button" role="menuitem" data-ctx="undone">${ICONS.close}${t('qsUndone')}</button>
+    <button type="button" role="menuitem" data-ctx="edit">${ICONS.pencilIcon}${t('editBtn')}</button>
+    <button type="button" role="menuitem" data-ctx="delete" class="danger">${ICONS.trash}${t('deleteBtn')}</button>
   `;
   document.body.appendChild(menu);
-  // Clamp so it never renders off the right/bottom edge of the viewport.
   const w = menu.offsetWidth, h = menu.offsetHeight;
-  menu.style.left = Math.min(x, window.innerWidth - w - 8) + 'px';
-  menu.style.top = Math.min(y, window.innerHeight - h - 8) + 'px';
+  let x, y;
+  if(point){
+    x = point.x; y = point.y;
+  } else {
+    // Under the row, aligned with its reading-start edge; above it when
+    // there's no room below.
+    const r = el.getBoundingClientRect();
+    x = lang() === 'fa' ? r.right - w : r.left;
+    y = r.bottom + 10 + h > window.innerHeight ? r.top - h - 10 : r.bottom + 10;
+  }
+  menu.style.left = Math.max(8, Math.min(x, window.innerWidth - w - 8)) + 'px';
+  menu.style.top = Math.max(8, Math.min(y, window.innerHeight - h - 8)) + 'px';
   menu.addEventListener('click', e => {
     const btn = e.target.closest('[data-ctx]');
     if(!btn) return;
     e.stopPropagation();
-    const action = btn.dataset.ctx;
-    const cb = wrap.querySelector('.checkbox[data-action]');
-    if(action === 'done' && cb) applyQuicksetState(cb, true);
-    else if(action === 'undone' && cb) applyQuicksetState(cb, false, true);
-    else if(action === 'edit') openPopup(type, wrap, findItem(type, id));
-    else if(action === 'delete'){
-      if(type === 'task'){ state.tasks = state.tasks.filter(x => x.id !== id); cloudSync(() => Cloud.deleteTask(id)); }
-      if(type === 'habit'){ state.habits = state.habits.filter(x => x.id !== id); cloudSync(() => Cloud.deleteHabit(id)); }
-      render();
-    }
-    closeRowContextMenu();
+    runItemMenuAction(el, btn.dataset.ctx);
   });
+  menu.querySelector('button')?.focus({ preventScroll: true });
 }
 
-function attachDesktopContextMenu(){
+function runItemMenuAction(el, action){
+  const type = el.dataset.selectType, id = el.dataset.selectId;
+  const cb = el.querySelector('.checkbox[data-action]');
+  clearSelection();
+  if(action === 'done' && cb) applyQuicksetState(cb, true);
+  else if(action === 'undone' && cb) applyQuicksetState(cb, false, true);
+  else if(action === 'edit'){
+    if(type === 'habit') openPopup('habit', el, findItem('habit', id));
+    else openPopup('task', el, findTaskOrSub(id).item);
+  } else if(action === 'delete'){
+    deleteItem(type, id);
+    render();
+  }
+}
+
+function deleteItem(type, id){
+  if(type === 'task'){
+    state.tasks = state.tasks.filter(x => x.id !== id);
+    cloudSync(() => Cloud.deleteTask(id));
+  } else if(type === 'subtask'){
+    const { parent } = findTaskOrSub(id);
+    if(!parent) return;
+    parent.subtasks = parent.subtasks.filter(s => s.id !== id);
+    if(parent.subtasks.length) parent.done = parent.subtasks.every(s => s.done);
+    cloudSync(() => Cloud.saveTask(parent));
+  } else if(type === 'habit'){
+    state.habits = state.habits.filter(x => x.id !== id);
+    cloudSync(() => Cloud.deleteHabit(id));
+  }
+}
+
+function attachItemSelection(){
   const root = document.getElementById('device');
-  root.addEventListener('contextmenu', e => {
-    if(window.innerWidth < 960) return;
-    const wrap = e.target.closest('.swipe-wrap[data-swipe-type]');
-    if(!wrap) return;
-    const type = wrap.dataset.swipeType;
-    if(type !== 'task' && type !== 'habit') return;
+  if(!root) return;
+  let timer = null, startX = 0, startY = 0, pressedEl = null;
+  let swallowClick = false, lastLongPress = 0;
+  const cancel = () => { clearTimeout(timer); timer = null; };
+
+  root.addEventListener('pointerdown', e => {
+    if(e.target.closest('.row-context-menu')) return;
+    const el = selectableFrom(e.target);
+    if(!el || !el.classList.contains('is-selected')) clearSelection();
+    if(!el || e.button !== 0) return;
+    pressedEl = el; startX = e.clientX; startY = e.clientY;
+    cancel();
+    timer = setTimeout(() => {
+      timer = null;
+      swallowClick = true; // the click after this release must not toggle or open the editor
+      lastLongPress = Date.now();
+      selectItem(pressedEl, null);
+    }, LONG_PRESS_MS);
+  }, true);
+  root.addEventListener('pointermove', e => {
+    if(timer && (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8)) cancel();
+  }, true);
+  root.addEventListener('pointerup', cancel, true);
+  root.addEventListener('pointercancel', cancel, true);
+  root.addEventListener('click', e => {
+    if(!swallowClick) return;
+    swallowClick = false;
+    e.stopPropagation();
     e.preventDefault();
-    showRowContextMenu(e.clientX, e.clientY, type, wrap.dataset.swipeId, wrap);
+  }, true);
+
+  root.addEventListener('contextmenu', e => {
+    const el = selectableFrom(e.target);
+    if(!el) return;
+    e.preventDefault();
+    // Touch browsers also fire contextmenu after a long press, which the
+    // timer above already handled.
+    if(Date.now() - lastLongPress < 800) return;
+    selectItem(el, { x: e.clientX, y: e.clientY });
   });
-  document.addEventListener('pointerdown', e => {
-    if(!e.target.closest('.row-context-menu')) closeRowContextMenu();
-  });
-  document.addEventListener('scroll', closeRowContextMenu, true);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') clearSelection(); });
+  document.addEventListener('scroll', clearSelection, true);
+  window.addEventListener('resize', clearSelection);
 }

@@ -133,7 +133,7 @@ body{
   background:var(--surface-1);
   border:1px solid var(--edge);
   box-shadow:var(--shadow-soft-sm), var(--edge-highlight);
-  transition:border-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard), opacity .2s var(--ease-standard);
+  transition:border-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard), opacity .2s var(--ease-standard), scale .28s var(--ease-spring);
 }
 @media (hover:hover){
   .item-card:hover{ border-color:var(--edge-strong); box-shadow:var(--shadow-hover), var(--edge-highlight); }
@@ -144,7 +144,7 @@ body{
   box-shadow:var(--shadow-soft-sm), var(--edge-highlight);
 }
 .checkbox.checked{ box-shadow:0 0 0 4px var(--primary-soft), var(--glow-accent); }
-.subtask-row{ background:var(--surface-2); border-color:var(--edge); }
+.subtask-children{ background:var(--surface-2); border-color:var(--edge); }
 
 /* ---- calendar ---- */
 .day-cell{ transition:background-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard), transform .2s var(--ease-spring); }

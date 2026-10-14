@@ -11,6 +11,7 @@ let formDraft = {};
 let miniCalCursor = new Date(today);
 
 function findItem(type, id){
+  if(type === 'task') return findTaskOrSub(id).item; // tasks and subtasks share the editor
   const key = type === 'task' ? 'tasks' : type === 'habit' ? 'habits' : 'events';
   return state[key].find(x => x.id === id);
 }
@@ -35,7 +36,7 @@ function resetFormDraft(type, existing){
     }
   };
   formPhotos = existing ? [...(existing.photos||[])] : [];
-  formSubtasks = existing ? existing.subtasks.map(s => ({...s})) : [];
+  formSubtasks = existing ? (existing.subtasks || []).map(s => ({...s})) : [];
   formWeekdays = new Set(existing ? (existing.recurrence?.weekdays||[]) : []);
   miniCalCursor = new Date(formDraft.date);
 }
@@ -43,6 +44,8 @@ function resetFormDraft(type, existing){
 function openPopup(type, originEl, existing){
   state.popupOpen = true; state.popupType = type; state.navExpanded = false;
   state.editingId = existing ? existing.id : null;
+  // Set while editing a subtask: same form, minus repeat and subtasks.
+  state.editingParentId = (existing && type === 'task') ? (findTaskOrSub(existing.id).parent?.id || null) : null;
   state.popupSubView = null;
   resetFormDraft(type, existing);
 
@@ -74,7 +77,7 @@ function openPopup(type, originEl, existing){
 }
 
 function closePopup(){
-  state.popupOpen = false; state.editingId = null; state.popupSubView = null;
+  state.popupOpen = false; state.editingId = null; state.editingParentId = null; state.popupSubView = null;
   document.getElementById('add-popup').classList.remove('show');
   document.getElementById('popup-overlay').classList.remove('show');
 }
@@ -83,7 +86,7 @@ function closePopup(){
 function popupIconRow(type){
   const icons = [];
   if(type !== 'habit') icons.push({ key:'calendar', icon:ICONS.calendarIcon, set: formDraft.timeMode==='range' || formDraft.date !== dateKey(today) });
-  icons.push({ key:'repeat', icon:ICONS.repeatIcon, set: !!formDraft.recurrence.mode });
+  if(!state.editingParentId) icons.push({ key:'repeat', icon:ICONS.repeatIcon, set: !!formDraft.recurrence.mode });
   icons.push({ key:'notification', icon:ICONS.bellIcon, set: !!formDraft.notification.type, disabled:true });
   return `<div class="popup-icon-row">${icons.map(i => `<div class="popup-icon-btn ${i.set?'set':''} ${i.disabled?'disabled':''}" data-action="${i.disabled?'notification-coming-soon':'open-subview'}" data-sub="${i.key}">${i.icon}</div>`).join('')}</div>`;
 }
@@ -109,7 +112,7 @@ function subtasksBlock(){
 
 function subtasksListHtml(){
   return formSubtasks.map((s,i) => `<div class="subtask-edit-row">
-    <input type="text" value="${escapeAttr(s.text)}" data-subidx="${i}" placeholder="${t('subtaskTitle')}">
+    <input type="text" value="${escapeAttr(subTitle(s))}" data-subidx="${i}" placeholder="${t('subtaskTitle')}">
     <button type="button" class="remove-x" data-rmsubtask="${i}">×</button>
   </div>`).join('');
 }
@@ -253,7 +256,7 @@ function renderPopupBody(){
   }
   body.innerHTML = `
     <div class="float-field"><input type="text" id="f-title" placeholder=" " value="${escapeAttr(formDraft.title)}" autocomplete="off"><label>${t('titleLabel')}</label></div>
-    ${state.popupType === 'task' ? subtasksBlock() : ''}
+    ${state.popupType === 'task' && !state.editingParentId ? subtasksBlock() : ''}
     ${formBody(state.popupType)}
   `;
   wireMainFormInteractivity();
@@ -283,9 +286,9 @@ function wireMainFormInteractivity(){
     });
   });
   document.querySelectorAll('[data-rmphoto]').forEach(b => b.addEventListener('click', () => { formPhotos.splice(Number(b.dataset.rmphoto),1); renderPopupBody(); }));
-  document.getElementById('add-subtask-btn')?.addEventListener('click', () => { if(formSubtasks.length>=3) return; formSubtasks.push({id:uid(), text:'', done:false}); renderPopupBody(); });
+  document.getElementById('add-subtask-btn')?.addEventListener('click', () => { if(formSubtasks.length>=3) return; formSubtasks.push(newSubtask({ date: formDraft.date }, '')); renderPopupBody(); });
   document.querySelectorAll('[data-rmsubtask]').forEach(b => b.addEventListener('click', () => { formSubtasks.splice(Number(b.dataset.rmsubtask),1); renderPopupBody(); }));
-  document.querySelectorAll('[data-subidx]').forEach(inp => inp.addEventListener('input', e => { formSubtasks[Number(e.target.dataset.subidx)].text = e.target.value; }));
+  document.querySelectorAll('[data-subidx]').forEach(inp => inp.addEventListener('input', e => { const s = formSubtasks[Number(e.target.dataset.subidx)]; s.title = s.text = e.target.value; }));
 }
 
 function wireSubviewInteractivity(){
@@ -319,21 +322,41 @@ function submitPopup(){
   const type = state.popupType;
   const recurrence = { mode: formDraft.recurrence.mode, interval: formDraft.recurrence.interval, weekdays: Array.from(formWeekdays) };
   const notification = { ...formDraft.notification };
-  if(type === 'task'){
+  if(type === 'task' && state.editingParentId){
+    // Editing a subtask: update it inside its parent and save the parent.
+    const parent = state.tasks.find(x => x.id === state.editingParentId);
+    const sub = parent?.subtasks.find(s => s.id === state.editingId);
+    if(sub){
+      Object.assign(sub, {
+        title, text: title,
+        description: (formDraft.description||'').trim(),
+        photos: [...formPhotos],
+        timeMode: formDraft.timeMode,
+        date: formDraft.date,
+        endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
+        notification
+      });
+      cloudSync(() => Cloud.saveTask(parent));
+    }
+  } else if(type === 'task'){
+    const existing = state.editingId ? findItem('task', state.editingId) : null;
     const obj = {
       id: state.editingId || uid(),
       title,
       category: (formDraft.category||'').trim(),
       description: (formDraft.description||'').trim(),
       photos: [...formPhotos],
-      pinned: state.editingId ? findItem('task', state.editingId).pinned : false,
-      done: state.editingId ? findItem('task', state.editingId).done : false,
-      subtasks: formSubtasks.filter(s => s.text.trim()).slice(0,3),
+      pinned: existing ? existing.pinned : false,
+      done: existing ? existing.done : false,
+      skipped: existing ? !!existing.skipped : false,
+      subtasks: formSubtasks.filter(s => subTitle(s).trim()).slice(0,3).map(s => normalizeSubtask(s, { date: formDraft.date })),
       timeMode: formDraft.timeMode,
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
       recurrence, notification
     };
+    // A new, unticked subtask makes a finished parent unfinished again.
+    if(obj.subtasks.length){ obj.done = obj.subtasks.every(s => s.done); if(obj.done) obj.skipped = false; }
     upsert('tasks', obj);
   } else if(type === 'habit'){
     const obj = {
@@ -365,5 +388,5 @@ function upsert(arrKey, obj){
   const arr = state[arrKey];
   const idx = arr.findIndex(x => x.id === obj.id);
   if(idx >= 0) arr[idx] = obj; else arr.push(obj);
-  CLOUD_SAVE_BY_ARRKEY[arrKey](obj).catch(()=>{});
+  cloudSync(() => CLOUD_SAVE_BY_ARRKEY[arrKey](obj));
 }
