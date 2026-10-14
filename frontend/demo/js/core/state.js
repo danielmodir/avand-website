@@ -103,7 +103,7 @@ function sampleSubtaskTask(){
   task.subtasks = [
     Object.assign(newSubtask(task, fa ? 'جمع کردن منابع' : 'Gather sources'), { done: true }),
     newSubtask(task, fa ? 'ساختن اسلایدها' : 'Build the slides'),
-    // A subtask with its own date range, so the calendar capsule shows up.
+    // A subtask with its own date range: select it to see the calendar capsule.
     Object.assign(newSubtask(task, fa ? 'تمرین ارائه' : 'Rehearse'), { timeMode: 'range', endDate: dateKey(addDays(today, 3)) }),
   ];
   return task;

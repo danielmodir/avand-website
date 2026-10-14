@@ -1,7 +1,8 @@
 /* ============ TASK RANGES ON THE CALENDAR ============
-   Every task or subtask with a date range is drawn across its days as a
-   light, theme-colored capsule, with an orange circle on its start day
-   and on its deadline. Overlapping ranges merge into one band; the band
+   While a task or subtask with a date range is selected (long-press /
+   right-click, see attachItemSelection), its days are drawn as a light
+   capsule with an orange circle on the start day and the deadline. The
+   band
    is capped (rounded) wherever the day before/after is not covered, and at week-row edges. */
 const MAX_RANGE_DAYS = 400;
 
@@ -19,7 +20,11 @@ function taskRangeMap(){
       d = addDays(d, 1);
     }
   };
-  state.tasks.forEach(task => { add(task); (task.subtasks || []).forEach(add); });
+  const sel = state.selection;
+  if(sel && (sel.type === 'task' || sel.type === 'subtask')){
+    const { item } = findTaskOrSub(sel.id);
+    if(item) add(item);
+  }
   return map;
 }
 
@@ -37,6 +42,22 @@ function rangeCellClass(day, map, col){
 }
 
 const rangeDotHtml = cls => cls.includes('rng-mark') ? '<span class="rng-dot" aria-hidden="true"></span>' : '';
+
+/* Re-marks the cells already on screen when the selection changes, so
+   selecting doesn't re-render (and visibly refresh) the whole page. */
+function refreshCalendarRanges(){
+  const map = taskRangeMap();
+  document.querySelectorAll('#cal-month-grid, #home-cal-grid').forEach(grid => {
+    [...grid.querySelectorAll('.day-cell[data-date]')].forEach((cell, i) => {
+      cell.classList.remove('rng', 'rng-cap-s', 'rng-cap-e', 'rng-mark');
+      cell.querySelector('.rng-dot')?.remove();
+      const cls = rangeCellClass(parseDateKey(cell.dataset.date), map, i % 7);
+      if(!cls) return;
+      cell.classList.add(...cls.split(' '));
+      if(cls.includes('rng-mark')) cell.insertAdjacentHTML('afterbegin', rangeDotHtml(cls));
+    });
+  });
+}
 /* ============ MERGED CALENDAR WIDGET (mobile only — see
    .home-cal-widget{display:none} in the >=960px block, where the full
    #page-calendar column is used instead) ============

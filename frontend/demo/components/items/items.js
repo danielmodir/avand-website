@@ -255,6 +255,7 @@ function clearSelection(){
   if(!state.selection) return;
   state.selection = null;
   document.querySelectorAll('.is-selected').forEach(el => el.classList.remove('is-selected'));
+  refreshCalendarRanges();
 }
 
 function selectItem(el, point){
@@ -262,6 +263,7 @@ function selectItem(el, point){
   state.selection = { type: el.dataset.selectType, id: el.dataset.selectId };
   el.classList.add('is-selected');
   el.closest('.swipe-wrap')?.classList.add('is-selected');
+  refreshCalendarRanges();
   showRowContextMenu(el, point);
   if(navigator.vibrate && navigator.userActivation?.hasBeenActive) navigator.vibrate(12);
 }
