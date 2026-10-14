@@ -1,80 +1,101 @@
-# backend/ — Toojibee API (Express + MySQL)
+# backend/ — Toojibee API (Django + Django REST Framework, MySQL)
 
-REST API for the data the `/demo/` app keeps: auth, profile, settings,
-tasks, habits, events and connections (friends). The schema lives in
-`../database/`.
-
-> **Status (2026-10-15):** the databases were redesigned as one MySQL
-> database per module (see `../database/README.md`) and `scripts/db.js`
-> (`npm run db:setup / db:migrate / db:status / db:seed`) manages them.
-> The route code in `src/` still targets the earlier single-database schema
-> and is being rewritten module by module (`src/modules/<module>/`).
-
-**Not deployed and not wired to the demo yet.** The demo still talks to
-Supabase through `frontend/demo/js/services/cloud.js`. Switching it over
-means pointing those `Cloud.*` functions at this API; the request and
-response bodies already use the same camelCase objects the app keeps in
-memory, so the rest of the client does not change.
-
-## Structure
+One Django app per module, each with **its own MySQL database**
+(`config/routers.py`). Not deployed yet; the demo runs without login
+until it is (see `frontend/demo/js/services/api.js`).
 
 ```
 backend/
-  src/
-    server.js            process entry: listen + graceful shutdown
-    app.js               Express app (middleware + routes), no listen
-    config/env.js        reads and validates .env once
-    db/pool.js           mysql2 pool, query() and transaction() helpers
-    middleware/
-      auth.js            bearer token -> req.userId (checked against sessions)
-      errors.js          404 + error -> JSON response
-    utils/
-      http.js            HttpError, id/date validation
-      mapper.js          camelCase object <-> table columns
-    routes/
-      auth.js            register / login / logout
-      profile.js         GET / PATCH
-      settings.js        GET / PATCH
-      itemRouter.js      shared list / upsert / delete for the three item kinds
-      tasks.js habits.js events.js
-      connections.js     friends: list, search, request, respond, remove, block
-  scripts/
-    db.js                setup / migrate / status / seed for every database in ../database
+  manage.py  requirements.txt  .env.example
+  config/
+    settings/  base.py · dev.py · prod.py · test.py
+    routers.py             app -> database
+    urls.py                /api/v1/…, /health, admin
+  apps/
+    common/                UUIDv7 ids, base models, errors, CORS, test helpers
+    core/                  accounts, sessions, profile, settings, modules, files, content, admin roles
+    calendar_data/         occasions + Iran's official Hijri months (public)
+    planning/              categories, tasks/subtasks, per-day ticks, habits, events, sync
+    period/                encrypted (envelope encryption, crypto-shredding)
+    social/                connections, invites, abuse reports
+    notifications/         push devices, quiet hours (inactive until the app exists)
 ```
 
-## Running locally
+## Run locally
 
-1. MySQL 8.0.19+.
-2. `cp .env.example .env` and fill in the database passwords and secrets.
-3. `npm install`
-4. `npm run db:setup` (once per server), `npm run db:migrate`, optionally `npm run db:seed`
-5. `npm run dev` (or `npm start`), then `curl http://localhost:4000/health`
+```
+python -m venv .venv && .venv/Scripts/activate      # Windows; source .venv/bin/activate elsewhere
+pip install -r requirements.txt
+cp .env.example .env                                  # fill it in, see database/README.md
+DJANGO_DB_ROLE=migrator python manage.py migrate_all
+python manage.py createsuperuser
+python manage.py runserver
+```
 
-## Endpoints
+Tests (no MySQL needed, one SQLite file per module database):
 
-All except `/health`, `register` and `login` need `Authorization: Bearer <token>`.
+```
+python manage.py test apps --settings=config.settings.test
+```
 
-| Method | Path                                  | Notes                                      |
-|--------|---------------------------------------|--------------------------------------------|
-| POST   | `/api/auth/register`                  | `{ email, password, firstName?, lastName? }` → `{ token, userId }` |
-| POST   | `/api/auth/login`                     | `{ email, password }` → `{ token, userId }` |
-| POST   | `/api/auth/logout`                    | revokes this token                          |
-| GET/PATCH | `/api/profile`                     | `firstName lastName username phone gender dob photo` |
-| GET/PATCH | `/api/settings`                    | `language calendarSystem weekStartDay notifications showAddMenuLabels theme` |
-| GET    | `/api/tasks` · `/api/habits` · `/api/events` | the user's items                    |
-| PUT    | `/api/tasks/:id` (same for habits, events) | upsert; the client generates the UUID |
-| DELETE | `/api/tasks/:id` (same for habits, events) |                                       |
-| GET    | `/api/connections`                    | with `pending-outgoing / pending-incoming / accepted / blocked` |
-| GET    | `/api/connections/search?q=`          | exact username or phone only               |
-| POST   | `/api/connections/:userId/request`    | sending one back to a requester accepts it |
-| POST   | `/api/connections/:userId/respond`    | `{ accept: true \| false }`                 |
-| DELETE | `/api/connections/:userId`            | unfriend / cancel / decline                 |
-| POST/DELETE | `/api/connections/:userId/block` | block / unblock                             |
+## Security model
 
-## Before this handles real users
+- **Tokens:** 15-minute JWT access token tied to a session row (checked on
+  every request, so logout is immediate) + an opaque 30-day refresh token,
+  stored only as SHA-256 and **rotated on every use**. Replaying an
+  already-used refresh token signs the user out on every device.
+- **Passwords:** Argon2, Django's validators (length, common, numeric,
+  similar to email). Failed logins look identical for unknown emails.
+- **Rate limits:** login, register, password reset, refresh, search,
+  reports and uploads (`REST_FRAMEWORK.DEFAULT_THROTTLE_RATES`).
+- **Ownership:** every query filters by the signed-in user; writes to
+  someone else's row return 404, never 403 (no existence leaks).
+- **Optimistic locking:** writes send the `version` they read; a stale
+  version gets `409` with the current row.
+- **Uploads:** images only, re-encoded to WebP (strips EXIF/location and
+  anything that isn't pixels), 3 MB, served only to their owner.
+- **Period data:** AES-256-GCM per-user data key wrapped by a master key
+  kept outside MySQL; values bound to table/row/user.
+- **Least-privilege database users**, one per module database.
+- **Account deletion:** 30-day grace, then a purge across every database.
 
-- Rate limiting on `login` / `register` / `search`.
-- Email verification and password reset.
-- Photo upload storage: photos are stored inline as data URLs for now
-  (max 3 per task, 6 MB request limit).
-- HTTPS termination in front of it (Nginx or the host's proxy).
+## API (prefix `/api/v1`)
+
+Errors: `{"error": "<stable_code>", "detail": …}`. Auth: `Authorization: Bearer <access_token>`.
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST auth/register` · `auth/login` · `auth/google` · `auth/refresh` · `auth/logout` · `auth/logout-all` · `GET auth/sessions` · `DELETE auth/sessions/<id>` · `POST auth/email/verify` · `auth/email/resend` · `auth/password/forgot` · `auth/password/reset` · `auth/password/change` · `auth/account/deletion` |
+| Me | `GET me` (everything for start-up) · `GET/PATCH me/profile` · `GET me/profile/username-available` · `POST/DELETE me/avatar` · `GET/PATCH me/settings` · `GET me/modules` · `PATCH me/modules/<key>` · `POST me/modules/<key>/purge` · `POST me/consents` |
+| Files | `POST files` (multipart) · `GET/DELETE files/<id>` |
+| Public | `GET content/<key>` · `legal/<privacy\|terms>` · `releases/android/latest` · `calendar/occasions?year=1405` · `calendar/hijri-months?from&to` · `calendar/day?date` |
+| Planning | `GET planning/sync[?since]` · `PUT/DELETE planning/<categories\|tasks\|habits\|events>/<id>` · `PUT planning/tasks/<id>/occurrences/<date>` · `PUT planning/habits/<id>/logs/<date>` · `PUT/DELETE planning/<tasks\|events>/<id>/exceptions/<date>` · `PUT/DELETE planning/tasks/<id>/attachments/<file_id>` |
+| Period | `GET/PUT period/profile` · `GET period/cycles` · `PUT/DELETE period/cycles/<id>` · `GET period/predictions` |
+| Social | `GET social/connections` · `POST …/<user>/request` · `…/<user>/respond` · `DELETE …/<user>` · `PUT/DELETE social/blocks/<user>` · `GET social/search?q` · `GET/POST social/invites` · `DELETE social/invites/<id>` · `POST social/invites/<code>/redeem` · `POST social/reports` |
+| Notifications | `POST notifications/subscriptions` · `DELETE …/<id>` · `GET/PUT notifications/preferences` · `PUT/DELETE notifications/mutes/<module>` |
+
+## Admin
+
+`/<ADMIN_URL>` (Django admin). Superusers can do everything; the groups
+created after every migrate give partial roles:
+
+- `content_editor`: About text, privacy/terms versions, Android releases, occasions, Hijri months
+- `moderator`: abuse reports, look up and suspend accounts
+
+Every admin change is recorded by Django's admin log.
+
+## Scheduled jobs
+
+| Command | When |
+|---|---|
+| `send_emails` | every minute |
+| `purge_accounts` | daily |
+| `cleanup_expired` | daily |
+| `check_orphans` | weekly (report only; `--delete` to clean) |
+| `load_calendar_data` | when a new year's data file is added |
+
+## Deploy (outline)
+
+Gunicorn (`config.wsgi`, `DJANGO_SETTINGS_MODULE=config.settings.prod`)
+behind Nginx with HTTPS, Redis for the shared rate-limit cache, the jobs
+above in cron or systemd timers, `UPLOAD_DIR` on persistent storage.

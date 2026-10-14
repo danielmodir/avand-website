@@ -1,0 +1,191 @@
+"""Validation for planning writes. The database check constraints repeat
+the single-row rules as a last line of defense; rules that look at other
+rows (ownership, subtask depth, photo limit) live only here."""
+import re
+
+from rest_framework import serializers
+
+from apps.common.exceptions import ApiError
+
+from .models import Category, Event, Habit, HabitLog, Task, TaskOccurrence
+
+COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+RECURRENCE_FIELDS = ["rec_mode", "rec_interval", "rec_weekdays", "rec_until"]
+REMINDER_FIELDS = ["reminder_type", "reminder_time", "reminder_every_hours", "reminder_text"]
+SYNC_FIELDS = ["id", "version", "created_at", "updated_at", "deleted_at"]
+READ_ONLY = ["id", "created_at", "updated_at", "deleted_at"]
+
+
+def merged(attrs, instance, field, default=None):
+    if field in attrs:
+        return attrs[field]
+    return getattr(instance, field, default) if instance is not None else default
+
+
+class OwnedSerializer(serializers.ModelSerializer):
+    """Adds `version` (required on update) and checks that referenced
+    categories belong to the same user."""
+
+    version = serializers.IntegerField(required=False)
+
+    @property
+    def user_id(self):
+        return self.context["user_id"]
+
+    def validate_category(self, category):
+        if category is not None and (category.user_id != self.user_id or category.deleted_at is not None):
+            raise ApiError("category_not_found", 400)
+        return category
+
+    def check_schedule(self, attrs, kinds=("none", "interval", "weekdays")):
+        inst = self.instance
+        start, end = merged(attrs, inst, "start_date"), merged(attrs, inst, "end_date")
+        if start and end and end < start:
+            raise ApiError("end_before_start")
+        mode = merged(attrs, inst, "rec_mode", "none")
+        if mode not in kinds:
+            raise ApiError("invalid_recurrence")
+        if mode == "weekdays" and not merged(attrs, inst, "rec_weekdays", 0):
+            raise ApiError("weekdays_required")
+        until = merged(attrs, inst, "rec_until")
+        if until and (mode == "none" or (start and until < start)):
+            raise ApiError("invalid_rec_until")
+        rtype = merged(attrs, inst, "reminder_type", "none")
+        if rtype in ("at_time", "repeating") and not merged(attrs, inst, "reminder_time"):
+            raise ApiError("reminder_time_required")
+        if rtype == "repeating" and not 1 <= (merged(attrs, inst, "reminder_every_hours") or 0) <= 24:
+            raise ApiError("reminder_every_hours_invalid")
+
+
+class CategorySerializer(OwnedSerializer):
+    class Meta:
+        model = Category
+        fields = SYNC_FIELDS + ["name", "color", "sort_order"]
+        read_only_fields = READ_ONLY
+
+    def validate_color(self, value):
+        if value and not COLOR_RE.match(value):
+            raise serializers.ValidationError("#RRGGBB")
+        return value
+
+    def validate_name(self, value):
+        value = value.strip()
+        clash = Category.objects.filter(user_id=self.user_id, name=value, deleted_at__isnull=True)
+        if self.instance is not None:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise ApiError("category_name_taken", 409)
+        return value
+
+
+class TaskSerializer(OwnedSerializer):
+    parent_id = serializers.UUIDField(required=False, allow_null=True)
+    category_id = serializers.PrimaryKeyRelatedField(source="category", queryset=Category.objects.all(), required=False, allow_null=True)
+    origin_task_id = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = Task
+        fields = SYNC_FIELDS + ["parent_id", "category_id", "title", "description", "pinned", "sort_order", "start_date", "end_date"] \
+            + RECURRENCE_FIELDS + REMINDER_FIELDS + ["origin_task_id", "origin_date"]
+        read_only_fields = READ_ONLY
+
+    def validate_category_id(self, category):
+        return self.validate_category(category)
+
+    def validate(self, attrs):
+        self.check_schedule(attrs)
+        if merged(attrs, self.instance, "reminder_type") == "before_start":
+            raise ApiError("invalid_reminder_type")
+
+        parent_id = merged(attrs, self.instance, "parent_id")
+        if parent_id is not None:
+            if self.instance is not None and parent_id == self.instance.pk:
+                raise ApiError("task.subtask_depth")
+            parent = Task.objects.filter(pk=parent_id, user_id=self.user_id, deleted_at__isnull=True).first()
+            if parent is None:
+                raise ApiError("task.parent_not_found")
+            if parent.parent_id is not None:
+                raise ApiError("task.subtask_depth")  # one level only
+            if self.instance is not None and Task.objects.filter(parent_id=self.instance.pk, deleted_at__isnull=True).exists():
+                raise ApiError("task.subtask_depth")  # a task with subtasks can't become one
+            if merged(attrs, self.instance, "rec_mode", "none") != "none":
+                raise ApiError("task.subtask_recurring")
+        origin = attrs.get("origin_task_id")
+        if origin and not Task.objects.filter(pk=origin, user_id=self.user_id).exists():
+            raise ApiError("task.origin_not_found")
+        return attrs
+
+
+class HabitSerializer(OwnedSerializer):
+    category_id = serializers.PrimaryKeyRelatedField(source="category", queryset=Category.objects.all(), required=False, allow_null=True)
+
+    class Meta:
+        model = Habit
+        fields = SYNC_FIELDS + ["category_id", "title", "start_date", "end_date", "sort_order"] + RECURRENCE_FIELDS + REMINDER_FIELDS
+        read_only_fields = READ_ONLY
+
+    def validate_category_id(self, category):
+        return self.validate_category(category)
+
+    def validate(self, attrs):
+        if self.instance is None and "rec_mode" not in attrs:
+            attrs["rec_mode"] = "interval"
+        self.check_schedule(attrs, kinds=("interval", "weekdays"))
+        if merged(attrs, self.instance, "reminder_type") == "before_start":
+            raise ApiError("invalid_reminder_type")
+        return attrs
+
+
+class EventSerializer(OwnedSerializer):
+    category_id = serializers.PrimaryKeyRelatedField(source="category", queryset=Category.objects.all(), required=False, allow_null=True)
+    origin_event_id = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = Event
+        fields = SYNC_FIELDS + ["category_id", "title", "start_date", "end_date", "all_day", "start_time", "end_time"] \
+            + RECURRENCE_FIELDS + REMINDER_FIELDS + ["reminder_minutes_before", "origin_event_id", "origin_date"]
+        read_only_fields = READ_ONLY
+
+    def validate_category_id(self, category):
+        return self.validate_category(category)
+
+    def validate(self, attrs):
+        self.check_schedule(attrs)
+        inst = self.instance
+        all_day = merged(attrs, inst, "all_day", True)
+        start_time, end_time = merged(attrs, inst, "start_time"), merged(attrs, inst, "end_time")
+        if all_day:
+            attrs["start_time"] = attrs["end_time"] = None
+        elif start_time is None:
+            raise ApiError("start_time_required")
+        elif end_time is not None and not merged(attrs, inst, "end_date") and end_time <= start_time:
+            raise ApiError("end_before_start")
+        if merged(attrs, inst, "reminder_type") == "before_start":
+            minutes = merged(attrs, inst, "reminder_minutes_before")
+            if all_day or minutes is None or minutes > 10080:
+                raise ApiError("invalid_reminder_minutes")
+        origin = attrs.get("origin_event_id")
+        if origin and not Event.objects.filter(pk=origin, user_id=self.user_id).exists():
+            raise ApiError("event.origin_not_found")
+        return attrs
+
+
+class OccurrenceSerializer(serializers.ModelSerializer):
+    task_id = serializers.UUIDField(read_only=True)
+
+    class Meta:
+        model = TaskOccurrence
+        fields = ["task_id", "occurrence_date", "status", "completed_at", "version", "updated_at"]
+
+
+class HabitLogSerializer(serializers.ModelSerializer):
+    habit_id = serializers.UUIDField(read_only=True)
+
+    class Meta:
+        model = HabitLog
+        fields = ["habit_id", "log_date", "status", "version", "updated_at"]
+
+
+class StatusSerializer(serializers.Serializer):
+    status = serializers.CharField(max_length=10)
+    version = serializers.IntegerField(required=False)

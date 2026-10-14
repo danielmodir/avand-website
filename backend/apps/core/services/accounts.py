@@ -1,0 +1,322 @@
+"""Account lifecycle and sign-in sessions."""
+import random
+import re
+import string
+from datetime import timedelta
+
+from django.conf import settings
+from django.contrib.auth import password_validation
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
+from django.utils import timezone
+
+from apps.common.exceptions import ApiError
+
+from ..models import (
+    AuthEvent, AuthSession, AuthToken, EmailOutbox, Module, OAuthAccount, Profile, User, UserConsent,
+    UserModule, UserSettings,
+)
+from ..security import client_ip, email_hash, new_secret_token, sha256_hex, user_agent
+from ..tokens import issue_access_token
+from .email import queue_email
+
+
+def check_password_strength(password, user):
+    try:
+        password_validation.validate_password(password, user)
+    except ValidationError as exc:
+        raise ApiError("weak_password", 400, extra={"reasons": exc.messages})
+
+
+# ── audit ────────────────────────────────────────────────────────────────
+
+def log_event(request, event, success, user=None, email=""):
+    AuthEvent.objects.create(
+        user=user, email_hash=email_hash(email) if email else "", event=event, success=success,
+        ip=client_ip(request), user_agent=user_agent(request),
+    )
+
+
+# ── sessions ─────────────────────────────────────────────────────────────
+
+def _session_meta(request, data):
+    platform = (data or {}).get("platform") or AuthSession.Platform.WEB
+    if platform not in AuthSession.Platform.values:
+        platform = AuthSession.Platform.WEB
+    return {
+        "platform": platform,
+        "device_name": str((data or {}).get("device_name") or "")[:100],
+        "user_agent": user_agent(request),
+        "ip": client_ip(request),
+    }
+
+
+def start_session(user, request, data=None):
+    """Returns the token pair for a new signed-in device."""
+    refresh = new_secret_token()
+    session = AuthSession.objects.create(
+        user=user, token_hash=sha256_hex(refresh),
+        expires_at=timezone.now() + settings.REFRESH_TOKEN_LIFETIME, **_session_meta(request, data),
+    )
+    User.objects.filter(pk=user.pk).update(last_login=timezone.now())
+    return token_pair(session, refresh)
+
+
+def token_pair(session, refresh):
+    return {
+        "access_token": issue_access_token(session),
+        "refresh_token": refresh,
+        "access_expires_in": int(settings.ACCESS_TOKEN_LIFETIME.total_seconds()),
+        "session_id": str(session.id),
+        "user_id": str(session.user_id),
+    }
+
+
+def rotate_session(refresh_token, request):
+    replayed = None
+    with transaction.atomic():
+        result = _rotate(refresh_token, request)
+        if isinstance(result, User):
+            replayed = result
+    if replayed is not None:
+        # A refresh token that was already exchanged is being replayed:
+        # someone copied it. Sign the user out everywhere. Done after the
+        # block so the revocation is committed, not rolled back with the
+        # failed request.
+        revoke_all_sessions(replayed, AuthSession.RevokeReason.REUSE_DETECTED)
+        log_event(request, AuthEvent.Event.SESSION_REUSE, False, replayed)
+        raise ApiError("invalid_refresh_token", 401)
+    return result
+
+
+def _rotate(refresh_token, request):
+    """Token pair for a valid refresh token; the User if it was replayed."""
+    session = AuthSession.objects.select_for_update().select_related("user").filter(token_hash=sha256_hex(refresh_token or "")).first()
+    if session is None:
+        raise ApiError("invalid_refresh_token", 401)
+    if session.revoked_at is not None:
+        if session.revoked_reason == AuthSession.RevokeReason.ROTATED:
+            return session.user
+        raise ApiError("invalid_refresh_token", 401)
+    if session.expires_at <= timezone.now():
+        raise ApiError("refresh_token_expired", 401)
+    if not session.user.can_use_api:
+        raise ApiError(f"account_{session.user.status}", 403)
+
+    refresh = new_secret_token()
+    successor = AuthSession.objects.create(
+        user=session.user, token_hash=sha256_hex(refresh), expires_at=timezone.now() + settings.REFRESH_TOKEN_LIFETIME,
+        platform=session.platform, device_name=session.device_name, user_agent=user_agent(request), ip=client_ip(request),
+    )
+    session.revoked_at = timezone.now()
+    session.revoked_reason = AuthSession.RevokeReason.ROTATED
+    session.replaced_by = successor
+    session.save(update_fields=["revoked_at", "revoked_reason", "replaced_by"])
+    return token_pair(successor, refresh)
+
+
+def revoke_all_sessions(user, reason, except_session=None):
+    qs = AuthSession.objects.filter(user=user, revoked_at__isnull=True)
+    if except_session is not None:
+        qs = qs.exclude(pk=except_session.pk)
+    qs.update(revoked_at=timezone.now(), revoked_reason=reason)
+
+
+# ── registration ─────────────────────────────────────────────────────────
+
+def _public_id_base(first_name, email):
+    letters = re.sub(r"[^A-Za-z]", "", first_name or "") or re.sub(r"[^A-Za-z]", "", email.split("@")[0])
+    return (letters.upper() + "USER")[:4]
+
+
+def generate_public_id(first_name, email):
+    base = _public_id_base(first_name, email)
+    for _ in range(20):
+        candidate = base + "".join(random.choices(string.digits, k=4))
+        if not Profile.objects.filter(public_id=candidate).exists():
+            return candidate
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+
+def provision_user(user, first_name="", last_name=""):
+    """Profile, settings and default desktops for a brand-new account."""
+    Profile.objects.create(user=user, first_name=first_name[:60], last_name=last_name[:60], public_id=generate_public_id(first_name, user.email))
+    UserSettings.objects.create(user=user)
+    now = timezone.now()
+    for position, module in enumerate(Module.objects.filter(is_active=True, default_enabled=True)):
+        UserModule.objects.create(user=user, module=module, enabled=True, position=position, enabled_at=now)
+
+
+def record_consents(user, consents, request):
+    """consents: [{"doc_type": "terms", "version": 3}, …]"""
+    for c in consents or []:
+        UserConsent.objects.get_or_create(
+            user=user, doc_type=c["doc_type"], version=c["version"], defaults={"ip": client_ip(request)},
+        )
+
+
+@transaction.atomic
+def register(request, email, password, first_name="", last_name="", consents=None):
+    email = User.objects.normalize_email(email).lower()
+    candidate = User(email=email)
+    check_password_strength(password, candidate)
+    try:
+        with transaction.atomic():
+            user = User.objects.create_user(email, password)
+    except IntegrityError:
+        log_event(request, AuthEvent.Event.REGISTER, False, email=email)
+        raise ApiError("email_taken", 409)
+    provision_user(user, first_name, last_name)
+    record_consents(user, consents, request)
+    send_email_verification(user)
+    log_event(request, AuthEvent.Event.REGISTER, True, user)
+    return user
+
+
+def authenticate_password(request, email, password):
+    email = (email or "").strip().lower()
+    user = User.objects.filter(email=email).first()
+    # Hash something even for unknown emails so timing doesn't reveal them.
+    valid = user.check_password(password) if user else User().check_password(password)
+    if not user or not valid or not user.has_usable_password():
+        log_event(request, AuthEvent.Event.LOGIN, False, user, email)
+        raise ApiError("invalid_credentials", 401)
+    if user.status == User.Status.SUSPENDED:
+        log_event(request, AuthEvent.Event.LOGIN, False, user)
+        raise ApiError("account_suspended", 403)
+    log_event(request, AuthEvent.Event.LOGIN, True, user)
+    _cancel_deletion_on_sign_in(request, user)
+    return user
+
+
+@transaction.atomic
+def google_sign_in(request, claims):
+    """claims: a verified Google ID token (see views.GoogleLoginView)."""
+    subject, email = claims["sub"], (claims.get("email") or "").lower()
+    link = OAuthAccount.objects.select_related("user").filter(provider="google", provider_user_id=subject).first()
+    if link:
+        user = link.user
+        link.last_used_at = timezone.now()
+        link.save(update_fields=["last_used_at"])
+    else:
+        if not email or not claims.get("email_verified"):
+            raise ApiError("google_email_unverified", 400)
+        user = User.objects.filter(email=email).first()
+        if user is None:
+            user = User.objects.create_user(email, None, email_verified_at=timezone.now())
+            provision_user(user, claims.get("given_name", ""), claims.get("family_name", ""))
+        OAuthAccount.objects.create(user=user, provider="google", provider_user_id=subject, provider_email=email, last_used_at=timezone.now())
+    if user.status == User.Status.SUSPENDED:
+        raise ApiError("account_suspended", 403)
+    log_event(request, AuthEvent.Event.LOGIN_GOOGLE, True, user)
+    _cancel_deletion_on_sign_in(request, user)
+    return user
+
+
+# ── email links ──────────────────────────────────────────────────────────
+
+def _issue_link_token(user, purpose, lifetime, new_email=""):
+    AuthToken.objects.filter(user=user, purpose=purpose, used_at__isnull=True).update(used_at=timezone.now())
+    raw = new_secret_token()
+    AuthToken.objects.create(
+        user=user, purpose=purpose, token_hash=sha256_hex(raw), new_email=new_email,
+        expires_at=timezone.now() + lifetime,
+    )
+    return raw
+
+
+def _lang(user):
+    settings_row = getattr(user, "settings", None)
+    return settings_row.language if settings_row else "fa"
+
+
+def send_email_verification(user):
+    if user.email_verified_at:
+        return
+    raw = _issue_link_token(user, AuthToken.Purpose.VERIFY_EMAIL, settings.EMAIL_TOKEN_LIFETIME)
+    queue_email(user, EmailOutbox.Template.VERIFY_EMAIL, _lang(user), {"link": f"{settings.FRONTEND_URL}#verify-email={raw}"})
+
+
+def consume_link_token(raw, purpose):
+    token = AuthToken.objects.select_for_update().select_related("user").filter(token_hash=sha256_hex(raw or ""), purpose=purpose).first()
+    if token is None or token.used_at is not None or token.expires_at <= timezone.now():
+        raise ApiError("invalid_or_expired_token", 400)
+    token.used_at = timezone.now()
+    token.save(update_fields=["used_at"])
+    return token
+
+
+@transaction.atomic
+def verify_email(request, raw):
+    token = consume_link_token(raw, AuthToken.Purpose.VERIFY_EMAIL)
+    User.objects.filter(pk=token.user_id).update(email_verified_at=timezone.now())
+    log_event(request, AuthEvent.Event.EMAIL_VERIFY, True, token.user)
+
+
+def request_password_reset(request, email):
+    """Always succeeds from the caller's point of view (no account probing)."""
+    user = User.objects.filter(email=(email or "").strip().lower()).first()
+    log_event(request, AuthEvent.Event.PASSWORD_RESET_REQUEST, bool(user), user, email)
+    if user and user.status != User.Status.SUSPENDED:
+        raw = _issue_link_token(user, AuthToken.Purpose.RESET_PASSWORD, settings.PASSWORD_RESET_TOKEN_LIFETIME)
+        queue_email(user, EmailOutbox.Template.RESET_PASSWORD, _lang(user), {"link": f"{settings.FRONTEND_URL}#reset-password={raw}"})
+
+
+@transaction.atomic
+def reset_password(request, raw, new_password):
+    token = consume_link_token(raw, AuthToken.Purpose.RESET_PASSWORD)
+    user = token.user
+    check_password_strength(new_password, user)
+    user.set_password(new_password)
+    user.save(update_fields=["password", "updated_at"])
+    revoke_all_sessions(user, AuthSession.RevokeReason.PASSWORD_CHANGE)
+    log_event(request, AuthEvent.Event.PASSWORD_RESET, True, user)
+
+
+@transaction.atomic
+def change_password(request, user, current_password, new_password, keep_session):
+    if user.has_usable_password() and not user.check_password(current_password or ""):
+        log_event(request, AuthEvent.Event.PASSWORD_CHANGE, False, user)
+        raise ApiError("invalid_credentials", 401)
+    check_password_strength(new_password, user)
+    user.set_password(new_password)
+    user.save(update_fields=["password", "updated_at"])
+    revoke_all_sessions(user, AuthSession.RevokeReason.PASSWORD_CHANGE, except_session=keep_session)
+    log_event(request, AuthEvent.Event.PASSWORD_CHANGE, True, user)
+
+
+# ── account deletion ─────────────────────────────────────────────────────
+
+@transaction.atomic
+def request_deletion(request, user):
+    user.status = User.Status.PENDING_DELETION
+    user.deletion_requested_at = timezone.now()
+    user.save(update_fields=["status", "deletion_requested_at", "updated_at"])
+    # Signs out every device; signing in again during the grace period
+    # cancels the deletion (see _cancel_deletion_on_sign_in).
+    revoke_all_sessions(user, AuthSession.RevokeReason.ACCOUNT_DELETED)
+    purge_on = (user.deletion_requested_at + settings.ACCOUNT_DELETION_GRACE).date().isoformat()
+    queue_email(user, EmailOutbox.Template.DELETION_SCHEDULED, _lang(user), {"purge_on": purge_on})
+    log_event(request, AuthEvent.Event.DELETION_REQUEST, True, user)
+    return purge_on
+
+
+def _cancel_deletion_on_sign_in(request, user):
+    if user.status == User.Status.PENDING_DELETION:
+        cancel_deletion(request, user)
+
+
+@transaction.atomic
+def cancel_deletion(request, user):
+    user.status = User.Status.ACTIVE
+    user.deletion_requested_at = None
+    user.save(update_fields=["status", "deletion_requested_at", "updated_at"])
+    log_event(request, AuthEvent.Event.DELETION_CANCEL, True, user)
+
+
+def deletion_due_before():
+    return timezone.now() - settings.ACCOUNT_DELETION_GRACE
+
+
+def stale_cutoff(days):
+    return timezone.now() - timedelta(days=days)
