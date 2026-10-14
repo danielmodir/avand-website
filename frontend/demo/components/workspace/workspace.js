@@ -12,8 +12,8 @@ function renderHome(){
    occasionsForDate/OCCASIONS_DATA above), for the currently-viewed date
    `d`, not hardcoded to today, so paging the home date updates it too. */
 function renderOccasionsPane(d, events){
-  const occasionsHtml = OCCASIONS_DATA === null ? `<div class="empty-hint">…</div>` : (() => {
-    const items = occasionsForDate(d);
+  const items = occasionsForDate(d); // null while still loading
+  const occasionsHtml = items === null ? `<div class="empty-hint">…</div>` : (() => {
     return items.length ? items.map(it => `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}${escapeHtml(it.event_name)}</div>`).join('') : '';
   })();
   const dayEvents = events || [];
@@ -189,7 +189,7 @@ function attachDesktopPager(){
 const STAT_RING_CIRC = 2 * Math.PI * 42;
 
 function renderDayStatsCard(tasks, habits, events, d){
-  const doneTasks = tasks.filter(x => x.done).length;
+  const doneTasks = tasks.filter(x => taskStatusOn(x, dateKey(d)) === 'done').length;
   const doneHabits = habits.filter(h => h.completedDates.includes(dateKey(d))).length;
   const totalDoable = tasks.length + habits.length;
   const donePct = totalDoable ? Math.round((doneTasks + doneHabits) / totalDoable * 100) : 0;
@@ -244,15 +244,15 @@ function updateDayStatsInPlace(){
   if(!card) return;
   const d = state.homeDate;
   const {tasks, habits} = itemsForDate(d);
-  const doneTasks = tasks.filter(x => x.done).length;
+  const doneTasks = tasks.filter(x => taskStatusOn(x, dateKey(d)) === 'done').length;
   const doneHabits = habits.filter(h => h.completedDates.includes(dateKey(d))).length;
   const totalDoable = tasks.length + habits.length;
   const donePct = totalDoable ? Math.round((doneTasks + doneHabits) / totalDoable * 100) : 0;
   card.dataset.pct = donePct;
   animateDayStats();
   const counts = card.querySelectorAll('.stat-mini b');
-  if(counts[0]) counts[0].textContent = `${doneTasks}/${tasks.length}`;
-  if(counts[1]) counts[1].textContent = `${doneHabits}/${habits.length}`;
+  if(counts[0]) counts[0].textContent = `${dig(doneTasks)}/${dig(tasks.length)}`;
+  if(counts[1]) counts[1].textContent = `${dig(doneHabits)}/${dig(habits.length)}`;
 }
 
 /* Expand/collapse the merged calendar widget — reversed from the old

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>درخت قابلیت‌های توجیبی</title>
+<style>
+:root{
+  --bg:#F2F2F2; --card:#FFFFFF; --text:#14213D; --muted:#5b6478; --line:#d9dbe0;
+  --primary:#FCA311; --primary-soft:#fff3dc; --navy:#14213D;
+  --tag-m:#2f7de1; --tag-d:#7a5af8; --tag-g:#0f9d77; --tag-soon:#b26a00; --tag-off:#c0392b; --tag-f:#d6457a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --card:#0f1626; --text:#E5E5E5; --muted:#9aa3b5; --line:#24304a;
+    --primary-soft:#2b2210;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --card:#0f1626; --text:#E5E5E5; --muted:#9aa3b5; --line:#24304a;
+  --primary-soft:#2b2210;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--text);
+  font-family:'SG Kara','Vazirmatn',Tahoma,system-ui,sans-serif; font-size:15px; line-height:1.7}
+.wrap{max-width:980px; margin:0 auto; padding:24px 16px 80px}
+header{display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; margin-bottom:16px}
+h1{font-size:22px; margin:0}
+.sub{color:var(--muted); font-size:13px; margin:4px 0 0}
+.toolbar{position:sticky; top:0; z-index:5; background:var(--bg); padding:10px 0; display:flex; flex-wrap:wrap; gap:8px; align-items:center; border-bottom:1px solid var(--line); margin-bottom:14px}
+.toolbar input[type=search]{flex:1 1 220px; min-width:0; padding:9px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--text); font:inherit}
+button.tb{padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--text); font:inherit; font-size:13px; cursor:pointer}
+button.tb:hover{border-color:var(--primary)}
+.progress{flex:1 1 100%; display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted)}
+.bar{flex:1; height:8px; border-radius:99px; background:var(--line); overflow:hidden}
+.bar>i{display:block; height:100%; width:0; background:var(--primary); transition:width .25s}
+.legend{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 14px; font-size:12px; color:var(--muted)}
+ul.tree, ul.tree ul{list-style:none; margin:0; padding:0}
+ul.tree ul{padding-inline-start:22px; border-inline-start:1px dashed var(--line); margin-inline-start:11px}
+li.node{margin:2px 0}
+.row{display:flex; align-items:flex-start; gap:6px; padding:4px 8px; border-radius:10px}
+.row:hover{background:var(--primary-soft)}
+.lvl0>.row{background:var(--navy); color:#fff; border-radius:14px; padding:10px 12px; margin-top:14px; font-size:17px; font-weight:700}
+.lvl0>.row .note{color:#c9d0de}
+.lvl1>.row{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:7px 10px; margin-top:6px; font-weight:700}
+.caret{flex:0 0 22px; height:22px; border:0; background:none; color:inherit; cursor:pointer; font-size:12px; padding:0; transform:rotate(90deg); transition:transform .15s; margin-top:2px}
+.collapsed>.row .caret{transform:rotate(0deg)}
+[dir=rtl] .collapsed>.row .caret{transform:rotate(180deg)}
+.caret.leaf{visibility:hidden}
+.collapsed>ul{display:none}
+input[type=checkbox]{width:18px; height:18px; accent-color:var(--primary); margin-top:4px; flex:0 0 auto; cursor:pointer}
+.lbl{flex:1; min-width:0}
+.lbl label{cursor:pointer}
+.note{display:block; font-size:12.5px; color:var(--muted); font-weight:400}
+.count{font-size:11px; font-weight:400; padding:1px 8px; border-radius:99px; background:var(--primary); color:#000; margin-inline-start:6px; white-space:nowrap}
+.tag{display:inline-block; font-size:10.5px; font-weight:700; padding:0 7px; border-radius:99px; color:#fff; margin-inline-start:4px; vertical-align:middle; line-height:18px}
+.tag.m{background:var(--tag-m)} .tag.d{background:var(--tag-d)} .tag.g{background:var(--tag-g)}
+.tag.soon{background:var(--tag-soon)} .tag.off{background:var(--tag-off)} .tag.f{background:var(--tag-f)}
+.done>.row>.lbl label{text-decoration:line-through; opacity:.6}
+.hidden-by-search{display:none}
+mark{background:var(--primary); color:#000; border-radius:4px; padding:0 2px}
+footer{margin-top:30px; font-size:12px; color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>درخت قابلیت‌های توجیبی</h1>
+      <p class="sub">از روی کد فعلی (frontend/ — سایت معرفی + اپ /demo/) در تاریخ ۲۴ مهر ۱۴۰۵ — از بزرگ‌ترین بخش تا کوچک‌ترین دکمه و پاپ‌آپ. تیک‌ها تو همین مرورگر ذخیره می‌شن.</p>
+    </div>
+    <button class="tb" id="theme-btn" type="button">تغییر تم</button>
+  </header>
+
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="جست‌وجو تو قابلیت‌ها…">
+    <button class="tb" type="button" id="expand-all">باز کردن همه</button>
+    <button class="tb" type="button" id="collapse-all">بستن همه</button>
+    <button class="tb" type="button" id="clear-all">پاک کردن تیک‌ها</button>
+    <div class="progress"><span id="prog-text">۰ از ۰</span><div class="bar"><i id="prog-bar"></i></div></div>
+  </div>
+
+  <div class="legend">
+    راهنما:
+    <span class="tag m">موبایل</span>
+    <span class="tag d">دسکتاپ</span>
+    <span class="tag g">ژست/حرکت</span>
+    <span class="tag f">فقط خانم‌ها</span>
+    <span class="tag soon">به‌زودی</span>
+    <span class="tag off">غیرفعال/نمایشی</span>
+  </div>
+
+  <ul class="tree" id="tree"></ul>
+
+  <footer>منبع: frontend/demo/components/*، frontend/demo/js/*، frontend/fa|en/*. قابلیت‌هایی که فقط تو مستندات هستن و تو کد نیستن این‌جا نیومدن.</footer>
+</div>
+
+<!-- Outline: two spaces per level. "label — note {tag}{tag}". Tags: m d g f soon off -->
+<script type="text/plain" id="outline">
+سایت معرفی (لندینگ) — avand.ir، فارسی و انگلیسی با ساختار یکسان
+  صفحه‌ی ریشه (/) — انتخاب زبان
+    ریدایرکت خودکار بر اساس زبان مرورگر — navigator.language → /fa/ یا /en/
+    دکمه «فارسی»
+    دکمه «English»
+  هدر سایت
+    لوگو + نام برند — لینک به صفحه‌ی اصلی همان زبان
+    لوگوی جدا برای تم روشن و تیره
+    سوییچ زبان — فارسی ⇄ English
+    دکمه‌ی تغییر تم (خورشید/ماه) — ذخیره در localStorage
+    لینک «رفتن به محتوا» (skip link) — دسترس‌پذیری
+  صفحه‌ی اصلی (/fa/ و /en/)
+    بخش هیرو
+      برچسب «پیش‌نمایش زنده — همین الان امتحانش کن»
+      تیتر و متن معرفی
+      دکمه‌ی «امتحان پیش‌نمایش وب» — به /demo/؛ برچسبش از config.js عوض می‌شه
+      دکمه‌ی «دانلود برای اندروید» — فعلاً «به‌زودی» و غیرفعال {soon}{off}
+      تصویر موبایل اپ — نسخه‌ی روشن و تیره جدا
+    بخش «چی داخلشه» — ۴ کارت
+      کارت «کار»
+      کارت «عادت»
+      کارت «تقویم»
+      کارت «رویداد»
+    بخش «توجیبی چطور کار می‌کنه»
+      تصویر دسکتاپ چسبان (sticky) — روشن/تیره
+      گام ۱: افزودن کار/عادت/رویداد
+      گام ۲: دیدن همه‌چیز روی یه تقویم
+      گام ۳: تیک، پین، یادآوری
+    بخش «چرا توجیبی؟» — ۳ مورد
+    بخش CTA پایانی
+      دکمه‌ی «ورود به توجیبی»
+      دکمه‌ی «مشاهده نسخه‌ی وب»
+    انیمیشن ظاهر شدن هنگام اسکرول — reveal.js {g}
+  فوتر
+    لینک «درباره»
+    لینک «حریم خصوصی»
+    لینک «شرایط استفاده»
+    کپی‌رایت
+  صفحه‌ی «درباره» (/about/)
+    توجیبی چیست؟
+    چرا ساخته شد؟
+    چه مشکلی را حل می‌کند؟
+    قابلیت‌های اصلی
+    وضعیت فعلی محصول
+  صفحه‌ی «حریم خصوصی» (/privacy/)
+    خود این سایت
+    نسخه‌ی وب (پیش‌نمایش)
+    چه اطلاعاتی ذخیره می‌شه و کجا
+    حذف حساب و داده‌ها
+    امنیت
+    ارتباط با ما
+  صفحه‌ی «شرایط استفاده» (/terms/)
+    وضعیت فعلی: نسخه‌ی بتا
+    حساب کاربری
+    محتوای شما
+    سرویس‌های ثالث
+    تغییرات سرویس
+    محدودیت مسئولیت
+    حذف حساب
+    ارتباط با ما
+  صفحه‌ی «دانلود اندروید» (/download/)
+    دکمه‌ی دانلود — غیرفعال {soon}{off}
+    راهنمای نصب
+    منابع دیگه
+اپ توجیبی (/demo/) — وب‌اپ، noindex، PWA (manifest)
+  صفحه‌ی ورود / ثبت‌نام — فعلاً با REAL_LOGIN_DISABLED دور زده می‌شه {off}
+    لوگو، عنوان «به توجیبی خوش اومدی» و زیرعنوان
+    تب‌ها
+      تب «ورود»
+      تب «ثبت‌نام»
+    دکمه‌ی «ورود با گوگل» — هنوز راه‌اندازی نشده {soon}
+    جداکننده «یا»
+    فرم
+      فیلد «نام و نام خانوادگی» — فقط در ثبت‌نام
+      فیلد «ایمیل»
+      فیلد «رمز عبور»
+      پیام خطای زیر هر فیلد — نام خالی / ایمیل نامعتبر / رمز کمتر از ۶ کاراکتر
+      پیام خطای کلی (از سرور)
+      دکمه‌ی «ورود» / «ساخت حساب» — حالت «لطفاً صبر کن…» هنگام ارسال
+    متن پایین «حساب و اطلاعاتت واقعاً ذخیره می‌شه»
+    ساخت چند آیتم نمونه برای حساب تازه
+  صفحه‌ی بارگذاری (Boot)
+    اسکلت بارگذاری (skeleton) — هنگام بررسی نشست ذخیره‌شده
+    صفحه‌ی خطای اتصال
+      آیکون قطع وای‌فای + «اتصال برقرار نشد»
+      دکمه‌ی «تلاش دوباره»
+    انقضای نشست → برگشت به صفحه‌ی ورود + پیام
+  بنر بالای اپ (هدر)
+    لوگوی «Tj» — کلیک = برگشت به سایت معرفی
+    عنوان «توجیبی»
+    لایه‌ی عکس پس‌زمینه‌ی بنر — آماده، فعلاً بدون عکس {off}
+    مخفی شدن هنگام باز بودن پنل منو
+  تقویم اصلی (ستون تقویم) {d}
+    نوار بالا
+      فلش ماه/هفته/روز قبل
+      برچسب ماه — کلیک = منوی ماه‌ها؛ کشیدن بالا/پایین = ماه قبل/بعد {g}
+        منوی کشویی ماه‌ها (۱۲ ماه)
+      برچسب سال — کلیک = منوی سال‌ها؛ کشیدن = سال قبل/بعد {g}
+        منوی کشویی سال‌ها — اسکرول خودکار به سال فعلی
+      فلش ماه/هفته/روز بعد
+      انیمیشن چرخشی برچسب هنگام عوض شدن ماه/سال
+    تب‌های نما
+      روزانه — در دسکتاپ همیشه ماهانه اجباری می‌شه {m}
+      هفتگی {m}
+      ماهانه
+    نمای ماهانه
+      سرتیتر روزهای هفته — ترتیب از تنظیمات «شروع هفته»
+      خانه‌ی روز
+        عدد بزرگ (تقویم اصلی)
+        اعداد کوچک تقویم‌های دیگه (شمسی/میلادی/قمری)
+        نقطه‌ی «این روز آیتم داره»
+        حالت «امروز»
+        حالت «انتخاب‌شده»
+        روزهای ماه قبل/بعد کم‌رنگ — کلیک = پرش به اون ماه
+        کلیک = انتخاب روز
+        نگه داشتن ۰.۵ ثانیه = لرزش + باز شدن برگه‌ی روز {g}
+        کپسول بازه‌ی کار انتخاب‌شده + دایره‌ی شروع/پایان
+      حذف ردیف آخر اگه کامل مال ماه بعد باشه
+      اسکرول افقی ترک‌پد = ماه قبل/بعد {g}{d}
+      «اسکرول درجا»: فشرده شدن جدول (کامل/نیمه/یک‌هفته) {g}{m}
+    نمای هفتگی
+      ۷ ردیف روز — عدد، نام روز، تعداد آیتم یا «برنامه‌ای نیست»
+      کلیک روی ردیف = انتخاب روز
+    نمای روزانه
+      برچسب تاریخ روز
+      بخش‌های رویداد/کار/عادت همون روز
+  ویجت تقویم ادغام‌شده (خانه‌ی موبایل) {m}
+    نوار بالا: فلش قبلی، ماه، سال، فلش بعدی + منوهای کشویی ماه و سال
+    جدول ماه با همون خانه‌های روز
+    دستگیره‌ی پایین — کلیک = باز/بسته (ماه کامل ⇄ یک هفته)
+    کشیدن عمودی = باز/بسته کردن {g}
+    کشیدن افقی = هفته/ماه قبل و بعد با انیمیشن سُر خوردن {g}
+    کشیدن صفحه به پایین وقتی بالای صفحه‌ای = باز شدن ماه کامل {g}
+    اسکرول به پایین = جمع شدن به نوار هفته {g}
+  دکمه‌ی «بازگشت به امروز»
+    فقط وقتی روز/ماه دیگه‌ای انتخاب شده نمایش داده می‌شه
+    چسبیده به لبه‌ی پایین تقویم
+  میزکار (جعبه‌ی میزکارها)
+    نوار بالای میزکار
+      فلش میزکار قبلی — غیرفعال روی اولی
+      عنوان میزکار فعلی — کلیک = منوی انتخاب میزکار
+        منوی کشویی لیست میزکارها
+      فلش میزکار بعدی — غیرفعال روی آخری
+    نقطه‌های پایین (یکی برای هر میزکار) — کلیک = رفتن به اون میزکار
+    کشیدن افقی / سوایپ بین میزکارها {g}
+    اسکرول افقی ترک‌پد = یک میزکار جلو/عقب {g}{d}
+    باز کردن منوی «+» = پرش خودکار به میزکار برنامه‌ریزی
+    میزکار «مناسبت‌ها»
+      لیست مناسبت‌های روز انتخاب‌شده — از occasions.json محلی
+      نقطه‌ی قرمز برای روزهای تعطیل
+      رویدادهای همون روز (کارت رویداد)
+      پیام «مناسبتی برای این روز ثبت نشده»
+    میزکار «برنامه‌ریزی» — با تنظیمات مدیریت روشن/خاموش می‌شه
+      ویجت تقویم داخل میزکار {d}
+      کارت آمار روز {d}
+        حلقه‌ی پیشرفت درصد — انیمیشن عدد
+        کارها انجام‌شده/کل
+        عادت‌ها انجام‌شده/کل
+        تعداد رویدادها
+      بخش «رویدادها» (با شمارنده)
+        دکمه‌ی جمع/باز کردن بخش {m}
+        کارت رویداد — کلیک = ویرایش
+          ساعت رویداد (اگه یادآوری ساعتی داره)
+          عنوان
+          دکمه‌ی سطل آشغال = حذف رویداد
+        مرتب‌سازی بر اساس ساعت
+      بخش «کارها» (با شمارنده)
+        دکمه‌ی جمع/باز کردن بخش {m}
+        «نمایش بیشتر» بعد از ۳ کار {d}
+        مرتب‌سازی: پین‌شده‌ها بالا، انجام‌شده‌ها پایین
+        ردیف کار
+          چک‌باکس دایره‌ای — انجام شد / انجام نشد (ضربدر قرمز)
+          عنوان — کلیک = باز شدن ویرایش
+          ستاره = پین / برداشتن پین
+          فلش ریزتسک‌ها — باز/بسته کردن لیست ریزتسک
+          ریزتسک‌ها (حداکثر ۳)
+            چک‌باکس ریزتسک — کار اصلی وقتی همه تیک بخورن خودش تیک می‌خوره
+            عنوان ریزتسک — کلیک = ویرایش مثل یه کار کامل
+            قابل انتخاب با نگه داشتن/راست‌کلیک
+          سوایپ به چپ = تیک انجام شد {g}
+          سوایپ به راست = حذف (سطل قرمز) {g}
+          کیبورد: Enter/Space روی چک‌باکس
+      بخش «عادت‌ها» (با شمارنده)
+        دکمه‌ی جمع/باز کردن بخش {m}
+        «نمایش بیشتر» بعد از ۲ عادت {d}
+        ردیف عادت
+          چک‌باکس مربعی (برای همون روز)
+          عنوان — کلیک = ویرایش
+          سوایپ چپ = تیک، سوایپ راست = حذف {g}
+      منوی انتخاب ردیف (کلیک‌راست یا نگه داشتن ۰.۴۵ ثانیه) {g}
+        هایلایت و بالا آمدن ردیف
+        نمایش بازه‌ی تاریخ کار روی تقویم
+        «انجام شد»
+        «انجام نشد» — ضربدر قرمز و خط‌خوردگی
+        «ویرایش»
+        «حذف» (قرمز)
+        بسته شدن با Escape، اسکرول، کلیک بیرون
+      بخش خالی اصلاً نشون داده نمی‌شه
+    میزکار «پریودی» — فقط خانم‌ها + روشن بودن قابلیت {f}
+      حالت خاموش: «این قابلیت خاموشه»
+      قبل از کوییز: توضیح + دکمه‌ی «شروع»
+      بعد از کوییز
+        چرخه‌ی ۳۰ روزه (دایره‌ی خط‌خطی رنگی)
+        متن وسط: «X روز تا پریود بعدیت» / «امروز شروع می‌شه»
+        راهنمای رنگ: پریود، PMS، بازه‌ی باروری
+        هشدار «فقط یه تخمینه — توصیه‌ی پزشکی نیست»
+      کارت «می‌دونستی؟» — ۶ نکته که تایپ‌شونده می‌چرخن
+      «مقالات مرتبط» — ۴ کارت افقی اسکرول‌شونده
+        کلیک روی مقاله = پیام «در دسترس نیست» {soon}
+  نوار ابزار (پایین موبایل / کنار راست دسکتاپ)
+    کپسول پروفایل و مدیریت
+      دکمه‌ی آواتار (عکس یا حروف اول) = باز کردن پروفایل؛ کلیک دوباره = بستن
+      دکمه‌ی «مدیریت» (کلیپ‌بورد)
+      دکمه‌ی قطره = پرش به میزکار پریودی {f}
+    دکمه‌ی گرد «+»
+      در صفحه‌ی مدیریت/فروشگاه تبدیل به آیکون تقویم = بستن پنل {m}
+      مخفی وقتی میزکار برنامه‌ریزی خاموشه
+    منوی شناور افزودن
+      «کار جدید»
+      «عادت جدید»
+      «رویداد جدید»
+      برچسب‌ها قابل مخفی شدن (تنظیمات)
+      کلیک بیرون = بسته شدن
+  پاپ‌آپ افزودن / ویرایش (کار، عادت، رویداد)
+    انیمیشن باز شدن از محل دکمه‌ی کلیک‌شده
+    فیلد شناور «عنوان» — فوکوس خودکار
+    دکمه‌ی «افزودن کار/عادت/رویداد» / «ذخیره‌ی تغییرات» — فقط وقتی عنوان پره
+    ریزتسک‌ها (فقط کار، نه ریزتسک)
+      «+ افزودن ریزتسک» — بعدی‌ها فقط «+»؛ حداکثر ۳
+      فیلد عنوان هر ریزتسک
+      دکمه‌ی × حذف ریزتسک
+    ردیف آیکون‌ها
+      آیکون تقویم (کار و رویداد) — نقطه‌دار وقتی تنظیم شده
+      آیکون تکرار (نه برای ریزتسک)
+      آیکون زنگ یادآوری — غیرفعال، پیام «هنوز فعال نشده» {soon}{off}
+    توضیحات (فقط کار)
+      فیلد متنی توضیحات
+      دکمه‌ی گیره = پیوست عکس (حداکثر ۳، هر کدوم ≤۵۰ مگ)
+      بندانگشتی عکس‌ها + دکمه‌ی × حذف
+      پیام «حجم فایل بیشتر از ۵۰ مگابایته»
+    زیرصفحه‌ی «تاریخ»
+      دکمه‌ی برگشت
+      فلش ماه قبل/بعد + عنوان ماه
+      جدول ماه کوچک
+      کلیک = یک روز؛ کشیدن = انتخاب بازه {g}
+      راهنمای «یه روز رو بزن، یا بکش…»
+    زیرصفحه‌ی «تکرار»
+      دکمه‌ی برگشت
+      انتخابگر: بدون تکرار (نه برای عادت) / هر چند روز / روزهای مشخص
+      فیلد «هر چند روز یک‌بار؟» (۱ تا ۷)
+      دکمه‌های روزهای هفته (چندانتخابی)
+    زیرصفحه‌ی «یادآوری» — کد آماده، ورودی‌اش غیرفعاله {off}
+      سه‌گزینه‌ای: بدون یادآوری / در ساعت مشخص / تکرارشونده
+      انتخاب ساعت
+      «هر چند ساعت؟» (۱ تا ۱۲)
+      متن دلخواه یادآوری
+    بسته شدن با کلیک روی پس‌زمینه
+  پنل منو (پروفایل / مدیریت / فروشگاه) — تمام‌صفحه در موبایل، پنل کناری در دسکتاپ
+    پس‌زمینه‌ی تیره پشت پنل — کلیک = بستن {d}
+    دکمه‌ی برگشت در هر زیرصفحه — از صفحه‌ی اول = بستن پنل
+    صفحه‌ی «پروفایل»
+      دکمه‌ی تغییر تم (خورشید/ماه)
+      آواتار کوچک
+      نام کاربری + مداد = ویرایش پروفایل
+      شناسه‌ی یکتا + دکمه‌ی کپی — پیام «شناسه کپی شد»
+      آمار: کار انجام‌شده، عادت‌ها، چک‌این‌ها
+      بخش «حساب کاربری»
+        «ارتباط‌ها» + شمارنده
+        «اشتراک‌گذاری برنامه»
+        «درباره‌ی ما»
+        «تنظیمات»
+        «فروشگاه» — «به‌زودی» {soon}{off}
+      دکمه‌ی «خروج از حساب» — باید ۳ ثانیه نگه داشت (پر شدن قرمز)؛ کلیک کوتاه = راهنما {g}
+    صفحه‌ی «ویرایش پروفایل» — ذخیره‌ی خودکار
+      آواتار بزرگ
+      «تغییر عکس» (≤۵۰ مگ)
+      «حذف» عکس
+      اطلاعات شخصی
+        نام
+        نام خانوادگی
+        نام کاربری
+        تاریخ تولد — کلیک = تقویم کوچک با فلش ماه قبل/بعد
+        جنسیت: مرد / زن / ترجیح می‌دم نگم — «زن» بخش‌های پریودی رو فعال می‌کنه
+      اطلاعات تماس
+        ایمیل
+        شماره موبایل
+    صفحه‌ی «ارتباط‌ها» — واقعی (Supabase)
+      لینک دعوت + دکمه‌ی کپی
+      کادر جست‌وجو با شناسه + دکمه‌ی ذره‌بین / Enter — جست‌وجوی خودکار حین تایپ
+      نتایج جست‌وجو / «کاربری پیدا نشد»
+      «درخواست‌های دریافتی» — تأیید / رد
+      «ارتباط‌های من» — حذف ارتباط / مسدود کردن
+      «درخواست‌های ارسالی» — «در انتظار» (غیرفعال)
+      مسدودشده‌ها — رفع مسدودی
+      «ارتباط» برای کاربر جدید
+      پیام «هنوز ارتباطی نداری…»
+    صفحه‌ی «اشتراک‌گذاری توجیبی»
+      لوگو، نام و توضیح اپ
+      «کپی لینک» — پیام «لینک کپی شد»
+    صفحه‌ی «درباره‌ی ما»
+      لوگو، نام، نسخه (۰.۱ — پروتوتایپ MVP)
+      متن درباره (قابل تغییر برای هر زبان)
+      «حریم خصوصی» — بدون لینک {off}
+      «شرایط استفاده» — بدون لینک {off}
+    صفحه‌ی «تنظیمات»
+      «تنظیمات عمومی»
+        زبان: English / فارسی — با صفحه‌ی بارگذاری ۱ ثانیه‌ای
+        نوتیفیکیشن‌ها — کلید خاموش و غیرفعال {off}
+      «تنظیمات تقویم»
+        کلید «میلادی»
+        کلید «شمسی»
+        کلید «قمری»
+        حداقل یکی روشن می‌مونه — پیام هشدار
+        برچسب «به‌عنوان عدد بزرگ نشون داده می‌شه»
+        انتخابگر «تقویم اصلی»
+        انتخابگر «شروع هفته از» (۷ روز)
+      «مدیریت دوره‌ی پریود» {f}
+        کلید روشن/خاموش قابلیت
+        کلید «نمایش در تقویم» — فعلاً فقط نمایشی {off}
+        «ویرایش پاسخ‌ها» = باز کردن کوییز
+      «تنظیمات منو توجیبی» — صفحه هست ولی لینکی بهش نیست {off}
+        کلید «نمایش برچسب» زیر منوی +
+    صفحه‌ی «مدیریت»
+      بخش «میزکارهای فعال»
+        کارت «برنامه‌ریزی» — کلید روشن/خاموش + چرخ‌دنده (به‌زودی) {soon}
+        کارت «پریودی» — کلید روشن/خاموش + چرخ‌دنده (به‌زودی) {f}{soon}
+      کارت‌های قابلیت‌های فروشگاه (فعلاً خالی)
+    صفحه‌ی «فروشگاه» — فعلاً خالی {soon}
+      حالت خالی: «قابلیت‌های جدید به‌زودی اینجا اضافه می‌شن»
+      کارت قابلیت (آماده برای بعد)
+        آیکون + برچسب وضعیت: در دسترس / فعال / قفل / ویژه
+        کلید فعال‌سازی
+        «به‌زودی» برای قفل‌ها
+        دکمه‌ی «ارتقا» — پیام «در دسترس نیست»
+      قابلیت‌های تعریف‌شده در متن‌ها: تم سفارشی، تقویم پیشرفته، ابزار بهره‌وری، آمار پیشرفته، هوش مصنوعی
+  برگه‌ی کوییز پریود {f}
+    دکمه‌ی بستن (×) و کلیک روی پس‌زمینه
+    نقطه‌های مرحله (۱ از ۳)
+    سؤال ۱: آخرین پریود کی شروع شد؟ (انتخاب تاریخ، نه آینده) + «بعدی»
+    سؤال ۲: طول چرخه (۱۵ تا ۶۰ روز) + «بعدی»
+    سؤال ۳: طول پریود (۱ تا ۱۴ روز) + «پایان»
+  برگه‌ی روز (Day sheet) {d}
+    باز شدن با نگه داشتن روی روز تقویم
+    عنوان تاریخ
+    دکمه‌ی بستن (×)
+    بخش‌های رویداد/کار/عادت همون روز (با سوایپ)
+    کشیدن دستگیره به بالا = رفتن به اون روز و بستن {g}
+  پیام‌های کوتاه (Toast)
+    «ذخیره نشد — اتصالت رو چک کن»
+    «هنوز فعال نشده» (یادآوری)
+    «شناسه کپی شد» / «لینک دعوت کپی شد»
+    «برای خروج نگه دارید»
+    «حداقل یک تقویم باید روشن بمونه»
+    «تنظیمات این میزکار به‌زودی اضافه می‌شه»
+    «ارتقا در دسترس نیست» / «مقاله‌ها در دسترس نیستن»
+    «حجم فایل بیشتر از ۵۰ مگابایته»
+    «نشست شما منقضی شد»
+  رفتارهای سراسری
+    تم روشن/تیره — ذخیره و هم‌رنگ شدن نوار مرورگر
+    زبان فارسی/انگلیسی — اعداد فارسی در حالت فارسی
+    تقویم راست‌به‌چپ در حالت فارسی
+    سه تقویم: شمسی، میلادی، قمری
+    عوض شدن خودکار «امروز» بعد از نیمه‌شب
+    ذخیره‌ی ابری کار/عادت/رویداد/پروفایل/تنظیمات — وقتی ورود واقعی روشن باشه
+    واکنش به تغییر اندازه‌ی پنجره (موبایل ⇄ دسکتاپ در ۹۶۰px)
+    لرزش کوتاه گوشی در نگه داشتن‌ها {m}
+</script>
+
+<script>
+(function(){
+  var KEY = 'toojibee-feature-tree-v1';
+  var saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(e){}
+  var TAGS = { m:'موبایل', d:'دسکتاپ', g:'ژست', f:'خانم‌ها', soon:'به‌زودی', off:'غیرفعال' };
+  var fa = function(n){ return String(n).replace(/\d/g, function(d){ return '۰۱۲۳۴۵۶۷۸۹'[d]; }); };
+
+  // Parse the indented outline into a tree.
+  var lines = document.getElementById('outline').textContent.split('\n').filter(function(l){ return l.trim(); });
+  var root = { children: [] }, stack = [{ depth: -1, node: root }];
+  lines.forEach(function(line){
+    var depth = line.match(/^ */)[0].length / 2;
+    var text = line.trim(), tags = [];
+    text = text.replace(/\{(\w+)\}/g, function(_, t){ tags.push(t); return ''; }).trim();
+    var parts = text.split(' — ');
+    var node = { label: parts[0], note: parts.slice(1).join(' — '), tags: tags, children: [] };
+    while(stack[stack.length-1].depth >= depth) stack.pop();
+    var parent = stack[stack.length-1].node;
+    node.id = (parent.id ? parent.id + '/' : '') + node.label;
+    parent.children.push(node);
+    stack.push({ depth: depth, node: node });
+  });
+
+  function leafCount(n){ return n.children.length ? n.children.reduce(function(s,c){ return s + leafCount(c); }, 0) : 1; }
+
+  function build(node, depth){
+    var li = document.createElement('li');
+    li.className = 'node lvl' + Math.min(depth, 2) + (depth >= 2 && node.children.length ? ' collapsed' : '');
+    li.dataset.id = node.id;
+    var row = document.createElement('div'); row.className = 'row';
+    var caret = document.createElement('button'); caret.type = 'button';
+    caret.className = 'caret' + (node.children.length ? '' : ' leaf'); caret.textContent = '▶';
+    caret.setAttribute('aria-label', 'باز/بسته');
+    var cb = document.createElement('input'); cb.type = 'checkbox';
+    var uid = 'cb' + Math.random().toString(36).slice(2);
+    cb.id = uid;
+    var lbl = document.createElement('div'); lbl.className = 'lbl';
+    var label = document.createElement('label'); label.htmlFor = uid; label.textContent = node.label;
+    lbl.appendChild(label);
+    node.tags.forEach(function(t){ var s = document.createElement('span'); s.className = 'tag ' + t; s.textContent = TAGS[t] || t; lbl.appendChild(s); });
+    if(node.children.length){ var c = document.createElement('span'); c.className = 'count'; c.textContent = fa(leafCount(node)); lbl.appendChild(c); }
+    if(node.note){ var n = document.createElement('span'); n.className = 'note'; n.textContent = node.note; lbl.appendChild(n); }
+    row.append(caret, cb, lbl); li.appendChild(row);
+    if(node.children.length){
+      var ul = document.createElement('ul');
+      node.children.forEach(function(ch){ ul.appendChild(build(ch, depth+1)); });
+      li.appendChild(ul);
+    } else {
+      cb.checked = !!saved[node.id];
+      cb.dataset.leaf = '1';
+    }
+    caret.addEventListener('click', function(){ li.classList.toggle('collapsed'); });
+    return li;
+  }
+
+  var treeEl = document.getElementById('tree');
+  root.children.forEach(function(n){ treeEl.appendChild(build(n, 0)); });
+
+  // Parent state = derived from its leaves (checked / indeterminate).
+  function refresh(){
+    var leaves = treeEl.querySelectorAll('input[data-leaf]');
+    var done = 0;
+    leaves.forEach(function(cb){ if(cb.checked) done++; cb.closest('li').classList.toggle('done', cb.checked); });
+    treeEl.querySelectorAll('li').forEach(function(li){
+      var own = li.querySelector(':scope > .row > input');
+      if(own.dataset.leaf) return;
+      var ls = li.querySelectorAll('input[data-leaf]'), c = 0;
+      ls.forEach(function(x){ if(x.checked) c++; });
+      own.checked = c === ls.length; own.indeterminate = c > 0 && c < ls.length;
+      li.classList.toggle('done', c === ls.length);
+    });
+    document.getElementById('prog-text').textContent = fa(done) + ' از ' + fa(leaves.length) + ' تیک خورده';
+    document.getElementById('prog-bar').style.width = (leaves.length ? done / leaves.length * 100 : 0) + '%';
+  }
+  function save(){
+    var s = {};
+    treeEl.querySelectorAll('input[data-leaf]').forEach(function(cb){ if(cb.checked) s[cb.closest('li').dataset.id] = 1; });
+    try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){}
+  }
+  treeEl.addEventListener('change', function(e){
+    var cb = e.target; if(cb.type !== 'checkbox') return;
+    if(!cb.dataset.leaf){
+      cb.closest('li').querySelectorAll('input[data-leaf]').forEach(function(x){ x.checked = cb.checked; });
+    }
+    refresh(); save();
+  });
+  refresh();
+
+  document.getElementById('expand-all').onclick = function(){ treeEl.querySelectorAll('li.collapsed').forEach(function(li){ li.classList.remove('collapsed'); }); };
+  document.getElementById('collapse-all').onclick = function(){ treeEl.querySelectorAll('li').forEach(function(li){ if(li.querySelector('ul') && !li.classList.contains('lvl0')) li.classList.add('collapsed'); }); };
+  document.getElementById('clear-all').onclick = function(){
+    if(!confirm('همه‌ی تیک‌ها پاک بشن؟')) return;
+    treeEl.querySelectorAll('input[type=checkbox]').forEach(function(x){ x.checked = false; x.indeterminate = false; });
+    refresh(); save();
+  };
+
+  // Search: show matching rows plus their ancestors, open them up.
+  document.getElementById('q').addEventListener('input', function(e){
+    var q = e.target.value.trim().toLowerCase();
+    var all = treeEl.querySelectorAll('li');
+    all.forEach(function(li){ li.classList.remove('hidden-by-search'); });
+    treeEl.querySelectorAll('label').forEach(function(l){ l.textContent = l.textContent; }); // drops old <mark>s
+    if(!q) return;
+    all.forEach(function(li){ li.classList.add('hidden-by-search'); });
+    all.forEach(function(li){
+      var row = li.querySelector(':scope > .row');
+      if(row.textContent.toLowerCase().indexOf(q) < 0) return;
+      var l = row.querySelector('label'), txt = l.textContent, i = txt.toLowerCase().indexOf(q);
+      if(i >= 0){ l.innerHTML = ''; l.append(txt.slice(0,i)); var m = document.createElement('mark'); m.textContent = txt.slice(i, i+q.length); l.append(m, txt.slice(i+q.length)); }
+      li.querySelectorAll('li').forEach(function(d){ d.classList.remove('hidden-by-search'); });
+      for(var p = li; p && p !== treeEl; p = p.parentElement){
+        if(p.tagName === 'LI'){ p.classList.remove('hidden-by-search'); if(p !== li) p.classList.remove('collapsed'); }
+      }
+    });
+  });
+
+  document.getElementById('theme-btn').onclick = function(){
+    var r = document.documentElement, cur = r.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    r.setAttribute('data-theme', dark ? 'light' : 'dark');
+  };
+})();
+</script>
+</body>
+</html>

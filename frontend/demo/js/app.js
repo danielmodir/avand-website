@@ -54,12 +54,18 @@ Cloud.onSessionExpired = () => {
   showToast(t('sessionExpired'));
 };
 
-/* Temporarily disabled at the repo owner's request (2026-10-09) so the
-   desktop-rail/profile rework can be checked without a real account —
-   flip back to false to restore real Supabase login. Skips straight past
-   the auth screen into the local placeholder profile/data already in
-   `state` above; no cloud calls happen while this is true. */
-const REAL_LOGIN_DISABLED = true;
+// Private photos arrive after loadAll(), once fetched with the user's token.
+Cloud.onPhotoLoaded = (itemId, url) => {
+  const { item } = findTaskOrSub(itemId);
+  if(item){ item.photos = [...(item.photos || []), url]; render(); }
+};
+Cloud.onAvatarLoaded = url => { state.profile.photo = url; render(); };
+
+/* No backend configured (js/config.js apiBase empty, as on GitHub Pages)
+   = local demo: skip the auth screen and use the placeholder profile and
+   sample data in `state`; nothing is sent anywhere. Setting apiBase turns
+   real sign-in and sync with the Django API on. */
+const REAL_LOGIN_DISABLED = !Cloud.isConfigured();
 
 async function boot(){
   if(REAL_LOGIN_DISABLED){
@@ -68,7 +74,8 @@ async function boot(){
     render();
     return;
   }
-  Cloud.consumeOAuthRedirect();
+  try{ await Cloud.consumeOAuthRedirect(); }  // back from Google: #login_code -> tokens
+  catch(err){ showToast(err.message || String(err)); }
   state.booting = Cloud.hasSession();
   state.bootError = null;
   sessionJustExpired = false;

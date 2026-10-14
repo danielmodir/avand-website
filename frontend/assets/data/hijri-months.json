@@ -1,0 +1,18 @@
+{
+  "source": "Official calendar of Iran (Calendar Center, University of Tehran Institute of Geophysics), as published for 1405 SH. Months after the current one are the published forecast and may move by a day after the actual moon sighting; correct them in the admin.",
+  "months": [
+    {"hijri_year": 1447, "hijri_month": 10, "starts_on": "2026-03-21"},
+    {"hijri_year": 1447, "hijri_month": 11, "starts_on": "2026-04-19"},
+    {"hijri_year": 1447, "hijri_month": 12, "starts_on": "2026-05-18"},
+    {"hijri_year": 1448, "hijri_month": 1, "starts_on": "2026-06-16"},
+    {"hijri_year": 1448, "hijri_month": 2, "starts_on": "2026-07-16"},
+    {"hijri_year": 1448, "hijri_month": 3, "starts_on": "2026-08-14"},
+    {"hijri_year": 1448, "hijri_month": 4, "starts_on": "2026-09-13"},
+    {"hijri_year": 1448, "hijri_month": 5, "starts_on": "2026-10-12"},
+    {"hijri_year": 1448, "hijri_month": 6, "starts_on": "2026-11-11", "forecast": true},
+    {"hijri_year": 1448, "hijri_month": 7, "starts_on": "2026-12-11", "forecast": true},
+    {"hijri_year": 1448, "hijri_month": 8, "starts_on": "2027-01-10", "forecast": true},
+    {"hijri_year": 1448, "hijri_month": 9, "starts_on": "2027-02-08", "forecast": true},
+    {"hijri_year": 1448, "hijri_month": 10, "starts_on": "2027-03-10", "forecast": true}
+  ]
+}

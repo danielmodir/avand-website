@@ -78,7 +78,37 @@ function gregorianToJDN(y,m,d){
 
 const ISLAMIC_EPOCH_JDN = 1948440;
 
+/* Iran starts each Hijri month by moon sighting, so pure arithmetic is
+   often a day off (e.g. 15 Oct 2026 is 4 Jumada I officially, 3 by the
+   formula). Official month starts — from the API, or the bundled
+   assets/data/hijri-months.json — take precedence; arithmetic is only the
+   fallback outside the covered range. Rows: { hy, hm, start: Date }. */
+let HIJRI_MONTH_STARTS = [];
+
+function setHijriMonthStarts(rows){
+  HIJRI_MONTH_STARTS = rows
+    .map(r => ({ hy: r.hijri_year, hm: r.hijri_month, start: parseDateKey(r.starts_on) }))
+    .sort((a, b) => a.start - b.start);
+}
+
+function officialHijri(gy,gm,gd){
+  const d = new Date(gy, gm-1, gd);
+  for(let i = HIJRI_MONTH_STARTS.length - 1; i >= 0; i--){
+    const row = HIJRI_MONTH_STARTS[i];
+    if(row.start > d) continue;
+    const offset = Math.round((d - row.start) / 86400000);
+    const next = HIJRI_MONTH_STARTS[i+1];
+    const limit = next ? Math.round((next.start - row.start) / 86400000) : 30;
+    return offset < Math.min(limit, 30) ? { hy: row.hy, hm: row.hm, hd: offset + 1 } : null;
+  }
+  return null;
+}
+
 function toHijri(gy,gm,gd){
+  return officialHijri(gy,gm,gd) || toHijriTabular(gy,gm,gd);
+}
+
+function toHijriTabular(gy,gm,gd){
   let l = gregorianToJDN(gy,gm,gd) - ISLAMIC_EPOCH_JDN + 10632;
   const n = Math.floor((l-1)/10631);
   l = l - 10631*n + 354;
@@ -103,6 +133,11 @@ function jdnToGregorian(jdn){
 }
 
 function hijriToGregorian(hy,hm,hd){
+  const row = HIJRI_MONTH_STARTS.find(r => r.hy === hy && r.hm === hm);
+  if(row){
+    const d = addDays(row.start, hd - 1);
+    return { gy: d.getFullYear(), gm: d.getMonth()+1, gd: d.getDate() };
+  }
   const jdn = hd + Math.ceil(29.5*(hm-1)) + (hy-1)*354 + Math.floor((3+11*hy)/30) + ISLAMIC_EPOCH_JDN - 1;
   return jdnToGregorian(jdn);
 }
@@ -137,7 +172,7 @@ function hijriMonthName(i0){ return (lang()==='fa' ? HIJRI_MONTHS_FA : HIJRI_MON
    are always Arabic-Indic digits, Gregorian numbers are always Latin —
    this is a deliberate exception to the rest of the UI staying Latin,
    scoped to calendar date numbers specifically. */
-const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // same limit as the API (photos are re-encoded server-side)
 
 const PERSIAN_DIGITS = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
 

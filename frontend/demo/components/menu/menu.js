@@ -36,7 +36,9 @@ function renderMenu(){
 
 function renderProfilePage(){
   const p = state.profile;
-  const completedTasks = state.tasks.filter(x=>x.done).length;
+  const completedTasks = state.tasks.reduce((n, x) => n + (isRecurringTask(x)
+    ? Object.values(x.statusByDate || {}).filter(s => s === 'done').length
+    : (x.done ? 1 : 0)), 0);
   const activeHabits = state.habits.length;
   const checkins = state.habits.reduce((sum,h)=>sum+h.completedDates.length, 0);
   const displayName = p.username || p.name || '';

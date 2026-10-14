@@ -9,8 +9,8 @@ frontend/     published site (GitHub Pages deploys only this folder)
   fa/  en/    landing pages (RTL / LTR)
   assets/     css, js, fonts, icons, data shared by the landing pages
   demo/       app prototype: css/, js/, components/ — see demo/README.md
-backend/      Express + MySQL REST API (not deployed yet)
-database/     MySQL schema: migrations/, seeds/, schema.sql
+backend/      Django + DRF API, one app and one MySQL database per module (not deployed yet)
+database/     one-time MySQL setup (databases + least-privilege users)
 docs/         product docs, SPEC.md, DEPLOY.md
 .github/      Pages deploy workflow
 ```

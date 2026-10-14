@@ -7,20 +7,24 @@ a time-based personal-development app.
 Two primary CTAs: web app and "Download for Android". Project docs are in /docs.
 Read the relevant doc before any big change.
 
-## Repo layout (2026-10-14)
+## Repo layout (2026-10-15)
 - frontend/ — everything that is published (GitHub Pages deploys only this
   folder via .github/workflows/pages.yml). Site-root paths below such as
   /assets/ or /demo/ mean frontend/assets/, frontend/demo/.
   - frontend/demo/ — the app prototype, split into css/, js/core/,
-    js/services/cloud.js, js/app.js and components/<name>/ (html partial +
-    css + js per component). See frontend/demo/README.md before editing.
-- backend/ — Express + MySQL API (mysql2), not deployed; see backend/README.md.
-- database/ — one MySQL database per module (core, planning, period, social,
-  notifications), each folder with migrations/ and seeds/; see database/README.md
-  and docs/DATABASE-PLAN.md. Managed by backend/scripts/db.js.
-- docs/ — product docs, SPEC.md, DEPLOY.md.
-- The "no npm packages" rule below is about the published frontend only;
-  backend/ is a normal Node project with its own package.json.
+    js/services/api.js (API client), js/config.js (apiBase), js/app.js and
+    components/<name>/ (html partial + css + js per component). See
+    frontend/demo/README.md before editing.
+- backend/ — Django 5.2 + DRF API, one Django app and one MySQL database per
+  module (core, calendar_data, planning, period, social, notifications); not
+  deployed yet. See backend/README.md. Tests: `python manage.py test apps
+  --settings=config.settings.test` (SQLite, no MySQL needed).
+- database/ — one-time MySQL setup (databases + least-privilege users,
+  setup.sql); tables come from Django migrations. See database/README.md and
+  docs/DATABASE-PLAN.md.
+- docs/ — product docs, SPEC.md, DEPLOY.md, DATABASE-PLAN.md.
+- The "no npm packages / no build step" rules below are about the published
+  frontend only; backend/ is a normal Python project (requirements.txt).
 
 ## Hard rules
 - Plain HTML, CSS and vanilla JS. No frameworks, no npm packages, no build step.
@@ -39,7 +43,11 @@ Read the relevant doc before any big change.
   github.com/BaseMax/persian-holidays-api's holidays.json (238 entries, Jalali/
   Gregorian/Hijri), fetched once from this app's own origin at boot and cached in
   memory (loadOccasionsData() in demo/js/core/occasions.js). Not a live third-party API call —
-  that would break the zero-external-requests rule above.
+  that would break the zero-external-requests rule above. Hijri dates use Iran's
+  official month starts (moon sighting), /assets/data/hijri-months.json, with
+  arithmetic only as a fallback. When the demo has a backend, both come from its
+  /calendar/ API instead (same data, kept up to date in the Django admin).
+  time.ir has no public API; it is a feature reference only, never fetched.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.
   Never hardcode colors anywhere else.
 - Brand mark is assets/icons/logo-mark.png (the "Tj" monogram) on a navy circle —
@@ -49,18 +57,14 @@ Read the relevant doc before any big change.
 - /demo/ holds the HTML prototype. It must have noindex. noindex still applies, and the
   marketing site (outside /demo/) must still never describe it as the finished product.
   The visible "this is a preview" banner was removed by explicit product decision (SPEC.md §11.9).
-  Status (conscious exception, 2026-10-06): /demo/ now makes real requests to the project's
-  own Supabase backend (demo/js/services/cloud.js — plain fetch, no SDK, no CDN) for auth, profile,
-  settings, tasks, habits and events, so the prototype is a real, usable, multi-device app
-  instead of in-memory fake data. This was a deliberate decision made with the repo owner,
-  not a drift — see backend/README.md: /backend/ (now Express+MySQL, see database/) is still
-  superseded by Supabase rather than ever being deployed itself. Store/Period still have
-  no backend and stay demo-only fakes. Connections (2026-10-08) is also real now — a
-  `connections` table + SECURITY DEFINER RPCs (search_user, send_connection_request,
-  respond_connection_request, remove_connection, block_user, unblock_user,
-  list_connections); the client never writes the table directly. This exception is
-  /demo/-only: the marketing site (index.html, /en/, /fa/) still makes zero external
-  requests, full stop.
+  Status (conscious exception, updated 2026-10-15): /demo/ may make requests to the
+  project's OWN backend only — the Django API in backend/ (demo/js/services/api.js, plain
+  fetch, no SDK, no CDN), set via apiBase in demo/js/config.js. Supabase was dropped at the
+  repo owner's request. While apiBase is empty (as on GitHub Pages until the API is
+  deployed) the demo runs fully offline without sign-in (REAL_LOGIN_DISABLED in js/app.js
+  follows it). Google sign-in is a server-side redirect flow (the page only navigates;
+  no Google script is ever loaded). This exception is /demo/-only: the marketing site
+  (index.html, /en/, /fa/) still makes zero external requests, full stop.
 - Domains: .ir is canonical; .com redirects to it (settled during deployment).
 
 ## Product claims

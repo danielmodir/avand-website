@@ -349,6 +349,7 @@ function submitPopup(){
       pinned: existing ? existing.pinned : false,
       done: existing ? existing.done : false,
       skipped: existing ? !!existing.skipped : false,
+      statusByDate: existing ? { ...(existing.statusByDate || {}) } : {},
       subtasks: formSubtasks.filter(s => subTitle(s).trim()).slice(0,3).map(s => normalizeSubtask(s, { date: formDraft.date })),
       timeMode: formDraft.timeMode,
       date: formDraft.date,
@@ -356,7 +357,7 @@ function submitPopup(){
       recurrence, notification
     };
     // A new, unticked subtask makes a finished parent unfinished again.
-    if(obj.subtasks.length){ obj.done = obj.subtasks.every(s => s.done); if(obj.done) obj.skipped = false; }
+    if(obj.subtasks.length && !obj.recurrence.mode){ obj.done = obj.subtasks.every(s => s.done); if(obj.done) obj.skipped = false; }
     upsert('tasks', obj);
   } else if(type === 'habit'){
     const obj = {

@@ -32,18 +32,42 @@ function findTaskOrSub(id){
   return { item: null, parent: null };
 }
 
+/* ============ DONE / NOT DONE PER DAY ============
+   A one-off task keeps its state in done / skipped. A repeating task is
+   ticked separately on every day it occurs (statusByDate, keyed by
+   'YYYY-MM-DD'), the same model as the API's task_occurrences, so ticking
+   today's run doesn't tick every other day of the series. */
+function isRecurringTask(task){ return !!task.recurrence?.mode; }
+
+function taskStatusOn(task, key){
+  if(!isRecurringTask(task)) return task.done ? 'done' : task.skipped ? 'not_done' : null;
+  return task.statusByDate?.[key] || null;
+}
+
+function setTaskStatusOn(task, key, status){
+  if(!isRecurringTask(task)){
+    task.done = status === 'done';
+    task.skipped = status === 'not_done';
+    return;
+  }
+  task.statusByDate = task.statusByDate || {};
+  if(status) task.statusByDate[key] = status; else delete task.statusByDate[key];
+}
+
 function isSelected(type, id){
   return !!state.selection && state.selection.type === type && state.selection.id === id;
 }
 
-function taskRow(task){
+function taskRow(task, key){
   const subs = task.subtasks || [];
+  const status = taskStatusOn(task, key);
+  const done = status === 'done', skipped = status === 'not_done';
   const open = subs.length > 0 && !!state.expandedTasks[task.id];
   const sel = isSelected('task', task.id);
   return `<div class="swipe-wrap task-wrap ${open?'subs-open':''} ${sel?'is-selected':''}" data-swipe-type="task" data-swipe-id="${task.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
-    <div class="item-card task-row ${subs.length?'has-subtasks':''} ${task.done?'done':''} ${task.skipped?'skipped':''} ${sel?'is-selected':''}" data-select-type="task" data-select-id="${task.id}">
-      <div class="checkbox ${task.done?'checked':''} ${task.skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" role="checkbox" aria-checked="${task.done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${task.done?ICONS.check:task.skipped?ICONS.close:''}</div>
+    <div class="item-card task-row ${subs.length?'has-subtasks':''} ${done?'done':''} ${skipped?'skipped':''} ${sel?'is-selected':''}" data-select-type="task" data-select-id="${task.id}">
+      <div class="checkbox ${done?'checked':''} ${skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" data-date="${key}" role="checkbox" aria-checked="${done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${done?ICONS.check:skipped?ICONS.close:''}</div>
       <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${task.id}">
         <p class="item-title">${escapeHtml(task.title)}</p>
       </div>
@@ -124,8 +148,10 @@ function renderEventsSection(events){
   `;
 }
 
-function renderTasksSection(tasks){
-  const sorted = [...tasks].sort((a,b) => (b.pinned - a.pinned) || (a.done - b.done));
+function renderTasksSection(tasks, date){
+  const key = dateKey(date);
+  const isDone = t => taskStatusOn(t, key) === 'done';
+  const sorted = [...tasks].sort((a,b) => (b.pinned - a.pinned) || (isDone(a) - isDone(b)));
   const isMobile = window.innerWidth < 960;
   if(!tasks.length) return '';
   const limit = 3;
@@ -139,7 +165,7 @@ function renderTasksSection(tasks){
     <div class="section-title">${t('tasks')} <span class="count">${dig(tasks.length)}</span>
       ${showToggle ? `<button class="section-toggle ${open?'open':''}" data-action="toggle-section" data-section="tasks">${ICONS.chevronDown}</button>` : ''}
     </div>
-    ${visible.map(t=>taskRow(t)).join('')}
+    ${visible.map(t=>taskRow(t, key)).join('')}
   `;
 }
 
@@ -162,7 +188,7 @@ function renderHabitsSection(habits, date){
 }
 
 function renderItemSections(tasks, habits, events, date){
-  return `${renderEventsSection(events)}${renderTasksSection(tasks)}${renderHabitsSection(habits, date)}`;
+  return `${renderEventsSection(events)}${renderTasksSection(tasks, date)}${renderHabitsSection(habits, date)}`;
 }
 
 /* ============ DONE / NOT DONE ============
@@ -179,8 +205,10 @@ function applyQuicksetState(cb, wantDone, markSkipped){
   if(action === 'toggle-task'){
     const task = state.tasks.find(x => x.id === cb.dataset.id);
     if(!task) return;
-    task.done = wantDone; task.skipped = isSkipped;
-    (task.subtasks || []).forEach(s => { s.done = wantDone; s.skipped = isSkipped; });
+    setTaskStatusOn(task, cb.dataset.date, wantDone ? 'done' : isSkipped ? 'not_done' : null);
+    // A one-off parent and its subtasks move together. A repeating parent
+    // is ticked per day while its (one-off) subtasks keep their own state.
+    if(!isRecurringTask(task)) (task.subtasks || []).forEach(s => { s.done = wantDone; s.skipped = isSkipped; });
     cloudSync(() => Cloud.saveTask(task));
     syncTaskDom(task);
   } else if(action === 'toggle-subtask'){
@@ -188,8 +216,10 @@ function applyQuicksetState(cb, wantDone, markSkipped){
     const sub = task?.subtasks?.find(s => s.id === cb.dataset.subId);
     if(!sub) return;
     sub.done = wantDone; sub.skipped = isSkipped;
-    task.done = task.subtasks.every(s => s.done);
-    if(task.done) task.skipped = false;
+    if(!isRecurringTask(task)){
+      task.done = task.subtasks.every(s => s.done);
+      if(task.done) task.skipped = false;
+    }
     cloudSync(() => Cloud.saveTask(task));
     syncTaskDom(task);
   } else if(action === 'toggle-habit'){
@@ -229,7 +259,7 @@ function paintCheckbox(cb, done, skipped){
 
 function syncTaskDom(task){
   document.querySelectorAll(`.checkbox[data-action="toggle-task"][data-id="${CSS.escape(task.id)}"]`)
-    .forEach(cb => paintCheckbox(cb, task.done, task.skipped));
+    .forEach(cb => { const st = taskStatusOn(task, cb.dataset.date); paintCheckbox(cb, st === 'done', st === 'not_done'); });
   (task.subtasks || []).forEach(s => {
     document.querySelectorAll(`.checkbox[data-action="toggle-subtask"][data-sub-id="${CSS.escape(s.id)}"]`)
       .forEach(cb => paintCheckbox(cb, s.done, s.skipped));
@@ -326,7 +356,7 @@ function deleteItem(type, id){
     const { parent } = findTaskOrSub(id);
     if(!parent) return;
     parent.subtasks = parent.subtasks.filter(s => s.id !== id);
-    if(parent.subtasks.length) parent.done = parent.subtasks.every(s => s.done);
+    if(parent.subtasks.length && !isRecurringTask(parent)) parent.done = parent.subtasks.every(s => s.done);
     cloudSync(() => Cloud.saveTask(parent));
   } else if(type === 'habit'){
     state.habits = state.habits.filter(x => x.id !== id);

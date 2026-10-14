@@ -20,7 +20,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'toggle-task'){
     const task = state.tasks.find(x=>x.id===el.dataset.id);
     if(!task) return;
-    applyQuicksetState(el, !task.done);
+    applyQuicksetState(el, taskStatusOn(task, el.dataset.date) !== 'done');
     return;
   }
   if(action === 'toggle-habit'){

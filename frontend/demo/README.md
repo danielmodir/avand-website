@@ -18,7 +18,8 @@ demo/
     core/               no UI of their own
       icons.js  dates.js  i18n.js  calendars.js  occasions.js
       state.js  render.js  util.js  events.js  include.js
-    services/cloud.js   Supabase REST client (plain fetch)
+    services/api.js     client for the Django API (backend/), same Cloud interface
+    config.js           apiBase; empty = offline demo without sign-in
     app.js              entry point: start() loads partials, wires listeners, boots
   components/           one folder per UI piece: .html partial / .css / .js
     banner/  toolbar/  workspace/  calendar/  items/  day-sheet/
