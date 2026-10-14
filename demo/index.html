@@ -104,6 +104,12 @@
     --nav-icon:rgba(0,0,0,0.45);
     --overlay:rgba(0,0,0,0.35);
     --shadow:0 10px 30px rgba(20,33,61,0.18);
+    /* The dark-theme coral/amber are too pale for text on white (~2-2.6:1);
+       darker shades of the same hues reach ~4.5:1. */
+    --danger:#C0492F;
+    --danger-soft:rgba(192,73,47,0.14);
+    --pms:#A86A12;
+    --pms-soft:rgba(168,106,18,0.14);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
@@ -114,7 +120,15 @@
     min-height:100vh; min-height:100dvh; color:var(--text);
     box-sizing:border-box;
   }
-  .device.lang-fa{ font-family:'SG Kara','Inter',system-ui,Tahoma,sans-serif; }
+  /* Base text-align default for fa — inherited, so plain paragraphs,
+     card descriptions and labels read right-aligned like Persian text
+     expects, without touching layout/flex-direction at all (unlike dir
+     or the `direction` property, which would re-trigger the same
+     flex-reordering domino this file already hit once — see the fixes
+     above this). Anything that needs to stay centered or left (empty-
+     hint, URLs, numeric/LTR fields) already sets its own explicit
+     text-align, which wins over this inherited default regardless. */
+  .device.lang-fa{ font-family:'SG Kara','Inter',system-ui,Tahoma,sans-serif; text-align:right; }
   /* Full-bleed at every width — no phone-bezel chrome, no visible frame
      around the app, matching body background so there's no seam even
      when centered under the desktop max-width below. Exactly the real
@@ -422,6 +436,10 @@
     transition:opacity .15s ease, transform .15s cubic-bezier(.34,1.56,.64,1);
   }
   .checkbox-quickset.show{ opacity:1; pointer-events:auto; transform:translateY(-50%) scale(1); }
+  /* fa: task/habit rows read right-to-left (checkbox at the right,
+     reading-start edge), so the quickset popover opens toward the left. */
+  .device.lang-fa .item-card{ flex-direction:row-reverse; }
+  .device.lang-fa .checkbox-quickset{ left:auto; right:calc(100% + 8px); transform-origin:right center; }
   .checkbox-quickset button{ font-size:10.5px; font-weight:700; padding:6px 11px; border-radius:999px; cursor:pointer; font-family:inherit; white-space:nowrap; box-shadow:var(--shadow); }
   .checkbox-quickset .qs-done{ background:var(--primary); color:var(--on-primary); border:none; }
   .checkbox-quickset .qs-undone{ background:var(--card); color:var(--text-muted); border:1px solid var(--border); }
@@ -640,7 +658,6 @@
   .device.lang-fa .search-capsule{ padding:4px 16px 4px 4px; }
   .search-capsule:focus-within{ border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
   .search-capsule input{ flex:1; min-width:0; border:none; background:transparent; padding:9px 0; font-size:14px; color:var(--text); font-family:inherit; }
-  .device.lang-fa .search-capsule input{ text-align:right; direction:rtl; }
   .search-capsule input::placeholder{ color:var(--text-muted); }
   .search-capsule-btn{ flex:0 0 auto; width:36px; height:36px; border-radius:50%; border:none; background:var(--primary); color:var(--on-primary); display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .search-capsule-btn svg{ width:16px; height:16px; }
@@ -651,7 +668,6 @@
   .field input::placeholder, .field textarea::placeholder{ color:var(--text-muted); }
   .field textarea{ resize:vertical; min-height:64px; }
   .field input:focus, .field textarea:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
-  .device.lang-fa .field input[type=text], .device.lang-fa .field input[type=date], .device.lang-fa .field input[type=time], .device.lang-fa .field input[type=number], .device.lang-fa .field input[type=tel], .device.lang-fa .field textarea{ text-align:right; direction:rtl; }
   /* Profile-edit fields echo the add-popup title field's look (plain
      underline, no filled box) per the repo owner's request, instead of
      the filled .field box shared by every other form on the site. */
@@ -660,7 +676,6 @@
   }
   .profile-edit-form .field input:focus{ outline:none; border-bottom-color:var(--primary); box-shadow:none; }
   .dob-field-btn{ background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; font-size:14px; color:var(--text); cursor:pointer; transition:border-color .2s ease; }
-  .device.lang-fa .dob-field-btn{ text-align:right; }
   .dob-field-btn:hover{ border-bottom-color:var(--primary); }
   .dob-field-wrap{ position:relative; }
   .dob-cal-popover{ position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:20; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); font-size:12px; }
@@ -751,6 +766,24 @@
   .swipe-delete-bg svg{ width:17px; height:17px; fill:#fff; }
   .swipe-delete-bg.swipe-bg-done{ background:#2E7D32; }
 
+  /* subtasks: small down-arrow at the bottom-center of a task card that
+     has subtasks; the expanded list sits under it, indented one tab on
+     the checkbox side, each row a smaller copy of a task row. */
+  .item-card.task-row.has-subtasks{ padding-bottom:14px; }
+  .subtask-toggle{ position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:28px; height:14px; border:none; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .subtask-toggle svg{ width:14px; height:14px; transition:transform .2s ease; }
+  .subtask-toggle:hover{ color:var(--primary); }
+  .subtask-toggle.open svg{ transform:rotate(180deg); }
+  .subtask-children{ padding-left:28px; margin:-2px 0 8px 0; display:flex; flex-direction:column; gap:6px; }
+  .device.lang-fa .subtask-children{ padding-left:0; padding-right:28px; }
+  .subtask-row{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:18px; padding:7px 12px; }
+  .device.lang-fa .subtask-row{ flex-direction:row-reverse; }
+  .subtask-row .checkbox{ width:18px; height:18px; }
+  .subtask-row .checkbox.checked svg{ width:10px; height:10px; }
+  .subtask-row .item-title{ font-size:12.5px; font-weight:500; }
+  .subtask-row.done{ opacity:.5; }
+  .subtask-row.done .item-title{ text-decoration:line-through; color:var(--text-muted); }
+
   /* event cards */
   .events-scroll{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
   .events-scroll::-webkit-scrollbar{ display:none; }
@@ -821,8 +854,8 @@
   .menu-item-row svg{ width:14px; height:14px; fill:var(--text-muted); flex:0 0 auto; }
 
   .field-label{ display:block; font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:7px; }
-  .period-wheel-wrap{ position:relative; width:240px; height:240px; margin:4px auto 6px auto; }
-  .period-wheel{ width:100%; height:100%; }
+  .period-wheel-wrap{ position:relative; width:min(240px, 100%); aspect-ratio:1; margin:4px auto 6px auto; }
+  .period-wheel{ width:100%; height:100%; display:block; }
   .period-wheel-center{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; font-size:12.5px; font-weight:700; color:var(--text); padding:0 44px; line-height:1.4; }
   .period-legend{ display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin-top:4px; }
   .period-legend-item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); }
@@ -992,7 +1025,6 @@
   .auth-tabs button.active{ background:var(--card); color:var(--primary); }
   .auth-form .field{ margin-bottom:12px; }
   .auth-form input{ width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:14px; padding:14px 16px; font-size:14px; color:var(--text); font-family:inherit; transition:border-color .2s ease, box-shadow .2s ease; }
-  .device.lang-fa .auth-form input[type=text]{ text-align:right; direction:rtl; }
   .auth-form input::placeholder{ color:var(--text-muted); }
   .auth-form input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--primary-soft); }
   .auth-form .field.has-error input{ border-color:var(--danger); }
@@ -1723,7 +1755,7 @@ function secondaryLabelsFor(d, isHome){
 
 const STRINGS = {
   en: {
-    appName:'Toojibee',
+    appName:'Toojibee', subtasksLabel:'Subtasks', saveFailed:"Couldn't save — check your connection",
     today:'Today', calendar:'Calendar', planning:'Planning', occasionsDesktop:'Occasions', periodDesktop:'Period', occasionsComingSoon:"Today's and this month's occasions are coming here soon.", menu:'Menu', backToToday:'Back to today', workspace:'Workspace',
     events:'Events', tasks:'Tasks', habits:'Habits',
     noEventsToday:'No events today', noTasksToday:'No tasks today', noHabitsYet:'No habits yet',
@@ -1826,7 +1858,7 @@ const STRINGS = {
     retryBtn:'Retry'
   },
   fa: {
-    appName:'توجیبی',
+    appName:'توجیبی', subtasksLabel:'ریزتسک‌ها', saveFailed:'ذخیره نشد — اتصالت رو چک کن',
     today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', occasionsDesktop:'مناسبت‌ها', periodDesktop:'پریودی', occasionsComingSoon:'مناسبت‌های امروز و این ماه به‌زودی اینجا اضافه می‌شن.', menu:'منو', backToToday:'بازگشت به امروز', workspace:'میزکار',
     events:'رویدادها', tasks:'کارها', habits:'عادت‌ها',
     noEventsToday:'رویدادی برای امروز نیست', noTasksToday:'کاری برای امروز نیست', noHabitsYet:'هنوز عادتی نیست',
@@ -1971,6 +2003,7 @@ const state = {
   secDropdown: { kind: null, sys: null, home: false },
   dobPickerOpen: false,
   desktopTitleMenuOpen: false,
+  expandedTasks: {}, // task id -> true while its subtask list is shown
   editingId: null,
   sectionExpanded: { tasks:false, habits:false, events:false },
   /* Mobile-only (<960px): a non-empty section is shown by default, this
@@ -2034,6 +2067,22 @@ const state = {
   }
 };
 
+/* Starter task for today shown in the no-login demo mode, so the
+   subtask expand / auto-check behavior is visible right away. */
+function sampleSubtaskTask(){
+  const fa = lang() === 'fa';
+  return {
+    id: uid(), title: fa ? 'آماده کردن ارائه' : 'Prepare the presentation',
+    category:'', description:'', photos:[], pinned:false, done:false, skipped:false,
+    subtasks: [
+      { id: uid(), text: fa ? 'جمع کردن منابع' : 'Gather sources', done: true },
+      { id: uid(), text: fa ? 'ساختن اسلایدها' : 'Build the slides', done: false },
+      { id: uid(), text: fa ? 'تمرین ارائه' : 'Rehearse', done: false },
+    ],
+    timeMode:'single', date: dateKey(today), endDate:null,
+    recurrence:{mode:null, interval:1, weekdays:[]}, notification:{type:null}
+  };
+}
 function seed(){
   state.tasks = [
     { id: uid(), title:'Review math notes', category:'Study', description:'Go over the derivatives chapter and do 10 practice problems.',
@@ -2478,16 +2527,29 @@ function checkboxQuicksetHtml(){
     <button type="button" class="qs-undone" data-qs="undone" tabindex="-1">${t('qsUndone')}</button>
   </div>`;
 }
-function taskRow(t){
-  return `<div class="swipe-wrap task-wrap" data-swipe-type="task" data-swipe-id="${t.id}">
+function taskRow(task){
+  const subs = task.subtasks || [];
+  const open = subs.length > 0 && !!state.expandedTasks[task.id];
+  return `<div class="swipe-wrap task-wrap" data-swipe-type="task" data-swipe-id="${task.id}">
     <div class="swipe-delete-bg">${ICONS.trash}</div>
-    <div class="item-card task-row ${t.done?'done':''} ${t.skipped?'skipped':''}">
-      <div class="checkbox ${t.done?'checked':''} ${t.skipped?'skipped':''}" data-action="toggle-task" data-id="${t.id}" role="checkbox" aria-checked="${t.done}" aria-label="${escapeAttr(t.title)}" tabindex="0">${t.done?ICONS.check:t.skipped?ICONS.close:''}${checkboxQuicksetHtml()}</div>
-      <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${t.id}">
-        <p class="item-title">${escapeHtml(t.title)}</p>
+    <div class="item-card task-row ${subs.length?'has-subtasks':''} ${task.done?'done':''} ${task.skipped?'skipped':''}">
+      <div class="checkbox ${task.done?'checked':''} ${task.skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" role="checkbox" aria-checked="${task.done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${task.done?ICONS.check:task.skipped?ICONS.close:''}${checkboxQuicksetHtml()}</div>
+      <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${task.id}">
+        <p class="item-title">${escapeHtml(task.title)}</p>
       </div>
-      <button class="star-mini ${t.pinned?'active':''}" data-action="toggle-pin" data-id="${t.id}" aria-label="${t.pinned?tr('unpinBtn'):tr('pinBtn')}">${ICONS.star}</button>
+      <button class="star-mini ${task.pinned?'active':''}" data-action="toggle-pin" data-id="${task.id}" aria-label="${task.pinned?t('unpinBtn'):t('pinBtn')}">${ICONS.star}</button>
+      ${subs.length ? `<button type="button" class="subtask-toggle ${open?'open':''}" data-action="toggle-subtasks" data-id="${task.id}" aria-label="${t('subtasksLabel')}" aria-expanded="${open}">${ICONS.chevronDown}</button>` : ''}
     </div>
+  </div>
+  ${open ? `<div class="subtask-children">${subs.map(s => subtaskRow(task, s)).join('')}</div>` : ''}`;
+}
+/* Same checkbox + title as a task row, just smaller and indented under
+   its parent's checkbox — toggled via toggle-subtask, which keeps the
+   parent's done state in sync both ways (see syncTaskFromSubtasks). */
+function subtaskRow(task, s){
+  return `<div class="subtask-row ${s.done?'done':''}" data-task-id="${task.id}" data-sub-id="${s.id}">
+    <div class="checkbox ${s.done?'checked':''}" data-action="toggle-subtask" data-task-id="${task.id}" data-sub-id="${s.id}" role="checkbox" aria-checked="${!!s.done}" aria-label="${escapeAttr(s.text)}" tabindex="0">${s.done?ICONS.check:''}</div>
+    <p class="item-title">${escapeHtml(s.text)}</p>
   </div>`;
 }
 function habitRow(h, date){
@@ -2786,9 +2848,9 @@ function dobCalendarHtml(p){
   return `
     <div class="dob-cal-popover">
       <div class="cal-topbar" style="margin-bottom:10px;">
-        <div class="cal-corner-arrow left" data-action="dob-cal-prev">${ICONS.chevronLeft}</div>
+        <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="dob-cal-prev" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
         <span class="cal-label" style="font-size:16px; min-width:0;">${disp.monthLabel} ${disp.yearLabel}</span>
-        <div class="cal-corner-arrow right" data-action="dob-cal-next">${ICONS.chevronRight}</div>
+        <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="dob-cal-next" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
       </div>
       <div class="mini-cal-weekday">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
       <div class="mini-cal-grid" id="dob-cal-grid">${cells.map(d => {
@@ -2863,6 +2925,7 @@ function friendRow(c){
     </div>`;
 }
 async function refreshConnections(){
+  if(REAL_LOGIN_DISABLED || !Cloud.hasSession()) return; // nothing to load without a session (was a 401)
   try{ state.connections = await Cloud.listConnections(); }
   catch(e){ /* keep whatever was already loaded */ }
   render();
@@ -3306,20 +3369,20 @@ function syncProfileName(){
 let profileSaveTimer = null;
 function scheduleProfileSave(){
   clearTimeout(profileSaveTimer);
-  profileSaveTimer = setTimeout(() => Cloud.saveProfile(state.profile).catch(()=>{}), 600);
+  profileSaveTimer = setTimeout(() => cloudSync(() => Cloud.saveProfile(state.profile)), 600);
 }
 function wireMenuInteractivity(){
   document.getElementById('profile-first-name')?.addEventListener('input', e => { state.profile.firstName = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-username')?.addEventListener('input', e => { state.profile.username = e.target.value; syncProfileName(); scheduleProfileSave(); });
-  document.getElementById('profile-gender-select')?.addEventListener('change', e => { state.profile.gender = e.target.value; Cloud.saveProfile(state.profile).catch(()=>{}); render(); });
+  document.getElementById('profile-gender-select')?.addEventListener('change', e => { state.profile.gender = e.target.value; cloudSync(() => Cloud.saveProfile(state.profile)); render(); });
   document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; scheduleProfileSave(); });
-  document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; Cloud.saveSettings(state.settings).catch(()=>{}); render(); });
+  document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; cloudSync(() => Cloud.saveSettings(state.settings)); render(); });
   document.getElementById('primary-calendar-select')?.addEventListener('change', e => {
     state.settings.calendarSystem = e.target.value;
     state.monthDropdownOpen = false; state.yearDropdownOpen = false;
-    Cloud.saveSettings(state.settings).catch(()=>{});
+    cloudSync(() => Cloud.saveSettings(state.settings));
     render();
   });
   document.getElementById('profile-photo-input')?.addEventListener('change', e => {
@@ -3327,7 +3390,7 @@ function wireMenuInteractivity(){
     if(!file) return;
     if(file.size > MAX_UPLOAD_BYTES){ showToast(t('fileTooLarge')); e.target.value = ''; return; }
     const reader = new FileReader();
-    reader.onload = () => { state.profile.photo = reader.result; Cloud.saveProfile(state.profile).catch(()=>{}); render(); };
+    reader.onload = () => { state.profile.photo = reader.result; cloudSync(() => Cloud.saveProfile(state.profile)); render(); };
     reader.readAsDataURL(file);
   });
   document.getElementById('friend-search')?.addEventListener('input', e => {
@@ -3353,6 +3416,14 @@ function runFriendSearchNow(){
 }
 
 let toastTimer = null;
+/* Every background save/delete goes through here. With no real session
+   (no-login demo mode) there's nothing to save to, so it doesn't call
+   the backend at all — that was the 401 on each change. With a session,
+   a failed save no longer fails silently: the user gets a toast. */
+function cloudSync(call){
+  if(REAL_LOGIN_DISABLED || !Cloud.hasSession()) return;
+  call().catch(() => showToast(t('saveFailed')));
+}
 function showToast(msg){
   let el = document.getElementById('app-toast');
   if(!el){
@@ -3384,7 +3455,7 @@ function showLanguageLoading(newLang){
   requestAnimationFrame(() => el.classList.add('show'));
   setTimeout(() => {
     state.settings.language = newLang;
-    Cloud.saveSettings(state.settings).catch(()=>{});
+    cloudSync(() => Cloud.saveSettings(state.settings));
     render();
     setTimeout(() => el.classList.remove('show'), 150);
   }, 1100);
@@ -3802,9 +3873,9 @@ function miniCalendarHtml(){
   const disp = displayMonthYear(miniCalCursor);
   return `
     <div class="cal-topbar" style="margin-bottom:10px;">
-      <div class="cal-corner-arrow left" data-action="mini-cal-prev">${ICONS.chevronLeft}</div>
+      <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="mini-cal-prev" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
       <span class="cal-label" style="font-size:16px; min-width:0;">${disp.monthLabel} ${disp.yearLabel}</span>
-      <div class="cal-corner-arrow right" data-action="mini-cal-next">${ICONS.chevronRight}</div>
+      <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="mini-cal-next" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
     </div>
     <div class="mini-cal-weekday">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
     <div class="mini-cal-grid" id="mini-cal-grid">${cells.map(d => miniCalCellHtml(d)).join('')}</div>
@@ -4033,6 +4104,15 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(!el) return;
   const action = el.dataset.action;
 
+  if(action === 'toggle-subtasks'){
+    state.expandedTasks[el.dataset.id] = !state.expandedTasks[el.dataset.id];
+    render();
+    return;
+  }
+  if(action === 'toggle-subtask'){
+    toggleSubtask(el.dataset.taskId, el.dataset.subId);
+    return;
+  }
   if(action === 'toggle-task'){
     const task = state.tasks.find(x=>x.id===el.dataset.id);
     if(!task) return;
@@ -4046,7 +4126,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     applyQuicksetState(el, !habit.completedDates.includes(dk));
     return;
   }
-  if(action === 'delete-event'){ state.events = state.events.filter(x=>x.id!==el.dataset.id); Cloud.deleteEvent(el.dataset.id).catch(()=>{}); render(); return; }
+  if(action === 'delete-event'){ state.events = state.events.filter(x=>x.id!==el.dataset.id); cloudSync(() => Cloud.deleteEvent(el.dataset.id)); render(); return; }
 
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
@@ -4120,7 +4200,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'toggle-pin'){
     const t = state.tasks.find(x=>x.id===el.dataset.id); t.pinned = !t.pinned;
     el.classList.toggle('active', t.pinned);
-    Cloud.saveTask(t).catch(()=>{});
+    cloudSync(() => Cloud.saveTask(t));
     return;
   }
 
@@ -4157,7 +4237,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }
-  if(action === 'remove-profile-photo'){ state.profile.photo = null; Cloud.saveProfile(state.profile).catch(()=>{}); render(); return; }
+  if(action === 'remove-profile-photo'){ state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); render(); return; }
   if(action === 'toggle-dob-picker'){
     state.dobPickerOpen = !state.dobPickerOpen;
     if(state.dobPickerOpen) dobCalCursor = state.profile.dob ? new Date(state.profile.dob + 'T00:00:00') : new Date(today);
@@ -4169,7 +4249,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'pick-dob'){
     state.profile.dob = el.dataset.date;
     state.dobPickerOpen = false;
-    Cloud.saveProfile(state.profile).catch(()=>{});
+    cloudSync(() => Cloud.saveProfile(state.profile));
     render();
     return;
   }
@@ -4227,7 +4307,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'desktop-settings-soon'){ showToast(t('desktopSettingsSoon')); return; }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
-  if(action === 'toggle-planning-enabled'){ state.settings.planningEnabled = !state.settings.planningEnabled; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
+  if(action === 'toggle-planning-enabled'){ state.settings.planningEnabled = !state.settings.planningEnabled; cloudSync(() => Cloud.saveSettings(state.settings)); render(); return; }
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }
   if(action === 'open-article'){ showToast(t('articlesUnavailable')); return; }
   if(action === 'period-settings' || action === 'period-quiz-start'){
@@ -4285,7 +4365,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     render();
     return;
   }
-  if(action === 'toggle-setting'){ state.settings[el.dataset.key] = !state.settings[el.dataset.key]; Cloud.saveSettings(state.settings).catch(()=>{}); render(); return; }
+  if(action === 'toggle-setting'){ state.settings[el.dataset.key] = !state.settings[el.dataset.key]; cloudSync(() => Cloud.saveSettings(state.settings)); render(); return; }
   if(action === 'toggle-calendar-enabled'){
     const sys = el.dataset.val;
     const en = state.settings.calendarEnabled;
@@ -4298,7 +4378,7 @@ document.getElementById('device').addEventListener('click', (e) => {
       state.settings.calendarSystem = ['gregorian','jalali','hijri'].find(s => en[s]);
     }
     state.monthDropdownOpen = false; state.yearDropdownOpen = false;
-    Cloud.saveSettings(state.settings).catch(()=>{});
+    cloudSync(() => Cloud.saveSettings(state.settings));
     render();
     return;
   }
@@ -4387,12 +4467,16 @@ function initCalendarWheelSwipe(){
 function applyQuicksetState(cb, wantDone, markSkipped){
   const action = cb.dataset.action;
   const isSkipped = !!markSkipped && !wantDone;
-  let isDone;
+  let isDone, toggledTask = null;
   if(action === 'toggle-task'){
     const item = state.tasks.find(x => x.id === cb.dataset.id);
     if(!item) return;
     item.done = wantDone; item.skipped = isSkipped; isDone = wantDone;
-    Cloud.saveTask(item).catch(()=>{});
+    // Checking/unchecking the parent cascades to every subtask, so the
+    // "all subtasks done <=> parent done" rule never ends up violated.
+    (item.subtasks || []).forEach(s => { s.done = wantDone; });
+    toggledTask = item;
+    cloudSync(() => Cloud.saveTask(item));
   } else if(action === 'toggle-habit'){
     const item = state.habits.find(x => x.id === cb.dataset.id);
     if(!item) return;
@@ -4405,7 +4489,7 @@ function applyQuicksetState(cb, wantDone, markSkipped){
     if(isSkipped && si < 0) item.skippedDates.push(dk);
     else if(!isSkipped && si >= 0) item.skippedDates.splice(si, 1);
     isDone = wantDone;
-    Cloud.saveHabit(item).catch(()=>{});
+    cloudSync(() => Cloud.saveHabit(item));
   } else return;
   cb.classList.toggle('checked', isDone);
   cb.classList.toggle('skipped', isSkipped);
@@ -4415,6 +4499,48 @@ function applyQuicksetState(cb, wantDone, markSkipped){
   cb.innerHTML = (isDone ? ICONS.check : isSkipped ? ICONS.close : '') + (qs ? qs.outerHTML : '');
   cb.closest('.item-card')?.classList.toggle('done', isDone);
   cb.closest('.item-card')?.classList.toggle('skipped', isSkipped);
+  if(toggledTask) syncSubtaskRowsDom(toggledTask);
+  updateDayStatsInPlace();
+}
+/* In-place DOM patch (no full render(), same reasoning as above — keeps
+   the pane's scroll position) for a task's subtask rows, and optionally
+   its own parent checkbox. */
+function syncSubtaskRowsDom(task){
+  (task.subtasks || []).forEach(s => {
+    document.querySelectorAll(`.subtask-row[data-task-id="${CSS.escape(task.id)}"][data-sub-id="${CSS.escape(s.id)}"]`).forEach(row => {
+      row.classList.toggle('done', !!s.done);
+      const scb = row.querySelector('.checkbox');
+      if(!scb) return;
+      scb.classList.toggle('checked', !!s.done);
+      scb.setAttribute('aria-checked', !!s.done);
+      scb.innerHTML = s.done ? ICONS.check : '';
+    });
+  });
+}
+function syncTaskCheckboxDom(task){
+  document.querySelectorAll(`.checkbox[data-action="toggle-task"][data-id="${CSS.escape(task.id)}"]`).forEach(cb => {
+    const qs = cb.querySelector('.checkbox-quickset');
+    cb.classList.toggle('checked', !!task.done);
+    cb.classList.toggle('skipped', !!task.skipped);
+    cb.setAttribute('aria-checked', !!task.done);
+    cb.innerHTML = (task.done ? ICONS.check : task.skipped ? ICONS.close : '') + (qs ? qs.outerHTML : '');
+    cb.closest('.item-card')?.classList.toggle('done', !!task.done);
+    cb.closest('.item-card')?.classList.toggle('skipped', !!task.skipped);
+  });
+}
+/* Toggling one subtask: the parent becomes done exactly when every
+   subtask is done (and loses any explicit "skipped" mark), and goes back
+   to not-done as soon as one subtask is unchecked. */
+function toggleSubtask(taskId, subId){
+  const task = state.tasks.find(x => x.id === taskId);
+  const sub = task?.subtasks?.find(s => s.id === subId);
+  if(!sub) return;
+  sub.done = !sub.done;
+  task.done = task.subtasks.every(s => s.done);
+  if(task.done) task.skipped = false;
+  cloudSync(() => Cloud.saveTask(task));
+  syncSubtaskRowsDom(task);
+  syncTaskCheckboxDom(task);
   updateDayStatsInPlace();
 }
 function attachCheckboxLongPress(){
@@ -4537,8 +4663,8 @@ function showRowContextMenu(x, y, type, id, wrap){
     else if(action === 'undone' && cb) applyQuicksetState(cb, false, true);
     else if(action === 'edit') openPopup(type, wrap, findItem(type, id));
     else if(action === 'delete'){
-      if(type === 'task'){ state.tasks = state.tasks.filter(x => x.id !== id); Cloud.deleteTask(id).catch(()=>{}); }
-      if(type === 'habit'){ state.habits = state.habits.filter(x => x.id !== id); Cloud.deleteHabit(id).catch(()=>{}); }
+      if(type === 'task'){ state.tasks = state.tasks.filter(x => x.id !== id); cloudSync(() => Cloud.deleteTask(id)); }
+      if(type === 'habit'){ state.habits = state.habits.filter(x => x.id !== id); cloudSync(() => Cloud.deleteHabit(id)); }
       render();
     }
     closeRowContextMenu();
@@ -4953,8 +5079,8 @@ function attachSwipeToDelete(container){
           fg.style.transform = 'translateX(100%)';
           fg.style.opacity = '0';
           setTimeout(() => {
-            if(type === 'task'){ state.tasks = state.tasks.filter(x=>x.id!==id); Cloud.deleteTask(id).catch(()=>{}); }
-            if(type === 'habit'){ state.habits = state.habits.filter(x=>x.id!==id); Cloud.deleteHabit(id).catch(()=>{}); }
+            if(type === 'task'){ state.tasks = state.tasks.filter(x=>x.id!==id); cloudSync(() => Cloud.deleteTask(id)); }
+            if(type === 'habit'){ state.habits = state.habits.filter(x=>x.id!==id); cloudSync(() => Cloud.deleteHabit(id)); }
             render();
           }, 190);
         }
@@ -5153,6 +5279,22 @@ window.addEventListener('resize', () => {
   clearTimeout(navResizeTimer);
   navResizeTimer = setTimeout(updateNav, 120);
 });
+/* `today` is computed once at load, so an app left open past midnight
+   kept treating yesterday as today (today highlight, back-to-today,
+   new items' default date). Roll it forward in place (it's a shared
+   Date object, so every reference sees the change) when the day turns,
+   carrying along a calendar that was still sitting on the old today. */
+function refreshTodayIfDayChanged(){
+  const now = new Date(); now.setHours(0,0,0,0);
+  if(now.getTime() === today.getTime()) return;
+  const oldKey = dateKey(today);
+  today.setTime(now.getTime());
+  if(dateKey(state.homeDate) === oldKey) state.homeDate = new Date(today);
+  if(dateKey(state.calCursor) === oldKey) state.calCursor = new Date(today);
+  render();
+}
+setInterval(refreshTodayIfDayChanged, 60000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) refreshTodayIfDayChanged(); });
 
 async function loadFromCloud(){
   const data = await Cloud.loadAll();
@@ -5183,6 +5325,7 @@ const REAL_LOGIN_DISABLED = true;
 async function boot(){
   if(REAL_LOGIN_DISABLED){
     state.authScreen = false;
+    if(!state.tasks.length) state.tasks.push(sampleSubtaskTask());
     render();
     return;
   }
