@@ -37,7 +37,10 @@ const state = {
   rangeDragStart: null,
   menuSubView: null,
   homeDate: new Date(today),
-  authScreen: true,
+  authScreen: false,
+  guest: false,      // backend configured but signed out: browse-only, see GUEST_ACTIONS
+  authOpen: false,   // the sign-in popup (components/auth/auth.js)
+  authReason: null,  // i18n key for the popup's subtitle when an action asked for an account
   authTab: 'login',
   booting: false,  // true only while boot() is verifying a saved session
   bootError: null, // 'network' when that check failed for a non-auth reason

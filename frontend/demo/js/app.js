@@ -45,12 +45,23 @@ async function loadFromCloud(){
 
 let sessionJustExpired = false; // set true for the duration of a boot() that onSessionExpired fired during
 
+/* Signed out with a backend available: browse the calendar and the
+   occasions; everything else asks for an account (GUEST_ACTIONS in
+   js/core/events.js). No sample data, nothing personal on screen. */
+function enterGuestMode(){
+  state.guest = true;
+  state.authScreen = false;
+  state.tasks = []; state.habits = []; state.events = [];
+  state.connections = [];
+  state.profile = Object.assign({}, state.profile, { name:'', firstName:'', lastName:'', username:'', email:'', phone:'', gender:'', dob:'', photo:null });
+  state.activeDesktopIndex = 0;
+  state.selection = null;
+}
+
 Cloud.onSessionExpired = () => {
   sessionJustExpired = true;
-  state.authScreen = true;
-  state.authTab = 'login';
-  state.tasks = []; state.habits = []; state.events = [];
-  render();
+  enterGuestMode();
+  openAuth('login');
   showToast(t('sessionExpired'));
 };
 
@@ -62,10 +73,23 @@ Cloud.onPhotoLoaded = (itemId, url) => {
 Cloud.onAvatarLoaded = url => { state.profile.photo = url; render(); };
 
 /* No backend configured (js/config.js apiBase empty, as on GitHub Pages)
-   = local demo: skip the auth screen and use the placeholder profile and
-   sample data in `state`; nothing is sent anywhere. Setting apiBase turns
-   real sign-in and sync with the Django API on. */
+   = local demo: no sign-in at all, the placeholder profile and sample data
+   in `state`; nothing is sent anywhere. With a backend: guest mode until
+   the person signs in for real. */
 const REAL_LOGIN_DISABLED = !Cloud.isConfigured();
+
+/* #verify-email=… / #reset-password=… links from our emails. */
+async function handleEmailLink(){
+  const link = Cloud.takeEmailLink();
+  if(!link) return;
+  if(link.kind === 'reset-password'){
+    authResetToken = link.token;
+    openAuth('reset');
+    return;
+  }
+  try{ await Cloud.verifyEmail(link.token); showToast(t('emailVerified')); }
+  catch(err){ showToast(authErrorMessage(err)); }
+}
 
 async function boot(){
   if(REAL_LOGIN_DISABLED){
@@ -75,30 +99,36 @@ async function boot(){
     return;
   }
   try{ await Cloud.consumeOAuthRedirect(); }  // back from Google: #login_code -> tokens
-  catch(err){ showToast(err.message || String(err)); }
+  catch(err){ enterGuestMode(); openAuth('login'); authErrors.general = authErrorMessage(err); }
   state.booting = Cloud.hasSession();
   state.bootError = null;
   sessionJustExpired = false;
-  render(); // skeleton while a saved session is checked, else the normal auth screen
+  if(!Cloud.hasSession()) enterGuestMode();
+  render(); // skeleton while a saved session is checked, else guest mode
   if(Cloud.hasSession()){
     try{
       await loadFromCloud();
+      state.guest = false;
       state.authScreen = false;
     }catch(err){
-      /* A 401 with a failed refresh already pointed authScreen at the
-         login form itself (see Cloud.onSessionExpired above). Anything
-         else here — offline, timeout, a 5xx — isn't a real "you're
-         logged out", so don't force the login screen over it; show a
-         retry screen and leave the saved session alone instead. authScreen
-         defaults to true on a cold load, so it can't tell these apart by
-         itself — sessionJustExpired is the real signal. */
+      /* A 401 with a failed refresh already switched to guest mode and
+         opened sign-in (Cloud.onSessionExpired). Anything else — offline,
+         timeout, a 5xx — isn't a real "you're signed out": show a retry
+         screen and keep the saved session. */
       if(!sessionJustExpired) state.bootError = 'network';
     }
     state.booting = false;
     render();
   }
+  handleEmailLink();
 }
 
+function attachAuthPopupDismiss(){
+  const overlay = document.getElementById('auth-screen');
+  // A click on the dimmed backdrop (not inside the card) closes it.
+  overlay.addEventListener('click', e => { if(e.target === overlay) closeAuth(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && state.authOpen) closeAuth(); });
+}
 async function start(){
   await loadComponents();
   initFabAndMenuInteractions();
@@ -107,6 +137,7 @@ async function start(){
   attachItemSelection();
   attachDaySheetDrag();
   attachLogoutHold();
+  attachAuthPopupDismiss();
   boot();
   loadOccasionsData();
 }

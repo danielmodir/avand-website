@@ -36,7 +36,8 @@ function renderDesktops(d, data){
   const panes = [
     { key:'occasionsDesktop', html: renderOccasionsPane(d, events) },
   ];
-  if(state.settings.planningEnabled){
+  // Guests only browse the calendar and occasions; planning needs an account.
+  if(state.settings.planningEnabled && !state.guest){
     panes.push({ key:'planning', html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
       ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}

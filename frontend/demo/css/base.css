@@ -78,6 +78,11 @@
   --select-lift:0 16px 34px -12px rgba(0,0,0,0.65);
   --range-band:rgba(252,163,17,0.16);
   --period-ring-rest:rgba(255,255,255,0.14);
+  /* header buttons sit on the navy banner in both themes */
+  --on-banner:#FFFFFF;
+  --banner-btn-bg:rgba(255,255,255,0.12);
+  --banner-btn-bg-hover:rgba(255,255,255,0.22);
+  --banner-btn-border:rgba(255,255,255,0.35);
   --range-mark:#FCA311;
   --on-range-mark:#000000;
   /* Google's brand button is fixed white/dark-grey by their own brand

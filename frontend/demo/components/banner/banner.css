@@ -45,3 +45,15 @@
 @media (max-width:600px){
 .app-banner{ aspect-ratio:6.7/1; margin:0 0 10px 0; border-radius:0 0 24px 24px; }
 }
+/* Sign-in button for signed-out guests, at the far end from the logo. */
+.app-banner-auth{
+  position:relative; margin-inline-start:auto; flex:0 0 auto;
+  border:1px solid var(--banner-btn-border); background:var(--banner-btn-bg); color:var(--on-banner);
+  border-radius:999px; padding:7px 14px; font-size:12.5px; font-weight:700; font-family:inherit; cursor:pointer;
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  transition:background .2s ease, transform .2s ease;
+}
+.app-banner-auth:hover{ background:var(--banner-btn-bg-hover); transform:translateY(-1px); }
+.app-banner-auth.hidden{ display:none; }
+/* fa: the banner is row-reverse (logo on the right), so "far end" is left. */
+.device.lang-fa .app-banner-auth{ margin-inline-start:0; margin-right:auto; }

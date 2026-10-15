@@ -32,6 +32,9 @@ def frontend(request, path=""):
         if path and not path.endswith("/"):
             return HttpResponseRedirect(f"/{path}/")
         path = f"{path}index.html"
+    # Always send the file itself (no 304): a 304 would make the browser
+    # reuse whatever headers it cached before, e.g. a wrong Content-Type.
+    request.META.pop("HTTP_IF_MODIFIED_SINCE", None)
     response = serve(request, path, document_root=str(FRONTEND_DIR))
     response["Cache-Control"] = "no-cache"
     return response

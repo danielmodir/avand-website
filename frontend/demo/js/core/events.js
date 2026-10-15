@@ -1,3 +1,18 @@
+/* What a guest (API configured, not signed in) may do without an account:
+   look around the calendar and the occasions. Every other action opens
+   the sign-in popup instead (requireAccount). */
+const GUEST_ACTIONS = new Set([
+  'cal-prev-week','cal-next-week','cal-prev-day','cal-next-day','cal-prev-month','cal-next-month',
+  'home-prev-month','home-next-month','home-pick-month','home-pick-year','set-cal-mode',
+  'pick-month','pick-year','tap-month','tap-year','tap-sec-month','tap-sec-year','pick-sec-month','pick-sec-year',
+  'pick-day','close-day-sheet','go-today','goto-desktop','desktop-step','toggle-desktop-title-menu',
+  'toggle-section','go-landing','toggle-app-theme','retry-boot',
+  'open-auth','close-auth','auth-tab','auth-submit','auth-google',
+]);
+
+function requireAccount(){
+  openAuth('signup', 'authGateSub');
+}
 document.getElementById('device').addEventListener('click', (e) => {
   if((state.monthDropdownOpen || state.yearDropdownOpen || state.secDropdown.kind) && !e.target.closest('.cal-dropdown, .cal-label, .cal-subrow-item')){
     state.monthDropdownOpen = false; state.yearDropdownOpen = false;
@@ -7,6 +22,9 @@ document.getElementById('device').addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if(!el) return;
   const action = el.dataset.action;
+
+  // Guests may browse; anything that needs an account opens the sign-in popup.
+  if(state.guest && !GUEST_ACTIONS.has(action)){ e.preventDefault(); requireAccount(); return; }
 
   if(action === 'toggle-subtasks'){
     state.expandedTasks[el.dataset.id] = !state.expandedTasks[el.dataset.id];
@@ -108,40 +126,18 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
 
-  if(action === 'auth-tab'){ state.authTab = el.dataset.val; authErrors = { name:'', email:'', password:'', general:'' }; render(); return; }
-  if(action === 'auth-submit'){
-    if(authBusy) return;
-    authErrors.general = '';
-    if(!validateAuth()){ render(); return; }
-    const isLogin = state.authTab === 'login';
-    const email = authDraft.email.trim();
-    const password = authDraft.password;
-    const name = authDraft.name.trim();
-    authBusy = true;
-    render();
-    (isLogin ? Cloud.signIn(email, password) : Cloud.signUp(email, password, name))
-      .then(async () => {
-        await loadFromCloud();
-        if(!isLogin){
-          // Brand-new account: seed a few starter items so the screen
-          // isn't empty, and persist them for real right away.
-          seed();
-          await Promise.all([
-            ...state.tasks.map(x => Cloud.saveTask(x)),
-            ...state.habits.map(x => Cloud.saveHabit(x)),
-            ...state.events.map(x => Cloud.saveEvent(x)),
-          ]);
-        }
-        state.authScreen = false;
-        authDraft = { name:'', email:'', password:'' };
-        authErrors = { name:'', email:'', password:'', general:'' };
-      })
-      .catch(err => { authErrors.general = err.message || String(err); })
-      .finally(() => { authBusy = false; render(); });
+  if(action === 'open-auth'){ openAuth(el.dataset.val || 'login'); return; }
+  if(action === 'close-auth'){ closeAuth(); return; }
+  if(action === 'auth-tab'){
+    state.authTab = el.dataset.val;
+    authErrors = { name:'', email:'', password:'', general:'' };
+    authNotice = '';
+    renderAuth();
+    document.getElementById(state.authTab === 'signup' ? 'auth-name' : 'auth-email')?.focus();
     return;
   }
-  if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }
-  if(action === 'remove-profile-photo'){ state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); render(); return; }
+  if(action === 'auth-submit'){ submitAuth(); return; }
+  if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){ state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); render(); return; }
   if(action === 'toggle-dob-picker'){
     state.dobPickerOpen = !state.dobPickerOpen;
     if(state.dobPickerOpen) dobCalCursor = state.profile.dob ? new Date(state.profile.dob + 'T00:00:00') : new Date(today);

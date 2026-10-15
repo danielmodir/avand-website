@@ -4,6 +4,7 @@ from . import views as v
 
 urlpatterns = [
     # auth
+    path("auth/providers", v.AuthProvidersView.as_view()),
     path("auth/register", v.RegisterView.as_view()),
     path("auth/login", v.LoginView.as_view()),
     path("auth/google", v.GoogleLoginView.as_view()),  # mobile: posts a Google ID token

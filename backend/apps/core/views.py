@@ -65,6 +65,15 @@ class GoogleLoginView(PublicView):
         return Response(accounts.start_session(user, request, data.validated_data))
 
 
+class AuthProvidersView(PublicView):
+    """Which sign-in options this server offers, so the app only shows
+    buttons that work."""
+
+    def get(self, request):
+        google = bool(settings.GOOGLE_WEB_CLIENT_ID and settings.GOOGLE_WEB_CLIENT_SECRET and settings.GOOGLE_REDIRECT_URI)
+        return Response({"password": True, "google": google})
+
+
 class GoogleStartView(PublicView):
     throttle_scope = "login"
 

@@ -10,6 +10,13 @@ public. For MySQL locally use config.settings.dev, on a server prod.
 """
 import base64
 import os
+import sys
+
+# The console email backend prints Persian text; the Windows console's
+# default code page can't encode it and sending would fail.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 _DEV_ONLY = {
     "DJANGO_SECRET_KEY": "local-dev-only-secret-key-do-not-use-anywhere-else-0123456789abcdef",
@@ -31,6 +38,7 @@ LOCAL_DATA.mkdir(exist_ok=True)
 DATABASES = {alias: {"ENGINE": "django.db.backends.sqlite3", "NAME": str(LOCAL_DATA / f"{alias}.sqlite3")} for alias in MODULE_DATABASES}
 MEDIA_ROOT = LOCAL_DATA / "media"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_SEND_ON_QUEUE = True  # emails (with their links) appear in the server console at once
 # One address for everything: landing at /, app at /demo/, API at /api/v1/
 # (config/local_frontend.py). Never enabled outside this file.
 SERVE_FRONTEND = True

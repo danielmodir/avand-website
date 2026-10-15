@@ -127,9 +127,23 @@
     var err = /[#&]login_error=([^&]+)/.exec(global.location.hash);
     if (!m && !err) return false;
     history.replaceState(null, '', global.location.pathname + global.location.search);
-    if (!m) return false;
+    if (!m) { var e = new Error('google_failed'); e.code = err ? decodeURIComponent(err[1]) : 'google_failed'; throw e; }
     storeSession(await request('POST', '/auth/google/exchange', { code: decodeURIComponent(m[1]) }, { auth: false }));
     return true;
+  }
+
+  function authProviders() { return request('GET', '/auth/providers', undefined, { auth: false }); }
+  function forgotPassword(email) { return request('POST', '/auth/password/forgot', { email: email }, { auth: false }); }
+  function resetPassword(token, password) { return request('POST', '/auth/password/reset', { token: token, password: password }, { auth: false }); }
+  function verifyEmail(token) { return request('POST', '/auth/email/verify', { token: token }, { auth: false }); }
+
+  /* Links from emails land on the app as #verify-email=… or
+     #reset-password=…; returns { kind, token } and clears the hash. */
+  function takeEmailLink() {
+    var m = /[#&](verify-email|reset-password)=([^&]+)/.exec(global.location.hash);
+    if (!m) return null;
+    history.replaceState(null, '', global.location.pathname + global.location.search);
+    return { kind: m[1], token: decodeURIComponent(m[2]) };
   }
 
   async function signOut() {
@@ -529,6 +543,7 @@
   Object.assign(api, {
     uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,
     signUp: signUp, signIn: signIn, signInWithGoogle: signInWithGoogle, consumeOAuthRedirect: consumeOAuthRedirect, signOut: signOut,
+    authProviders: authProviders, forgotPassword: forgotPassword, resetPassword: resetPassword, verifyEmail: verifyEmail, takeEmailLink: takeEmailLink,
     loadAll: loadAll,
     saveTask: saveTask, deleteTask: deleteTask, saveHabit: saveHabit, deleteHabit: deleteHabit,
     saveEvent: saveEvent, deleteEvent: deleteEvent, saveProfile: saveProfile, saveSettings: saveSettings,

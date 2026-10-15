@@ -43,7 +43,12 @@ MAX_ATTEMPTS = 6
 
 
 def queue_email(user, template, lang, payload=None):
-    return EmailOutbox.objects.create(user=user, to_email=user.email, template=template, lang=lang, payload=payload or {})
+    item = EmailOutbox.objects.create(user=user, to_email=user.email, template=template, lang=lang, payload=payload or {})
+    if getattr(settings, "EMAIL_SEND_ON_QUEUE", False):
+        # Local mode: deliver right away (printed to the console) instead
+        # of waiting for the send_emails job.
+        transaction.on_commit(send_pending)
+    return item
 
 
 def render(item):

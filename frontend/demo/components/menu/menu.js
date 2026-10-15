@@ -483,6 +483,14 @@ function updateNav(){
      there'd be nowhere for a new task/habit/event to show up otherwise
      (see Management's "Workspace desktops" toggles). */
   document.getElementById('fab-add').classList.toggle('hidden', !state.settings.planningEnabled);
+  // Signed-out guests: no profile or management until there's an account;
+  // the header shows a sign-in button instead.
+  document.getElementById('toolbar-pill').classList.toggle('hidden', !!state.guest);
+  const authBtn = document.getElementById('app-banner-auth');
+  if(authBtn){
+    authBtn.classList.toggle('hidden', !state.guest);
+    authBtn.textContent = t('loginSignup');
+  }
   document.getElementById('fab-add').classList.toggle('active', state.navExpanded);
   // Fully appears/disappears with the Management toggle — not just
   // dimmed — per explicit correction: gender gates it the same as the
@@ -568,6 +576,7 @@ function updateNav(){
 
 function initFabAndMenuInteractions(){
   document.getElementById('fab-add').addEventListener('click', () => {
+    if(state.guest) return; // the delegated click handler opens sign-in instead
     if(state.menuPanelOpen && (state.menuSubView === 'store' || state.menuSubView === 'admin')){
       state.menuPanelOpen = false; render();
       return;
@@ -596,10 +605,9 @@ function initFabAndMenuInteractions(){
 
 function doLogout(){
   Cloud.signOut();
-  state.authScreen = true;
-  state.authTab = 'login';
+  enterGuestMode();
+  state.menuPanelOpen = false;
   state.menuSubView = null;
-  state.tasks = []; state.habits = []; state.events = [];
   render();
 }
 

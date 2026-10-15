@@ -1,4 +1,5 @@
 """Settings shared by every environment. dev.py / prod.py / test.py extend this."""
+import mimetypes
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -7,6 +8,14 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+# Windows takes file types from the registry, which often maps .js to
+# text/plain; browsers then refuse to run the scripts (the admin's and
+# the locally served site's). Pin the types instead of trusting the OS.
+for _type, _ext in [("text/javascript", ".js"), ("text/css", ".css"), ("image/svg+xml", ".svg"),
+                    ("application/json", ".json"), ("font/woff2", ".woff2"), ("image/webp", ".webp"),
+                    ("application/manifest+json", ".webmanifest")]:
+    mimetypes.add_type(_type, _ext, strict=True)
 
 
 def env(name, default=None, required=False):
