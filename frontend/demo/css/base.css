@@ -77,6 +77,7 @@
   --select-glow:rgba(252,163,17,0.45);
   --select-lift:0 16px 34px -12px rgba(0,0,0,0.65);
   --range-band:rgba(252,163,17,0.16);
+  --period-ring-rest:rgba(255,255,255,0.14);
   --range-mark:#FCA311;
   --on-range-mark:#000000;
   /* Google's brand button is fixed white/dark-grey by their own brand
@@ -110,6 +111,7 @@
   --select-glow:rgba(252,163,17,0.40);
   --select-lift:0 16px 30px -12px rgba(20,33,61,0.35);
   --range-band:rgba(252,163,17,0.20);
+  --period-ring-rest:rgba(20,33,61,0.12);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}

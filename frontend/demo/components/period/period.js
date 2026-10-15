@@ -40,23 +40,94 @@ function periodSummaryText(cats){
   const nextPeriodIdx = cats.indexOf('period');
   if(nextPeriodIdx === 0) return t('periodStartsToday');
   if(nextPeriodIdx > 0){
-    return lang()==='fa' ? `${nextPeriodIdx} روز تا پریود بعدیت` : `${nextPeriodIdx} day${nextPeriodIdx===1?'':'s'} until your next period`;
+    return lang()==='fa' ? `${dig(nextPeriodIdx)} روز تا پریود بعدیت` : `${nextPeriodIdx} day${nextPeriodIdx===1?'':'s'} until your next period`;
   }
   return '';
 }
 
-function periodWheelSvg(cats){
-  const size=240, cx=size/2, cy=size/2, rOuter=104, rInner=74;
-  const colorFor = c => c==='period' ? 'var(--danger)' : c==='pms' ? 'var(--pms)' : c==='fertile' ? 'var(--secondary)' : 'var(--border)';
-  let ticks = '';
-  for(let i=0;i<30;i++){
-    const angle = (i/30)*2*Math.PI - Math.PI/2;
-    const x1 = (cx + rInner*Math.cos(angle)).toFixed(1), y1 = (cy + rInner*Math.sin(angle)).toFixed(1);
-    const x2 = (cx + rOuter*Math.cos(angle)).toFixed(1), y2 = (cy + rOuter*Math.sin(angle)).toFixed(1);
-    const isToday = i===0;
-    ticks += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorFor(cats[i])}" stroke-width="${isToday?5:3}" stroke-linecap="round"/>`;
-  }
-  return `<svg viewBox="0 0 ${size} ${size}" class="period-wheel">${ticks}</svg>`;
+/* ---- cycle ring ----
+   One continuous ring = the current cycle, day 1 at the top, clockwise.
+   Each phase is its own arc: period, the regular days, the fertile window
+   and PMS. Hovering (or tapping) an arc lifts it and shows the phase's
+   name, length and dates in the middle; a dot marks today. */
+const PERIOD_PHASE_COLOR = { period:'var(--danger)', pms:'var(--pms)', fertile:'var(--secondary)', normal:'var(--period-ring-rest)' };
+const PERIOD_PHASE_LABEL = { period:'legendPeriod', pms:'legendPms', fertile:'legendFertile', normal:'legendRegular' };
+
+function periodCycleSegments(){
+  const p = state.period;
+  const len = Math.max(15, p.cycleLength);
+  const cats = new Array(len).fill('normal');
+  const ovulation = len - 14;
+  for(let d = ovulation - 4; d <= ovulation + 1; d++) if(d >= 0 && d < len) cats[d] = 'fertile';
+  for(let d = len - 5; d < len; d++) if(d >= 0) cats[d] = 'pms';
+  for(let d = 0; d < Math.min(p.periodLength, len); d++) cats[d] = 'period';
+  const segments = [];
+  cats.forEach((cat, day) => {
+    const last = segments[segments.length - 1];
+    if(last && last.cat === cat) last.len++;
+    else segments.push({ cat, start: day, len: 1 });
+  });
+  return { len, segments };
+}
+
+function shortDate(d){ return `${displayDayNum(d)} ${monthNameFor(primaryMonthOf(d) - 1)}`; }
+
+function periodArcPath(cx, cy, r, a0, a1){
+  const pt = a => [(cx + r * Math.cos(a)).toFixed(2), (cy + r * Math.sin(a)).toFixed(2)];
+  const [x0, y0] = pt(a0), [x1, y1] = pt(a1);
+  return `M ${x0} ${y0} A ${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`;
+}
+
+function periodWheelSvg(){
+  const size = 240, c = size / 2, r = 94, gap = 0.035; // radians between arcs
+  const { len, segments } = periodCycleSegments();
+  const angle = day => (day / len) * 2 * Math.PI - Math.PI / 2;
+  const arcs = segments.map((s, i) => {
+    const a0 = angle(s.start) + gap / 2, a1 = angle(s.start + s.len) - gap / 2;
+    return `<path class="period-arc" data-seg="${i}" d="${periodArcPath(c, c, r, a0, a1)}" stroke="${PERIOD_PHASE_COLOR[s.cat]}" tabindex="0" role="button" aria-label="${escapeAttr(t(PERIOD_PHASE_LABEL[s.cat]))}"></path>`;
+  }).join('');
+  const todayIdx = Math.min(len - 1, Math.max(0, daysBetween(computePeriodCycleStart(), today)));
+  const ta = angle(todayIdx + 0.5);
+  const todayDot = `<circle class="period-today-dot" cx="${(c + r * Math.cos(ta)).toFixed(2)}" cy="${(c + r * Math.sin(ta)).toFixed(2)}" r="7"></circle>`;
+  return `<svg viewBox="0 0 ${size} ${size}" class="period-wheel">${arcs}${todayDot}</svg>`;
+}
+
+function periodCenterDefault(cats){
+  const p = state.period;
+  const day = daysBetween(computePeriodCycleStart(), today) + 1;
+  const sub = lang() === 'fa' ? `روز ${dig(day)} از ${dig(p.cycleLength)}` : `Day ${day} of ${p.cycleLength}`;
+  return `<span class="period-center-main">${periodSummaryText(cats)}</span><span class="period-center-sub">${sub}</span>`;
+}
+
+function periodCenterForSegment(s){
+  const from = addDays(computePeriodCycleStart(), s.start), to = addDays(from, s.len - 1);
+  const days = lang() === 'fa' ? `${dig(s.len)} روز` : `${s.len} day${s.len === 1 ? '' : 's'}`;
+  const range = s.len === 1 ? shortDate(from) : `${shortDate(from)} – ${shortDate(to)}`;
+  const color = s.cat === 'normal' ? 'var(--text)' : PERIOD_PHASE_COLOR[s.cat];
+  return `<span class="period-center-main" style="color:${color}">${t(PERIOD_PHASE_LABEL[s.cat])}</span><span class="period-center-days">${days}</span><span class="period-center-sub">${range}</span>`;
+}
+
+/* Wired after every render (render.js); in-place DOM changes only. */
+function attachPeriodWheel(){
+  const wrap = document.querySelector('.period-wheel-wrap');
+  if(!wrap) return;
+  const center = wrap.querySelector('.period-wheel-center');
+  const { segments } = periodCycleSegments();
+  const defaultHtml = center.innerHTML;
+  let pinned = null; // tapped arc stays highlighted until tapped again
+  const show = i => {
+    wrap.querySelectorAll('.period-arc').forEach(a => a.classList.toggle('active', a.dataset.seg === String(i)));
+    wrap.classList.toggle('has-active', i !== null);
+    center.innerHTML = i === null ? defaultHtml : periodCenterForSegment(segments[i]);
+  };
+  wrap.querySelectorAll('.period-arc').forEach(arc => {
+    const i = Number(arc.dataset.seg);
+    arc.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') show(i); });
+    arc.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse') show(pinned); });
+    arc.addEventListener('focus', () => show(i));
+    arc.addEventListener('blur', () => show(pinned));
+    arc.addEventListener('click', () => { pinned = pinned === i ? null : i; show(pinned); });
+  });
 }
 
 /* Compact entry card shown in Management. Just the toggle, a settings
@@ -112,8 +183,8 @@ function renderPeriodPage(headerHtml){
     return `
       <div class="store-card">
         <div class="period-wheel-wrap">
-          ${periodWheelSvg(cats)}
-          <div class="period-wheel-center">${periodSummaryText(cats)}</div>
+          ${periodWheelSvg()}
+          <div class="period-wheel-center" dir="${lang()==='fa'?'rtl':'ltr'}" aria-live="polite">${periodCenterDefault(cats)}</div>
         </div>
         <div class="period-legend">
           <span class="period-legend-item"><span class="dot" style="background:var(--danger);"></span>${t('legendPeriod')}</span>
@@ -130,9 +201,7 @@ function renderPeriodPage(headerHtml){
     ${headerHtml}
     ${trackerBody}
     <div class="section-title">${t('tipsTitle')}</div>
-    <div class="tips-card">
-      <div class="tips-card-text" id="period-tip-text"></div>
-    </div>
+    ${periodTipsHtml()}
     <div class="section-title">${t('articlesTitle')}</div>
     <div class="articles-scroll">
       ${Array.from({length: articleCount}, (_, idx) => idx + 1).map(i => `
@@ -147,43 +216,76 @@ function renderPeriodPage(headerHtml){
   `;
 }
 
-/* Rotating tips, typed out character by character and swapped every few
-   seconds. Runs via setInterval against a fixed element id, never via
-   render() — so it can never trigger the kind of full-page re-render
-   that caused the earlier scroll/animation bug. Always cleared before a
-   new one starts so leaving and reopening the page can't stack timers. */
+/* "Did you know?" carousel: whole tips slide in (no typing effect),
+   advance on their own every few seconds, and can be swiped or stepped
+   with the arrows. The current slide survives re-renders. */
 const PERIOD_TIPS = ['tip1','tip2','tip3','tip4','tip5','tip6'];
+const TIP_AUTO_MS = 7000;
 
 let periodTipsTimer = null;
+let periodTipIndex = 0;
+
+function periodTipsHtml(){
+  const fa = lang() === 'fa';
+  return `
+    <div class="tips-carousel ${fa ? 'is-rtl' : ''}" id="period-tips">
+      <div class="tips-viewport">
+        <div class="tips-track" id="period-tips-track">
+          ${PERIOD_TIPS.map((k, i) => `<div class="tip-slide" aria-hidden="${i !== periodTipIndex}"><div class="tip-slide-icon">${ICONS.infoIcon}</div><p dir="${fa ? 'rtl' : 'ltr'}">${escapeHtml(t(k))}</p></div>`).join('')}
+        </div>
+      </div>
+      <div class="tips-controls">
+        <button type="button" class="tips-nav" data-tip-step="-1" aria-label="${t('prev')}">${fa ? ICONS.chevronRight : ICONS.chevronLeft}</button>
+        <div class="tips-dots">${PERIOD_TIPS.map((_, i) => `<span class="${i === periodTipIndex ? 'active' : ''}"></span>`).join('')}</div>
+        <button type="button" class="tips-nav" data-tip-step="1" aria-label="${t('next')}">${fa ? ICONS.chevronLeft : ICONS.chevronRight}</button>
+      </div>
+    </div>`;
+}
 
 function stopPeriodTipsRotator(){
-  clearTimeout(periodTipsTimer);
+  clearInterval(periodTipsTimer);
   periodTipsTimer = null;
 }
 
 function startPeriodTipsRotator(){
   stopPeriodTipsRotator();
-  const el = document.getElementById('period-tip-text');
-  if(!el) return;
-  let tipIndex = 0;
-  const typeTip = () => {
-    const text = t(PERIOD_TIPS[tipIndex]);
-    let i = 0;
-    const type = () => {
-      el.innerHTML = escapeHtml(text.slice(0, i)) + '<span class="caret"></span>';
-      i++;
-      if(i <= text.length){
-        periodTipsTimer = setTimeout(type, 22);
-      } else {
-        periodTipsTimer = setTimeout(() => {
-          tipIndex = (tipIndex + 1) % PERIOD_TIPS.length;
-          typeTip();
-        }, 3200);
-      }
-    };
-    type();
+  const root = document.getElementById('period-tips');
+  const track = document.getElementById('period-tips-track');
+  if(!root || !track) return;
+  const sign = root.classList.contains('is-rtl') ? 1 : -1; // fa slides toward the right
+  const go = (i, animate = true) => {
+    periodTipIndex = (i + PERIOD_TIPS.length) % PERIOD_TIPS.length;
+    track.style.transition = animate ? '' : 'none';
+    track.style.transform = `translateX(${sign * periodTipIndex * 100}%)`;
+    root.querySelectorAll('.tips-dots span').forEach((d, j) => d.classList.toggle('active', j === periodTipIndex));
+    track.querySelectorAll('.tip-slide').forEach((s, j) => s.setAttribute('aria-hidden', j !== periodTipIndex));
   };
-  typeTip();
+  const restart = () => { clearInterval(periodTipsTimer); periodTipsTimer = setInterval(() => go(periodTipIndex + 1), TIP_AUTO_MS); };
+  go(periodTipIndex, false);
+  restart();
+
+  root.querySelectorAll('[data-tip-step]').forEach(b => b.addEventListener('click', () => { go(periodTipIndex + Number(b.dataset.tipStep)); restart(); }));
+  root.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') clearInterval(periodTipsTimer); });
+  root.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse') restart(); });
+
+  // Swipe: follow the finger, then settle on the nearer slide.
+  const viewport = root.querySelector('.tips-viewport');
+  let startX = null, dx = 0;
+  viewport.addEventListener('pointerdown', e => { startX = e.clientX; dx = 0; track.style.transition = 'none'; viewport.setPointerCapture(e.pointerId); e.stopPropagation(); });
+  viewport.addEventListener('pointermove', e => {
+    if(startX === null) return;
+    dx = e.clientX - startX;
+    track.style.transform = `translateX(calc(${sign * periodTipIndex * 100}% + ${dx}px))`;
+  });
+  const end = () => {
+    if(startX === null) return;
+    startX = null;
+    const step = Math.abs(dx) > 40 ? (dx < 0 ? 1 : -1) * (sign === 1 ? -1 : 1) : 0;
+    go(periodTipIndex + step);
+    restart();
+  };
+  viewport.addEventListener('pointerup', end);
+  viewport.addEventListener('pointercancel', end);
 }
 
 function periodQuizStepHtml(){

@@ -55,13 +55,14 @@ function render(){
   updateNav();
   animateDayStats();
   wireMenuInteractivity();
-  /* #period-tip-text lives in the میزکار pane (renderDesktops), not
+  /* #period-tips lives in the میزکار pane (renderDesktops), not
      behind any menu navigation — it exists whenever the pane itself
      does, regardless of which میزکار the pager is currently scrolled
      to. (Previously gated on menuSubView==='period', a Management route
      that no longer exists now that period settings moved to Settings.) */
   if(state.profile.gender === 'female' && state.period.enabled){
     startPeriodTipsRotator();
+    attachPeriodWheel();
   } else {
     stopPeriodTipsRotator();
   }
