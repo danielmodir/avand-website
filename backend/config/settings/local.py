@@ -31,3 +31,8 @@ LOCAL_DATA.mkdir(exist_ok=True)
 DATABASES = {alias: {"ENGINE": "django.db.backends.sqlite3", "NAME": str(LOCAL_DATA / f"{alias}.sqlite3")} for alias in MODULE_DATABASES}
 MEDIA_ROOT = LOCAL_DATA / "media"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# One address for everything: landing at /, app at /demo/, API at /api/v1/
+# (config/local_frontend.py). Never enabled outside this file.
+SERVE_FRONTEND = True
+CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS + ["http://127.0.0.1:8000", "http://localhost:8000"]  # noqa: F405
+FRONTEND_URL = "http://127.0.0.1:8000/demo/"

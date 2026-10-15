@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import include, path
+from django.urls import include, path, re_path
 
 
 def health(request):
@@ -22,3 +22,12 @@ urlpatterns = [
     path("api/v1/", include(api_v1)),
     path(settings.ADMIN_URL, admin.site.urls),
 ]
+
+# Local mode: also serve the static site (landing + demo) from ../frontend.
+if getattr(settings, "SERVE_FRONTEND", False):
+    from . import local_frontend
+
+    urlpatterns += [
+        path("demo/js/config.js", local_frontend.demo_config),
+        re_path(r"^(?!api/)(?P<path>.*)$", local_frontend.frontend),
+    ]
