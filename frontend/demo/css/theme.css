@@ -147,8 +147,10 @@ body{
 .subtask-children{ background:var(--surface-2); border-color:var(--edge); }
 
 /* ---- calendar ---- */
-.day-cell{ transition:background-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard), transform .2s var(--ease-spring); }
-@media (hover:hover){ .day-cell:hover{ transform:translateY(-1px); } }
+/* The cell itself never moves on hover/press: range and period capsules
+   are drawn on the cells, so lifting one cell broke the capsule into
+   steps. Hover/press feedback lives on the day circle (.day-cell-bg). */
+.day-cell{ transition:background-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard); }
 /* Today/selected are drawn by .day-cell-bg (calendar.css), a circle;
    the glow belongs on that circle, not on the (column-wide) cell. */
 .day-cell.selected .day-cell-bg{ box-shadow:var(--shadow-glow); }
@@ -225,5 +227,5 @@ body{
 /* No entrance animation on panels: render() rebuilds them on every click,
    so it replayed each time and the workspace looked like it reloaded. */
 @media (prefers-reduced-motion:reduce){
-  .fab-add:hover, .btn-primary:hover, .pop-submit:hover, .day-cell:hover{ transform:none; }
+  .fab-add:hover, .btn-primary:hover, .pop-submit:hover{ transform:none; }
 }

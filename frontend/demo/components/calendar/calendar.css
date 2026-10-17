@@ -107,9 +107,9 @@
 }
 /* Public holidays (Occasions settings): the day number in red. */
 .day-cell.holiday:not(.selected) .day-cell-num{ color:var(--holiday, var(--danger)); }
-.day-cell{ transition:transform .1s ease; }
-.day-cell.press{ transform:scale(.94); }
-.day-cell.press .day-cell-bg{ transform:translate(-50%,-50%) scale(.9); }
+/* Press feedback: only the circle shrinks (the cell stays put, see theme.css). */
+.day-cell.press .day-cell-bg{ opacity:1; transform:translate(-50%,-50%) scale(.88); }
+.day-cell.press:not(.selected) .day-cell-bg{ background:var(--primary-soft); }
 @media (prefers-reduced-motion:reduce){ .day-cell-bg{ transition:none; } }
 /* Secondary line: the two non-primary calendar systems (Gregorian/
    Jalali, whichever isn't the big number, plus Hijri), small and muted
@@ -195,8 +195,8 @@
    circle's edge, so a capsule's rounded end and the circle line up. */
 .day-cell{ position:relative; isolation:isolate; --day-circle:min(42px, 94%); --day-circle-r:21px; }
 .day-cell.rng::before{
-  content:''; position:absolute; z-index:-2; top:50%; height:var(--day-circle); transform:translateY(-50%);
-  inset-inline:-3px; background:var(--range-band);
+  content:''; position:absolute; z-index:-2; top:calc(50% - var(--day-circle-r)); height:42px;
+  inset-inline:-2px; background:var(--range-band); /* translucent: pieces meet exactly, no overlap */
 }
 .day-cell.rng-cap-s::before{ inset-inline-start:calc(50% - var(--day-circle-r)); border-start-start-radius:999px; border-end-start-radius:999px; }
 .day-cell.rng-cap-e::before{ inset-inline-end:calc(50% - var(--day-circle-r)); border-start-end-radius:999px; border-end-end-radius:999px; }
@@ -215,7 +215,9 @@
   /* Opaque tint (mixed into the card color, not into transparent) and a
      slight overlap into the grid gap, so neighbouring days join into one
      seamless capsule instead of showing hairline seams. */
-  content:''; position:absolute; z-index:-3; top:50%; height:var(--day-circle); transform:translateY(-50%); inset-inline:-3px;
+  /* Whole-pixel top (no translate) and a wider overlap: sub-pixel
+     positioned pieces left hairline seams between neighbouring days. */
+  content:''; position:absolute; z-index:-3; top:calc(50% - var(--day-circle-r)); height:42px; inset-inline:-4px;
   background:color-mix(in srgb, var(--ph-color) var(--phase-capsule-strength), var(--card));
   opacity:0; transition:opacity .35s ease;
 }
