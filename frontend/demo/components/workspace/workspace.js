@@ -53,6 +53,7 @@ function renderDesktops(d, data){
      column already fills the left, so the box just says how to get one back. */
   if(!panes.length){
     state.activeDesktopIndex = 0;
+    syncPeriodDeskOnCalendar(null);
     if(window.innerWidth < 960) return renderHomeCalWidget(true);
     return `<div class="desktop-box desktop-box-empty"><div class="empty-hint">${t('noDesktopsEnabled')}</div></div>`;
   }
@@ -60,6 +61,7 @@ function renderDesktops(d, data){
   // dropping the period pane) out from under whatever was active.
   state.activeDesktopIndex = Math.max(0, Math.min(state.activeDesktopIndex || 0, panes.length - 1));
   const activeKey = panes[state.activeDesktopIndex]?.key || 'workspace';
+  syncPeriodDeskOnCalendar(activeKey);
   const atStart = state.activeDesktopIndex <= 0;
   const atEnd = state.activeDesktopIndex >= panes.length - 1;
   return `
@@ -102,6 +104,7 @@ function syncDesktopTopbar(i){
   if(titleEl && key) titleEl.textContent = t(key);
   // The period desk has its own palette, frame included (period.css).
   dots.closest('.desktop-box')?.classList.toggle('period-mode', key === 'periodDesktop');
+  syncPeriodDeskOnCalendar(key);
   const arrows = document.querySelectorAll('.desktop-nav-arrow');
   if(arrows[0]) arrows[0].classList.toggle('disabled', i <= 0);
   if(arrows[1]) arrows[1].classList.toggle('disabled', i >= dotEls.length - 1);
@@ -276,25 +279,33 @@ function updateDayStatsInPlace(){
    (wheel and touch) stays completely unaffected either way. */
 function initHomeScrollExpand(){
   const el = document.getElementById('page-home');
-  el.addEventListener('scroll', () => {
-    if(el.scrollTop > 4 && state.calDensity !== 'compact'){
+  /* The page itself no longer scrolls on phones — the workspace panes
+     do. "Scrolled away from the top" therefore means the pane under the
+     pointer (or the page, on layouts where it still scrolls). Scroll
+     events don't bubble, hence the capture listener for the panes. */
+  const paneOf = target => target && target.closest ? target.closest('.desktop-pane') : null;
+  const scrolledFrom = target => (paneOf(target)?.scrollTop || 0) + el.scrollTop;
+  el.addEventListener('scroll', (e) => {
+    const t = e.target;
+    if(t !== el && !(t.classList && t.classList.contains('desktop-pane'))) return; // the horizontal pager, tips, etc.
+    if(t.scrollTop > 4 && state.calDensity !== 'compact'){
       setCalDensity('compact');
     }
-  }, { passive: true });
+  }, { passive: true, capture: true });
 
   el.addEventListener('wheel', (e) => {
     // Horizontal scroll here no longer changes the day at all (removed
     // per explicit request — it was firing on any left/right scroll
     // over the page, which read as a bug, not a gesture).
     if(Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-    if(el.scrollTop <= 0 && e.deltaY < -10 && state.calDensity !== 'full'){
+    if(scrolledFrom(e.target) <= 0 && e.deltaY < -10 && state.calDensity !== 'full'){
       setCalDensity('full');
     }
   }, { passive: true });
 
   let pullStartY = null, pullActive = false;
   el.addEventListener('pointerdown', (e) => {
-    pullActive = el.scrollTop <= 0;
+    pullActive = scrolledFrom(e.target) <= 0;
     pullStartY = e.clientY;
   }, { passive: true });
   el.addEventListener('pointermove', (e) => {

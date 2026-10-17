@@ -30,6 +30,31 @@
 .page::-webkit-scrollbar{display:none;}
 .page.no-scroll{ overflow-y:hidden; }
 #page-calendar{ display:none; }
+/* Phone/tablet home (repo owner's request): header, calendar and the
+   workspace box are one joined column and the page itself never scrolls
+   — the box takes whatever height is left above the bottom bar and only
+   its panes scroll (their own overflow-y). The pull-to-expand / scroll-
+   to-collapse gestures follow the panes instead (initHomeScrollExpand). */
+@media (max-width:959px){
+  /* .device prefix: banner.css and theme.css load after this file. */
+  .device .app-banner{ margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0; box-shadow:none; }
+  /* overflow-y:auto, not hidden: on a normal phone everything fits and
+     nothing scrolls; only an unusually short screen (landscape, split
+     view) with the month open falls back to scrolling rather than
+     cutting the calendar's last row off. */
+  #page-home{
+    overflow-y:auto; display:flex; flex-direction:column;
+    padding:0 14px 92px 14px;
+  }
+  #page-home > .home-cal-widget{ flex:0 0 auto; border-top-width:0; border-top-left-radius:0; border-top-right-radius:0; }
+  #page-home > .desktop-box{ flex:1 0 auto; min-height:180px; height:0; }
+  #page-home > .home-cal-full{ flex:1 1 auto; border-bottom-left-radius:20px; border-bottom-right-radius:20px; }
+}
+/* Phones: the banner is edge to edge, so the column under it is too. */
+@media (max-width:600px){
+  #page-home{ padding-left:0; padding-right:0; }
+  #page-home > .home-cal-widget, #page-home > .desktop-box{ border-left-width:0; border-right-width:0; }
+}
 @media (min-width: 960px){
 .pager-wrap{ position:static; overflow:visible; touch-action:auto; flex:1 1 auto; min-height:0; }
 .pager{

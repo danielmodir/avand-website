@@ -94,6 +94,10 @@
   --swatch-toojibee-1:#2E2910; --swatch-toojibee-2:#2C5745; --swatch-toojibee-3:#EBE3A7; --swatch-toojibee-4:#EB7D00;
   --swatch-classic-1:#000000; --swatch-classic-2:#14213D; --swatch-classic-3:#E5E5E5; --swatch-classic-4:#FCA311;
   --holiday:#E08578;
+  /* Period phase colors (period.css' palette), also needed outside the
+     period desk: the calendar's phase capsules (calendar.css). */
+  --period-flow:#FF84BA; --period-pms:#FFDF82; --period-fertile:#99C2FF;
+  --phase-capsule-strength:30%;
 }
 :root[data-theme="light"]{
   color-scheme: light;
@@ -123,6 +127,7 @@
   --range-band:rgba(252,163,17,0.20);
   --period-ring-rest:rgba(20,33,61,0.12);
   --holiday:#C0492F;
+  --phase-capsule-strength:42%;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}

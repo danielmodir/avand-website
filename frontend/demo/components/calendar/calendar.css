@@ -112,6 +112,11 @@
 [data-density="compact"] .cal-corner-arrow{ display:none; }
 [data-density="compact"] .month-grid{ gap:2px; }
 [data-density="compact"] .day-cell{ font-size:10.5px; border-radius:7px; }
+/* On wider phones/tablets a square cell is ~85px tall, so the 1- and 2-
+   week strips turned into tall, top-clipped blocks around the selected
+   day; the strips keep a fixed, compact cell height instead. */
+#page-home[data-density="compact"] .home-cal-widget .day-cell{ aspect-ratio:auto; height:44px; border-radius:12px; }
+#page-home[data-density="mid"] .home-cal-widget .day-cell{ aspect-ratio:auto; height:48px; border-radius:12px; }
 [data-density="compact"] .day-dots{ display:none; }
 .day-dots{display:flex; gap:2px; height:4px;}
 .day-dots span{width:4px; height:4px; border-radius:50%; background:var(--primary);}
@@ -166,4 +171,24 @@
   background:var(--range-mark); box-shadow:0 4px 12px -4px var(--range-mark);
 }
 .day-cell.rng-mark:not(.selected){ color:var(--on-range-mark); }
+
+/* ---- period phases (periodPhaseClass in calendar.js) ----
+   Same capsule shape as the task ranges, in the cycle ring's phase color
+   at low strength. Always in the DOM; visible only while the period desk
+   is the active one (#device.period-desk-active), with a fade. */
+.day-cell.ph::after{
+  /* Opaque tint (mixed into the card color, not into transparent) and a
+     slight overlap into the grid gap, so neighbouring days join into one
+     seamless capsule instead of showing hairline seams. */
+  content:''; position:absolute; z-index:-3; top:18%; bottom:18%; inset-inline:-3px;
+  background:color-mix(in srgb, var(--ph-color) var(--phase-capsule-strength), var(--card));
+  opacity:0; transition:opacity .35s ease;
+}
+.day-cell.ph-period{ --ph-color:var(--period-flow); }
+.day-cell.ph-pms{ --ph-color:var(--period-pms); }
+.day-cell.ph-fertile{ --ph-color:var(--period-fertile); }
+.day-cell.ph-cap-s::after{ inset-inline-start:4%; border-start-start-radius:999px; border-end-start-radius:999px; }
+.day-cell.ph-cap-e::after{ inset-inline-end:4%; border-start-end-radius:999px; border-end-end-radius:999px; }
+.period-desk-active .day-cell.ph::after{ opacity:1; }
+@media (prefers-reduced-motion:reduce){ .day-cell.ph::after{ transition:none; } }
 .day-cell.rng-mark .day-cell-sub{ opacity:.75; }

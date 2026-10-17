@@ -30,8 +30,18 @@
 .desktop-dots{ flex:0 0 auto; display:flex; justify-content:center; align-items:center; gap:6px; padding:10px 0; border-top:1px solid var(--border); }
 .desktop-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); cursor:pointer; transition:background .2s ease, width .2s ease; }
 .desktop-dots span.active{ background:var(--primary); width:18px; border-radius:4px; }
-@media (max-width:600px){
-.desktop-box{ height:430px; }
+/* Phone/tablet: the calendar card and the workspace box below it are one
+   joined card (repo owner's request) — square inner corners, no gap, the
+   box's top border is the divider line, one shadow for the pair. */
+@media (max-width:959px){
+  .home-cal-widget:not(.home-cal-full){
+    margin-bottom:0; border-bottom-width:0;
+    border-bottom-left-radius:0; border-bottom-right-radius:0;
+    box-shadow:var(--edge-highlight);
+  }
+  .home-cal-widget:not(.home-cal-full) + .desktop-box{
+    border-top-left-radius:0; border-top-right-radius:0;
+  }
 }
 .occasion-row{ padding:12px 14px; border-radius:12px; background:var(--card); border:1px solid var(--border); margin-bottom:8px; font-size:13px; display:flex; align-items:center; gap:8px; }
 .occasion-row.holiday{ color:var(--danger); border-color:var(--danger-soft); }

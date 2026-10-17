@@ -41,7 +41,40 @@ function rangeCellClass(day, map, col){
   ].filter(Boolean).join(' ');
 }
 
-const rangeDotHtml = cls => cls.includes('rng-mark') ? '<span class="rng-dot" aria-hidden="true"></span>' : '';
+/* ============ PERIOD PHASES ON THE CALENDAR ============
+   While the period desk is the active one (#device.period-desk-active,
+   toggled by renderDesktops/syncDesktopTopbar), every day of the
+   predicted cycle gets a faint capsule in its phase color — the same
+   colors as the cycle ring. The classes are always on the cells; only
+   that one #device class fades them in or out, so switching desks
+   doesn't re-render the calendar. Cycles repeat from the last period
+   start the user entered; nothing is drawn before it. */
+function periodPhaseOn(day){
+  const p = state.period;
+  if(state.profile.gender !== 'female' || !p.enabled || p.step !== 'done' || !p.lastStart) return null;
+  const since = daysBetween(parseDateKey(p.lastStart), day);
+  if(since < 0) return null;
+  const { len, segments } = periodCycleSegments();
+  const idx = since % len;
+  const seg = segments.find(s => idx >= s.start && idx < s.start + s.len);
+  return seg && seg.cat !== 'normal' ? seg.cat : null;
+}
+
+function periodPhaseClass(day, col){
+  const cat = periodPhaseOn(day);
+  if(!cat) return '';
+  return [
+    'ph', 'ph-' + cat,
+    (col === 0 || periodPhaseOn(addDays(day, -1)) !== cat) && 'ph-cap-s',
+    (col === 6 || periodPhaseOn(addDays(day, 1)) !== cat) && 'ph-cap-e',
+  ].filter(Boolean).join(' ');
+}
+
+function syncPeriodDeskOnCalendar(activeKey){
+  document.getElementById('device')?.classList.toggle('period-desk-active', activeKey === 'periodDesktop');
+}
+
+const rangeDotHtml =cls => cls.includes('rng-mark') ? '<span class="rng-dot" aria-hidden="true"></span>' : '';
 
 /* Re-marks the cells already on screen when the selection changes, so
    selecting doesn't re-render (and visibly refresh) the whole page. */
@@ -85,7 +118,7 @@ function renderHomeCalWidget(fullScreen){
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
     const rng = rangeCellClass(day, ranges, i % 7);
-    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(day)?'holiday':''} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(day)?'holiday':''} ${periodPhaseClass(day, i % 7)} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
       ${rangeDotHtml(rng)}${dayCellDateHtml(day)}
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
     </button>`;
@@ -160,7 +193,7 @@ function renderCalendar(){
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
           const rng = rangeCellClass(d, ranges, i % 7);
-          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(d)?'holiday':''} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(d)?'holiday':''} ${periodPhaseClass(d, i % 7)} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
             ${rangeDotHtml(rng)}${dayCellDateHtml(d)}
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
           </button>`;
