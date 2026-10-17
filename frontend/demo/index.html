@@ -29,7 +29,7 @@
 .splash-dots{display:flex;gap:7px}
 .splash-dots i{width:7px;height:7px;border-radius:50%;background:var(--s-arc);opacity:.25;animation:splash-dot 1.2s ease-in-out infinite}
 .splash-dots i:nth-child(2){animation-delay:.15s}.splash-dots i:nth-child(3){animation-delay:.3s}
-.splash-slow{font:600 13px/1.6 Tahoma,system-ui,sans-serif;color:var(--s-text);text-align:center;opacity:0;animation:splash-slow .4s 12s forwards}
+.splash-slow{font:600 13px/1.6 'Baloo Bhaijaan 2',Tahoma,system-ui,sans-serif;color:var(--s-text);text-align:center;opacity:0;animation:splash-slow .4s 12s forwards}
 .splash-slow a{color:var(--s-arc)}
 @keyframes splash-spin{to{transform:rotate(360deg)}}
 @keyframes splash-arc{0%{stroke-dasharray:20 300}50%{stroke-dasharray:110 300}100%{stroke-dasharray:20 300}}
@@ -38,24 +38,24 @@
 @keyframes splash-slow{to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#app-splash *{animation:none!important}.splash-slow{opacity:1;animation:none}}
 </style>
-<link rel="stylesheet" href="css/base.css?v=2026-10-18.5">
-<link rel="stylesheet" href="css/layout.css?v=2026-10-18.5">
-<link rel="stylesheet" href="css/shared.css?v=2026-10-18.5">
-<link rel="stylesheet" href="css/forms.css?v=2026-10-18.5">
-<link rel="stylesheet" href="css/buttons.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/menu/menu.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/toolbar/toolbar.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/calendar/calendar.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/banner/banner.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/workspace/workspace.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/items/items.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/day-sheet/day-sheet.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/popup/popup.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/period/period.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/auth/auth.css?v=2026-10-18.5">
-<link rel="stylesheet" href="components/app-error/app-error.css?v=2026-10-18.5">
-<link rel="stylesheet" href="css/theme.css?v=2026-10-18.5">
-<link rel="stylesheet" href="css/palette-toojibee.css?v=2026-10-18.5">
+<link rel="stylesheet" href="css/base.css?v=2026-10-18.6">
+<link rel="stylesheet" href="css/layout.css?v=2026-10-18.6">
+<link rel="stylesheet" href="css/shared.css?v=2026-10-18.6">
+<link rel="stylesheet" href="css/forms.css?v=2026-10-18.6">
+<link rel="stylesheet" href="css/buttons.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/menu/menu.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/toolbar/toolbar.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/calendar/calendar.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/banner/banner.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/workspace/workspace.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/items/items.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/day-sheet/day-sheet.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/popup/popup.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/period/period.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/auth/auth.css?v=2026-10-18.6">
+<link rel="stylesheet" href="components/app-error/app-error.css?v=2026-10-18.6">
+<link rel="stylesheet" href="css/theme.css?v=2026-10-18.6">
+<link rel="stylesheet" href="css/palette-toojibee.css?v=2026-10-18.6">
 </head>
 <body>
 <div id="app-splash" role="progressbar" aria-label="Loading Toojibee">
@@ -97,29 +97,29 @@
   <div data-include="components/app-error/app-error.html"></div>
 </div>
 
-<script src="js/config.js?v=2026-10-18.5"></script>
-<script src="js/services/api.js?v=2026-10-18.5"></script>
-<script src="js/core/icons.js?v=2026-10-18.5"></script>
-<script src="js/core/dates.js?v=2026-10-18.5"></script>
-<script src="js/core/i18n.js?v=2026-10-18.5"></script>
-<script src="js/core/calendars.js?v=2026-10-18.5"></script>
-<script src="js/core/occasions.js?v=2026-10-18.5"></script>
-<script src="js/core/state.js?v=2026-10-18.5"></script>
-<script src="js/core/render.js?v=2026-10-18.5"></script>
-<script src="components/workspace/workspace.js?v=2026-10-18.5"></script>
-<script src="components/calendar/calendar.js?v=2026-10-18.5"></script>
-<script src="components/items/items.js?v=2026-10-18.5"></script>
-<script src="components/auth/auth.js?v=2026-10-18.5"></script>
-<script src="components/app-error/app-error.js?v=2026-10-18.5"></script>
-<script src="components/menu/menu.js?v=2026-10-18.5"></script>
-<script src="components/period/period.js?v=2026-10-18.5"></script>
-<script src="js/core/util.js?v=2026-10-18.5"></script>
-<script src="components/day-sheet/day-sheet.js?v=2026-10-18.5"></script>
-<script src="components/popup/popup.js?v=2026-10-18.5"></script>
-<script src="js/core/events.js?v=2026-10-18.5"></script>
-<script src="components/calendar/calendar-gestures.js?v=2026-10-18.5"></script>
-<script src="components/items/swipe.js?v=2026-10-18.5"></script>
-<script src="js/core/include.js?v=2026-10-18.5"></script>
-<script src="js/app.js?v=2026-10-18.5"></script>
+<script src="js/config.js?v=2026-10-18.6"></script>
+<script src="js/services/api.js?v=2026-10-18.6"></script>
+<script src="js/core/icons.js?v=2026-10-18.6"></script>
+<script src="js/core/dates.js?v=2026-10-18.6"></script>
+<script src="js/core/i18n.js?v=2026-10-18.6"></script>
+<script src="js/core/calendars.js?v=2026-10-18.6"></script>
+<script src="js/core/occasions.js?v=2026-10-18.6"></script>
+<script src="js/core/state.js?v=2026-10-18.6"></script>
+<script src="js/core/render.js?v=2026-10-18.6"></script>
+<script src="components/workspace/workspace.js?v=2026-10-18.6"></script>
+<script src="components/calendar/calendar.js?v=2026-10-18.6"></script>
+<script src="components/items/items.js?v=2026-10-18.6"></script>
+<script src="components/auth/auth.js?v=2026-10-18.6"></script>
+<script src="components/app-error/app-error.js?v=2026-10-18.6"></script>
+<script src="components/menu/menu.js?v=2026-10-18.6"></script>
+<script src="components/period/period.js?v=2026-10-18.6"></script>
+<script src="js/core/util.js?v=2026-10-18.6"></script>
+<script src="components/day-sheet/day-sheet.js?v=2026-10-18.6"></script>
+<script src="components/popup/popup.js?v=2026-10-18.6"></script>
+<script src="js/core/events.js?v=2026-10-18.6"></script>
+<script src="components/calendar/calendar-gestures.js?v=2026-10-18.6"></script>
+<script src="components/items/swipe.js?v=2026-10-18.6"></script>
+<script src="js/core/include.js?v=2026-10-18.6"></script>
+<script src="js/app.js?v=2026-10-18.6"></script>
 </body>
 </html>

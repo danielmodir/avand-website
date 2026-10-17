@@ -1,42 +1,21 @@
 /*
-  Self-hosted fonts (hard rule: no Google Fonts/CDN — CLAUDE.md). The
-  original prototype loaded Inter + Vazirmatn from fonts.googleapis.com;
-  that link was removed early on, but this file never actually declared
-  its own @font-face either (see tokens.css for the site's copy), so
-  'Inter' below was silently falling back to system-ui the whole time.
-  SG Kara (fa) replaced Vazirmatn at the repo owner's request — only one
-  weight (Light) exists, so bold/heading fa text is browser-synthesized
-  faux-bold; see assets/fonts/sg-kara/NOTE.txt for provenance.
+  The one font of the app and the site: Baloo Bhaijaan 2 (SIL OFL),
+  self-hosted in assets/fonts/baloo-bhaijaan-2/ — same two faces as the
+  site's tokens.css (Arabic-script file for Persian, Latin file for
+  English, each loaded only when its characters appear). Variable,
+  weights 400–800.
 */
 @font-face {
-  font-family: 'Inter';
-  src: url('../../assets/fonts/inter/Inter-Regular.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
+  font-family: 'Baloo Bhaijaan 2';
+  src: url('../../assets/fonts/baloo-bhaijaan-2/BalooBhaijaan2-Arabic-VF.woff2') format('woff2');
+  font-weight: 400 800; font-style: normal; font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
 }
 @font-face {
-  font-family: 'Inter';
-  src: url('../../assets/fonts/inter/Inter-Medium.woff2') format('woff2');
-  font-weight: 500; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('../../assets/fonts/inter/Inter-SemiBold.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('../../assets/fonts/inter/Inter-Bold.woff2') format('woff2');
-  font-weight: 700; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('../../assets/fonts/inter/Inter-ExtraBold.woff2') format('woff2');
-  font-weight: 800; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'SG Kara';
-  src: url('../../assets/fonts/sg-kara/SGKara-Light.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
+  font-family: 'Baloo Bhaijaan 2';
+  src: url('../../assets/fonts/baloo-bhaijaan-2/BalooBhaijaan2-Latin-VF.woff2') format('woff2');
+  font-weight: 400 800; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-200B, U+200F-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /*
   Brand palette: https://coolors.co/palette/000000-14213d-fca311-e5e5e5-ffffff
@@ -135,7 +114,7 @@
 html,body{margin:0;padding:0;}
 body{
   background:var(--bg);
-  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  font-family:'Baloo Bhaijaan 2',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
   display:flex; align-items:center; justify-content:center;
   min-height:100vh; min-height:100dvh; color:var(--text);
   box-sizing:border-box;
@@ -148,7 +127,7 @@ body{
    above this). Anything that needs to stay centered or left (empty-
    hint, URLs, numeric/LTR fields) already sets its own explicit
    text-align, which wins over this inherited default regardless. */
-.device.lang-fa{ font-family:'SG Kara','Inter',system-ui,Tahoma,sans-serif; text-align:right; }
+.device.lang-fa{ font-family:'Baloo Bhaijaan 2',system-ui,Tahoma,sans-serif; text-align:right; }
 /* Hint paragraphs are plain text: let each take its direction from its
    own words so a Persian sentence's final "." lands on the left. */
 .device.lang-fa .empty-hint{ unicode-bidi:plaintext; }

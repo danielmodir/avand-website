@@ -56,8 +56,9 @@
   --shadow-md: 0 8px 24px rgba(46, 41, 16, 0.14);
 
   /* Typography */
-  --font-sans-latin: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-  --font-sans-fa: 'SG Kara', 'Inter', system-ui, Tahoma, sans-serif;
+  /* One font for both languages (see the @font-face note at the end). */
+  --font-sans-latin: 'Baloo Bhaijaan 2', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-sans-fa: 'Baloo Bhaijaan 2', system-ui, Tahoma, sans-serif;
 
   --font-size-xs: 0.8125rem;   /* 13px */
   --font-size-sm: 0.9375rem;   /* 15px */
@@ -172,42 +173,23 @@
 }
 
 /*
-  Self-hosted fonts (hard rule: no Google Fonts / CDN — CLAUDE.md).
-  Inter: assets/fonts/inter/, official open-source release (SIL OFL
-  license, see LICENSE.txt there). SG Kara: assets/fonts/sg-kara/,
-  provided directly by the project owner — see NOTE.txt there, no formal
-  license file came with it. Zero runtime third-party requests either way.
+  The one font of the site and the app (repo owner's choice, 2026-10-18):
+  Baloo Bhaijaan 2, SIL OFL — assets/fonts/baloo-bhaijaan-2/ (LICENSE.txt
+  there). Variable, real weights 400–800 (no more faux bold). Self-hosted
+  (hard rule: no Google Fonts / CDN), split like Google Fonts serves it:
+  the browser downloads only the file whose unicode-range a page uses —
+  the Arabic-script file for Persian (letters, Persian digits, ZWNJ) and
+  the Latin file for English. demo/css/base.css declares the same faces.
 */
 @font-face {
-  font-family: 'Inter';
-  src: url('../fonts/inter/Inter-Regular.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
+  font-family: 'Baloo Bhaijaan 2';
+  src: url('../fonts/baloo-bhaijaan-2/BalooBhaijaan2-Arabic-VF.woff2') format('woff2');
+  font-weight: 400 800; font-style: normal; font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
 }
 @font-face {
-  font-family: 'Inter';
-  src: url('../fonts/inter/Inter-Medium.woff2') format('woff2');
-  font-weight: 500; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('../fonts/inter/Inter-SemiBold.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('../fonts/inter/Inter-Bold.woff2') format('woff2');
-  font-weight: 700; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('../fonts/inter/Inter-ExtraBold.woff2') format('woff2');
-  font-weight: 800; font-style: normal; font-display: swap;
-}
-/* Only one weight exists for this face (Light) — declared once at 400 so
-   normal text renders at its real weight; headings/bold text fall back to
-   the browser's synthesized (faux) bold rather than a true bold face. */
-@font-face {
-  font-family: 'SG Kara';
-  src: url('../fonts/sg-kara/SGKara-Light.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
+  font-family: 'Baloo Bhaijaan 2';
+  src: url('../fonts/baloo-bhaijaan-2/BalooBhaijaan2-Latin-VF.woff2') format('woff2');
+  font-weight: 400 800; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-200B, U+200F-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }

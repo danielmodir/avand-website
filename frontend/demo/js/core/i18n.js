@@ -285,7 +285,7 @@ const tr = t;
 
 function applyLanguageDom(){
   document.documentElement.setAttribute('lang', lang()==='fa' ? 'fa' : 'en');
-  document.body.style.fontFamily = lang()==='fa' ? "'SG Kara','Inter',system-ui,Tahoma,sans-serif" : "'Inter','SG Kara',system-ui,sans-serif";
+  document.body.style.fontFamily = lang()==='fa' ? "'Baloo Bhaijaan 2',system-ui,Tahoma,sans-serif" : "'Baloo Bhaijaan 2',system-ui,sans-serif";
   document.getElementById('device').classList.toggle('lang-fa', lang()==='fa');
   var taskLabel = document.getElementById('nav-add-task-label'); if(taskLabel) taskLabel.textContent = t('newTask');
   var habitLabel = document.getElementById('nav-add-habit-label'); if(habitLabel) habitLabel.textContent = t('newHabit');

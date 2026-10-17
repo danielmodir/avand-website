@@ -29,13 +29,14 @@ Read the relevant doc before any big change.
 ## Hard rules
 - Plain HTML, CSS and vanilla JS. No frameworks, no npm packages, no build step.
 - ZERO external requests at runtime: no CDNs, no Google Fonts, no analytics, no
-  third-party scripts. Fonts (SG Kara for fa, Inter for latin) must be
-  self-hosted in /assets/fonts — never linked from Google Fonts or any CDN.
-  Status (2026-10-08): both are live via tokens.css's @font-face block.
-  SG Kara replaced Vazirmatn at the repo owner's request — it only ships
-  one weight (Light), so bold/heading text in fa is browser-synthesized
-  faux-bold, not a true bold face; see assets/fonts/sg-kara/NOTE.txt for
-  provenance (no formal license file came with it, unlike Inter's OFL one).
+  third-party scripts. Fonts must be self-hosted in /assets/fonts — never
+  linked from Google Fonts or any CDN.
+  Status (2026-10-18): ONE font for the whole site and app, both languages —
+  Baloo Bhaijaan 2 (SIL OFL, variable 400–800), assets/fonts/baloo-bhaijaan-2/
+  (Arabic-script file + Latin file, split by unicode-range), declared in
+  tokens.css and demo/css/base.css. Chosen by the repo owner over Vazirmatn,
+  Estedad, Sahel, Samim, Mikhak and others. The earlier SG Kara (fa, Light
+  only) and Inter (latin) files are still in assets/fonts but unused.
 - Audience is in Iran on a slow, filtered network. Keep pages light (target: under
   300 KB per page excluding fonts). Prefer SVG or WebP, lazy-load images.
 - Daily occasions (مناسبت‌ها, demo/'s اصلی desktop pane) use a self-hosted static
