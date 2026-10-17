@@ -200,10 +200,6 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'connect-unblock'){ runConnectionAction(el, () => Cloud.unblockUser(el.dataset.id)); return; }
   if(action === 'toggle-store-feature'){ const f = state.store.find(x=>x.id===el.dataset.id); if(f) f.on = !f.on; render(); return; }
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
-  if(action === 'goto-period-desktop'){
-    document.querySelector('[data-action="goto-desktop"][data-key="periodDesktop"]')?.click();
-    return;
-  }
   if(action === 'goto-desktop'){
     state.desktopTitleMenuOpen = false;
     goToDesktopIndex(Number(el.dataset.i));

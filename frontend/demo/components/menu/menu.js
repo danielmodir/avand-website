@@ -545,12 +545,6 @@ function updateNav(){
     authBtn.textContent = t('loginSignup');
   }
   document.getElementById('fab-add').classList.toggle('active', state.navExpanded);
-  // Fully appears/disappears with the Management toggle — not just
-  // dimmed — per explicit correction: gender gates it the same as the
-  // pane itself, but state.period.enabled now controls its very
-  // presence here too, not a muted opacity state.
-  const periodBtn = document.getElementById('toolbar-period-btn');
-  periodBtn.classList.toggle('hidden', state.profile.gender !== 'female' || !state.period.enabled);
   document.getElementById('fab-menu').classList.toggle('show', state.navExpanded);
   document.getElementById('fab-menu').classList.toggle('labels-hidden', !state.settings.showAddMenuLabels);
 
