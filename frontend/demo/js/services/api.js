@@ -323,6 +323,8 @@
         language: st.language, calendarSystem: st.calendar_primary,
         calendarEnabled: { gregorian: enabled.indexOf('gregorian') >= 0, jalali: enabled.indexOf('jalali') >= 0, hijri: enabled.indexOf('hijri') >= 0 },
         planningEnabled: planning ? planning.enabled : true,
+        theme: st.theme, palette: st.palette || 'toojibee',
+        prefs: prefsFromApi(st.preferences || {}),
       },
       tasks: tasks, habits: habits, events: events,
     };
@@ -502,6 +504,19 @@
     });
   }
 
+  /* settings.preferences (snake_case, backend) <-> state.settings.prefs
+     (camelCase): planning_day_summary <-> planningDaySummary. */
+  function prefsFromApi(p) {
+    var out = {};
+    Object.keys(p).forEach(function (k) { out[k.replace(/_([a-z])/g, function (_, c) { return c.toUpperCase(); })] = p[k]; });
+    return out;
+  }
+  function prefsToApi(p) {
+    var out = {};
+    Object.keys(p).forEach(function (k) { out[k.replace(/[A-Z]/g, function (c) { return '_' + c.toLowerCase(); })] = !!p[k]; });
+    return out;
+  }
+
   function saveSettings(s) {
     return enqueue('settings', async function () {
       var cal = s.calendarEnabled || {};
@@ -510,7 +525,9 @@
       var body = {
         language: s.language, calendar_primary: s.calendarSystem, calendars_enabled: enabled,
         week_start: s.weekStartDay, notifications_enabled: !!s.notifications, show_add_menu_labels: !!s.showAddMenuLabels,
+        palette: s.palette || 'toojibee', preferences: prefsToApi(s.prefs || {}),
       };
+      if (s.theme === 'light' || s.theme === 'dark') body.theme = s.theme;
       var send = function (v) { return request('PATCH', '/me/settings', Object.assign({ version: v }, body)); };
       var row;
       try { row = await send(meVersions.settings); }

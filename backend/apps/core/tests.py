@@ -109,6 +109,23 @@ class ProfileAndSettingsTests(ApiTestCase):
         bad_tz = client.patch("/api/v1/me/settings", {"timezone": "Mars/Base", "version": v}, format="json")
         self.assertEqual(bad_tz.status_code, 400)
 
+    def test_palette_and_preferences_merge_and_validate(self):
+        client = self.register()
+        first = client.get("/api/v1/me/settings").json()
+        self.assertEqual(first["palette"], "toojibee")
+        self.assertTrue(first["preferences"]["planning_day_summary"])  # defaults are filled in
+        ok = client.patch("/api/v1/me/settings", {"palette": "classic", "preferences": {"occasions_hijri": False}, "version": first["version"]}, format="json")
+        self.assertEqual(ok.status_code, 200)
+        ok2 = client.patch("/api/v1/me/settings", {"preferences": {"planning_day_summary": False}, "version": ok.json()["version"]}, format="json")
+        prefs = ok2.json()["preferences"]
+        self.assertFalse(prefs["occasions_hijri"])  # the earlier switch is kept
+        self.assertFalse(prefs["planning_day_summary"])
+        self.assertEqual(ok2.json()["palette"], "classic")
+        v = ok2.json()["version"]
+        self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"nope": True}, "version": v}, format="json").status_code, 400)
+        self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"occasions_hijri": "no"}, "version": v}, format="json").status_code, 400)
+        self.assertEqual(client.patch("/api/v1/me/settings", {"palette": "neon", "version": v}, format="json").status_code, 400)
+
     def test_period_desktop_only_appears_for_eligible_profiles(self):
         client = self.register()
         self.set_gender(client, "female")

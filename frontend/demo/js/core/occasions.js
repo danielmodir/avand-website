@@ -33,7 +33,7 @@ async function loadOccasionsFromApi(){
   const byDate = {}, months = [];
   years.forEach(y => {
     months.push(...y.hijri_months);
-    y.occasions.forEach(o => { (byDate[o.date] = byDate[o.date] || []).push({ event_name: o.title_fa, is_holiday: o.is_holiday }); });
+    y.occasions.forEach(o => { (byDate[o.date] = byDate[o.date] || []).push({ event_name: o.title_fa, is_holiday: o.is_holiday, calendar: o.calendar }); });
   });
   setHijriMonthStarts(months);
   OCCASIONS_BY_DATE = byDate;
@@ -45,7 +45,22 @@ async function loadOccasionsFromFiles(){
     fetch('../assets/data/hijri-months.json').then(r => r.json()).catch(() => ({ months: [] })),
   ]);
   setHijriMonthStarts(hijri.months);
-  OCCASIONS_DATA = occasions;
+  const CAL = { shamsi:'jalali', gregorian:'gregorian', hijri:'hijri' };
+  OCCASIONS_DATA = occasions.map(o => Object.assign({ calendar: CAL[o.date.type] }, o));
+}
+
+/* occasionsForDate() filtered by the Occasions settings (which calendars'
+   occasions, holidays only). null while the data is still loading. */
+function visibleOccasionsForDate(d){
+  const items = occasionsForDate(d);
+  if(items === null) return null;
+  const allowed = { jalali: pref('occasionsJalali'), hijri: pref('occasionsHijri'), gregorian: pref('occasionsGregorian') };
+  return items.filter(o => allowed[o.calendar] !== false && (!pref('occasionsHolidaysOnly') || o.is_holiday));
+}
+
+function isHolidayOn(d){
+  if(!pref('occasionsEnabled') || !pref('occasionsMarkHolidays')) return false;
+  return (visibleOccasionsForDate(d) || []).some(o => o.is_holiday);
 }
 
 function occasionsForDate(d){

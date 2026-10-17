@@ -89,6 +89,11 @@
      guidelines, independent of app theme — not a themed surface. */
   --google-btn-bg:#FFFFFF;
   --google-btn-text:#1F1F1F;
+  /* Theme picker previews (Settings > General): each palette's own four
+     colors, fixed whatever palette is active. */
+  --swatch-toojibee-1:#2E2910; --swatch-toojibee-2:#2C5745; --swatch-toojibee-3:#EBE3A7; --swatch-toojibee-4:#EB7D00;
+  --swatch-classic-1:#000000; --swatch-classic-2:#14213D; --swatch-classic-3:#E5E5E5; --swatch-classic-4:#FCA311;
+  --holiday:#E08578;
 }
 :root[data-theme="light"]{
   color-scheme: light;
@@ -117,6 +122,7 @@
   --select-lift:0 16px 30px -12px rgba(20,33,61,0.35);
   --range-band:rgba(252,163,17,0.20);
   --period-ring-rest:rgba(20,33,61,0.12);
+  --holiday:#C0492F;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
@@ -136,6 +142,9 @@ body{
    hint, URLs, numeric/LTR fields) already sets its own explicit
    text-align, which wins over this inherited default regardless. */
 .device.lang-fa{ font-family:'SG Kara','Inter',system-ui,Tahoma,sans-serif; text-align:right; }
+/* Hint paragraphs are plain text: let each take its direction from its
+   own words so a Persian sentence's final "." lands on the left. */
+.device.lang-fa .empty-hint{ unicode-bidi:plaintext; }
 /* Full-bleed at every width — no phone-bezel chrome, no visible frame
    around the app, matching body background so there's no seam even
    when centered under the desktop max-width below. Exactly the real

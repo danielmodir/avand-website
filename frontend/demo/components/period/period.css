@@ -61,7 +61,26 @@
    soft/--on-primary at this one value for everything inside
    .period-themed (the tracker card, quiz sheet, buttons, links), so
    existing components don't need their own period-specific classes. */
-.period-themed{ --primary:#D46A82; --primary-soft:rgba(212,106,130,0.16); --on-primary:#000000; }
+/* Period desktop palette (repo owner's request, both app palettes):
+   https://colorhunt.co/palette/ff84baffdf8299c2ffffefe3 —
+   pink #FF84BA = period days and the desk's accent, butter #FFDF82 = PMS,
+   sky #99C2FF = fertile window, peach #FFEFE3 = the soft card tint.
+   The pastels are fills; text in a phase color uses the deeper --*-ink
+   shade in day mode, where the pastels are too faint on a light card. */
+.period-themed{
+  --period-flow:#FF84BA; --period-pms:#FFDF82; --period-fertile:#99C2FF; --period-tint:#FFEFE3;
+  --period-flow-ink:#FF84BA; --period-pms-ink:#FFDF82; --period-fertile-ink:#99C2FF;
+  --primary:#FF84BA; --primary-soft:rgba(255,132,186,0.18); --on-primary:#3D0F25;
+  --surface-2:linear-gradient(160deg, rgba(255,132,186,0.09) 0%, rgba(255,239,227,0.03) 100%);
+  --edge:rgba(255,132,186,0.18);
+}
+:root[data-theme="light"] .period-themed{
+  --period-flow-ink:#C92D72; --period-pms-ink:#8F6A00; --period-fertile-ink:#2B66C9;
+  --primary-soft:rgba(255,132,186,0.22);
+  --surface-2:linear-gradient(160deg, rgba(255,239,227,0.95) 0%, rgba(255,239,227,0.6) 100%);
+  --edge:rgba(255,132,186,0.30);
+}
+.period-themed .switch.on{ box-shadow:0 0 0 3px var(--primary-soft); }
 /* ===== period setup quiz (bottom sheet, slides up) ===== */
 .period-quiz-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .25s ease; }
 .period-quiz-overlay.show{ opacity:1; pointer-events:auto; }

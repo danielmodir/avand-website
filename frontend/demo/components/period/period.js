@@ -50,7 +50,9 @@ function periodSummaryText(cats){
    Each phase is its own arc: period, the regular days, the fertile window
    and PMS. Hovering (or tapping) an arc lifts it and shows the phase's
    name, length and dates in the middle; a dot marks today. */
-const PERIOD_PHASE_COLOR = { period:'var(--danger)', pms:'var(--pms)', fertile:'var(--secondary)', normal:'var(--period-ring-rest)' };
+// Fills (arcs, legend dots) and text shades — period.css' .period-themed tokens.
+const PERIOD_PHASE_COLOR = { period:'var(--period-flow)', pms:'var(--period-pms)', fertile:'var(--period-fertile)', normal:'var(--period-ring-rest)' };
+const PERIOD_PHASE_INK = { period:'var(--period-flow-ink)', pms:'var(--period-pms-ink)', fertile:'var(--period-fertile-ink)', normal:'var(--text)' };
 const PERIOD_PHASE_LABEL = { period:'legendPeriod', pms:'legendPms', fertile:'legendFertile', normal:'legendRegular' };
 
 function periodCycleSegments(){
@@ -103,7 +105,7 @@ function periodCenterForSegment(s){
   const from = addDays(computePeriodCycleStart(), s.start), to = addDays(from, s.len - 1);
   const days = lang() === 'fa' ? `${dig(s.len)} روز` : `${s.len} day${s.len === 1 ? '' : 's'}`;
   const range = s.len === 1 ? shortDate(from) : `${shortDate(from)} – ${shortDate(to)}`;
-  const color = s.cat === 'normal' ? 'var(--text)' : PERIOD_PHASE_COLOR[s.cat];
+  const color = PERIOD_PHASE_INK[s.cat];
   return `<span class="period-center-main" style="color:${color}">${t(PERIOD_PHASE_LABEL[s.cat])}</span><span class="period-center-days">${days}</span><span class="period-center-sub">${range}</span>`;
 }
 
@@ -187,9 +189,9 @@ function renderPeriodPage(headerHtml){
           <div class="period-wheel-center" dir="${lang()==='fa'?'rtl':'ltr'}" aria-live="polite">${periodCenterDefault(cats)}</div>
         </div>
         <div class="period-legend">
-          <span class="period-legend-item"><span class="dot" style="background:var(--danger);"></span>${t('legendPeriod')}</span>
-          <span class="period-legend-item"><span class="dot" style="background:var(--pms);"></span>${t('legendPms')}</span>
-          <span class="period-legend-item"><span class="dot" style="background:var(--secondary);"></span>${t('legendFertile')}</span>
+          <span class="period-legend-item"><span class="dot" style="background:var(--period-flow);"></span>${t('legendPeriod')}</span>
+          <span class="period-legend-item"><span class="dot" style="background:var(--period-pms);"></span>${t('legendPms')}</span>
+          <span class="period-legend-item"><span class="dot" style="background:var(--period-fertile);"></span>${t('legendFertile')}</span>
         </div>
         <div class="empty-hint" style="margin-top:12px;">${t('periodDisclaimer')}</div>
       </div>

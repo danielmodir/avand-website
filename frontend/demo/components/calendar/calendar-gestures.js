@@ -67,6 +67,7 @@ function attachCalWheelMonthNav(el, stepFn){
 function attachDensityGesture(el, scopeEl){
   if(!el || !scopeEl) return;
   if(window.innerWidth >= 768){ scopeEl.removeAttribute('data-density'); return; }
+  if(el.closest('.home-cal-full')){ scopeEl.setAttribute('data-density', 'full'); return; } // full-screen calendar never shrinks
   if(!state.calDensity) state.calDensity = 'full';
   scopeEl.setAttribute('data-density', state.calDensity);
   // A sheet/dropdown open over the grid shouldn't also be eating the
@@ -88,7 +89,9 @@ function attachDensityGesture(el, scopeEl){
     acc = Math.max(0, Math.min(200, acc + Math.abs(dy)));
     const i = CAL_DENSITY_ORDER.indexOf(state.calDensity);
     if(dy > 0 && acc > (i === 0 ? 40 : 140)) step(1);
-    else if(dy < 0 && acc > (i === 2 ? 15 : 115)) step(-1);
+    // Opening back up is easy from both smaller sizes (the 2-week view
+    // used to need a 115px drag inside an ~80px-tall grid).
+    else if(dy < 0 && acc > 24) step(-1);
   };
   /* Wheel deltaY and touch's own dy (touchY-y, below) are opposite in
      sign for the same physical "scroll up" gesture — a wheel scrolled
@@ -373,15 +376,18 @@ function attachHomeCalDrag(){
     startY = null;
   }
 
+  const onCancel = () => { startY = null; };
   if(handle){
     handle.addEventListener('pointerdown', e => { onDown(e); e.stopPropagation(); });
     handle.addEventListener('pointermove', onMove);
     handle.addEventListener('pointerup', e => onUp(e, true));
+    handle.addEventListener('pointercancel', onCancel);
   }
   if(surface){
     surface.addEventListener('pointerdown', onDown);
     surface.addEventListener('pointermove', onMove);
     surface.addEventListener('pointerup', e => onUp(e, false));
+    surface.addEventListener('pointercancel', onCancel);
     // a real drag (moved) shouldn't also register as a day pick
     surface.addEventListener('click', e => { if(moved) e.stopPropagation(); });
   }
@@ -425,6 +431,7 @@ function slideHomeCalDate(dir, updateFn){
    node is what makes the grow/shrink animate properly — and also avoids
    re-attaching gesture listeners onto elements that never went away. */
 function setCalDensity(density){
+  if(document.querySelector('.home-cal-full')) density = 'full';
   state.calDensity = density;
   const widget = document.getElementById('home-cal-widget');
   const scopeEl = document.getElementById('page-home');

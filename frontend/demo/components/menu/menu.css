@@ -165,6 +165,34 @@
 .desktop-manage-gear{ position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; border:none; background:var(--bg-soft); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .device.lang-fa .desktop-manage-gear{ right:auto; left:12px; }
 .desktop-manage-gear svg{ width:14px; height:14px; }
+.desktop-manage-gear:hover{ color:var(--primary); }
+/* Persian sentences in these LTR-laid-out rows put the final period on
+   the wrong end; plaintext picks each line's direction from its own text
+   without touching the row's flex layout. */
+.device.lang-fa .desktop-manage-desc,
+.device.lang-fa .settings-row .lbl,
+.device.lang-fa .settings-row .sub,
+.device.lang-fa #page-menu .sub{ unicode-bidi:plaintext; }
+
+/* Settings > General > Theme: two cards, each previewing its palette. */
+.palette-picker{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.palette-option{
+  display:flex; flex-direction:column; align-items:stretch; gap:8px; padding:10px;
+  border-radius:16px; border:1.5px solid var(--border); background:var(--card);
+  color:var(--text); font:inherit; cursor:pointer; text-align:center;
+}
+.palette-option.active{ border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }
+.palette-swatches{ display:flex; height:34px; border-radius:10px; overflow:hidden; }
+.palette-swatches i{ flex:1; }
+.palette-swatches-toojibee i:nth-child(1){ background:var(--swatch-toojibee-1); }
+.palette-swatches-toojibee i:nth-child(2){ background:var(--swatch-toojibee-2); }
+.palette-swatches-toojibee i:nth-child(3){ background:var(--swatch-toojibee-3); }
+.palette-swatches-toojibee i:nth-child(4){ background:var(--swatch-toojibee-4); }
+.palette-swatches-classic i:nth-child(1){ background:var(--swatch-classic-1); }
+.palette-swatches-classic i:nth-child(2){ background:var(--swatch-classic-2); }
+.palette-swatches-classic i:nth-child(3){ background:var(--swatch-classic-3); }
+.palette-swatches-classic i:nth-child(4){ background:var(--swatch-classic-4); }
+.palette-name{ font-size:13px; font-weight:700; }
 /* unicode-bidi:plaintext makes each row's own text decide its
    direction/alignment by its own first strong character instead of
    inheriting the page's dir — Persian labels stay right-aligned,

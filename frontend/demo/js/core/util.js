@@ -1,5 +1,46 @@
 let toastTimer = null;
 
+/* Display switches behind each Management card's gear. Same keys and
+   defaults as UserSettings.PREFERENCE_DEFAULTS on the server (camelCase
+   here, snake_case there — api.js maps them). */
+const DEFAULT_PREFS = {
+  planningDaySummary: true, planningCalendarDots: true, planningShowEvents: true, planningShowHabits: true,
+  occasionsEnabled: true, occasionsJalali: true, occasionsHijri: true, occasionsGregorian: true,
+  occasionsHolidaysOnly: false, occasionsMarkHolidays: true, occasionsShowEvents: true,
+};
+function pref(key){
+  const p = state.settings.prefs || {};
+  return key in p ? !!p[key] : DEFAULT_PREFS[key];
+}
+function setPref(key, value){
+  state.settings.prefs = Object.assign({}, state.settings.prefs, { [key]: value });
+  // The offline demo (no backend) keeps them on this device; with an
+  // account the server copy wins on the next load.
+  try{ localStorage.setItem('toojibee-prefs', JSON.stringify(state.settings.prefs)); }catch(e){}
+  cloudSync(() => Cloud.saveSettings(state.settings));
+}
+function loadLocalPrefs(){
+  try{ Object.assign(state.settings.prefs, JSON.parse(localStorage.getItem('toojibee-prefs') || '{}')); }catch(e){}
+}
+
+/* Theme = palette (Toojibee olive/orange or Classic navy/orange) x mode
+   (dark/light). The day/night button only flips the mode, inside the
+   chosen palette. Both are cached locally so the first paint is right
+   (index.html's inline script) and saved to the account when signed in. */
+const THEME_COLOR = {
+  toojibee: { dark:'#1A1708', light:'#F7F3DA' },
+  classic:  { dark:'#000000', light:'#E5E5E5' },
+};
+function applyAppearance(){
+  const root = document.documentElement;
+  const palette = state.settings.palette === 'classic' ? 'classic' : 'toojibee';
+  if(state.settings.theme === 'light' || state.settings.theme === 'dark') root.setAttribute('data-theme', state.settings.theme);
+  root.setAttribute('data-palette', palette);
+  const mode = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  try{ localStorage.setItem('toojibee-palette', palette); localStorage.setItem('toojibee-theme', mode); }catch(e){}
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[palette][mode]);
+}
+
 /* Every background save/delete goes through here. With no real session
    (no-login demo mode) there's nothing to save to, so it doesn't call
    the backend at all — that was the 401 on each change. With a session,

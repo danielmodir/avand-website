@@ -163,11 +163,27 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'toggle-app-theme'){
-    const root = document.documentElement;
-    const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    root.setAttribute('data-theme', next);
-    try{ localStorage.setItem('toojibee-theme', next); }catch(e){}
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'light' ? '#E5E5E5' : '#000000');
+    state.settings.theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    applyAppearance();
+    cloudSync(() => Cloud.saveSettings(state.settings));
+    render();
+    return;
+  }
+  if(action === 'set-palette'){
+    state.settings.palette = el.dataset.val === 'classic' ? 'classic' : 'toojibee';
+    applyAppearance();
+    cloudSync(() => Cloud.saveSettings(state.settings));
+    render();
+    return;
+  }
+  if(action === 'toggle-pref'){
+    setPref(el.dataset.key, !pref(el.dataset.key));
+    render();
+    return;
+  }
+  if(action === 'toggle-occasions-enabled'){
+    setPref('occasionsEnabled', !pref('occasionsEnabled'));
+    state.activeDesktopIndex = 0;
     render();
     return;
   }
@@ -206,6 +222,11 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'desktop-settings-soon'){ showToast(t('desktopSettingsSoon')); return; }
+  if(action === 'open-desktop-settings'){
+    state.menuSubView = el.dataset.sub;
+    render();
+    return;
+  }
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
   if(action === 'toggle-planning-enabled'){ state.settings.planningEnabled = !state.settings.planningEnabled; cloudSync(() => Cloud.saveSettings(state.settings)); render(); return; }
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }

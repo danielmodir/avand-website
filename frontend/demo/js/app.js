@@ -38,6 +38,7 @@ async function loadFromCloud(){
   state.profile = Object.assign({}, state.profile, data.profile);
   syncProfileName();
   state.settings = Object.assign({}, state.settings, data.settings);
+  applyAppearance();
   state.tasks = data.tasks.map(t => ({ ...t, subtasks: (t.subtasks || []).map(s => normalizeSubtask(s, t)) }));
   state.habits = data.habits;
   state.events = data.events;
@@ -140,6 +141,10 @@ function attachAuthPopupDismiss(){
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && state.authOpen) closeAuth(); });
 }
 async function start(){
+  // Last palette/mode used on this device, until the account's settings load.
+  state.settings.palette = document.documentElement.getAttribute('data-palette') === 'classic' ? 'classic' : 'toojibee';
+  loadLocalPrefs();
+  applyAppearance();
   await loadComponents();
   initFabAndMenuInteractions();
   initHomeScrollExpand();

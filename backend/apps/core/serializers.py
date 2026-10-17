@@ -103,7 +103,22 @@ class SettingsSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["calendars_enabled"] = instance.calendars_enabled_list
+        data["preferences"] = instance.effective_preferences
         return data
+
+    def validate_preferences(self, value):
+        """A partial object of known boolean switches, merged into what is
+        stored, so a client can PATCH one switch without sending the rest."""
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Must be an object.")
+        unknown = sorted(set(value) - set(UserSettings.PREFERENCE_DEFAULTS))
+        if unknown:
+            raise serializers.ValidationError(f"Unknown keys: {', '.join(unknown)}.")
+        if any(not isinstance(v, bool) for v in value.values()):
+            raise serializers.ValidationError("Every value must be true or false.")
+        merged = dict(self.instance.preferences or {}) if self.instance else {}
+        merged.update(value)
+        return merged
 
     def validate_timezone(self, value):
         if value not in zoneinfo.available_timezones():

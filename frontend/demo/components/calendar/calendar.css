@@ -11,7 +11,18 @@
   border-radius:20px; margin:0 0 14px 0; padding:14px 10px 10px 10px;
 }
 .home-cal-topbar{ margin-bottom:10px; }
-.home-cal-grid-clip{ overflow:hidden; transition:height .28s cubic-bezier(.4,0,.2,1); }
+/* The grid owns its vertical drags (expand/collapse, week/month swipe):
+   without touch-action:none a downward drag on a phone was taken by the
+   browser's own pull-to-refresh/scroll and cancelled the pointer gesture,
+   so the 1- and 2-week views could not be opened again by dragging. */
+.home-cal-grid-clip{ overflow:hidden; transition:height .28s cubic-bezier(.4,0,.2,1); touch-action:none; }
+#page-home{ overscroll-behavior-y:contain; }
+/* Every workspace desktop off (phone): the calendar is the whole page —
+   always the full month, cells stretched to fill the screen height. */
+.home-cal-full{ margin-bottom:0; padding-bottom:14px; }
+.home-cal-full .day-cell{ aspect-ratio:auto; height:max(46px, calc((100dvh - 330px) / 6)); border-radius:14px; }
+.home-cal-full .day-cell.today, .home-cal-full .day-cell.selected{ border-radius:14px; }
+.home-cal-full .day-cell-num{ font-size:17px; }
 #home-cal-grid{ transition:transform .28s cubic-bezier(.4,0,.2,1); }
 /* Separate from #home-cal-grid's own translateY (expand/collapse) —
    this wrapper only ever does the horizontal week/month-change slide,
@@ -67,6 +78,8 @@
 .day-cell.other-month{color:var(--text-muted); opacity:0.3;}
 .day-cell.today{border-color:var(--primary); border-radius:50%;}
 .day-cell.selected{background:var(--primary); color:var(--on-primary); border-radius:50%;}
+/* Public holidays (Occasions settings): the day number in red. */
+.day-cell.holiday:not(.selected) .day-cell-num{ color:var(--holiday, var(--danger)); }
 .day-cell.selected.today{ box-shadow:0 0 0 2px var(--on-primary) inset; }
 .day-cell{ transition:transform .1s ease; }
 .day-cell.press{ transform:scale(.94); }

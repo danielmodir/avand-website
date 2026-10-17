@@ -1,0 +1,122 @@
+/* ============ PALETTE: Toojibee (default) ============
+   https://colorhunt.co/palette/2e29102c5745ebe3a7eb7d00 — the marketing
+   site's palette (frontend/assets/css/tokens.css), offered in the app as
+   the default; the earlier navy/orange look stays as "Classic"
+   (base.css + theme.css, i.e. this file's rules simply don't match when
+   <html data-palette="classic">). Settings > General picks the palette;
+   the day/night button flips dark/light inside it (applyAppearance()).
+
+     #2E2910 olive ink   #2C5745 forest   #EBE3A7 cream   #EB7D00 orange
+
+   Buttons and other filled accents are orange in BOTH modes, with olive
+   text on them (white on this orange is only ~2.8:1). Only token values
+   change here — no layout. */
+
+/* ---- dark: deep olive night, cream text ---- */
+:root[data-palette="toojibee"]{
+  --bg:#1A1708;
+  --bg-soft:#221E0B;
+  --card:#2E2910;
+  --primary:#EB7D00;
+  --primary-soft:rgba(235,125,0,0.16);
+  --on-primary:#2E2910;
+  --secondary:#8CC2A3;
+  --text:#F5F0D2;
+  --text-muted:rgba(235,227,167,0.66);
+  --border:rgba(235,227,167,0.12);
+  --nav-bg:#221E0B;
+  --nav-icon:rgba(235,227,167,0.45);
+  --overlay:rgba(10,9,3,0.6);
+  --shadow:0 10px 30px rgba(0,0,0,0.5);
+  --danger:#F0937A;
+  --danger-soft:rgba(240,147,122,0.16);
+  --pms:#F5B65C;
+  --pms-soft:rgba(245,182,92,0.16);
+  --select-ring:rgba(235,125,0,0.85);
+  --select-glow:rgba(235,125,0,0.45);
+  --select-lift:0 16px 34px -12px rgba(0,0,0,0.65);
+  --range-band:rgba(235,125,0,0.16);
+  --range-mark:#EB7D00;
+  --on-range-mark:#2E2910;
+  --period-ring-rest:rgba(235,227,167,0.14);
+  --holiday:#F0937A;
+
+  --glow-orange:rgba(235,125,0,0.18);
+  --glow-navy:rgba(44,87,69,0.42);
+  --surface-1:linear-gradient(160deg, rgba(56,50,22,0.92) 0%, rgba(38,34,14,0.92) 100%);
+  --surface-2:linear-gradient(160deg, rgba(235,227,167,0.05) 0%, rgba(235,227,167,0.018) 100%);
+  --surface-solid:linear-gradient(165deg, #38321A 0%, #2A250F 60%, #211D0B 100%);
+  --surface-panel:linear-gradient(170deg, rgba(52,46,20,0.80) 0%, rgba(36,32,13,0.84) 55%, rgba(26,23,8,0.90) 100%);
+  --edge:rgba(235,227,167,0.09);
+  --edge-strong:rgba(235,227,167,0.17);
+  --edge-highlight:inset 0 1px 0 rgba(235,227,167,0.06);
+  --shadow-soft-sm:0 2px 10px rgba(0,0,0,0.32);
+  --shadow-soft-lg:0 28px 70px -18px rgba(0,0,0,0.62);
+  --shadow-glow:0 0 0 1px rgba(235,125,0,0.24), 0 14px 36px -12px rgba(235,125,0,0.55);
+  --gradient-brand:linear-gradient(135deg, #F28A12 0%, #EB7D00 55%, #D96F00 100%);
+  --banner-bg:
+    radial-gradient(120% 180% at 100% 0%, rgba(235,125,0,0.34) 0%, transparent 55%),
+    linear-gradient(135deg, #356852 0%, #2C5745 55%, #1D3C2F 100%);
+  --banner-edge:rgba(235,227,167,0.12);
+  --on-banner:#FFFDF3;
+  --banner-btn-bg:rgba(255,253,243,0.12);
+  --banner-btn-bg-hover:rgba(255,253,243,0.22);
+  --banner-btn-border:rgba(255,253,243,0.35);
+  --glass:rgba(26,23,8,0.64);
+  --glow-accent:0 4px 12px -2px rgba(235,125,0,0.55);
+  --glow-today:0 0 0 1px rgba(235,125,0,0.38), 0 10px 24px -10px rgba(235,125,0,0.75);
+  --glow-switch:0 6px 16px -6px rgba(235,125,0,0.7);
+  --glow-mark:0 0 0 3px rgba(235,125,0,0.35), 0 8px 20px -6px rgba(235,125,0,0.55);
+  --shadow-hover:0 10px 26px -12px rgba(0,0,0,0.6);
+}
+
+/* ---- light: warm cream paper, olive ink, the same orange buttons ---- */
+:root[data-palette="toojibee"][data-theme="light"]{
+  --bg:#F7F3DA;
+  --bg-soft:#F0EAC6;
+  --card:#FFFDF3;
+  --primary:#EB7D00;
+  --primary-soft:rgba(235,125,0,0.14);
+  --on-primary:#2E2910;
+  --secondary:#2C5745;
+  --text:#2E2910;
+  --text-muted:rgba(46,41,16,0.66);
+  --border:rgba(46,41,16,0.14);
+  --nav-bg:#FFFDF3;
+  --nav-icon:rgba(46,41,16,0.45);
+  --overlay:rgba(46,41,16,0.32);
+  --shadow:0 10px 30px rgba(46,41,16,0.16);
+  --danger:#A8361F;
+  --danger-soft:rgba(168,54,31,0.12);
+  --pms:#8A5200;
+  --pms-soft:rgba(138,82,0,0.12);
+  --select-ring:rgba(235,125,0,0.9);
+  --select-glow:rgba(235,125,0,0.36);
+  --select-lift:0 16px 30px -12px rgba(46,41,16,0.32);
+  --range-band:rgba(235,125,0,0.18);
+  --period-ring-rest:rgba(46,41,16,0.12);
+  --holiday:#A8361F;
+
+  --glow-orange:rgba(235,125,0,0.16);
+  --glow-navy:rgba(44,87,69,0.14);
+  --surface-1:linear-gradient(160deg, #FFFDF3 0%, #FAF6E1 100%);
+  --surface-2:linear-gradient(160deg, rgba(46,41,16,0.04) 0%, rgba(46,41,16,0.015) 100%);
+  --surface-solid:linear-gradient(165deg, #FFFDF3 0%, #F8F3DC 100%);
+  --surface-panel:linear-gradient(170deg, rgba(255,253,243,0.92) 0%, rgba(248,243,220,0.92) 100%);
+  --edge:rgba(46,41,16,0.10);
+  --edge-strong:rgba(46,41,16,0.18);
+  --edge-highlight:inset 0 1px 0 rgba(255,255,255,0.85);
+  --shadow-soft-sm:0 2px 8px rgba(46,41,16,0.08);
+  --shadow-soft-lg:0 24px 60px -16px rgba(46,41,16,0.24);
+  --shadow-glow:0 0 0 1px rgba(235,125,0,0.18), 0 14px 32px -12px rgba(235,125,0,0.45);
+  --glass:rgba(255,253,243,0.74);
+  --glow-accent:0 4px 12px -2px rgba(235,125,0,0.45);
+  --glow-switch:0 6px 16px -6px rgba(235,125,0,0.55);
+  --shadow-hover:0 10px 24px -12px rgba(46,41,16,0.26);
+}
+
+/* The banner stays forest green in day mode too, so its white monogram
+   must not be inverted the way Classic's light mode does it. */
+:root[data-palette="toojibee"][data-theme="light"] .app-banner .brand-mark-img{ filter:none; }
+/* Orange text on cream is too faint: counts/links read in ink instead. */
+:root[data-palette="toojibee"][data-theme="light"] .section-title .count{ color:var(--text); }

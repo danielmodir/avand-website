@@ -64,19 +64,28 @@ function refreshCalendarRanges(){
    Collapsed: this week as a 7-day strip. Expanded: full month grid.
    Toggle via the handle (tap or drag) — see attachHomeCalDrag(). Picking
    a date in the expanded grid also collapses back to the strip. */
-function renderHomeCalWidget(){
+/* Whether a day gets the small "has plans" dot (Planning settings). */
+function dayHasPlans(day){
+  if(!pref('planningCalendarDots') || !state.settings.planningEnabled) return false;
+  const {tasks, events} = itemsForDate(day);
+  return tasks.length || events.length;
+}
+
+/* fullScreen: every workspace desktop is off (phone only) — the widget is
+   the whole page, always the full month, with no expand/collapse handle. */
+function renderHomeCalWidget(fullScreen){
   const d = state.homeDate;
   const disp = displayMonthYear(d);
   const cells = monthMatrix(d);
   const ranges = taskRangeMap();
+  if(fullScreen) state.calDensity = 'full';
   const cellHtml = (day, i) => {
     const inMonth = cellInCurrentMonth(day, d);
-    const {tasks, events} = itemsForDate(day);
-    const hasAny = tasks.length || events.length;
+    const hasAny = dayHasPlans(day);
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
     const rng = rangeCellClass(day, ranges, i % 7);
-    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(day)?'holiday':''} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
       ${rangeDotHtml(rng)}${dayCellDateHtml(day)}
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
     </button>`;
@@ -90,7 +99,7 @@ function renderHomeCalWidget(){
       ${yearRangeFor().map(y => `<div class="cal-dropdown-item ${y===primaryYearOf(d)?'active':''}" data-action="home-pick-year" data-year="${y}">${toSysDigits(y,primarySystem())}</div>`).join('')}
     </div>` : '';
   return `
-    <div class="home-cal-widget" id="home-cal-widget" dir="${lang()==='fa'?'rtl':'ltr'}">
+    <div class="home-cal-widget ${fullScreen?'home-cal-full':''}" id="home-cal-widget" dir="${lang()==='fa'?'rtl':'ltr'}">
       <div class="cal-topbar home-cal-topbar">
         <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="home-prev-month" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
         <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
@@ -104,7 +113,7 @@ function renderHomeCalWidget(){
           <div class="month-grid" id="home-cal-grid">${cells.map(cellHtml).join('')}</div>
         </div>
       </div>
-      <div class="home-cal-handle" id="home-cal-handle"><span></span></div>
+      ${fullScreen ? '' : '<div class="home-cal-handle" id="home-cal-handle"><span></span></div>'}
     </div>
   `;
 }
@@ -147,12 +156,11 @@ function renderCalendar(){
       <div class="month-grid" id="cal-month-grid">
         ${cells.map((d, i) => {
           const inMonth = cellInCurrentMonth(d, c);
-          const {tasks,events} = itemsForDate(d);
-          const hasAny = tasks.length || events.length;
+          const hasAny = dayHasPlans(d);
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
           const rng = rangeCellClass(d, ranges, i % 7);
-          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(d)?'holiday':''} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
             ${rangeDotHtml(rng)}${dayCellDateHtml(d)}
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
           </button>`;

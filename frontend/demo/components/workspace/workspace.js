@@ -12,11 +12,11 @@ function renderHome(){
    occasionsForDate/OCCASIONS_DATA above), for the currently-viewed date
    `d`, not hardcoded to today, so paging the home date updates it too. */
 function renderOccasionsPane(d, events){
-  const items = occasionsForDate(d); // null while still loading
+  const items = visibleOccasionsForDate(d); // null while still loading
   const occasionsHtml = items === null ? `<div class="empty-hint">…</div>` : (() => {
     return items.length ? items.map(it => `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}${escapeHtml(it.event_name)}</div>`).join('') : '';
   })();
-  const dayEvents = events || [];
+  const dayEvents = pref('occasionsShowEvents') ? (events || []) : [];
   const eventsHtml = dayEvents.length ? `
     <div class="section-title">${t('events')} <span class="count">${dig(dayEvents.length)}</span></div>
     <div class="events-scroll">${sortEvents(dayEvents).map(e=>eventCard(e)).join('')}</div>
@@ -33,19 +33,28 @@ function renderOccasionsPane(d, events){
    gender is 'female', same gate Settings/Management already used. */
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;
-  const panes = [
-    { key:'occasionsDesktop', html: renderOccasionsPane(d, events) },
-  ];
+  const panes = [];
+  if(pref('occasionsEnabled')){
+    panes.push({ key:'occasionsDesktop', html: renderOccasionsPane(d, events) });
+  }
   // Guests only browse the calendar and occasions; planning needs an account.
   if(state.settings.planningEnabled && !state.guest){
     panes.push({ key:'planning', html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
-      ${window.innerWidth >= 960 ? renderDayStatsCard(tasks, habits, events, d) : ''}
-      ${renderItemSections(tasks, habits, events, d)}
+      ${window.innerWidth >= 960 && pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
+      ${renderItemSections(tasks,pref('planningShowHabits') ? habits : [], pref('planningShowEvents') ? events : [], d)}
     ` });
   }
   if(state.profile.gender === 'female' && state.period.enabled){
     panes.push({ key:'periodDesktop', html: renderPeriodPage('') });
+  }
+  /* Every desktop switched off: on a phone the app becomes a full-screen
+     month calendar (no workspace box under it); on desktop the calendar
+     column already fills the left, so the box just says how to get one back. */
+  if(!panes.length){
+    state.activeDesktopIndex = 0;
+    if(window.innerWidth < 960) return renderHomeCalWidget(true);
+    return `<div class="desktop-box desktop-box-empty"><div class="empty-hint">${t('noDesktopsEnabled')}</div></div>`;
   }
   // Clamp in case the pane count just shrank (e.g. gender toggled off,
   // dropping the period pane) out from under whatever was active.

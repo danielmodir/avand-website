@@ -1,6 +1,7 @@
 const MENU_PARENT = {
   'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
-  'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings', 'settings-period': 'settings'
+  'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings', 'settings-period': 'settings',
+  'settings-planning': 'admin', 'settings-occasions': 'admin'
 };
 
 function initials(name){
@@ -28,6 +29,8 @@ function renderMenu(){
   if(sub === 'settings-calendar') return renderCalendarSettings();
   if(sub === 'settings-avandmenu') return renderToojibeeMenuSettings();
   if(sub === 'settings-period') return renderPeriodSettings();
+  if(sub === 'settings-planning') return renderPlanningSettings();
+  if(sub === 'settings-occasions') return renderOccasionsSettings();
   /* No button opens the menu panel with no data-sub anymore (the
      hamburger entry point is gone — Profile/Store/Management each have
      their own bottom-bar button), so this is just a safe fallback. */
@@ -310,14 +313,20 @@ function renderAdminPanel(){
     <div class="section-title">${t('enabledDesktops')}</div>
     <div class="sub" style="margin:-6px 2px 10px 2px;">${t('enabledDesktopsSub')}</div>
     <div class="desktop-manage-card">
-      <button type="button" class="desktop-manage-gear" data-action="desktop-settings-soon" aria-label="${t('settings')}">${ICONS.gearIcon}</button>
+      <button type="button" class="desktop-manage-gear" data-action="open-desktop-settings" data-sub="settings-occasions" aria-label="${t('occasionsSettings')}">${ICONS.gearIcon}</button>
+      <div class="desktop-manage-title">${t('occasionsDesktop')}</div>
+      <div class="desktop-manage-desc">${t('occasionsDesktopSub')}</div>
+      <div class="switch ${pref('occasionsEnabled')?'on':''}" data-action="toggle-occasions-enabled"><div class="knob"></div></div>
+    </div>
+    <div class="desktop-manage-card">
+      <button type="button" class="desktop-manage-gear" data-action="open-desktop-settings" data-sub="settings-planning" aria-label="${t('planningSettings')}">${ICONS.gearIcon}</button>
       <div class="desktop-manage-title">${t('planning')}</div>
       <div class="desktop-manage-desc">${t('planningDesktopSub')}</div>
       <div class="switch ${state.settings.planningEnabled?'on':''}" data-action="toggle-planning-enabled"><div class="knob"></div></div>
     </div>
     ${state.profile.gender === 'female' ? `
       <div class="desktop-manage-card">
-        <button type="button" class="desktop-manage-gear" data-action="desktop-settings-soon" aria-label="${t('settings')}">${ICONS.gearIcon}</button>
+        <button type="button" class="desktop-manage-gear" data-action="open-desktop-settings" data-sub="settings-period" aria-label="${t('settings')}">${ICONS.gearIcon}</button>
         <div class="desktop-manage-title">${t('periodDesktop')}</div>
         <div class="desktop-manage-desc">${t('periodDesktopSub')}</div>
         <div class="switch ${state.period.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
@@ -380,6 +389,18 @@ function renderGeneralSettings(){
         <button type="button" data-action="set-language" data-val="fa" class="${lang()==='fa'?'active':''}">فارسی</button>
       </div>
     </div>
+    <div class="section-title">${t('appearance')}</div>
+    <div class="palette-picker" role="radiogroup" aria-label="${t('themePalette')}">
+      ${['toojibee','classic'].map(p => `
+        <button type="button" class="palette-option ${state.settings.palette===p?'active':''}" data-action="set-palette" data-val="${p}" role="radio" aria-checked="${state.settings.palette===p}">
+          <span class="palette-swatches palette-swatches-${p}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span class="palette-name">${t(p==='toojibee'?'paletteToojibee':'paletteClassic')}</span>
+        </button>`).join('')}
+    </div>
+    <div class="settings-row">
+      <div><div class="lbl">${t('darkMode')}</div><div class="sub">${t('darkModeSub')}</div></div>
+      <div class="switch ${document.documentElement.getAttribute('data-theme')!=='light'?'on':''}" data-action="toggle-app-theme" role="switch" aria-checked="${document.documentElement.getAttribute('data-theme')!=='light'}"><div class="knob"></div></div>
+    </div>
     <div class="settings-row" style="opacity:.5;"><div><div class="lbl">${t('notifications')}</div><div class="sub">${t('notificationsSub')}</div></div><div class="switch" style="pointer-events:none;"><div class="knob"></div></div></div>
   `;
 }
@@ -408,6 +429,38 @@ function renderCalendarSettings(){
         ${weekdayLabels.map((key,i) => `<option value="${key}" ${state.settings.weekStartDay===key?'selected':''}>${weekdayFull(i)}</option>`).join('')}
       </select>
     </div>
+  `;
+}
+
+function prefRow(key, label, sub){
+  return `
+    <div class="settings-row">
+      <div><div class="lbl">${t(label)}</div>${sub ? `<div class="sub">${t(sub)}</div>` : ''}</div>
+      <div class="switch ${pref(key)?'on':''}" data-action="toggle-pref" data-key="${key}" role="switch" aria-checked="${pref(key)}" aria-label="${escapeAttr(t(label))}"><div class="knob"></div></div>
+    </div>`;
+}
+
+function renderPlanningSettings(){
+  return `
+    ${subHeader(t('planningSettings'))}
+    ${prefRow('planningDaySummary', 'prefDaySummary', 'prefDaySummarySub')}
+    ${prefRow('planningCalendarDots', 'prefCalendarDots', 'prefCalendarDotsSub')}
+    ${prefRow('planningShowEvents', 'prefPlanningEvents', 'prefPlanningEventsSub')}
+    ${prefRow('planningShowHabits', 'prefPlanningHabits', 'prefPlanningHabitsSub')}
+  `;
+}
+
+function renderOccasionsSettings(){
+  return `
+    ${subHeader(t('occasionsSettings'))}
+    <div class="section-title">${t('occasionSources')}</div>
+    ${prefRow('occasionsJalali', 'prefOccJalali', 'prefOccJalaliSub')}
+    ${prefRow('occasionsHijri', 'prefOccHijri', 'prefOccHijriSub')}
+    ${prefRow('occasionsGregorian', 'prefOccGregorian', 'prefOccGregorianSub')}
+    <div class="section-title">${t('display')}</div>
+    ${prefRow('occasionsHolidaysOnly', 'prefOccHolidaysOnly', 'prefOccHolidaysOnlySub')}
+    ${prefRow('occasionsMarkHolidays', 'prefOccMarkHolidays', 'prefOccMarkHolidaysSub')}
+    ${prefRow('occasionsShowEvents', 'prefOccShowEvents', 'prefOccShowEventsSub')}
   `;
 }
 

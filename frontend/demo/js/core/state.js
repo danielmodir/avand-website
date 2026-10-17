@@ -49,7 +49,8 @@ const state = {
     email: 'daniel@example.com', phone: '', gender: '', dob: '', photo: null,
     userId: genUserId('Daniel')
   },
-  settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali', calendarEnabled: { gregorian: true, jalali: true, hijri: true }, planningEnabled: true },
+  settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali', calendarEnabled: { gregorian: true, jalali: true, hijri: true }, planningEnabled: true,
+    theme: null, palette: 'toojibee', prefs: {} },
   /* Admin-editable "About us" text, per language. Empty string means
      "use the default aboutDesc translation" — renderAboutPage() falls
      back to t('aboutDesc') until an admin actually fills this in. */

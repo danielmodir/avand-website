@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="dark">
+<html lang="en" dir="ltr" data-theme="dark" data-palette="toojibee">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Toojibee — Design Preview</title>
 <meta name="robots" content="noindex">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#1A1708">
 <link rel="apple-touch-icon" href="../assets/icons/logo.svg">
-<script>(function(){try{var t=localStorage.getItem('toojibee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var r=document.documentElement,t=localStorage.getItem('toojibee-theme'),p=localStorage.getItem('toojibee-palette');if(t)r.setAttribute('data-theme',t);if(p==='classic')r.setAttribute('data-palette','classic');}catch(e){}})();</script>
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/shared.css">
@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="components/period/period.css">
 <link rel="stylesheet" href="components/auth/auth.css">
 <link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/palette-toojibee.css">
 </head>
 <body>
 <div class="device" id="device">
