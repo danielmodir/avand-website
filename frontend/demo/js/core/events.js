@@ -230,7 +230,6 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; render(); return; }
   if(action === 'toggle-planning-enabled'){ state.settings.planningEnabled = !state.settings.planningEnabled; cloudSync(() => Cloud.saveSettings(state.settings)); render(); return; }
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; render(); return; }
-  if(action === 'open-article'){ showToast(t('articlesUnavailable')); return; }
   if(action === 'period-settings' || action === 'period-quiz-start'){
     state.menuSubView = 'settings-period';
     render();

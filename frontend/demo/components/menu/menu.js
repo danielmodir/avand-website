@@ -28,7 +28,7 @@ function renderMenu(){
   if(sub === 'settings-general') return renderGeneralSettings();
   if(sub === 'settings-calendar') return renderCalendarSettings();
   if(sub === 'settings-avandmenu') return renderToojibeeMenuSettings();
-  if(sub === 'settings-period') return renderPeriodSettings();
+  if(sub === 'settings-period') return `<div class="period-themed">${renderPeriodSettings()}</div>`;
   if(sub === 'settings-planning') return renderPlanningSettings();
   if(sub === 'settings-occasions') return renderOccasionsSettings();
   /* No button opens the menu panel with no data-sub anymore (the

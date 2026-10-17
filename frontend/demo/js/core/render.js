@@ -1,3 +1,5 @@
+let lastRenderedMenuSub = null; // which menu page the last render showed (entrance animations)
+
 function render(){
   applyLanguageDom();
   renderAuth();
@@ -13,8 +15,12 @@ function render(){
      (see SPEC.md for why that's still true everywhere else). */
   document.getElementById('page-calendar').setAttribute('dir', lang()==='fa' ? 'rtl' : 'ltr');
   document.getElementById('page-home').innerHTML = renderHome();
+  // Entrance animation only when a page is newly opened, not on every
+  // re-render while it stays open (e.g. picking a gender re-renders).
+  const menuEnter = state.menuPanelOpen && state.menuSubView !== lastRenderedMenuSub ? `enter-${state.menuSubView}` : '';
+  lastRenderedMenuSub = state.menuPanelOpen ? state.menuSubView : null;
   document.getElementById('page-menu').innerHTML =
-    `<div class="menu-panel-content">${renderMenu()}</div>`;
+    `<div class="menu-panel-content ${menuEnter}">${renderMenu()}</div>`;
   document.getElementById('page-menu').classList.toggle('leave-bottom-bar', state.menuSubView !== 'profile');
   document.getElementById('page-calendar').classList.toggle('no-scroll', state.calMode === 'month');
   document.getElementById('device').classList.toggle('show-menu', state.menuPanelOpen);

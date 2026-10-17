@@ -64,7 +64,7 @@ function renderDesktops(d, data){
   const atEnd = state.activeDesktopIndex >= panes.length - 1;
   return `
     ${window.innerWidth < 960 ? renderHomeCalWidget() : ''}
-    <div class="desktop-box">
+    <div class="desktop-box ${activeKey==='periodDesktop'?'period-mode':''}">
       <div class="desktop-box-topbar">
         <div class="desktop-box-title-group">
           <button type="button" class="desktop-nav-arrow ${atStart?'disabled':''}" data-action="desktop-step" data-dir="-1" aria-label="${t('prev')}">${ICONS.chevronLeft}</button>
@@ -79,7 +79,7 @@ function renderDesktops(d, data){
       </div>
       <div class="desktop-wrap" id="desktop-wrap">
         <div class="desktop-track" id="desktop-track">
-          ${panes.map(p => `<div class="desktop-pane">${p.html}</div>`).join('')}
+          ${panes.map(p => `<div class="desktop-pane ${p.key==='periodDesktop'?'period-pane':''}">${p.html}</div>`).join('')}
         </div>
       </div>
       <div class="desktop-dots" id="desktop-dots">
@@ -100,6 +100,8 @@ function syncDesktopTopbar(i){
   const key = dotEls[i]?.dataset.key;
   const titleEl = document.getElementById('desktop-box-title');
   if(titleEl && key) titleEl.textContent = t(key);
+  // The period desk has its own palette, frame included (period.css).
+  dots.closest('.desktop-box')?.classList.toggle('period-mode', key === 'periodDesktop');
   const arrows = document.querySelectorAll('.desktop-nav-arrow');
   if(arrows[0]) arrows[0].classList.toggle('disabled', i <= 0);
   if(arrows[1]) arrows[1].classList.toggle('disabled', i >= dotEls.length - 1);
@@ -154,7 +156,7 @@ function attachDesktopPager(){
   /* Only a genuinely horizontal wheel/trackpad gesture switches
      میزکار desktops — vertical scroll must always reach each pane's own
      content underneath (.desktop-pane's overflow-y:auto) so a long
-     pane (e.g. period's wheel+tips+articles) can actually be scrolled
+     pane (e.g. period's wheel+tips) can actually be scrolled
      with a plain mouse wheel. An earlier version also treated a *plain*
      vertical wheel as "switch panes" (reasoning that some mice have no
      horizontal wheel at all), but that unconditionally called

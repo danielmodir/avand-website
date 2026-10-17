@@ -66,7 +66,7 @@ function attachSwipeToDelete(container){
     fg.addEventListener('pointerup', end);
     fg.addEventListener('pointercancel', end);
   });
-  container.querySelectorAll('.events-scroll, .articles-scroll').forEach(el => {
+  container.querySelectorAll('.events-scroll').forEach(el => {
     el.addEventListener('pointerdown', e => e.stopPropagation());
   });
 }

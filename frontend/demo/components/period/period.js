@@ -135,7 +135,7 @@ function attachPeriodWheel(){
 /* Compact entry card shown in Management. Just the toggle, a settings
    gear (jumps straight into the quiz for editing), title/description,
    and an Open button into the full page below — the actual quiz, wheel,
-   articles and tips all live in renderPeriodPage(), not here. */
+   tips live in renderPeriodPage(), not here. */
 /* Settings → Period: every actual *setting* (on/off, calendar reminder,
    re-answering the quiz) lives here now, not in the میزکار pane itself
    or in Management — renderPeriodPage() below is pure content/view. */
@@ -163,7 +163,7 @@ function renderPeriodSettings(){
 /* میزکار pane content only (see renderDesktops) — no settings controls
    here at all (enable toggle, calendar reminder, edit-answers all moved
    to Settings → Period / renderPeriodSettings() above); this just shows
-   the current status, tips and articles. */
+   the current status and tips. */
 function renderPeriodPage(headerHtml){
   if(headerHtml === undefined) headerHtml = '';
   const p = state.period;
@@ -197,30 +197,20 @@ function renderPeriodPage(headerHtml){
       </div>
     `;
   })();
-  const articleCount = 4;
   return `
     <div class="period-themed">
     ${headerHtml}
     ${trackerBody}
     <div class="section-title">${t('tipsTitle')}</div>
     ${periodTipsHtml()}
-    <div class="section-title">${t('articlesTitle')}</div>
-    <div class="articles-scroll">
-      ${Array.from({length: articleCount}, (_, idx) => idx + 1).map(i => `
-        <div class="article-card" data-action="open-article">
-          <div class="article-row-icon">${ICONS.infoIcon}</div>
-          <div class="article-row-title">${t('article'+i+'Title')}</div>
-          <div class="article-row-desc">${t('article'+i+'Desc')}</div>
-        </div>
-      `).join('')}
-    </div>
     </div>
   `;
 }
 
 /* "Did you know?" carousel: whole tips slide in (no typing effect),
-   advance on their own every few seconds, and can be swiped or stepped
-   with the arrows. The current slide survives re-renders. */
+   advance on their own every few seconds, and can be swiped (no arrows or
+   dots — removed at the repo owner's request). The current slide
+   survives re-renders. */
 const PERIOD_TIPS = ['tip1','tip2','tip3','tip4','tip5','tip6'];
 const TIP_AUTO_MS = 7000;
 
@@ -235,11 +225,6 @@ function periodTipsHtml(){
         <div class="tips-track" id="period-tips-track">
           ${PERIOD_TIPS.map((k, i) => `<div class="tip-slide" aria-hidden="${i !== periodTipIndex}"><div class="tip-slide-icon">${ICONS.infoIcon}</div><p dir="${fa ? 'rtl' : 'ltr'}">${escapeHtml(t(k))}</p></div>`).join('')}
         </div>
-      </div>
-      <div class="tips-controls">
-        <button type="button" class="tips-nav" data-tip-step="-1" aria-label="${t('prev')}">${fa ? ICONS.chevronRight : ICONS.chevronLeft}</button>
-        <div class="tips-dots">${PERIOD_TIPS.map((_, i) => `<span class="${i === periodTipIndex ? 'active' : ''}"></span>`).join('')}</div>
-        <button type="button" class="tips-nav" data-tip-step="1" aria-label="${t('next')}">${fa ? ICONS.chevronLeft : ICONS.chevronRight}</button>
       </div>
     </div>`;
 }
@@ -259,14 +244,12 @@ function startPeriodTipsRotator(){
     periodTipIndex = (i + PERIOD_TIPS.length) % PERIOD_TIPS.length;
     track.style.transition = animate ? '' : 'none';
     track.style.transform = `translateX(${sign * periodTipIndex * 100}%)`;
-    root.querySelectorAll('.tips-dots span').forEach((d, j) => d.classList.toggle('active', j === periodTipIndex));
     track.querySelectorAll('.tip-slide').forEach((s, j) => s.setAttribute('aria-hidden', j !== periodTipIndex));
   };
   const restart = () => { clearInterval(periodTipsTimer); periodTipsTimer = setInterval(() => go(periodTipIndex + 1), TIP_AUTO_MS); };
   go(periodTipIndex, false);
   restart();
 
-  root.querySelectorAll('[data-tip-step]').forEach(b => b.addEventListener('click', () => { go(periodTipIndex + Number(b.dataset.tipStep)); restart(); }));
   root.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') clearInterval(periodTipsTimer); });
   root.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse') restart(); });
 

@@ -174,6 +174,34 @@
 .device.lang-fa .settings-row .sub,
 .device.lang-fa #page-menu .sub{ unicode-bidi:plaintext; }
 
+/* Opening Edit profile (render.js adds .enter-profile-edit only on the
+   render that opens it): the avatar grows from the small one on the
+   profile page into the big one, then the fields rise in one by one. */
+.enter-profile-edit .popup-subview-header{ animation:pe-fade .3s ease both; }
+.enter-profile-edit .profile-avatar-big{ animation:pe-avatar .55s cubic-bezier(.22,1,.36,1) both; }
+.enter-profile-edit .profile-edit-form > :not(.profile-avatar-big){ animation:pe-rise .45s cubic-bezier(.22,1,.36,1) both; }
+.enter-profile-edit .profile-edit-form > :nth-child(2){ animation-delay:.08s; }
+.enter-profile-edit .profile-edit-form > :nth-child(3){ animation-delay:.12s; }
+.enter-profile-edit .profile-edit-form > :nth-child(4){ animation-delay:.16s; }
+.enter-profile-edit .profile-edit-form > :nth-child(5){ animation-delay:.20s; }
+.enter-profile-edit .profile-edit-form > :nth-child(6){ animation-delay:.24s; }
+.enter-profile-edit .profile-edit-form > :nth-child(7){ animation-delay:.28s; }
+.enter-profile-edit .profile-edit-form > :nth-child(8){ animation-delay:.32s; }
+.enter-profile-edit .profile-edit-form > :nth-child(9){ animation-delay:.36s; }
+.enter-profile-edit .profile-edit-form > :nth-child(n+10){ animation-delay:.40s; }
+@keyframes pe-fade{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes pe-avatar{
+  from{ opacity:0; transform:translateY(-36px) scale(.4); }
+  60%{ opacity:1; }
+  to{ opacity:1; transform:none; }
+}
+@keyframes pe-rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce){
+  .enter-profile-edit .popup-subview-header,
+  .enter-profile-edit .profile-avatar-big,
+  .enter-profile-edit .profile-edit-form > *{ animation:none; }
+}
+
 /* Settings > General > Theme: two cards, each previewing its palette. */
 .palette-picker{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
 .palette-option{

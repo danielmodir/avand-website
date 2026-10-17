@@ -21,23 +21,9 @@
 .period-legend{ display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin-top:4px; }
 .period-legend-item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); }
 .period-legend-item .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
-.article-row-icon{ width:32px; height:32px; border-radius:10px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
-.article-row-icon svg{ width:16px; height:16px; }
-.article-row-title{ font-size:13.5px; font-weight:700; }
-.article-row-desc{ font-size:12px; color:var(--text-muted); margin-top:2px; }
-/* Horizontal card row for the period pane's articles — same scroll
-   pattern as .events-scroll, used only when there are enough
-   articles that a horizontal strip makes sense instead of a plain
-   vertical list. */
-.articles-scroll{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-.articles-scroll::-webkit-scrollbar{ display:none; }
-.article-card{ flex:0 0 190px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px; cursor:pointer; }
-.article-card .article-row-icon{ margin-bottom:10px; }
-.article-card .article-row-title{ font-size:13.5px; font-weight:700; }
-.article-card .article-row-desc{ font-size:12px; color:var(--text-muted); margin-top:4px; }
 /* "Did you know?" carousel (startPeriodTipsRotator): whole slides, swipe
    or arrows, auto-advance. fa runs right-to-left via row-reverse. */
-.tips-carousel{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px 14px 10px; }
+.tips-carousel{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px 14px; }
 .tips-viewport{ overflow:hidden; touch-action:pan-y; cursor:grab; }
 .tips-viewport:active{ cursor:grabbing; }
 .tips-track{ display:flex; transition:transform .45s cubic-bezier(.22,1,.36,1); will-change:transform; }
@@ -47,40 +33,92 @@
 .tip-slide p{ margin:0; font-size:13.5px; line-height:1.85; color:var(--text); }
 .tip-slide-icon{ flex:0 0 auto; width:30px; height:30px; border-radius:10px; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; }
 .tip-slide-icon svg{ width:16px; height:16px; }
-.tips-controls{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:12px; }
-.tips-nav{ width:28px; height:28px; border-radius:50%; border:1px solid var(--border); background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
-.tips-nav:hover{ color:var(--primary); border-color:var(--primary); }
-.tips-nav svg{ width:14px; height:14px; }
-.tips-dots{ display:flex; gap:6px; }
-.tips-dots span{ width:6px; height:6px; border-radius:999px; background:var(--border); transition:width .3s ease, background-color .3s ease; }
-.tips-dots span.active{ width:18px; background:var(--primary); }
-@media (prefers-reduced-motion:reduce){ .tips-track, .period-arc{ transition:none; } }/* Period میزکار gets its own accent instead of the app's global orange
-   --primary — a muted rose, distinct from --danger (the wheel chart's
-   literal "period day" red) so an active/selected UI control never
-   reads as a data color. Scoped by re-pointing --primary/--primary-
-   soft/--on-primary at this one value for everything inside
-   .period-themed (the tracker card, quiz sheet, buttons, links), so
-   existing components don't need their own period-specific classes. */
-/* Period desktop palette (repo owner's request, both app palettes):
-   https://colorhunt.co/palette/ff84baffdf8299c2ffffefe3 —
-   pink #FF84BA = period days and the desk's accent, butter #FFDF82 = PMS,
-   sky #99C2FF = fertile window, peach #FFEFE3 = the soft card tint.
-   The pastels are fills; text in a phase color uses the deeper --*-ink
-   shade in day mode, where the pastels are too faint on a light card. */
-.period-themed{
+@media (prefers-reduced-motion:reduce){ .tips-track, .period-arc{ transition:none; } }
+
+/* ============ PERIOD DESK = ITS OWN LITTLE APP ============
+   Palette (repo owner's request): https://colorhunt.co/palette/ff84baffdf8299c2ffffefe3
+     #FF84BA pink   — period days AND the desk's accent (buttons, switches, dots)
+     #FFDF82 butter — PMS
+     #99C2FF sky    — fertile window
+     #FFEFE3 peach  — the canvas: day mode's background, night mode's text
+   EVERY app token is redefined here — background, cards, text, borders,
+   buttons, glows — so the whole desk (and the desk box's own frame, title
+   bar and dots while it is showing) reads as one separate product, in
+   either app palette (Toojibee / Classic). Night mode is a deep plum made
+   from the same pink; text in a phase color uses the --*-ink shades,
+   deeper in day mode where the pastels are too faint on peach.
+   Applied to: .period-themed (pane content, quiz sheet, period settings),
+   .desktop-pane.period-pane (the pane's own full background, so it slides
+   in already themed) and .desktop-box.period-mode (the frame, while the
+   period pane is the active one — see renderDesktops/syncDesktopTopbar). */
+.period-themed,
+.desktop-pane.period-pane,
+.desktop-box.period-mode{
   --period-flow:#FF84BA; --period-pms:#FFDF82; --period-fertile:#99C2FF; --period-tint:#FFEFE3;
   --period-flow-ink:#FF84BA; --period-pms-ink:#FFDF82; --period-fertile-ink:#99C2FF;
-  --primary:#FF84BA; --primary-soft:rgba(255,132,186,0.18); --on-primary:#3D0F25;
-  --surface-2:linear-gradient(160deg, rgba(255,132,186,0.09) 0%, rgba(255,239,227,0.03) 100%);
-  --edge:rgba(255,132,186,0.18);
+
+  --bg:#1C0F17;
+  --bg-soft:#26141F;
+  --card:#2F1827;
+  --text:#FFEFE3;
+  --text-muted:rgba(255,239,227,0.66);
+  --border:rgba(255,132,186,0.20);
+  --primary:#FF84BA;
+  --primary-soft:rgba(255,132,186,0.18);
+  --on-primary:#3D0F25;
+  --secondary:#99C2FF;
+  --nav-icon:rgba(255,239,227,0.45);
+  --period-ring-rest:rgba(255,239,227,0.14);
+
+  --surface-1:linear-gradient(160deg, rgba(60,31,49,0.95) 0%, rgba(42,21,34,0.95) 100%);
+  --surface-2:linear-gradient(160deg, rgba(255,132,186,0.10) 0%, rgba(255,239,227,0.03) 100%);
+  --surface-solid:linear-gradient(165deg, #3A1E2F 0%, #2A1522 60%, #200F1A 100%);
+  --surface-panel:linear-gradient(170deg, rgba(58,30,47,0.94) 0%, rgba(38,19,31,0.95) 55%, rgba(28,15,23,0.97) 100%);
+  --edge:rgba(255,132,186,0.16);
+  --edge-strong:rgba(255,132,186,0.30);
+  --edge-highlight:inset 0 1px 0 rgba(255,239,227,0.06);
+  --shadow-glow:0 0 0 1px rgba(255,132,186,0.25), 0 14px 36px -12px rgba(255,132,186,0.50);
+  --gradient-brand:linear-gradient(135deg, #FF9CC8 0%, #FF84BA 55%, #F56DA8 100%);
+  --glass:rgba(28,15,23,0.66);
+  --glow-accent:0 4px 12px -2px rgba(255,132,186,0.55);
+  --glow-switch:0 6px 16px -6px rgba(255,132,186,0.65);
+  --shadow-hover:0 10px 26px -12px rgba(0,0,0,0.6);
+  color:var(--text);
 }
-:root[data-theme="light"] .period-themed{
+:root[data-theme="light"] .period-themed,
+:root[data-theme="light"] .desktop-pane.period-pane,
+:root[data-theme="light"] .desktop-box.period-mode{
   --period-flow-ink:#C92D72; --period-pms-ink:#8F6A00; --period-fertile-ink:#2B66C9;
+
+  --bg:#FFF6EF;
+  --bg-soft:#FFEFE3;
+  --card:#FFFBF8;
+  --text:#4A1D33;
+  --text-muted:rgba(74,29,51,0.64);
+  --border:rgba(255,132,186,0.30);
   --primary-soft:rgba(255,132,186,0.22);
-  --surface-2:linear-gradient(160deg, rgba(255,239,227,0.95) 0%, rgba(255,239,227,0.6) 100%);
-  --edge:rgba(255,132,186,0.30);
+  --on-primary:#4A1D33;
+  --nav-icon:rgba(74,29,51,0.45);
+  --period-ring-rest:rgba(74,29,51,0.10);
+
+  --surface-1:linear-gradient(160deg, #FFFBF8 0%, #FFF3EA 100%);
+  --surface-2:linear-gradient(160deg, rgba(255,239,227,0.95) 0%, rgba(255,239,227,0.55) 100%);
+  --surface-solid:linear-gradient(165deg, #FFFBF8 0%, #FFF1E6 100%);
+  --surface-panel:linear-gradient(170deg, rgba(255,246,239,0.97) 0%, rgba(255,239,227,0.97) 100%);
+  --edge:rgba(255,132,186,0.22);
+  --edge-strong:rgba(255,132,186,0.40);
+  --edge-highlight:inset 0 1px 0 rgba(255,255,255,0.9);
+  --shadow-glow:0 0 0 1px rgba(255,132,186,0.25), 0 14px 32px -12px rgba(255,132,186,0.55);
+  --glass:rgba(255,251,248,0.76);
+  --glow-switch:0 6px 16px -6px rgba(255,132,186,0.6);
+  --shadow-hover:0 10px 24px -12px rgba(74,29,51,0.22);
 }
-.period-themed .switch.on{ box-shadow:0 0 0 3px var(--primary-soft); }
+/* The pane paints its own canvas so it slides in already pink, before
+   the box frame switches over at the end of the swipe. */
+.desktop-pane.period-pane{ background:var(--surface-panel); }
+.desktop-box.period-mode{ transition:border-color .25s ease, box-shadow .25s ease; }
+.period-themed .switch.on{ box-shadow:0 0 0 3px var(--primary-soft), var(--glow-switch); }
+.period-themed .section-title .count{ color:var(--primary); }
 /* ===== period setup quiz (bottom sheet, slides up) ===== */
 .period-quiz-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .25s ease; }
 .period-quiz-overlay.show{ opacity:1; pointer-events:auto; }
