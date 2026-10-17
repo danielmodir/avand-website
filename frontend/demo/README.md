@@ -37,5 +37,10 @@ demo/
 - Component CSS loads after `css/`, so a component rule wins a tie with a
   generic one.
 - `url()` paths in CSS are relative to the CSS file, not to `index.html`.
+- Cache busting: every `<link>`/`<script>` in `index.html` carries
+  `?v=<version>` and `js/core/include.js` has the same `ASSET_VERSION`
+  for the partials. Bump it (one find-and-replace across both files) with
+  each change, or phones keep the old files for up to 10 minutes after a
+  GitHub Pages deploy.
 - Partials are fetched at runtime, so open the demo over HTTP
   (`npx http-server frontend`), not from `file://`.

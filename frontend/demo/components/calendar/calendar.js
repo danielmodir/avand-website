@@ -119,7 +119,7 @@ function renderHomeCalWidget(fullScreen){
     const isSelected = sameDay(day, d);
     const rng = rangeCellClass(day, ranges, i % 7);
     return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(day)?'holiday':''} ${periodPhaseClass(day, i % 7)} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-      ${rangeDotHtml(rng)}${dayCellDateHtml(day)}
+      <span class="day-cell-bg" aria-hidden="true"></span>${rangeDotHtml(rng)}${dayCellDateHtml(day)}
       <div class="day-dots">${hasAny?'<span></span>':''}</div>
     </button>`;
   };
@@ -194,7 +194,7 @@ function renderCalendar(){
           const isSelected = sameDay(d, state.homeDate);
           const rng = rangeCellClass(d, ranges, i % 7);
           return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(d)?'holiday':''} ${periodPhaseClass(d, i % 7)} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-            ${rangeDotHtml(rng)}${dayCellDateHtml(d)}
+            <span class="day-cell-bg" aria-hidden="true"></span>${rangeDotHtml(rng)}${dayCellDateHtml(d)}
             <div class="day-dots">${hasAny?'<span></span>':''}</div>
           </button>`;
         }).join('')}

@@ -78,14 +78,39 @@
 .day-cell{ aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); border:1px solid transparent; background:none; padding:0; font-family:inherit; -webkit-tap-highlight-color:transparent; }
 .day-cell:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
 .day-cell.other-month{color:var(--text-muted); opacity:0.3;}
-.day-cell.today{border-color:var(--primary); border-radius:50%;}
-.day-cell.selected{background:var(--primary); color:var(--on-primary); border-radius:50%;}
+/* Selected day and today are drawn on .day-cell-bg — a fixed-size CIRCLE
+   centred in the cell — not on the cell itself. Cells are as wide as
+   their column, so on wider phones/tablets the old cell-shaped highlight
+   became a wide rounded rectangle; the circle stays a circle at any
+   width. It grows in with a small spring when a day is picked. */
+.day-cell-bg{
+  position:absolute; z-index:-1; top:50%; left:50%;
+  width:min(42px, 94%); aspect-ratio:1; border-radius:50%;
+  transform:translate(-50%,-50%) scale(.55); opacity:0; pointer-events:none;
+  transition:transform .32s cubic-bezier(.22,1.4,.36,1), opacity .18s ease, box-shadow .25s ease;
+}
+.day-cell.today .day-cell-bg{
+  opacity:1; transform:translate(-50%,-50%) scale(1);
+  box-shadow:inset 0 0 0 2px var(--primary); background:var(--primary-soft);
+}
+.day-cell.today:not(.selected){ color:var(--primary); }
+.day-cell.selected{ color:var(--on-primary); }
+.day-cell.selected .day-cell-bg{
+  opacity:1; transform:translate(-50%,-50%) scale(1);
+  background:var(--primary); background-image:var(--gradient-brand, none);
+  box-shadow:0 6px 16px -6px var(--primary);
+}
+.day-cell.selected.today .day-cell-bg{ box-shadow:0 0 0 3px var(--primary-soft), 0 6px 16px -6px var(--primary); }
+.day-cell.selected .day-cell-sub{ opacity:.8; }
+@media (hover:hover){
+  .day-cell:not(.selected):not(.other-month):hover .day-cell-bg{ opacity:1; transform:translate(-50%,-50%) scale(.92); background:var(--primary-soft); }
+}
 /* Public holidays (Occasions settings): the day number in red. */
 .day-cell.holiday:not(.selected) .day-cell-num{ color:var(--holiday, var(--danger)); }
-.day-cell.selected.today{ box-shadow:0 0 0 2px var(--on-primary) inset; }
 .day-cell{ transition:transform .1s ease; }
 .day-cell.press{ transform:scale(.94); }
-.day-cell.selected.press{ transform:translateY(-1px) scale(1.01); }
+.day-cell.press .day-cell-bg{ transform:translate(-50%,-50%) scale(.9); }
+@media (prefers-reduced-motion:reduce){ .day-cell-bg{ transition:none; } }
 /* Secondary line: the two non-primary calendar systems (Gregorian/
    Jalali, whichever isn't the big number, plus Hijri), small and muted
    so the primary number stays the visual focus — same idea as the
@@ -127,7 +152,7 @@
 [data-density="compact"] .day-dots{ display:none; }
 .day-dots{display:flex; gap:2px; height:4px;}
 .day-dots span{width:4px; height:4px; border-radius:50%; background:var(--primary);}
-.day-cell.selected .day-dots span{background:#fff;}
+.day-cell.selected .day-dots span{background:var(--on-primary);}
 .week-list{display:flex; flex-direction:column; gap:8px;}
 .week-row{display:flex; align-items:center; gap:12px; background:var(--card); border-radius:14px; padding:10px 12px; border:1px solid var(--border); cursor:pointer;}
 .week-row.today{border-color:var(--primary);}

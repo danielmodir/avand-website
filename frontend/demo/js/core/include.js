@@ -5,10 +5,16 @@
    app.js wires any event listeners, so the rest of the code can keep
    using getElementById as if the markup were inline. Same-origin fetch,
    no build step. */
+/* Same version as the ?v= on every <link>/<script> in index.html: GitHub
+   Pages lets browsers cache files for 10 minutes, so after a deploy a
+   phone kept the old CSS/JS. Bump both (one find-and-replace) on every
+   frontend change to /demo/. */
+const ASSET_VERSION = '2026-10-18.1';
+
 async function loadComponents(){
   const slots = [...document.querySelectorAll('[data-include]')];
   const htmls = await Promise.all(slots.map(el =>
-    fetch(el.dataset.include).then(r => {
+    fetch(el.dataset.include + '?v=' + ASSET_VERSION).then(r => {
       if(!r.ok) throw new Error('Component failed to load: ' + el.dataset.include);
       return r.text();
     })

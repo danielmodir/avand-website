@@ -149,8 +149,10 @@ body{
 /* ---- calendar ---- */
 .day-cell{ transition:background-color .2s var(--ease-standard), box-shadow .25s var(--ease-standard), transform .2s var(--ease-spring); }
 @media (hover:hover){ .day-cell:hover{ transform:translateY(-1px); } }
-.day-cell.today{ box-shadow:var(--glow-today); }
-.day-cell.selected{ background-image:var(--gradient-brand); box-shadow:var(--shadow-glow); }
+/* Today/selected are drawn by .day-cell-bg (calendar.css), a circle;
+   the glow belongs on that circle, not on the (column-wide) cell. */
+.day-cell.selected .day-cell-bg{ box-shadow:var(--shadow-glow); }
+.day-cell.today:not(.selected) .day-cell-bg{ box-shadow:inset 0 0 0 2px var(--primary), var(--glow-today); }
 .cal-mode-tabs{ background:var(--surface-2); border:1px solid var(--edge); }
 .cal-mode-tabs button.active{ background-image:var(--gradient-brand); box-shadow:var(--shadow-glow); }
 
