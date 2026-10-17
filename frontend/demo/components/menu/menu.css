@@ -15,6 +15,9 @@
   visibility:hidden;
 }
 .device.lang-fa #page-menu{ transform:translateX(-100%); }
+/* Vertical scrolling stays native; horizontal drags reach the swipe-to-
+   close handler (attachMenuSwipeClose) instead of being eaten by the browser. */
+@media (max-width:959px){ #page-menu{ touch-action:pan-y; } }
 .device.show-menu #page-menu{ transform:translateX(0); pointer-events:auto; visibility:visible; transition-delay:0s; }
 /* Bottom bar (FAB/profile/capsule) stays visible behind the panel for
    every section except Profile, which still covers the full screen —

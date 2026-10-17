@@ -644,6 +644,50 @@ function initFabAndMenuInteractions(){
   });
 }
 
+/* Phone: a sideways swipe on the open Profile/Management panel closes it
+   and goes back to the home screen — either direction. The panel follows
+   the finger, then slides out (or springs back if the swipe was short).
+   Horizontal scrollers, fields and sliders inside keep their own drags. */
+function attachMenuSwipeClose(){
+  const panel = document.getElementById('page-menu');
+  if(!panel) return;
+  let x0 = null, y0 = 0, dx = 0, axis = null;
+  const skip = t => t.closest('input, textarea, select, .events-scroll, .store-grid, .toggle-pair, .dob-cal-popover, .logout-hold-btn');
+  panel.addEventListener('pointerdown', e => {
+    if(window.innerWidth >= 960 || !state.menuPanelOpen || skip(e.target)) return;
+    x0 = e.clientX; y0 = e.clientY; dx = 0; axis = null;
+  });
+  panel.addEventListener('pointermove', e => {
+    if(x0 === null) return;
+    const mx = e.clientX - x0, my = e.clientY - y0;
+    if(!axis && (Math.abs(mx) > 10 || Math.abs(my) > 10)) axis = Math.abs(mx) > Math.abs(my) * 1.3 ? 'x' : 'y';
+    if(axis !== 'x') return;
+    dx = mx;
+    panel.style.transition = 'none';
+    panel.style.transform = `translateX(${dx}px)`;
+  });
+  const end = () => {
+    if(x0 === null) return;
+    x0 = null;
+    if(axis !== 'x') return;
+    panel.style.transition = '';
+    const close = Math.abs(dx) > Math.min(110, panel.clientWidth * 0.28);
+    if(close){
+      // Finish the slide out in the swipe's direction, then close for real.
+      panel.style.transform = `translateX(${dx > 0 ? '100%' : '-100%'})`;
+      setTimeout(() => {
+        panel.style.transform = '';
+        state.menuPanelOpen = false; state.menuSubView = null;
+        render();
+      }, 260);
+    } else {
+      panel.style.transform = '';
+    }
+  };
+  panel.addEventListener('pointerup', end);
+  panel.addEventListener('pointercancel', end);
+}
+
 function doLogout(){
   Cloud.signOut();
   enterGuestMode();

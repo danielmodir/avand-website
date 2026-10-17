@@ -177,6 +177,7 @@ async function start(){
   attachItemSelection();
   attachDaySheetDrag();
   attachLogoutHold();
+  attachMenuSwipeClose();
   attachAuthPopupDismiss();
   initConnectionWatch();
   boot();

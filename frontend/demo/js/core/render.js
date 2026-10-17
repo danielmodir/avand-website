@@ -21,7 +21,10 @@ function render(){
   lastRenderedMenuSub = state.menuPanelOpen ? state.menuSubView : null;
   document.getElementById('page-menu').innerHTML =
     `<div class="menu-panel-content ${menuEnter}">${renderMenu()}</div>`;
-  document.getElementById('page-menu').classList.toggle('leave-bottom-bar', state.menuSubView !== 'profile');
+  // Phone: Profile, Management and everything under them cover the whole
+  // screen (back arrow or a sideways swipe closes them); only the Store
+  // keeps the bottom bar visible below it.
+  document.getElementById('page-menu').classList.toggle('leave-bottom-bar', state.menuSubView === 'store');
   document.getElementById('page-calendar').classList.toggle('no-scroll', state.calMode === 'month');
   document.getElementById('device').classList.toggle('show-menu', state.menuPanelOpen);
   document.getElementById('device').classList.toggle('menu-maximized', state.menuMaximized);
