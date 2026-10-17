@@ -221,7 +221,6 @@ document.getElementById('device').addEventListener('click', (e) => {
     goToDesktopIndex(i);
     return;
   }
-  if(action === 'desktop-settings-soon'){ showToast(t('desktopSettingsSoon')); return; }
   if(action === 'open-desktop-settings'){
     state.menuSubView = el.dataset.sub;
     render();
