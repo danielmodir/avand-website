@@ -67,7 +67,7 @@ ASGI_APPLICATION = "config.asgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],  # 404/500/403/403_csrf pages (backend/templates)
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

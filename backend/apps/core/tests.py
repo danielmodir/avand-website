@@ -15,6 +15,28 @@ from apps.core.services.purge import purge_due_accounts
 from apps.planning.models import Task
 
 
+class ErrorPageTests(ApiTestCase):
+    def test_api_errors_are_json_and_pages_are_themed_html(self):
+        api = APIClient().get("/api/v1/no-such-endpoint")
+        self.assertEqual(api.status_code, 404)
+        self.assertEqual(api.json(), {"error": "not_found"})
+        page = APIClient().get("/no-such-page")
+        self.assertEqual(page.status_code, 404)
+        self.assertIn("text/html", page["Content-Type"])
+        self.assertIn("این صفحه پیدا نشد", page.content.decode())
+
+    def test_server_error_handler(self):
+        from django.test import RequestFactory
+
+        from config import urls
+
+        api = urls.handler500(RequestFactory().get("/api/v1/x"))
+        self.assertEqual((api.status_code, api.content), (500, b'{"error": "server_error"}'))
+        page = urls.handler500(RequestFactory().get("/admin/x"))
+        self.assertEqual(page.status_code, 500)
+        self.assertIn("یه مشکل از سمت ما پیش اومد", page.content.decode())
+
+
 class DatabaseRoutingTests(ApiTestCase):
     def test_each_app_lives_only_in_its_own_database(self):
         tables = {alias: set(connections[alias].introspection.table_names()) for alias in connections}

@@ -35,6 +35,13 @@ def frontend(request, path=""):
     # Always send the file itself (no 304): a 304 would make the browser
     # reuse whatever headers it cached before, e.g. a wrong Content-Type.
     request.META.pop("HTTP_IF_MODIFIED_SINCE", None)
-    response = serve(request, path, document_root=str(FRONTEND_DIR))
+    try:
+        response = serve(request, path, document_root=str(FRONTEND_DIR))
+    except Http404:
+        # Same as GitHub Pages: the site's own 404 page, with a 404 status.
+        page = FRONTEND_DIR / "404.html"
+        if not page.is_file():
+            raise
+        response = HttpResponse(page.read_bytes(), status=404, content_type="text/html; charset=utf-8")
     response["Cache-Control"] = "no-cache"
     return response

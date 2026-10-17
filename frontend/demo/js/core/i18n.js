@@ -131,8 +131,12 @@ const STRINGS = {
     googleNotAvailable:'Google sign-in isn\'t set up yet.',
     authSubmitting:'Please wait…',
     authFooter:'Your data is saved to your account and synced across your devices.',
-    couldntConnect:'Couldn\'t connect', couldntConnectDesc:'Check your connection and try again. You\'re still signed in.',
-    retryBtn:'Retry'
+    retryBtn:'Retry',
+    errOfflineTitle:"You're offline", errOfflineDesc:"Looks like you're not connected to the internet. Toojibee will try again as soon as you're back.",
+    errServerTitle:'Something went wrong on our side', errServerDesc:"Our server didn't answer this time. It's not you — give it a moment and try again.",
+    errCrashTitle:'Oops, something broke', errCrashDesc:'The app hit an unexpected error. Reloading usually fixes it; your saved data is safe.',
+    reloadBtn:'Reload', continueBtn:'Continue anyway',
+    offlineStrip:"You're offline — changes won't be saved until you reconnect", backOnline:"You're back online"
   },
   fa: {
     appName:'توجیبی', subtasksLabel:'ریزتسک‌ها', saveFailed:'ذخیره نشد — اتصالت رو چک کن',
@@ -264,8 +268,12 @@ const STRINGS = {
     googleNotAvailable:'ورود با گوگل هنوز فعال نشده.',
     authSubmitting:'لطفاً صبر کن…',
     authFooter:'اطلاعاتت در حسابت ذخیره و بین دستگاه‌هات همگام می‌شه.',
-    couldntConnect:'اتصال برقرار نشد', couldntConnectDesc:'اتصال اینترنتت رو چک کن و دوباره امتحان کن. هنوز وارد حسابتی.',
-    retryBtn:'تلاش دوباره'
+    retryBtn:'تلاش دوباره',
+    errOfflineTitle:'اینترنت قطعه', errOfflineDesc:'به نظر می‌رسه به اینترنت وصل نیستی. وصل که بشی، توجیبی خودش دوباره امتحان می‌کنه.',
+    errServerTitle:'یه مشکل از سمت ما پیش اومد', errServerDesc:'سرور این بار جواب نداد. تقصیر تو نیست؛ چند لحظه بعد دوباره امتحان کن.',
+    errCrashTitle:'اوپس! یه چیزی خراب شد', errCrashDesc:'برنامه به یه خطای غیرمنتظره خورد. معمولاً با بارگذاری دوباره درست می‌شه؛ داده‌های ذخیره‌شده‌ات سر جاشونه.',
+    reloadBtn:'بارگذاری دوباره', continueBtn:'ادامه بده',
+    offlineStrip:'آفلاینی — تا وصل نشی تغییرات ذخیره نمی‌شن', backOnline:'دوباره آنلاین شدی'
   }
 };
 

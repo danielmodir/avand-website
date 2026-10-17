@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>{% block title %}{% endblock %} — توجیبی</title>
+{# Self-contained on purpose: an error page must render even when static
+   files, the database or the template context are broken. Same palette
+   as frontend/assets/css/tokens.css (colorhunt 2e2910-2c5745-ebe3a7-eb7d00). #}
+<style>
+:root{--bg:#F7F3DA;--card:#FFFDF3;--ink:#2E2910;--muted:rgba(46,41,16,.66);--line:rgba(46,41,16,.14);--accent:#EB7D00;--forest:#2C5745}
+@media (prefers-color-scheme:dark){:root{--bg:#1A1708;--card:#2E2910;--ink:#F5F0D2;--muted:rgba(235,227,167,.68);--line:rgba(235,227,167,.13)}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(600px 400px at 50% 30%,rgba(235,125,0,.14),transparent 70%),var(--bg);
+  color:var(--ink);font:16px/1.7 Tahoma,"Segoe UI",system-ui,sans-serif;text-align:center}
+main{max-width:440px}
+svg{width:min(240px,70vw);height:auto;overflow:visible}
+.card{fill:var(--card);stroke:var(--line);stroke-width:2}.head{fill:var(--accent)}.ring{fill:var(--muted)}
+.face{fill:none;stroke:var(--ink);stroke-width:3.5;stroke-linecap:round}.eye{fill:var(--ink)}
+.code{fill:#2E2910;font:800 18px/1 system-ui,sans-serif}
+.body{animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.body{animation:none}}
+h1{font-size:22px;margin:14px 0 4px}
+p{color:var(--muted);margin:0 0 4px}
+p.en{direction:ltr;font-size:14px}
+a.btn{display:inline-block;margin-top:18px;padding:12px 24px;border-radius:999px;background:var(--accent);color:#2E2910;font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="0 0 200 160" aria-hidden="true">
+    <g class="body">
+      <rect class="card" x="34" y="34" width="132" height="104" rx="20"/>
+      <path class="head" d="M34 54a20 20 0 0 1 20-20h92a20 20 0 0 1 20 20v8H34z"/>
+      <text class="code" x="100" y="55" text-anchor="middle">{% block code %}{% endblock %}</text>
+      <rect class="ring" x="64" y="22" width="9" height="24" rx="4.5"/><rect class="ring" x="127" y="22" width="9" height="24" rx="4.5"/>
+      {% block face %}<circle class="eye" cx="72" cy="88" r="4.5"/><circle class="eye" cx="128" cy="88" r="4.5"/><path class="face" d="M88 116q12 -8 24 0"/>{% endblock %}
+    </g>
+  </svg>
+  <h1>{% block heading %}{% endblock %}</h1>
+  <p>{% block text_fa %}{% endblock %}</p>
+  <p class="en">{% block text_en %}{% endblock %}</p>
+  <a class="btn" href="/">صفحه‌ی اصلی · Home</a>
+</main>
+</body>
+</html>

@@ -43,7 +43,7 @@ const state = {
   authReason: null,  // i18n key for the popup's subtitle when an action asked for an account
   authTab: 'login',
   booting: false,  // true only while boot() is verifying a saved session
-  bootError: null, // 'network' when that check failed for a non-auth reason
+  bootError: null, // 'offline' | 'server' when that check failed for a non-auth reason
   profile: {
     name: 'Daniel', firstName: 'Daniel', lastName: '', username: 'daniel',
     email: 'daniel@example.com', phone: '', gender: '', dob: '', photo: null,

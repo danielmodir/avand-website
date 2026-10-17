@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>صفحه پیدا نشد — توجیبی</title>
+<script>
+/* GitHub Pages serves this file for ANY missing path, at any depth, and
+   the site may live under a sub-path (user.github.io/repo/), so asset
+   links can't be relative or root-absolute. Work out the site root from
+   the URL, then load the shared stylesheets from it. Same-origin only. */
+(function(){
+  var p = location.pathname, root = '/';
+  if(/\.github\.io$/.test(location.hostname)){ var seg = p.split('/')[1]; if(seg) root = '/' + seg + '/'; }
+  window.SITE_ROOT = root;
+  var en = p.indexOf(root + 'en/') === 0;
+  window.PAGE_LANG = en ? 'en' : 'fa';
+  if(en){ document.documentElement.lang = 'en'; document.documentElement.dir = 'ltr'; document.title = 'Page not found — Toojibee'; }
+  try{ var t = localStorage.getItem('toojibee-theme'); if(t) document.documentElement.setAttribute('data-theme', t); }catch(e){}
+  document.write('<link rel="icon" href="' + root + 'assets/icons/favicon.svg" type="image/svg+xml">'
+    + '<link rel="stylesheet" href="' + root + 'assets/css/tokens.css">'
+    + '<link rel="stylesheet" href="' + root + 'assets/css/site.css">');
+})();
+</script>
+<style>
+/* Page-only styles; every color is a tokens.css variable. */
+.nf{ min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:var(--space-6) var(--space-5); gap:var(--space-3); }
+.nf h1{ font-size:var(--font-size-xl); margin:var(--space-3) 0 0; }
+.nf p{ color:var(--color-text-muted); max-width:42ch; margin:0 0 var(--space-4); unicode-bidi:plaintext; }
+.nf .hero-actions{ justify-content:center; }
+.nf-art{ width:min(300px, 80vw); height:auto; overflow:visible; }
+.nf-art .card{ fill:var(--color-surface); stroke:var(--color-border); stroke-width:2; }
+.nf-art .head{ fill:var(--color-primary); }
+.nf-art .ring{ fill:var(--color-text-muted); }
+.nf-art .cell{ fill:var(--color-border); }
+.nf-art .gap{ fill:none; stroke:var(--color-primary); stroke-width:2.5; stroke-dasharray:5 5; animation:nf-dash 1.2s linear infinite; }
+.nf-art .glass circle{ fill:var(--color-bg-soft); stroke:var(--color-secondary); stroke-width:5; }
+.nf-art .glass path{ stroke:var(--color-secondary); stroke-width:7; stroke-linecap:round; }
+.nf-art .glass{ animation:nf-search 3.6s ease-in-out infinite; }
+.nf-art .num{ fill:var(--color-on-accent); font:800 22px/1 var(--font-sans-latin); }
+.nf-art .body{ animation:nf-bob 3.2s ease-in-out infinite; }
+.nf-art .shadow{ fill:var(--color-text); opacity:.08; }
+@keyframes nf-dash{ to{ stroke-dashoffset:-20; } }
+@keyframes nf-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+@keyframes nf-search{ 0%,100%{ transform:translate(0,0) rotate(0); } 30%{ transform:translate(-62px,8px) rotate(-8deg); } 60%{ transform:translate(-28px,34px) rotate(4deg); } }
+@media (prefers-reduced-motion:reduce){ .nf-art *{ animation:none !important; } }
+[data-lang-only]{ display:none; }
+html[lang="fa"] [data-lang-only="fa"], html[lang="en"] [data-lang-only="en"]{ display:revert; }
+</style>
+</head>
+<body>
+<main class="nf">
+  <!-- A calendar page with one day missing, and a magnifier looking for it. -->
+  <svg class="nf-art" viewBox="0 0 260 190" aria-hidden="true">
+    <ellipse class="shadow" cx="122" cy="178" rx="84" ry="7"></ellipse>
+    <g class="body">
+      <rect class="card" x="40" y="30" width="164" height="136" rx="22"></rect>
+      <path class="head" d="M40 52a22 22 0 0 1 22-22h120a22 22 0 0 1 22 22v10H40z"></path>
+      <text class="num" x="122" y="54" text-anchor="middle" data-lang-only="en">404</text>
+      <text class="num" x="122" y="54" text-anchor="middle" data-lang-only="fa">۴۰۴</text>
+      <rect class="ring" x="74" y="18" width="10" height="26" rx="5"></rect>
+      <rect class="ring" x="160" y="18" width="10" height="26" rx="5"></rect>
+      <g>
+        <rect class="cell" x="58" y="78" width="20" height="18" rx="6"></rect><rect class="cell" x="86" y="78" width="20" height="18" rx="6"></rect><rect class="cell" x="114" y="78" width="20" height="18" rx="6"></rect><rect class="cell" x="142" y="78" width="20" height="18" rx="6"></rect><rect class="cell" x="170" y="78" width="20" height="18" rx="6"></rect>
+        <rect class="cell" x="58" y="104" width="20" height="18" rx="6"></rect><rect class="cell" x="86" y="104" width="20" height="18" rx="6"></rect><rect class="gap" x="114" y="104" width="20" height="18" rx="6"></rect><rect class="cell" x="142" y="104" width="20" height="18" rx="6"></rect><rect class="cell" x="170" y="104" width="20" height="18" rx="6"></rect>
+        <rect class="cell" x="58" y="130" width="20" height="18" rx="6"></rect><rect class="cell" x="86" y="130" width="20" height="18" rx="6"></rect><rect class="cell" x="114" y="130" width="20" height="18" rx="6"></rect><rect class="cell" x="142" y="130" width="20" height="18" rx="6"></rect>
+      </g>
+    </g>
+    <g class="glass"><circle cx="214" cy="96" r="22"></circle><path d="M230 112l16 16"></path></g>
+  </svg>
+
+  <!-- ===== Copy ===== -->
+  <h1 data-lang-only="fa">این روز تو تقویم ما نیست!</h1>
+  <h1 data-lang-only="en">This day isn't on our calendar!</h1>
+  <p data-lang-only="fa">صفحه‌ای که دنبالش بودی پیدا نشد؛ شاید آدرسش عوض شده یا اشتباه تایپ شده.</p>
+  <p data-lang-only="en">We couldn't find the page you were looking for — it may have moved, or the address has a typo.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" id="nf-home" href="./">
+      <span data-lang-only="fa">برگرد به صفحه‌ی اصلی</span><span data-lang-only="en">Back to home</span>
+    </a>
+    <a class="btn btn-outline" id="nf-app" href="./demo/">
+      <span data-lang-only="fa">باز کردن توجیبی</span><span data-lang-only="en">Open Toojibee</span>
+    </a>
+  </div>
+</main>
+<script>
+document.getElementById('nf-home').href = SITE_ROOT + PAGE_LANG + '/';
+document.getElementById('nf-app').href = SITE_ROOT + 'demo/';
+</script>
+</body>
+</html>

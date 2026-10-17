@@ -21,17 +21,23 @@
 }
 .app-toast.show{ opacity:1; transform:translate(-50%,0); }
 .lang-loading{
-  position:absolute; inset:0; z-index:95; background:rgba(5,8,10,0.55);
+  position:absolute; inset:0; z-index:95; background:var(--overlay);
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
   display:flex; align-items:center; justify-content:center;
   opacity:0; pointer-events:none; transition:opacity .18s ease;
 }
 .lang-loading.show{ opacity:1; pointer-events:auto; }
-.lang-spinner{
-  width:36px; height:36px; border-radius:50%;
-  border:3px solid rgba(255,255,255,0.25); border-top-color:#fff;
-  animation:lang-spin .7s linear infinite;
-}
-@keyframes lang-spin{ to{ transform:rotate(360deg); } }
+/* Brand loader: the splash's spinning arc around the logo (index.html
+   has the same, inline), for in-app waits like switching language. */
+.brand-loader{ position:relative; width:84px; height:84px; }
+.brand-loader svg{ position:absolute; inset:0; width:100%; height:100%; animation:brand-spin 1.4s linear infinite; }
+.brand-loader .track{ fill:none; stroke:var(--border); stroke-width:6; }
+.brand-loader .arc{ fill:none; stroke:var(--primary); stroke-width:6; stroke-linecap:round; stroke-dasharray:70 300; animation:brand-arc 1.4s ease-in-out infinite; }
+.brand-loader img{ position:absolute; inset:16px; width:52px; height:52px; border-radius:50%; animation:brand-breathe 2s ease-in-out infinite; }
+@keyframes brand-spin{ to{ transform:rotate(360deg); } }
+@keyframes brand-arc{ 0%,100%{ stroke-dasharray:20 300; } 50%{ stroke-dasharray:110 300; } }
+@keyframes brand-breathe{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(.94); } }
+@media (prefers-reduced-motion:reduce){ .brand-loader *{ animation:none; } }
 .inline-row{ display:flex; gap:8px; }
 .inline-row > *{ flex:1; }
 /* section collapse */

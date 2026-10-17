@@ -1,0 +1,68 @@
+/* ===== error screens (app-error.js) =====
+   Centered illustration + message + actions. The calendar character
+   bobs gently; everything is drawn from theme tokens, so it follows the
+   palette (Toojibee / Classic) and day/night mode. */
+.error-screen{
+  min-height:70vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:8px; padding:24px 18px;
+  animation:error-in .45s cubic-bezier(.22,1,.36,1) both;
+}
+.error-screen h2{ font-size:19px; font-weight:800; margin:6px 0 0; color:var(--text); }
+.error-screen h2, .error-screen p{ unicode-bidi:plaintext; } /* fa sentences end on the left */
+.error-screen p{ font-size:13.5px; line-height:1.8; color:var(--text-muted); margin:0 0 10px; max-width:300px; }
+.error-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.error-actions .btn{ min-width:130px; }
+@keyframes error-in{ from{ opacity:0; transform:translateY(12px); } to{ opacity:1; transform:none; } }
+
+.error-art{ width:min(220px, 62vw); height:auto; overflow:visible; }
+.error-art .ea-shadow{ fill:var(--text); opacity:.08; transform-origin:100px 150px; animation:ea-shadow 3.2s ease-in-out infinite; }
+.error-art .ea-body{ animation:ea-bob 3.2s ease-in-out infinite; }
+.error-art .ea-card{ fill:var(--card); stroke:var(--border); stroke-width:2; }
+.error-art .ea-head{ fill:var(--primary); }
+.error-art .ea-ring{ fill:var(--text-muted); }
+.error-art .ea-dot{ fill:var(--text); animation:ea-blink 4s infinite; transform-box:fill-box; transform-origin:center; }
+.error-art .ea-line{ fill:none; stroke:var(--text); stroke-width:3.5; stroke-linecap:round; }
+.error-art .ea-crack{ fill:none; stroke:var(--danger); stroke-width:3.5; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:120; animation:ea-crack 1.1s .2s ease-out both; }
+.error-art .ea-badge circle:first-child{ fill:var(--bg-soft); stroke:var(--border); stroke-width:2; }
+.error-art .ea-badge{ animation:ea-pop .5s .25s cubic-bezier(.22,1.4,.36,1) both; transform-box:fill-box; transform-origin:center; }
+.error-art .ea-badge-wave{ fill:none; stroke:var(--text-muted); stroke-width:3; stroke-linecap:round; }
+.error-art .ea-badge-fill{ fill:var(--text-muted); }
+.error-art .ea-badge-slash{ stroke:var(--danger); stroke-width:3.5; stroke-linecap:round; }
+.error-art .ea-badge-mark{ stroke:var(--danger); stroke-width:4; stroke-linecap:round; }
+.error-art .ea-zzz text{ fill:var(--primary); font:800 15px/1 system-ui, sans-serif; animation:ea-zzz 2.4s ease-in-out infinite; }
+.error-art .ea-zzz text:nth-child(2){ font-size:12px; animation-delay:.4s; }
+.error-art .ea-zzz text:nth-child(3){ font-size:10px; animation-delay:.8s; }
+@keyframes ea-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+@keyframes ea-shadow{ 0%,100%{ transform:scaleX(1); opacity:.08; } 50%{ transform:scaleX(.86); opacity:.05; } }
+@keyframes ea-blink{ 0%,92%,100%{ transform:scaleY(1); } 95%{ transform:scaleY(.1); } }
+@keyframes ea-crack{ from{ stroke-dashoffset:120; } to{ stroke-dashoffset:0; } }
+@keyframes ea-pop{ from{ transform:scale(0); } to{ transform:scale(1); } }
+@keyframes ea-zzz{ 0%,100%{ opacity:.25; transform:translateY(0); } 50%{ opacity:1; transform:translateY(-4px); } }
+@media (prefers-reduced-motion:reduce){
+  .error-screen, .error-art *{ animation:none !important; }
+}
+
+/* Crash overlay: covers the app, above popups, below nothing. */
+.app-crash{
+  position:fixed; inset:0; z-index:200; background:var(--bg); overflow-y:auto;
+  opacity:0; pointer-events:none; transition:opacity .25s ease;
+}
+.app-crash.show{ opacity:1; pointer-events:auto; }
+
+/* ===== connection strip ===== */
+.connection-strip{
+  position:fixed; top:0; left:50%; z-index:120;
+  transform:translate(-50%, -110%); transition:transform .3s cubic-bezier(.22,1,.36,1);
+  margin-top:8px; padding:7px 14px; border-radius:999px;
+  background:var(--card); color:var(--text); border:1px solid var(--border);
+  box-shadow:var(--shadow); font-size:12.5px; font-weight:700; white-space:nowrap; max-width:92vw;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.connection-strip::before{
+  content:''; display:inline-block; width:8px; height:8px; border-radius:50%;
+  background:var(--danger); margin-inline-end:8px; vertical-align:1px;
+  animation:strip-pulse 1.6s ease-in-out infinite;
+}
+.connection-strip.show{ transform:translate(-50%, 0); }
+@keyframes strip-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+.device.lang-fa .connection-strip{ direction:rtl; }

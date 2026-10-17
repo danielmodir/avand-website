@@ -88,7 +88,7 @@ function showLanguageLoading(newLang){
     el = document.createElement('div');
     el.id = 'lang-loading';
     el.className = 'lang-loading';
-    el.innerHTML = '<div class="lang-spinner"></div>';
+    el.innerHTML = '<div class="brand-loader" aria-hidden="true"><svg viewBox="0 0 112 112"><circle class="track" cx="56" cy="56" r="50"/><circle class="arc" cx="56" cy="56" r="50"/></svg><img src="../assets/icons/logo.svg" alt=""></div>';
     document.getElementById('device').appendChild(el);
   }
   requestAnimationFrame(() => el.classList.add('show'));

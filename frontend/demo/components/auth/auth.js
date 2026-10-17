@@ -201,15 +201,11 @@ function renderBootSkeleton(){
   `;
 }
 
+/* state.bootError: 'offline' (no connection) or 'server' (5xx/timeout).
+   Illustrated screens live in components/app-error. */
 function renderBootError(){
-  return `
-    <div class="boot-error">
-      ${ICONS.wifiOff}
-      <h2>${t('couldntConnect')}</h2>
-      <p>${t('couldntConnectDesc')}</p>
-      <button type="button" class="btn btn-primary" data-action="retry-boot">${t('retryBtn')}</button>
-    </div>
-  `;
+  return renderErrorScreen(state.bootError === 'offline' ? 'offline' : 'server',
+    `<button type="button" class="btn btn-primary" data-action="retry-boot">${t('retryBtn')}</button>`);
 }
 
 function renderBootScreen(){

@@ -2,10 +2,36 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path, re_path
+from django.views import defaults
 
 
 def health(request):
     return JsonResponse({"ok": True})
+
+
+# Error pages: the API always answers in JSON (same {"error": code} shape
+# as every other API error); anything else (admin, unknown pages) gets
+# the themed HTML pages in backend/templates. Only used when DEBUG=False.
+def _is_api(request):
+    return request.path.startswith("/api/")
+
+
+def handler404(request, exception):
+    if _is_api(request):
+        return JsonResponse({"error": "not_found"}, status=404)
+    return defaults.page_not_found(request, exception)
+
+
+def handler500(request):
+    if _is_api(request):
+        return JsonResponse({"error": "server_error"}, status=500)
+    return defaults.server_error(request)
+
+
+def handler403(request, exception):
+    if _is_api(request):
+        return JsonResponse({"error": "forbidden"}, status=403)
+    return defaults.permission_denied(request, exception)
 
 
 api_v1 = [

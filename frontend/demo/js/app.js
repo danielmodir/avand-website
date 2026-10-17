@@ -130,7 +130,9 @@ async function boot(){
          opened sign-in (Cloud.onSessionExpired). Anything else — offline,
          timeout, a 5xx — isn't a real "you're signed out": show a retry
          screen and keep the saved session. */
-      if(!sessionJustExpired) state.bootError = 'network';
+      // No connection at all -> "you're offline"; online but our server
+      // didn't answer (down, timeout, 5xx) -> "problem on our side".
+      if(!sessionJustExpired) state.bootError = navigator.onLine ? 'server' : 'offline';
     }
     state.booting = false;
     render();
@@ -160,7 +162,15 @@ async function start(){
   loadLocalPrefs();
   try{ const l = localStorage.getItem('toojibee-lang'); if(l === 'fa' || l === 'en') state.settings.language = l; }catch(e){}
   applyAppearance();
-  await loadComponents();
+  initCrashScreen();
+  try{
+    await loadComponents();
+  }catch(err){
+    // The app's own files didn't arrive (offline on first visit, or the
+    // host is down): show the matching error screen on the splash.
+    showSplashError(navigator.onLine ? 'server' : 'offline');
+    return;
+  }
   initFabAndMenuInteractions();
   initHomeScrollExpand();
   initCalendarWheelSwipe();
@@ -168,7 +178,32 @@ async function start(){
   attachDaySheetDrag();
   attachLogoutHold();
   attachAuthPopupDismiss();
+  initConnectionWatch();
   boot();
   loadOccasionsData();
+  hideSplash();
 }
+
+/* The inline splash in index.html (styled there, before any CSS). */
+const SPLASH_MIN_MS = 450; // long enough to read as a deliberate intro, not a flicker
+const splashShownAt = performance.now();
+
+function hideSplash(){
+  const el = document.getElementById('app-splash');
+  if(!el) return;
+  const wait = Math.max(0, SPLASH_MIN_MS - (performance.now() - splashShownAt));
+  setTimeout(() => {
+    el.classList.add('done');
+    setTimeout(() => el.remove(), 450);
+  }, wait);
+}
+
+function showSplashError(kind){
+  const el = document.getElementById('app-splash');
+  if(!el) return;
+  el.setAttribute('dir', lang() === 'fa' ? 'rtl' : 'ltr');
+  el.innerHTML = renderErrorScreen(kind, `<button type="button" class="btn btn-primary" onclick="location.reload()">${t('reloadBtn')}</button>`);
+  el.removeAttribute('role');
+}
+
 start();
