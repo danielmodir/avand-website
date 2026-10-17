@@ -150,7 +150,10 @@
   #page-home .home-cal-widget:not(.home-cal-full) .month-grid{ gap:4px; }
 }
 [data-density="compact"] .day-dots{ display:none; }
-.day-dots{display:flex; gap:2px; height:4px;}
+/* Out of the flow, pinned near the circle's bottom: in the flow it pushed
+   the day number above the cell's centre, so numbers didn't sit in the
+   middle of the (centred) circle and period/range capsules. */
+.day-dots{ position:absolute; left:50%; bottom:calc(50% - var(--day-circle-r) + 3px); transform:translateX(-50%); display:flex; gap:2px; height:4px; pointer-events:none; }
 .day-dots span{width:4px; height:4px; border-radius:50%; background:var(--primary);}
 .day-cell.selected .day-dots span{background:var(--on-primary);}
 .week-list{display:flex; flex-direction:column; gap:8px;}
