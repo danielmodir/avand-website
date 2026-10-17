@@ -105,6 +105,9 @@ function attachDensityGesture(el, scopeEl){
      (initHomeScrollExpand), which read the very same gesture and
      immediately stomp whatever density this just set. */
   el.addEventListener('wheel', e => { if(!blocked() && Math.abs(e.deltaY) > 1 && Math.abs(e.deltaY) > Math.abs(e.deltaX)){ e.preventDefault(); e.stopPropagation(); feed(-e.deltaY); } }, {passive:false});
+  // The phone home widget's finger drags are handled live, following the
+  // finger (attachHomeCalDrag); only the mouse wheel steps it here.
+  if(el.id === 'home-cal-grid') return;
   let touchY = null;
   el.addEventListener('touchstart', e => { touchY = blocked() ? null : e.touches[0].clientY; }, {passive:true});
   el.addEventListener('touchmove', e => {
@@ -344,53 +347,118 @@ function shiftHomeDay(dir){
   }, 130);
 }
 
+/* Phone home calendar: the size follows the finger LIVE (no fixed steps
+   while dragging), then on release settles on the nearest of the three
+   sizes — 1 week, 2 weeks, the whole month — with the swipe's speed
+   taken into account, so a flick goes all the way and a slow drag stops
+   where it is. Each size owns an equal share of the drag range, which is
+   what makes the 2-week stop easy to land on. Horizontal swipes still
+   page weeks/months; a tap on the handle toggles month <-> 1 week. */
+function homeCalMetrics(){
+  const clip = document.getElementById('home-cal-grid-clip');
+  const grid = document.getElementById('home-cal-grid');
+  if(!clip || !grid || !grid.children.length) return null;
+  const rowGap = 4;
+  const rowH = grid.children[0].getBoundingClientRect().height;
+  const total = Math.ceil(grid.children.length / 7);
+  const key = dateKey(state.homeDate);
+  let rowIndex = 0;
+  for(let i = 0; i < grid.children.length; i++){
+    if(grid.children[i].dataset.date === key){ rowIndex = Math.floor(i / 7); break; }
+  }
+  const heightFor = rows => rows * rowH + Math.max(0, rows - 1) * rowGap;
+  return { clip, grid, rowGap, rowH, total, rowIndex, heightFor };
+}
+
+// Draws the grid at any (fractional) number of visible rows — the window
+// slides so the selected day's row stays in view, like the snapped sizes.
+function drawHomeCalAt(m, rows){
+  const startRow = Math.max(0, Math.min(m.rowIndex, m.total - rows));
+  m.clip.style.height = m.heightFor(rows) + 'px';
+  m.grid.style.transform = `translateY(-${startRow * (m.rowH + m.rowGap)}px)`;
+  syncBackTodayButton();
+}
+
 function attachHomeCalDrag(){
   const handle = document.getElementById('home-cal-handle');
   const surface = document.getElementById('home-cal-grid-clip');
-  let startX = null, startY = null, moved = false;
+  if(!surface || document.querySelector('.home-cal-full')) return;
+  let startX = null, startY = null, moved = false, axis = null, m = null, startRows = 1;
+  let lastY = 0, lastT = 0, velocity = 0, fromHandle = false;
 
-  function onDown(e){ startX = e.clientX; startY = e.clientY; moved = false; }
-  function onMove(e){
-    if(startY === null) return;
-    if(Math.abs(e.clientY - startY) > 8 || Math.abs(e.clientX - startX) > 8) moved = true;
+  const rowsFor = d => d === 'compact' ? 1 : d === 'mid' ? Math.min(2, m.total) : m.total;
+
+  function onDown(e, isHandle){
+    if(state.monthDropdownOpen || state.yearDropdownOpen) return;
+    startX = e.clientX; startY = e.clientY; moved = false; axis = null; fromHandle = isHandle;
+    lastY = e.clientY; lastT = e.timeStamp; velocity = 0;
+    m = homeCalMetrics();
+    if(m) startRows = rowsFor(state.calDensity || 'full');
+    // Only the handle captures the pointer: capturing on the grid surface
+    // would steal pointerup from the day cells (tap to pick a day).
+    if(isHandle){ try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(err){} }
+    e.stopPropagation(); // #page-home's own pull-to-expand must not also act on this drag
   }
-  function onUp(e, isHandle){
+  function onMove(e){
+    if(startY === null || !m) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if(!axis && (Math.abs(dx) > 8 || Math.abs(dy) > 8)){
+      axis = Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x';
+      moved = true;
+      if(axis === 'y'){ m.clip.style.transition = 'none'; m.grid.style.transition = 'none'; }
+    }
+    if(axis !== 'y') return;
+    const dt = Math.max(1, e.timeStamp - lastT);
+    velocity = 0.8 * ((e.clientY - lastY) / dt) + 0.2 * velocity; // px per ms, smoothed
+    lastY = e.clientY; lastT = e.timeStamp;
+    // 1 row of drag = 1 row of calendar; a soft rubber band past the ends.
+    let rows = startRows + dy / (m.rowH + m.rowGap);
+    if(rows < 1) rows = 1 - (1 - rows) * 0.25;
+    if(rows > m.total) rows = m.total + (rows - m.total) * 0.25;
+    drawHomeCalAt(m, rows);
+  }
+  function onUp(e){
     if(startY === null) return;
     const dx = e.clientX - startX, dy = e.clientY - startY;
-    if(moved && Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)){
+    if(axis === 'x' && Math.abs(dx) > 50){
       // Horizontal: previous/next week (collapsed) or month (expanded),
-      // with a slide in the swipe's own direction instead of an instant
-      // date swap. RTL-agnostic on purpose (app stays LTR always) — left
-      // swipe = forward.
+      // sliding in the swipe's direction. Left swipe = forward.
       const dir = dx < 0 ? 1 : -1;
       slideHomeCalDate(dir, () => {
         state.homeDate = state.calDensity === 'full' ? stepMonth(state.homeDate, dir) : addDays(state.homeDate, dir*7);
       });
-      startY = null;
-      return;
-    } else if(moved && Math.abs(dy) > 24){
-      setCalDensity(dy > 0 ? 'full' : 'compact');
-    } else if(!moved && isHandle){
+    } else if(axis === 'y' && m){
+      // Where the finger would have gone in ~180ms, then the nearest size.
+      const projected = startRows + (dy + velocity * 180) / (m.rowH + m.rowGap);
+      const stops = [['compact', 1], ['mid', Math.min(2, m.total)], ['full', m.total]];
+      let best = stops[0];
+      stops.forEach(s => { if(Math.abs(s[1] - projected) < Math.abs(best[1] - projected)) best = s; });
+      m.clip.style.transition = ''; m.grid.style.transition = '';
+      setCalDensity(best[0]);
+    } else if(!moved && fromHandle){
       setCalDensity(state.calDensity === 'full' ? 'compact' : 'full');
     }
     startY = null;
   }
+  function onCancel(){
+    if(startY === null) return;
+    startY = null;
+    if(m){ m.clip.style.transition = ''; m.grid.style.transition = ''; }
+    positionHomeCalGrid(); // back to the size it had
+  }
 
-  const onCancel = () => { startY = null; };
   if(handle){
-    handle.addEventListener('pointerdown', e => { onDown(e); e.stopPropagation(); });
+    handle.addEventListener('pointerdown', e => onDown(e, true));
     handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup', e => onUp(e, true));
+    handle.addEventListener('pointerup', onUp);
     handle.addEventListener('pointercancel', onCancel);
   }
-  if(surface){
-    surface.addEventListener('pointerdown', onDown);
-    surface.addEventListener('pointermove', onMove);
-    surface.addEventListener('pointerup', e => onUp(e, false));
-    surface.addEventListener('pointercancel', onCancel);
-    // a real drag (moved) shouldn't also register as a day pick
-    surface.addEventListener('click', e => { if(moved) e.stopPropagation(); });
-  }
+  surface.addEventListener('pointerdown', e => onDown(e, false));
+  surface.addEventListener('pointermove', onMove);
+  surface.addEventListener('pointerup', onUp);
+  surface.addEventListener('pointercancel', onCancel);
+  // a real drag shouldn't also register as a day pick
+  surface.addEventListener('click', e => { if(moved) e.stopPropagation(); }, true);
 }
 
 /* Slides the calendar grid out in the swipe's direction, applies the
@@ -480,4 +548,32 @@ function positionHomeCalGrid(){
       homeCalFirstPosition = false;
     });
   }
+  followBackTodayButton();
+}
+
+/* "Back to today" sits on the calendar widget's bottom edge. While the
+   widget grows/shrinks (CSS transition, or a live drag) that edge moves
+   every frame, so the button is re-anchored every frame for the length
+   of the animation instead of jumping at the end. */
+function syncBackTodayButton(){
+  if(window.innerWidth >= 960) return;
+  const btn = document.getElementById('back-today-btn');
+  const box = document.querySelector('#page-home .home-cal-widget');
+  if(!btn || !box) return;
+  const r = box.getBoundingClientRect();
+  btn.style.left = (r.left + r.width / 2) + 'px';
+  btn.style.bottom = 'auto';
+  btn.style.top = (r.bottom - btn.offsetHeight / 2) + 'px';
+}
+
+let backTodayFollowUntil = 0;
+function followBackTodayButton(){
+  const running = backTodayFollowUntil > performance.now();
+  backTodayFollowUntil = performance.now() + 480; // a bit longer than the .42s resize
+  if(running) return;
+  const tick = () => {
+    syncBackTodayButton();
+    if(performance.now() < backTodayFollowUntil) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }

@@ -596,13 +596,7 @@ function updateNav(){
        inline `top` set at once stretches the pill's height to fill the
        gap between them instead of sizing to its own content. */
     backBtn.classList.toggle('show', !sameDay(state.homeDate, today));
-    const boxEl = document.querySelector('#page-home .home-cal-widget');
-    if(boxEl){
-      const boxRect = boxEl.getBoundingClientRect();
-      backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
-      backBtn.style.bottom = 'auto';
-      backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight / 2) + 'px';
-    }
+    syncBackTodayButton(); // also re-run every frame while the widget resizes
   }
 
   /* Quick-add popup aligns to #fab-add's real measured center — desktop

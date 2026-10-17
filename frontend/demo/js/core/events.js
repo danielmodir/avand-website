@@ -202,6 +202,14 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'store-upgrade'){ showToast(t('upgradeUnavailable')); return; }
   if(action === 'goto-desktop'){
     state.desktopTitleMenuOpen = false;
+    // Picked from the title menu: highlight the choice at once, then close
+    // the menu (it's not re-rendered by goToDesktopIndex, so it used to
+    // stay open with the old item highlighted).
+    const menu = el.closest('#desktop-title-menu');
+    if(menu){
+      menu.querySelectorAll('.cal-dropdown-item').forEach(x => x.classList.toggle('active', x === el));
+      setTimeout(() => menu.remove(), 120);
+    }
     goToDesktopIndex(Number(el.dataset.i));
     return;
   }

@@ -15,7 +15,9 @@
    without touch-action:none a downward drag on a phone was taken by the
    browser's own pull-to-refresh/scroll and cancelled the pointer gesture,
    so the 1- and 2-week views could not be opened again by dragging. */
-.home-cal-grid-clip{ overflow:hidden; transition:height .28s cubic-bezier(.4,0,.2,1); touch-action:none; }
+/* Settling after a drag/tap: a soft spring-like ease (fast start, long
+   gentle stop) instead of a stiff linear-ish one. */
+.home-cal-grid-clip{ overflow:hidden; transition:height .42s cubic-bezier(.22,1,.36,1); touch-action:none; }
 #page-home{ overscroll-behavior-y:contain; }
 /* Every workspace desktop off (phone): the calendar is the whole page —
    always the full month, cells stretched to fill the screen height. */
@@ -23,7 +25,7 @@
 .home-cal-full .day-cell{ aspect-ratio:auto; height:max(46px, calc((100dvh - 330px) / 6)); border-radius:14px; }
 .home-cal-full .day-cell.today, .home-cal-full .day-cell.selected{ border-radius:14px; }
 .home-cal-full .day-cell-num{ font-size:17px; }
-#home-cal-grid{ transition:transform .28s cubic-bezier(.4,0,.2,1); }
+#home-cal-grid{ transition:transform .42s cubic-bezier(.22,1,.36,1); }
 /* Separate from #home-cal-grid's own translateY (expand/collapse) —
    this wrapper only ever does the horizontal week/month-change slide,
    set/cleared by slideHomeCalDate() rather than a persistent class. */
@@ -115,8 +117,13 @@
 /* On wider phones/tablets a square cell is ~85px tall, so the 1- and 2-
    week strips turned into tall, top-clipped blocks around the selected
    day; the strips keep a fixed, compact cell height instead. */
-#page-home[data-density="compact"] .home-cal-widget .day-cell{ aspect-ratio:auto; height:44px; border-radius:12px; }
-#page-home[data-density="mid"] .home-cal-widget .day-cell{ aspect-ratio:auto; height:48px; border-radius:12px; }
+/* One fixed cell height at EVERY size of the phone widget: the drag
+   follows the finger row by row, so rows can't change height when the
+   size settles (that was the jump at the end of a resize). */
+@media (max-width:959px){
+  #page-home .home-cal-widget:not(.home-cal-full) .day-cell{ aspect-ratio:auto; height:46px; border-radius:12px; font-size:13px; }
+  #page-home .home-cal-widget:not(.home-cal-full) .month-grid{ gap:4px; }
+}
 [data-density="compact"] .day-dots{ display:none; }
 .day-dots{display:flex; gap:2px; height:4px;}
 .day-dots span{width:4px; height:4px; border-radius:50%; background:var(--primary);}

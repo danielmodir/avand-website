@@ -114,6 +114,9 @@ function goToDesktopIndex(i){
   state.activeDesktopIndex = i;
   const wrap = document.getElementById('desktop-wrap');
   if(wrap){ desktopPagerProgrammatic = true; wrap.scrollTo({ left: i * wrap.clientWidth, behavior:'smooth' }); }
+  // Title, arrows and dots go straight to the target (the scroll listener
+  // stays quiet until the animation settles).
+  document.querySelectorAll('#desktop-dots span').forEach((el, idx) => el.classList.toggle('active', idx === i));
   syncDesktopTopbar(i);
 }
 
@@ -131,13 +134,19 @@ function attachDesktopPager(){
      is wired up. */
   wrap.scrollLeft = (state.activeDesktopIndex || 0) * wrap.clientWidth;
   let raf = null, settleTimer = null;
+  let shownIndex = state.activeDesktopIndex || 0;
   wrap.addEventListener('scroll', () => {
-    // Live dot highlight during the drag/animation — purely visual,
-    // never written to state here.
-    if(!raf){
+    // Live dot/title sync during a finger swipe — purely visual, never
+    // written to state here. Skipped while a programmatic jump (title
+    // menu, arrows, dots) is animating: that already shows its target,
+    // and following every in-between frame made the title flicker
+    // through the panes it passed. abs(): scrollLeft is negative in RTL.
+    if(!raf && !desktopPagerProgrammatic){
       raf = requestAnimationFrame(() => {
         raf = null;
-        const i = Math.round(wrap.scrollLeft / wrap.clientWidth);
+        const i = Math.max(0, Math.min(dotEls.length - 1, Math.round(Math.abs(wrap.scrollLeft) / wrap.clientWidth)));
+        if(i === shownIndex) return; // only when it actually changes
+        shownIndex = i;
         dotEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
         syncDesktopTopbar(i);
       });
@@ -152,8 +161,8 @@ function attachDesktopPager(){
        committed, undoing the navigation the user just made. */
     clearTimeout(settleTimer);
     settleTimer = setTimeout(() => {
-      if(desktopPagerProgrammatic){ desktopPagerProgrammatic = false; return; }
-      state.activeDesktopIndex = Math.round(wrap.scrollLeft / wrap.clientWidth);
+      if(desktopPagerProgrammatic){ desktopPagerProgrammatic = false; shownIndex = state.activeDesktopIndex; return; }
+      state.activeDesktopIndex = Math.round(Math.abs(wrap.scrollLeft) / wrap.clientWidth);
     }, 120);
   }, {passive:true});
   /* Only a genuinely horizontal wheel/trackpad gesture switches
@@ -190,9 +199,7 @@ function attachDesktopPager(){
       const i = Math.max(0, Math.min(dotEls.length - 1, Math.round(wrap.scrollLeft / wrap.clientWidth) + dir));
       if(i === state.activeDesktopIndex){ return; }
       navigating = true;
-      state.activeDesktopIndex = i;
-      desktopPagerProgrammatic = true;
-      wrap.scrollTo({ left: i * wrap.clientWidth, behavior: 'smooth' });
+      goToDesktopIndex(i);
       setTimeout(() => { navigating = false; }, 350);
     }, 60);
   }, { passive:false });
