@@ -85,7 +85,7 @@
    width. It grows in with a small spring when a day is picked. */
 .day-cell-bg{
   position:absolute; z-index:-1; top:50%; left:50%;
-  width:min(42px, 94%); aspect-ratio:1; border-radius:50%;
+  width:var(--day-circle); aspect-ratio:1; border-radius:50%;
   transform:translate(-50%,-50%) scale(.55); opacity:0; pointer-events:none;
   transition:transform .32s cubic-bezier(.22,1.4,.36,1), opacity .18s ease, box-shadow .25s ease;
 }
@@ -190,13 +190,16 @@
    over half the grid gap on each side so neighbouring days join up, and
    rounded where the range starts/ends. Start and deadline days get a
    solid orange circle. Logical sides: both grids are dir=rtl in fa. */
-.day-cell{ position:relative; isolation:isolate; }
+/* --day-circle: the size of the today/selected circle (.day-cell-bg).
+   Range and period capsules use the same height and end exactly on that
+   circle's edge, so a capsule's rounded end and the circle line up. */
+.day-cell{ position:relative; isolation:isolate; --day-circle:min(42px, 94%); --day-circle-r:21px; }
 .day-cell.rng::before{
-  content:''; position:absolute; z-index:-2; top:20%; bottom:20%; inset-inline:-2px;
-  background:var(--range-band);
+  content:''; position:absolute; z-index:-2; top:50%; height:var(--day-circle); transform:translateY(-50%);
+  inset-inline:-3px; background:var(--range-band);
 }
-.day-cell.rng-cap-s::before{ inset-inline-start:4%; border-start-start-radius:999px; border-end-start-radius:999px; }
-.day-cell.rng-cap-e::before{ inset-inline-end:4%; border-start-end-radius:999px; border-end-end-radius:999px; }
+.day-cell.rng-cap-s::before{ inset-inline-start:calc(50% - var(--day-circle-r)); border-start-start-radius:999px; border-end-start-radius:999px; }
+.day-cell.rng-cap-e::before{ inset-inline-end:calc(50% - var(--day-circle-r)); border-start-end-radius:999px; border-end-end-radius:999px; }
 .rng-dot{
   position:absolute; z-index:-1; top:50%; left:50%; height:66%; aspect-ratio:1;
   transform:translate(-50%,-50%); border-radius:50%;
@@ -212,15 +215,15 @@
   /* Opaque tint (mixed into the card color, not into transparent) and a
      slight overlap into the grid gap, so neighbouring days join into one
      seamless capsule instead of showing hairline seams. */
-  content:''; position:absolute; z-index:-3; top:18%; bottom:18%; inset-inline:-3px;
+  content:''; position:absolute; z-index:-3; top:50%; height:var(--day-circle); transform:translateY(-50%); inset-inline:-3px;
   background:color-mix(in srgb, var(--ph-color) var(--phase-capsule-strength), var(--card));
   opacity:0; transition:opacity .35s ease;
 }
 .day-cell.ph-period{ --ph-color:var(--period-flow); }
 .day-cell.ph-pms{ --ph-color:var(--period-pms); }
 .day-cell.ph-fertile{ --ph-color:var(--period-fertile); }
-.day-cell.ph-cap-s::after{ inset-inline-start:4%; border-start-start-radius:999px; border-end-start-radius:999px; }
-.day-cell.ph-cap-e::after{ inset-inline-end:4%; border-start-end-radius:999px; border-end-end-radius:999px; }
+.day-cell.ph-cap-s::after{ inset-inline-start:calc(50% - var(--day-circle-r)); border-start-start-radius:999px; border-end-start-radius:999px; }
+.day-cell.ph-cap-e::after{ inset-inline-end:calc(50% - var(--day-circle-r)); border-start-end-radius:999px; border-end-end-radius:999px; }
 .period-desk-active .day-cell.ph::after{ opacity:1; }
 @media (prefers-reduced-motion:reduce){ .day-cell.ph::after{ transition:none; } }
 .day-cell.rng-mark .day-cell-sub{ opacity:.75; }
