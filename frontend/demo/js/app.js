@@ -9,9 +9,23 @@
    since resize fires continuously while dragging. */
 let navResizeTimer = null;
 
+/* Crossing the 960px phone/desktop breakpoint also changes the MARKUP,
+   not just CSS (renderDesktops puts the calendar widget inside or above
+   the workspace box, the day summary is desktop-only, the day sheet is
+   desktop-only...), so a resize or rotation across it re-renders. */
+let wasDesktopLayout = window.innerWidth >= 960;
+
 window.addEventListener('resize', () => {
   clearTimeout(navResizeTimer);
-  navResizeTimer = setTimeout(updateNav, 120);
+  navResizeTimer = setTimeout(() => {
+    const isDesktop = window.innerWidth >= 960;
+    if(isDesktop !== wasDesktopLayout){
+      wasDesktopLayout = isDesktop;
+      state.daySheetOpen = false;
+      render();
+    }
+    updateNav();
+  }, 120);
 });
 
 /* `today` is computed once at load, so an app left open past midnight
@@ -144,6 +158,7 @@ async function start(){
   // Last palette/mode used on this device, until the account's settings load.
   state.settings.palette = document.documentElement.getAttribute('data-palette') === 'classic' ? 'classic' : 'toojibee';
   loadLocalPrefs();
+  try{ const l = localStorage.getItem('toojibee-lang'); if(l === 'fa' || l === 'en') state.settings.language = l; }catch(e){}
   applyAppearance();
   await loadComponents();
   initFabAndMenuInteractions();

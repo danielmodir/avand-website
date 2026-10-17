@@ -295,7 +295,7 @@ function selectItem(el, point){
   el.closest('.swipe-wrap')?.classList.add('is-selected');
   refreshCalendarRanges();
   showRowContextMenu(el, point);
-  if(navigator.vibrate && navigator.userActivation?.hasBeenActive) navigator.vibrate(12);
+  haptic(12);
 }
 
 function showRowContextMenu(el, point){

@@ -140,7 +140,7 @@ function attachDayCellGestures(gridEl, isHome){
     timer = setTimeout(() => {
       longFired = true;
       btn.classList.remove('press');
-      try{ navigator.vibrate && navigator.vibrate(15); }catch(err){}
+      haptic(15);
       const d = new Date(btn.dataset.date);
       state.selectedDate = d;
       state.homeDate = d;

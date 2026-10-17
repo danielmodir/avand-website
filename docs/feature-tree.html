@@ -299,13 +299,14 @@ footer{margin-top:30px; font-size:12px; color:var(--muted)}
       حالت خاموش: «این قابلیت خاموشه»
       قبل از کوییز: توضیح + دکمه‌ی «شروع»
       بعد از کوییز
-        چرخه‌ی ۳۰ روزه (دایره‌ی خط‌خطی رنگی)
+        حلقه‌ی پیوسته‌ی چرخه، یه کمان برای هر فاز
+        رفتن روی یه فاز = پررنگ‌تر و بزرگ‌تر + اسم و مدت و تاریخش وسط حلقه
         متن وسط: «X روز تا پریود بعدیت» / «امروز شروع می‌شه»
         راهنمای رنگ: پریود، PMS، بازه‌ی باروری
         هشدار «فقط یه تخمینه — توصیه‌ی پزشکی نیست»
-      کارت «می‌دونستی؟» — ۶ نکته که تایپ‌شونده می‌چرخن
-      «مقالات مرتبط» — ۴ کارت افقی اسکرول‌شونده
-        کلیک روی مقاله = پیام «در دسترس نیست» {soon}
+      کارت «می‌دونستی؟» — ۶ نکته که اسلاید می‌شن؛ با کشیدن یا خودکار هر ۷ ثانیه
+      تم مستقل خودش (صورتی/زرد/آبی/هلویی) — کل میزکار، قاب و نقطه‌هاش هم
+      فازها روی تقویم — کپسول کم‌رنگ هم‌رنگ حلقه، فقط وقتی این میزکار فعاله
   نوار ابزار (پایین موبایل / کنار راست دسکتاپ)
     کپسول پروفایل و مدیریت
       دکمه‌ی آواتار (عکس یا حروف اول) = باز کردن پروفایل؛ کلیک دوباره = بستن
@@ -451,18 +452,18 @@ footer{margin-top:30px; font-size:12px; color:var(--muted)}
     «برای خروج نگه دارید»
     «حداقل یک تقویم باید روشن بمونه»
     «تنظیمات این میزکار به‌زودی اضافه می‌شه»
-    «ارتقا در دسترس نیست» / «مقاله‌ها در دسترس نیستن»
+    «ارتقا در دسترس نیست»
     «حجم فایل بیشتر از ۵۰ مگابایته»
     «نشست شما منقضی شد»
   رفتارهای سراسری
-    تم روشن/تیره — ذخیره و هم‌رنگ شدن نوار مرورگر
-    زبان فارسی/انگلیسی — اعداد فارسی در حالت فارسی
-    تقویم راست‌به‌چپ در حالت فارسی
-    سه تقویم: شمسی، میلادی، قمری
-    عوض شدن خودکار «امروز» بعد از نیمه‌شب
-    ذخیره‌ی ابری کار/عادت/رویداد/پروفایل/تنظیمات — وقتی ورود واقعی روشن باشه
-    واکنش به تغییر اندازه‌ی پنجره (موبایل ⇄ دسکتاپ در ۹۶۰px)
-    لرزش کوتاه گوشی در نگه داشتن‌ها {m}
+    تم روشن/تیره — ذخیره و هم‌رنگ شدن نوار مرورگر؛ داخل تم انتخاب‌شده (توجیبی/کلاسیک) {ok}
+    زبان فارسی/انگلیسی — اعداد فارسی در حالت فارسی؛ روی دستگاه هم می‌مونه {ok}
+    تقویم راست‌به‌چپ در حالت فارسی {ok}
+    سه تقویم: شمسی، میلادی، قمری {ok}
+    عوض شدن خودکار «امروز» بعد از نیمه‌شب {ok}
+    ذخیره‌ی ابری کار/عادت/رویداد/پروفایل/تنظیمات — وقتی ورود واقعی روشن باشه؛ تم و تنظیمات میزکارها هم {ok}
+    واکنش به تغییر اندازه‌ی پنجره (موبایل ⇄ دسکتاپ در ۹۶۰px) {ok}
+    لرزش کوتاه گوشی در نگه داشتن‌ها — نگه داشتن روی روز، روی آیتم و دکمه‌ی خروج {m} {ok}
 </script>
 
 <script>
@@ -505,7 +506,7 @@ footer{margin-top:30px; font-size:12px; color:var(--muted)}
     var lbl = document.createElement('div'); lbl.className = 'lbl';
     var label = document.createElement('label'); label.htmlFor = uid; label.textContent = node.label;
     lbl.appendChild(label);
-    node.tags.forEach(function(t){ var s = document.createElement('span'); s.className = 'tag ' + t; s.textContent = TAGS[t] || t; lbl.appendChild(s); });
+    node.tags.filter(function(t){ return t !== 'ok'; }).forEach(function(t){ var s =document.createElement('span'); s.className = 'tag ' + t; s.textContent = TAGS[t] || t; lbl.appendChild(s); });
     if(node.children.length){ var c = document.createElement('span'); c.className = 'count'; c.textContent = fa(leafCount(node)); lbl.appendChild(c); }
     if(node.note){ var n = document.createElement('span'); n.className = 'note'; n.textContent = node.note; lbl.appendChild(n); }
     row.append(caret, cb, lbl); li.appendChild(row);
@@ -514,7 +515,10 @@ footer{margin-top:30px; font-size:12px; color:var(--muted)}
       node.children.forEach(function(ch){ ul.appendChild(build(ch, depth+1)); });
       li.appendChild(ul);
     } else {
-      cb.checked = !!saved[node.id];
+      // {ok} in the outline = implemented and verified (ticked in the
+      // file itself); a tick/untick made in this browser still wins.
+      cb.dataset.def = node.tags.indexOf('ok') >= 0 ? '1' : '';
+      cb.checked = node.id in saved ? !!saved[node.id] : !!cb.dataset.def;
       cb.dataset.leaf = '1';
     }
     caret.addEventListener('click', function(){ li.classList.toggle('collapsed'); });
@@ -542,7 +546,10 @@ footer{margin-top:30px; font-size:12px; color:var(--muted)}
   }
   function save(){
     var s = {};
-    treeEl.querySelectorAll('input[data-leaf]').forEach(function(cb){ if(cb.checked) s[cb.closest('li').dataset.id] = 1; });
+    // Only differences from the file's own {ok} defaults are stored.
+    treeEl.querySelectorAll('input[data-leaf]').forEach(function(cb){
+      if(cb.checked !== !!cb.dataset.def) s[cb.closest('li').dataset.id] = cb.checked ? 1 : 0;
+    });
     try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){}
   }
   treeEl.addEventListener('change', function(e){

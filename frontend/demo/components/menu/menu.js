@@ -682,6 +682,7 @@ function attachLogoutHold(){
     timer = setTimeout(() => {
       timer = null;
       firedByHold = true; // the click the browser fires right after this pointerup must not also show the toast
+      haptic(30);
       doLogout();
     }, 3000);
   };

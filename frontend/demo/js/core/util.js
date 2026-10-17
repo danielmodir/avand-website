@@ -69,6 +69,12 @@ function showToast(msg){
    language, sees loading, then the whole UI (labels, digits, calendar
    system default, hamburger/menu-panel side, everything) lands already
    switched, all at once, rather than visibly re-flowing piece by piece. */
+/* Short vibration when a press-and-hold fires (phones that support it;
+   browsers ignore vibrate() before the first user gesture). */
+function haptic(ms){
+  try{ if(navigator.vibrate && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate(ms || 12); }catch(e){}
+}
+
 function showLanguageLoading(newLang){
   let el = document.getElementById('lang-loading');
   if(!el){
@@ -81,6 +87,9 @@ function showLanguageLoading(newLang){
   requestAnimationFrame(() => el.classList.add('show'));
   setTimeout(() => {
     state.settings.language = newLang;
+    // Kept on the device too, for guests and the offline demo; with an
+    // account the saved setting wins on the next load.
+    try{ localStorage.setItem('toojibee-lang', newLang); }catch(e){}
     cloudSync(() => Cloud.saveSettings(state.settings));
     render();
     setTimeout(() => el.classList.remove('show'), 150);
