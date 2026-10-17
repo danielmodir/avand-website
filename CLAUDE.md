@@ -50,7 +50,7 @@ Read the relevant doc before any big change.
   time.ir has no public API; it is a feature reference only, never fetched.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.
   Never hardcode colors anywhere else.
-- Brand mark is assets/icons/logo-mark.png (the "Tj" monogram) on a navy circle —
+- Brand mark is assets/icons/logo-mark.png (the "Tj" monogram) on a forest-green circle —
   swap that one file to rebrand everywhere (assets/icons/logo.svg, favicon.svg,
   og-image.svg, and demo/'s header banner all reference it). Keep it swappable in
   one place.
@@ -81,11 +81,15 @@ Read the relevant doc before any big change.
 - If something is not in /docs, ask me instead of guessing.
 
 ## Design system (docs/avand_phase4-designsystem_v1.md)
-- Status (2026-10-09): palette replaced at the repo owner's request with
-  https://coolors.co/palette/000000-14213d-fca311-e5e5e5-ffffff — primary
-  #FCA311 (orange), secondary #14213D (navy), dark bg #000000, light bg
-  derived from #E5E5E5. The docs/avand_phase4-designsystem_v1.md file still
-  describes the original blue palette; tokens.css is the source of truth.
+- Status (2026-10-18): marketing-site palette replaced at the repo owner's
+  request with https://colorhunt.co/palette/2e29102c5745ebe3a7eb7d00 —
+  primary #EB7D00 (orange; every button, both themes, olive text on it for
+  contrast), secondary #2C5745 (forest; brand-mark circle, CTA band), olive
+  #2E2910 (light-mode text, dark-mode canvas), cream #EBE3A7 (light canvas,
+  dark text). The previous navy/orange palette (coolors 000000-14213d-
+  fca311-e5e5e5-ffffff) is kept in the demo as the "Classic" theme option.
+  The docs/avand_phase4-designsystem_v1.md file still describes the
+  original blue palette; tokens.css is the source of truth.
 - Minimal and serious mood, rounded corners, filled icons.
 - Digits: Persian digits (۰-۹) in /fa/ copy, Latin digits in /en/. The app's Design
   System uses Latin digits; this is a deliberate site-only difference.

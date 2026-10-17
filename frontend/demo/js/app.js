@@ -121,6 +121,16 @@ async function boot(){
     render();
   }
   handleEmailLink();
+  openAuthFromLink();
+}
+
+/* The landing page's "Log in" button links to /demo/#login (#signup also
+   works): open the popup once, then drop the hash so a reload doesn't. */
+function openAuthFromLink(){
+  const tab = { '#login':'login', '#signup':'signup' }[location.hash];
+  if(!tab) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  if(state.guest) openAuth(tab);
 }
 
 function attachAuthPopupDismiss(){

@@ -1,13 +1,16 @@
 /*
   Design tokens — Toojibee marketing site.
-  Brand palette: https://coolors.co/palette/000000-14213d-fca311-e5e5e5-ffffff
-  (black, navy #14213D, orange #FCA311, light gray #E5E5E5, white) — swapped
-  in from the earlier blue Design System v1 palette at the repo owner's
-  request. --color-primary (orange) is decorative/brand-mark use; buttons
-  use --color-accent, a per-theme pick of navy/orange chosen so button text
-  clears WCAG AA (orange reads poorly with white text, so light mode's
-  button is navy-on-white and dark mode's is orange-on-black — same
-  accessible-pair pattern the old palette used, just swapped per theme).
+  Brand palette (2026-10-18, repo owner's request):
+  https://colorhunt.co/palette/2e29102c5745ebe3a7eb7d00
+    #2E2910 olive ink  — text in light mode, the dark-mode canvas
+    #2C5745 forest     — secondary: brand-mark circle, CTA band, success
+    #EBE3A7 cream      — light-mode canvas (lightened), dark-mode text
+    #EB7D00 orange     — primary: EVERY button, in both themes
+
+  Buttons are orange in day and night mode alike. White on #EB7D00 is
+  only ~2.8:1, so button text is the olive ink (#2E2910, ~5.2:1, WCAG AA)
+  — --color-on-accent below. Never put orange TEXT on the cream canvas
+  (also below AA): orange is a fill, links/labels use --color-link.
 
   Theme switching: light is the default. Dark applies via
   `prefers-color-scheme: dark` UNLESS the page has an explicit
@@ -19,31 +22,38 @@
 
 :root {
   /* Brand */
-  --color-primary: #FCA311;
-  --color-secondary: #14213D;
+  --color-primary: #EB7D00;
+  --color-secondary: #2C5745;
+  --color-ink: #2E2910;
+  --color-cream: #EBE3A7;
 
-  /* Light mode (default) */
-  --color-bg: #E5E5E5;
-  --color-bg-soft: #EFEFEF;
-  --color-surface: #FFFFFF;
-  --color-border: rgba(20, 33, 61, 0.16);
-  --color-text: #000000;
-  --color-text-muted: rgba(0, 0, 0, 0.6);
-  --color-on-primary: #000000;
+  /* Light mode (default): warm cream paper, olive ink */
+  --color-bg: #F7F3DA;
+  --color-bg-soft: #F0EAC6;
+  --color-surface: #FFFDF3;
+  --color-border: rgba(46, 41, 16, 0.14);
+  --color-text: #2E2910;
+  --color-text-muted: rgba(46, 41, 16, 0.68);
+  --color-on-primary: #2E2910;
+  --color-link: #2C5745;
 
-  --color-success: #2E8B57;
-  --color-success-bg: #E3F3EA;
-  --color-error: #B23A2E;
-  --color-error-bg: #FBEAE8;
-  --color-warning: #9C6B05;
-  --color-warning-bg: #FBF3DE;
+  --color-success: #2C5745;
+  --color-success-bg: #E1EDE3;
+  --color-error: #A8361F;
+  --color-error-bg: #FBE7DF;
+  --color-warning: #8A5200;
+  --color-warning-bg: #FBEFD6;
 
-  /* Accessible button pair — see note above. */
-  --color-accent: #14213D;
-  --color-on-accent: #FFFFFF;
+  /* Buttons: orange fill, olive text — both themes (see note above). */
+  --color-accent: #EB7D00;
+  --color-on-accent: #2E2910;
 
-  --shadow-sm: 0 1px 3px rgba(18, 36, 46, 0.10);
-  --shadow-md: 0 8px 24px rgba(18, 36, 46, 0.14);
+  /* CTA band: forest green panel with cream text, orange button on it. */
+  --color-band: #2C5745;
+  --color-on-band: #FFFDF3;
+
+  --shadow-sm: 0 1px 3px rgba(46, 41, 16, 0.10);
+  --shadow-md: 0 8px 24px rgba(46, 41, 16, 0.14);
 
   /* Typography */
   --font-sans-latin: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
@@ -80,13 +90,15 @@
   --radius-xl: 32px;
   --radius-full: 999px;
 
-  /* Warm gradient + soft-UI accents (soft/warm redesign pass). Built only
-     from the locked brand colors — no new hues introduced. */
-  --gradient-brand: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  --gradient-glow: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--color-primary) 35%, transparent), transparent 60%);
-  --shadow-soft-sm: 0 2px 8px color-mix(in srgb, var(--color-secondary) 10%, transparent);
-  --shadow-soft-lg: 0 24px 60px -16px color-mix(in srgb, var(--color-secondary) 28%, transparent);
-  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, transparent), 0 16px 40px -12px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  /* Gradient + soft-UI accents, built only from the brand colors. The
+     hero headline's highlighted word uses --gradient-brand as text, so
+     each theme picks an end color that stays readable on its canvas. */
+  --gradient-brand: linear-gradient(120deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-glow: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 60%);
+  --shadow-soft-sm: 0 2px 8px color-mix(in srgb, var(--color-ink) 9%, transparent);
+  --shadow-soft-lg: 0 24px 60px -16px color-mix(in srgb, var(--color-ink) 26%, transparent);
+  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent), 0 16px 40px -12px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  --band-shine: color-mix(in srgb, var(--color-cream) 22%, transparent);
 
   /* Motion */
   --ease-standard: cubic-bezier(.4, 0, .2, 1);
@@ -98,56 +110,65 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: #000000;
-    --color-bg-soft: #0D0D0D;
-    --color-surface: #14213D;
-    --color-border: rgba(255, 255, 255, 0.12);
-    --color-text: #FFFFFF;
-    --color-text-muted: rgba(255, 255, 255, 0.6);
-    --color-on-primary: #000000;
+    /* Dark mode: deep olive night, cream text, orange buttons. */
+    --color-bg: #1A1708;
+    --color-bg-soft: #221E0B;
+    --color-surface: #2E2910;
+    --color-border: rgba(235, 227, 167, 0.13);
+    --color-text: #F5F0D2;
+    --color-text-muted: rgba(235, 227, 167, 0.68);
+    --color-on-primary: #2E2910;
+    --color-link: #F5A54A;
 
-    --color-success: #4CC38A;
-    --color-success-bg: rgba(76, 195, 138, 0.16);
-    --color-error: #E08578;
-    --color-error-bg: rgba(224, 133, 120, 0.16);
-    --color-warning: #D9B65C;
-    --color-warning-bg: rgba(217, 182, 92, 0.16);
+    --color-success: #8CC2A3;
+    --color-success-bg: rgba(140, 194, 163, 0.16);
+    --color-error: #F0937A;
+    --color-error-bg: rgba(240, 147, 122, 0.16);
+    --color-warning: #F5B65C;
+    --color-warning-bg: rgba(245, 182, 92, 0.16);
 
-    --color-accent: #FCA311;
-    --color-on-accent: #000000;
+    --color-accent: #EB7D00;
+    --color-on-accent: #2E2910;
+    --color-band: #2C5745;
+    --color-on-band: #F5F0D2;
 
+    --gradient-brand: linear-gradient(120deg, var(--color-primary) 0%, var(--color-cream) 100%);
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
     --shadow-soft-sm: 0 2px 10px rgba(0, 0, 0, 0.3);
     --shadow-soft-lg: 0 28px 70px -18px rgba(0, 0, 0, 0.55);
-    --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 24%, transparent), 0 18px 46px -14px color-mix(in srgb, var(--color-accent) 55%, transparent);
+    --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 24%, transparent), 0 18px 46px -14px color-mix(in srgb, var(--color-accent) 50%, transparent);
   }
 }
 
 :root[data-theme="dark"] {
-  --color-bg: #000000;
-  --color-bg-soft: #0D0D0D;
-  --color-surface: #14213D;
-  --color-border: rgba(255, 255, 255, 0.12);
-  --color-text: #FFFFFF;
-  --color-text-muted: rgba(255, 255, 255, 0.6);
-  --color-on-primary: #000000;
+  --color-bg: #1A1708;
+  --color-bg-soft: #221E0B;
+  --color-surface: #2E2910;
+  --color-border: rgba(235, 227, 167, 0.13);
+  --color-text: #F5F0D2;
+  --color-text-muted: rgba(235, 227, 167, 0.68);
+  --color-on-primary: #2E2910;
+  --color-link: #F5A54A;
 
-  --color-success: #4CC38A;
-  --color-success-bg: rgba(76, 195, 138, 0.16);
-  --color-error: #E08578;
-  --color-error-bg: rgba(224, 133, 120, 0.16);
-  --color-warning: #D9B65C;
-  --color-warning-bg: rgba(217, 182, 92, 0.16);
+  --color-success: #8CC2A3;
+  --color-success-bg: rgba(140, 194, 163, 0.16);
+  --color-error: #F0937A;
+  --color-error-bg: rgba(240, 147, 122, 0.16);
+  --color-warning: #F5B65C;
+  --color-warning-bg: rgba(245, 182, 92, 0.16);
 
-  --color-accent: #FCA311;
-  --color-on-accent: #000000;
+  --color-accent: #EB7D00;
+  --color-on-accent: #2E2910;
+  --color-band: #2C5745;
+  --color-on-band: #F5F0D2;
 
+  --gradient-brand: linear-gradient(120deg, var(--color-primary) 0%, var(--color-cream) 100%);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
   --shadow-soft-sm: 0 2px 10px rgba(0, 0, 0, 0.3);
   --shadow-soft-lg: 0 28px 70px -18px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 24%, transparent), 0 18px 46px -14px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 24%, transparent), 0 18px 46px -14px color-mix(in srgb, var(--color-accent) 50%, transparent);
 }
 
 /*

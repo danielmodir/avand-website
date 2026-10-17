@@ -56,4 +56,24 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/download/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/download/"/>
   </url>
+  <url>
+    <loc>https://avand.ir/en/guide/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/guide/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/guide/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/fa/guide/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/guide/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/guide/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/en/contact/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/contact/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/contact/"/>
+  </url>
+  <url>
+    <loc>https://avand.ir/fa/contact/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avand.ir/en/contact/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://avand.ir/fa/contact/"/>
+  </url>
 </urlset>
