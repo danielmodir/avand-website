@@ -44,10 +44,22 @@
      cutting the calendar's last row off. */
   #page-home{
     overflow-y:auto; display:flex; flex-direction:column;
-    padding:0 14px 92px 14px;
+    padding:0 14px;
   }
   #page-home > .home-cal-widget{ flex:0 0 auto; border-top-width:0; border-top-left-radius:0; border-top-right-radius:0; }
-  #page-home > .desktop-box{ flex:1 0 auto; min-height:180px; height:0; }
+  /* The workspace box runs all the way to the bottom edge, under the
+     floating toolbar (repo owner's request) — no empty strip below it.
+     Its panes get bottom room so their last item can scroll up past the
+     toolbar, and its page dots move up into its title row. */
+  #page-home > .desktop-box{
+    flex:1 0 auto; min-height:180px; height:0; position:relative;
+    border-bottom-width:0; border-bottom-left-radius:0; border-bottom-right-radius:0;
+  }
+  #page-home > .desktop-box .desktop-pane{ padding-bottom:calc(100px + env(safe-area-inset-bottom)); }
+  #page-home > .desktop-box .desktop-dots{
+    position:absolute; top:10px; inset-inline-start:14px; height:24px;
+    padding:0; border-top:0; background:none;
+  }
   #page-home > .home-cal-full{ flex:1 1 auto; border-bottom-left-radius:20px; border-bottom-right-radius:20px; }
 }
 /* Phones: the banner is edge to edge, so the column under it is too. */
