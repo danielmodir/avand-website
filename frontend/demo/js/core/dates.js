@@ -58,12 +58,17 @@ function weekdayShort(i){ return lang()==='fa' ? WD_SHORT_FA[i] : WD_SHORT_EN[i]
 
 function weekdayFull(i){ return lang()==='fa' ? WD_FULL_FA[i] : WD_FULL_EN[i]; }
 
+/* "Wednesday, Mehr 29" in en; «چهارشنبه، ۲۹ مهر» in fa (Persian comma,
+   Persian digits, day before month). Used for the day sheet's title and
+   every day cell's aria-label. */
 function dayLabel(d){
+  let day = d.getDate(), month = monthName(d.getMonth());
   if(isJalali()){
     const j = toJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
-    return `${weekdayFull(d.getDay())}, ${jalaliMonthName(j.jm-1)} ${j.jd}`;
+    day = j.jd; month = jalaliMonthName(j.jm-1);
   }
-  return `${weekdayFull(d.getDay())}, ${monthName(d.getMonth())} ${d.getDate()}`;
+  const wd = weekdayFull(d.getDay());
+  return lang() === 'fa' ? `${wd}، ${dig(day)} ${month}` : `${wd}, ${month} ${day}`;
 }
 
 const today = new Date(); today.setHours(0,0,0,0);

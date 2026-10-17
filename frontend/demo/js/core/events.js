@@ -154,7 +154,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'copy-user-id'){
-    try{ navigator.clipboard.writeText(state.profile.userId); }catch(err){}
+    copyText(state.profile.userId);
     showToast(t('idCopied'));
     return;
   }
@@ -188,7 +188,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'copy-invite-link'){
-    try{ navigator.clipboard.writeText(`avand.ir/invite/${state.profile.userId}`); }catch(err){}
+    copyText(`avand.ir/invite/${state.profile.userId}`);
     showToast(t('inviteLinkCopied'));
     return;
   }
@@ -307,7 +307,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'share-copy'){
-    try{ navigator.clipboard.writeText('https://avand.app'); }catch(err){}
+    copyText('https://avand.app');
     const fb = document.getElementById('share-feedback');
     if(fb){ fb.textContent = t('linkCopied'); fb.style.display = 'block'; setTimeout(()=>{ fb.style.display='none'; }, 1500); }
     return;

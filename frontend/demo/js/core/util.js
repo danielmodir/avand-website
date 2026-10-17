@@ -69,6 +69,13 @@ function showToast(msg){
    language, sees loading, then the whole UI (labels, digits, calendar
    system default, hamburger/menu-panel side, everything) lands already
    switched, all at once, rather than visibly re-flowing piece by piece. */
+/* writeText() returns a promise that rejects (not throws) when the page
+   isn't focused or permission is denied — a plain try/catch left an
+   "Uncaught (in promise)" error in the console. */
+function copyText(text){
+  try{ navigator.clipboard?.writeText(text)?.catch(() => {}); }catch(e){}
+}
+
 /* Short vibration when a press-and-hold fires (phones that support it;
    browsers ignore vibrate() before the first user gesture). */
 function haptic(ms){
