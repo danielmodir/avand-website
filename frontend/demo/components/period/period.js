@@ -109,6 +109,18 @@ function periodCenterForSegment(s){
   return `<span class="period-center-main" style="color:${color}">${t(PERIOD_PHASE_LABEL[s.cat])}</span><span class="period-center-days">${days}</span><span class="period-center-sub">${range}</span>`;
 }
 
+/* The arc picked on the ring lights up the same days on the calendar:
+   those cells get .ph-focus and their phase capsule turns a little
+   stronger and brighter (calendar.css, short soft transition). Only the
+   current cycle's dates — the ring shows the current cycle. */
+function focusPhaseOnCalendar(seg){
+  const from = seg && seg.cat !== 'normal' ? dateKey(addDays(computePeriodCycleStart(), seg.start)) : null;
+  const to = from ? dateKey(addDays(computePeriodCycleStart(), seg.start + seg.len - 1)) : null;
+  document.querySelectorAll('#home-cal-grid .day-cell, #cal-month-grid .day-cell').forEach(c => {
+    c.classList.toggle('ph-focus', !!from && c.dataset.date >= from && c.dataset.date <= to);
+  });
+}
+
 /* Wired after every render (render.js); in-place DOM changes only. */
 function attachPeriodWheel(){
   const wrap = document.querySelector('.period-wheel-wrap');
@@ -121,7 +133,9 @@ function attachPeriodWheel(){
     wrap.querySelectorAll('.period-arc').forEach(a => a.classList.toggle('active', a.dataset.seg === String(i)));
     wrap.classList.toggle('has-active', i !== null);
     center.innerHTML = i === null ? defaultHtml : periodCenterForSegment(segments[i]);
+    focusPhaseOnCalendar(i === null ? null : segments[i]);
   };
+  focusPhaseOnCalendar(null); // a fresh render starts with nothing focused
   wrap.querySelectorAll('.period-arc').forEach(arc => {
     const i = Number(arc.dataset.seg);
     arc.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') show(i); });

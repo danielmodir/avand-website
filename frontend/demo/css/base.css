@@ -98,6 +98,7 @@
      period desk: the calendar's phase capsules (calendar.css). */
   --period-flow:#FF84BA; --period-pms:#FFDF82; --period-fertile:#99C2FF;
   --phase-capsule-strength:13%; /* just a shadow of the phase color */
+  --phase-focus-strength:26%;   /* the phase picked on the period ring */
 }
 :root[data-theme="light"]{
   color-scheme: light;
@@ -128,6 +129,7 @@
   --period-ring-rest:rgba(20,33,61,0.12);
   --holiday:#C0492F;
   --phase-capsule-strength:20%;
+  --phase-focus-strength:36%;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}

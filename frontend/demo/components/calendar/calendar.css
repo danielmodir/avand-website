@@ -222,7 +222,13 @@
      positioned pieces left hairline seams between neighbouring days. */
   content:''; position:absolute; z-index:-3; top:calc(50% - var(--day-circle-r)); height:42px; inset-inline:-4px;
   background:color-mix(in srgb, var(--ph-color) var(--phase-capsule-strength), var(--card));
-  opacity:0; transition:opacity .35s ease;
+  opacity:0; transition:opacity .35s ease, background-color .22s ease-out, filter .22s ease-out;
+}
+/* The phase picked on the period ring (focusPhaseOnCalendar): its days
+   get a slightly stronger, brighter capsule — a quick, soft change. */
+.day-cell.ph.ph-focus::after{
+  background-color:color-mix(in srgb, var(--ph-color) var(--phase-focus-strength), var(--card));
+  filter:brightness(1.06) saturate(1.2);
 }
 .day-cell.ph-period{ --ph-color:var(--period-flow); }
 .day-cell.ph-pms{ --ph-color:var(--period-pms); }
