@@ -1,6 +1,7 @@
 let lastRenderedMenuSub = null; // which menu page the last render showed (entrance animations)
 
 function render(){
+  scheduleLocalSave(); // no-backend mode: keep this device's data (local-store.js)
   applyLanguageDom();
   renderAuth();
   renderBootScreen();

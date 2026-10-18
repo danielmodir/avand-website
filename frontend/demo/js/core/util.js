@@ -46,7 +46,9 @@ function applyAppearance(){
    the backend at all — that was the 401 on each change. With a session,
    a failed save no longer fails silently: the user gets a toast. */
 function cloudSync(call){
-  if(REAL_LOGIN_DISABLED || !Cloud.hasSession()) return;
+  // No backend: every change that would be synced is saved on this device.
+  if(REAL_LOGIN_DISABLED){ scheduleLocalSave(); return; }
+  if(!Cloud.hasSession()) return;
   call().catch(() => showToast(t('saveFailed')));
 }
 

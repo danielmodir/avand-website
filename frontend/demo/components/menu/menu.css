@@ -169,6 +169,7 @@
 .device.lang-fa .desktop-manage-gear{ right:auto; left:12px; }
 .desktop-manage-gear svg{ width:14px; height:14px; }
 .desktop-manage-gear:hover{ color:var(--primary); }
+.profile-no-name{ color:var(--primary); cursor:pointer; text-decoration:underline; text-underline-offset:4px; }
 /* Persian sentences in these LTR-laid-out rows put the final period on
    the wrong end; plaintext picks each line's direction from its own text
    without touching the row's flex layout. */

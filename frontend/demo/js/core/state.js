@@ -44,10 +44,13 @@ const state = {
   authTab: 'login',
   booting: false,  // true only while boot() is verifying a saved session
   bootError: null, // 'offline' | 'server' when that check failed for a non-auth reason
+  /* Starts empty: no placeholder person. Without a backend the person
+     fills it in themselves and it is kept on this device (local-store.js);
+     with one it comes from their account. */
   profile: {
-    name: 'Daniel', firstName: 'Daniel', lastName: '', username: 'daniel',
-    email: 'daniel@example.com', phone: '', gender: '', dob: '', photo: null,
-    userId: genUserId('Daniel')
+    name: '', firstName: '', lastName: '', username: '',
+    email: '', phone: '', gender: '', dob: '', photo: null,
+    userId: genUserId('')
   },
   settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali', calendarEnabled: { gregorian: true, jalali: true, hijri: true }, planningEnabled: true,
     theme: null, palette: 'toojibee', prefs: {} },

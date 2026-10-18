@@ -108,8 +108,10 @@ async function handleEmailLink(){
 
 async function boot(){
   if(REAL_LOGIN_DISABLED){
+    // No backend (the live site today): this device's own saved data, no
+    // sample person or sample tasks.
     state.authScreen = false;
-    if(!state.tasks.length) state.tasks.push(sampleSubtaskTask());
+    loadLocalData();
     render();
     return;
   }

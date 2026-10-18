@@ -59,7 +59,9 @@ function renderProfilePage(){
       <div class="profile-avatar-sm" ${p.photo?`style="background-image:url('${p.photo}')"`:''}>${p.photo?'':initials(p.name)}</div>
       <div class="profile-header-text">
         <div class="profile-username-row">
-          <span class="profile-username">${escapeHtml(displayName)}</span>
+          ${displayName
+            ? `<span class="profile-username">${escapeHtml(displayName)}</span>`
+            : `<span class="profile-username profile-no-name" data-action="menu-nav" data-sub="profile-edit">${t('profileNoName')}</span>`}
           <button type="button" class="icon-btn-sm" data-action="menu-nav" data-sub="profile-edit" aria-label="${t('editBtn')}">${ICONS.pencilIcon}</button>
         </div>
         <div class="profile-id-row">
