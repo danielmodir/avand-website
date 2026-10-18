@@ -23,19 +23,18 @@ frontend/
 ## ۲. دامنه‌ها
 
 - **`.ir` دامنه‌ی اصلی (canonical)** — تمام تگ‌های `canonical`، `hreflang` و
-  `og:url` در HTML به `https://avand.ir/...` اشاره می‌کنن.
-  > ⚠️ **`avand.ir` فرض شده، نه تأییدشده.** اگه دامنه‌ی واقعی چیز دیگه‌ایه،
-  > قبل از انتشار باید توی همه‌ی فایل‌های HTML + `robots.txt` +
-  > `sitemap.xml` جایگزین بشه (یه `grep -rl "avand.ir"` روی `dist/` کل
-  > مواردی که باید عوض بشن رو نشون می‌ده).
+  `og:url` در HTML به `https://toojibee.ir/...` اشاره می‌کنن.
+  > ✅ **`toojibee.ir` تأیید شد** (دامنه‌ای که صاحب پروژه خرید، ۲۰۲۶-۱۰-۱۸).
+  > همه‌ی فایل‌های HTML، `robots.txt` و `sitemap.xml` روی همین آدرس‌ان.
+  > `.com` فقط اگه خریده بشه به `.ir` ریدایرکت می‌شه.
 - **`.com` باید با ریدایرکت دائمی ۳۰۱ به همون آدرس روی `.ir` بره** —
   این کار روی سطح DNS/هاست انجام می‌شه (مثلاً یه قانون در Nginx یا پنل
   دامنه)، نه با کد سمت سایت. نمونه‌ی Nginx:
   ```nginx
   server {
     listen 443 ssl;
-    server_name avand.com www.avand.com;
-    return 301 https://avand.ir$request_uri;
+    server_name toojibee.com www.toojibee.com;
+    return 301 https://toojibee.ir$request_uri;
   }
   ```
 
@@ -87,9 +86,9 @@ location /assets/ {
 
 ## ۶. چک‌لیست بعد از انتشار
 
-- [ ] `https://avand.ir/` باز می‌شه و صفحه‌ی انتخاب زبان رو نشون می‌ده
-- [ ] `https://avand.ir/fa/` و `/en/` هر دو لود می‌شن، RTL/LTR درسته
-- [ ] `https://avand.com/` با ۳۰۱ به `https://avand.ir/` ریدایرکت می‌شه
+- [ ] `https://toojibee.ir/` باز می‌شه و صفحه‌ی انتخاب زبان رو نشون می‌ده
+- [ ] `https://toojibee.ir/fa/` و `/en/` هر دو لود می‌شن، RTL/LTR درسته
+- [ ] `https://toojibee.com/` با ۳۰۱ به `https://toojibee.ir/` ریدایرکت می‌شه
 - [ ] HTTP هر دو دامنه به HTTPS ریدایرکت می‌شه
 - [ ] `robots.txt` و `sitemap.xml` روی هر دو دامنه در دسترسن
   (`/robots.txt`, `/sitemap.xml`)

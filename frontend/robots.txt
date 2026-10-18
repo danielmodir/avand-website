@@ -7,4 +7,4 @@ Allow: /
 # indexed with no snippet — see DEPLOY.md. Privacy/Terms are real,
 # complete pages now (see SPEC.md §11.9) and are meant to be indexed.
 
-Sitemap: https://avand.ir/sitemap.xml
+Sitemap: https://toojibee.ir/sitemap.xml

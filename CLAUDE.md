@@ -66,7 +66,9 @@ Read the relevant doc before any big change.
   follows it). Google sign-in is a server-side redirect flow (the page only navigates;
   no Google script is ever loaded). This exception is /demo/-only: the marketing site
   (index.html, /en/, /fa/) still makes zero external requests, full stop.
-- Domains: .ir is canonical; .com redirects to it (settled during deployment).
+- Domains: toojibee.ir is canonical (bought by the repo owner, 2026-10-18; every
+  canonical/hreflang/og:url, robots.txt and sitemap.xml use it); a .com, if
+  bought, redirects to it.
 
 ## Product claims
 - The marketing site (index.html, /en/, /fa/ — everything outside /demo/) only

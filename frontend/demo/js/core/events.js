@@ -188,7 +188,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'copy-invite-link'){
-    copyText(`avand.ir/invite/${state.profile.userId}`);
+    copyText(`toojibee.ir/invite/${state.profile.userId}`);
     showToast(t('inviteLinkCopied'));
     return;
   }
@@ -311,7 +311,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'share-copy'){
-    copyText('https://avand.app');
+    copyText('https://toojibee.ir/');
     const fb = document.getElementById('share-feedback');
     if(fb){ fb.textContent = t('linkCopied'); fb.style.display = 'block'; setTimeout(()=>{ fb.style.display='none'; }, 1500); }
     return;

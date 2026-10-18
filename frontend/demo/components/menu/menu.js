@@ -242,7 +242,7 @@ function renderFriendsPage(){
   return `
     ${subHeader(t('connections'))}
     <div class="settings-row">
-      <div style="min-width:0;"><div class="lbl">${t('inviteLink')}</div><div class="sub" style="overflow:hidden; text-overflow:ellipsis;">avand.ir/invite/${escapeHtml(state.profile.userId)}</div></div>
+      <div style="min-width:0;"><div class="lbl">${t('inviteLink')}</div><div class="sub" style="overflow:hidden; text-overflow:ellipsis;">toojibee.ir/invite/${escapeHtml(state.profile.userId)}</div></div>
       <span class="link-btn" data-action="copy-invite-link" aria-label="${t('copyBtn')}">${ICONS.copyIcon}</span>
     </div>
     <div class="search-capsule" style="margin-top:16px;">
