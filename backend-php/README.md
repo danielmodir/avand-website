@@ -38,14 +38,20 @@ Errors are `{"error": code}` with the same codes as the Django API
 - `lib/` is never served (`.htaccess`); DB credentials live in
   `~/toojibee-config.php`, outside the web root and outside git.
 
-## Setup on the host (once)
-1. cPanel → **MySQL Database Wizard**: database `app`, user `app`
-   (cPanel prefixes both: `toojibee_app`), a strong generated password,
-   **ALL PRIVILEGES** on that database.
-2. Copy `config.sample.php` to the account home as
-   `/home/toojibee/toojibee-config.php` and put that password in it.
-3. Deploy the site package (`deploy/build-site-zip.ps1` puts this folder
-   at `public_html/api/`). Tables are created on the first request.
-4. Check `https://toojibee.ir/api/v1/health` → `{"ok":true,"backend":"php"}`.
+## Setup on the host
+Nothing to do: deploy the site package (`deploy/build-site-zip.ps1` puts
+this folder at `public_html/api/`). With no config file the API uses a
+SQLite database at `/home/toojibee/toojibee-data/toojibee.sqlite`
+(outside the web root, created with its tables on the first request).
+Check `https://toojibee.ir/api/v1/health` → `{"ok":true,"backend":"php"}`.
 
-Requires PHP 7.4+ with PDO MySQL and OpenSSL (standard on cPanel).
+Moving to MySQL later (more users): cPanel → **MySQL Database Wizard**
+(database and user `toojibee_app`, ALL PRIVILEGES), then copy
+`config.sample.php` to `/home/toojibee/toojibee-config.php` with that
+password. The config file takes over from SQLite; existing accounts
+would need copying across first.
+
+Back up `/home/toojibee/toojibee-data/` and `toojibee-secrets.php`
+together: without the key, the period data can't be read.
+
+Requires PHP 7.4+ with PDO SQLite (or MySQL) and OpenSSL, standard on cPanel.

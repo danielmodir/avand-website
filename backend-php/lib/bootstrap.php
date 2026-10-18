@@ -7,7 +7,8 @@
  * document per account. See backend-php/README.md.
  *
  * Secrets never live in the web root or in git:
- *   ~/toojibee-config.php   DB credentials (made by the owner in cPanel)
+ *   ~/toojibee-data/        SQLite database, the default (no setup)
+ *   ~/toojibee-config.php   optional: MySQL credentials instead
  *   ~/toojibee-secrets.php  encryption key, generated here on first use
  * (~ = the account home, one level above public_html.) For local tests
  * TJ_CONFIG / TJ_SECRETS env vars point elsewhere.
@@ -28,14 +29,22 @@ function tj_config(): array {
     static $cfg = null;
     if ($cfg !== null) return $cfg;
     $path = getenv('TJ_CONFIG') ?: tj_home() . '/toojibee-config.php';
-    if (!is_file($path)) tj_fail(503, 'not_configured');
-    $cfg = require $path;
+    // No config file: a SQLite database in ~/toojibee-data/ (outside the
+    // web root). Works with no setup and no DB password; a config file
+    // with MySQL credentials takes over when there is one.
+    $cfg = is_file($path) ? require $path : ['db_dsn' => 'sqlite:' . tj_data_dir() . '/toojibee.sqlite'];
     $cfg += [
         'app_url'   => 'https://toojibee.ir/demo/',
         'mail_from' => 'Toojibee <no-reply@toojibee.ir>',
         'send_mail' => true,
     ];
     return $cfg;
+}
+
+function tj_data_dir(): string {
+    $dir = getenv('TJ_DATA_DIR') ?: tj_home() . '/toojibee-data';
+    if (!is_dir($dir) && !@mkdir($dir, 0700, true)) tj_fail(500, 'data_dir_unwritable');
+    return $dir;
 }
 
 /* A random 32-byte key, created once, outside the web root, readable
@@ -63,7 +72,11 @@ function tj_db(): PDO {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
-    if (tj_driver() === 'sqlite') $db->exec('PRAGMA foreign_keys = ON');
+    if (tj_driver() === 'sqlite') {
+        $db->exec('PRAGMA foreign_keys = ON');
+        $db->exec('PRAGMA busy_timeout = 5000'); // wait, don't fail, when two requests write at once
+        $db->exec('PRAGMA journal_mode = WAL');
+    }
     tj_migrate($db);
     return $db;
 }
