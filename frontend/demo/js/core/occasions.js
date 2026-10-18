@@ -23,7 +23,9 @@ const OCC_HIJRI_MONTH = {
 
 function loadOccasionsData(){
   if(OCCASIONS_DATA || OCCASIONS_BY_DATE) return;
-  const loaded = Cloud.isConfigured() ? loadOccasionsFromApi() : loadOccasionsFromFiles();
+  // The PHP backend has no calendar API: it uses the same static files.
+  const fromApi = Cloud.isConfigured() && Cloud.supportsCalendar !== false;
+  const loaded = fromApi ? loadOccasionsFromApi() : loadOccasionsFromFiles();
   loaded.then(render).catch(() => { OCCASIONS_DATA = []; });
 }
 

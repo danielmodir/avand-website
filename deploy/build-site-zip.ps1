@@ -18,11 +18,18 @@ if (Test-Path $zip) { Remove-Item $zip }
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 $fs = [IO.File]::Open($zip, 'Create')
 $za = New-Object IO.Compression.ZipArchive($fs, [IO.Compression.ZipArchiveMode]::Create)
-try {
-  Get-ChildItem $root -Recurse -File -Force | ForEach-Object {
-    $rel = $_.FullName.Substring($root.Length + 1).Replace('\', '/')
+function Add-Tree($za, $dir, $prefix) {
+  Get-ChildItem $dir -Recurse -File -Force | Where-Object { $_.Name -notlike 'config.php' -and $_.FullName -notmatch '\\tests\\' } | ForEach-Object {
+    $rel = $prefix + $_.FullName.Substring($dir.Length + 1).Replace('\', '/')
     [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($za, $_.FullName, $rel, [IO.Compression.CompressionLevel]::Optimal)
   }
+}
+try {
+  Add-Tree $za $root ''
+  # The PHP API (backend-php/) is served from /api on the same host.
+  # Its config with the DB password lives outside public_html and is
+  # never part of this package.
+  Add-Tree $za (Join-Path $repo 'backend-php') 'api/'
 } finally { $za.Dispose(); $fs.Dispose() }
 
 $count = ([IO.Compression.ZipFile]::OpenRead($zip)).Entries.Count

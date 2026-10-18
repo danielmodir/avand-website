@@ -79,11 +79,11 @@ function renderProfilePage(){
 
     <div class="section-title" style="margin-top:22px;">${t('accountInfo')}</div>
     <div class="menu-list">
-      <div class="menu-item-row" data-action="menu-nav" data-sub="friends">
+      ${Cloud.supportsSocial === false ? '' : `<div class="menu-item-row" data-action="menu-nav" data-sub="friends">
         <div class="menu-item-icon">${ICONS.peopleIcon}</div>
         <div class="menu-item-label">${t('connections')} <span class="count">${dig(state.connections.filter(c=>c.status==='accepted').length)}</span></div>
         ${ICONS.chevronRightSmall}
-      </div>
+      </div>`}
       <div class="menu-item-row" data-action="menu-nav" data-sub="share">
         <div class="menu-item-icon">${ICONS.shareIcon}</div><div class="menu-item-label">${t('shareApp')}</div>${ICONS.chevronRightSmall}
       </div>

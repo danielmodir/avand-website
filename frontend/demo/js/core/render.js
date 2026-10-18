@@ -2,6 +2,7 @@ let lastRenderedMenuSub = null; // which menu page the last render showed (entra
 
 function render(){
   scheduleLocalSave(); // no-backend mode: keep this device's data (local-store.js)
+  if(Cloud.onStateChanged) Cloud.onStateChanged(); // PHP backend: debounced account sync (api-php.js)
   applyLanguageDom();
   renderAuth();
   renderBootScreen();

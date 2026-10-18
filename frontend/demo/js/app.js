@@ -52,6 +52,7 @@ async function loadFromCloud(){
   state.profile = Object.assign({}, state.profile, data.profile);
   syncProfileName();
   state.settings = Object.assign({}, state.settings, data.settings);
+  if(data.period) state.period = Object.assign({}, state.period, data.period); // PHP backend syncs it with the account
   applyAppearance();
   state.tasks = data.tasks.map(t => ({ ...t, subtasks: (t.subtasks || []).map(s => normalizeSubtask(s, t)) }));
   state.habits = data.habits;
