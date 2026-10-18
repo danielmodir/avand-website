@@ -113,3 +113,23 @@ location /assets/ {
 Settings → Pages، گزینه‌ی Source روی **GitHub Actions** باشه.
 
 برای هاست دیگه (مثلاً سرور ایرانی)، کافیه محتوای `frontend/` آپلود بشه.
+
+---
+
+## ۸. هاست لینوکس ایران‌هاست (اشتراکی، cPanel/DirectAdmin)
+
+**سایت و اپ (بدون بک‌اند):**
+1. بسته رو بساز: `powershell -ExecutionPolicy Bypass -File deploy\build-site-zip.ps1`
+   → `dist/toojibee-site.zip` (ساختش با اسکریپت مهمه: زیپ پیش‌فرض ویندوز
+   مسیرها رو با `\` می‌نویسه و روی لینوکس خراب باز می‌شه).
+2. تو پنل هاست → File Manager → پوشه‌ی `public_html` (یا `domains/toojibee.ir/public_html`
+   در DirectAdmin). فایل‌های پیش‌فرض هاست (`index.html`/`default.html`) رو پاک کن.
+3. زیپ رو آپلود کن و همون‌جا Extract کن؛ باید `index.html`، `.htaccess`،
+   `fa/`، `en/`، `demo/`، `assets/` مستقیم داخل `public_html` باشن (نه یه پوشه پایین‌تر).
+4. SSL رایگان (Let's Encrypt / AutoSSL) رو از پنل برای `toojibee.ir` و `www.toojibee.ir` فعال کن.
+   `.htaccess` خودش HTTP و www رو به `https://toojibee.ir` می‌بره.
+5. DNS: تو پنل ایرانیک، نیم‌سرورهای دامنه رو همونایی بذار که ایران‌هاست تو ایمیل خوش‌آمد داده.
+
+**بک‌اند جنگو:** روی هاست اشتراکی فقط وقتی شدنیه که پنل بخش «Setup Python App»
+(Passenger) و «MySQL Databases» داشته باشه؛ وگرنه یه سرور مجازی لازمه.
+تا اون موقع `demo/js/config.js` با `apiBase` خالی می‌مونه و اپ آفلاین کار می‌کنه.
