@@ -81,6 +81,17 @@ tr.click:hover td{ background:var(--color-bg-soft); }
 .meter > i{ display:block; height:100%; background:var(--color-secondary); border-radius:var(--radius-full); }
 .meter.warn > i{ background:var(--color-primary); }
 .meter.bad > i{ background:var(--color-error); }
+textarea{ width:100%; min-height:90px; padding:12px 14px; border-radius:var(--radius-md); border:2px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text); font:inherit; resize:vertical; }
+textarea:focus{ outline:none; border-color:var(--color-primary); }
+.mt{ margin-top:22px; }
+.lang-col h3{ margin:0 0 4px; font-size:var(--font-size-sm); }
+.slots{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px; }
+.slot{ border:1px solid var(--color-border); border-radius:var(--radius-md); padding:10px; display:flex; flex-direction:column; gap:8px; }
+.slot b{ font-size:var(--font-size-xs); }
+.slot .thumb{ height:150px; border-radius:var(--radius-sm); background:var(--color-bg-soft); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.slot .thumb img{ max-width:100%; max-height:100%; object-fit:contain; }
+.slot .custom{ color:var(--color-success); font-size:var(--font-size-xs); }
+.slot input[type=file]{ font-size:var(--font-size-xs); max-width:100%; }
 .hidden{ display:none !important; }
 </style>
 </head>
@@ -164,6 +175,28 @@ tr.click:hover td{ background:var(--color-bg-soft); }
         <div class="card"><h2>صفحه‌های پربازدید</h2><table><tbody id="v-pages"></tbody></table></div>
         <div class="card"><h2>از کجا اومدن</h2><table><tbody id="v-refs"></tbody></table></div>
       </div>
+    </section>
+
+    <section id="tab-content" class="hidden stack">
+      <form class="card" id="content-text" novalidate>
+        <h2>متن بالای صفحه‌ی لندینگ</h2>
+        <p class="hint">خالی بذاری = همون متن فعلی سایت می‌مونه. تو عنوان، کلمه‌ای که بین دو ستاره باشه (مثل <span dir="ltr">*یک‌جا*</span>) رنگی نشون داده می‌شه.</p>
+        <div class="two" id="ct-fields"></div>
+        <h2 class="mt">عنوان بنر بالای برنامه</h2>
+        <div class="two">
+          <div><label for="ct-banner-fa">فارسی</label><input id="ct-banner-fa" type="text" placeholder="توجیبی"></div>
+          <div><label for="ct-banner-en">English</label><input id="ct-banner-en" type="text" dir="ltr" placeholder="Toojibee"></div>
+        </div>
+        <button class="btn block" type="submit">ذخیره‌ی متن‌ها</button>
+        <div class="alert error hidden" role="alert"></div>
+        <div class="alert ok hidden" id="ct-saved">ذخیره شد و روی سایت اعمال شد.</div>
+      </form>
+      <div class="card">
+        <h2>عکس‌ها</h2>
+        <p class="hint" id="ct-img-hint"></p>
+        <div class="slots" id="ct-slots"></div>
+      </div>
+      <p class="note" id="ct-last"></p>
     </section>
 
     <section id="tab-system" class="hidden stack">
@@ -271,7 +304,7 @@ tr.click:hover td{ background:var(--color-bg-soft); }
     'stats.view': ['دیدن آمار', 'تعداد کاربرها، ثبت‌نام‌ها و کاربرهای فعال'],
     'users.view': ['دیدن کاربرها', 'اطلاعات حساب‌ها و آمار استفاده، بدون محتوای کارها و پریود'],
     'users.manage': ['مدیریت کاربرها', 'تعلیق، خارج کردن و حذف حساب'],
-    'content.manage': ['محتوای سایت', 'سربرگ، عکس‌ها و متن‌ها', true],
+    'content.manage': ['محتوای سایت', 'متن بالای لندینگ، بنر برنامه و اسکرین‌شات‌ها'],
     'articles.review': ['بررسی مقاله‌ها', 'تأیید یا رد مقاله‌ها', true],
     'system.view': ['دیتابیس و سرور', 'جدول‌ها، حجم دیتابیس، دیسک، رم و وضعیت سرور'],
     'audit.view': ['گزارش فعالیت', 'دیدن کارهای همه‌ی ادمین‌ها'],
@@ -294,6 +327,10 @@ tr.click:hover td{ background:var(--color-bg-soft); }
     owner_locked: 'دسترسی‌های مالک قابل تغییر نیست.',
     not_yourself: 'دسترسی‌های خودت رو نمی‌تونی تغییر بدی.',
     not_authenticated: 'نشستت تموم شده. دوباره وارد شو.',
+    too_large: 'فایل خیلی بزرگه (حداکثر ۶ مگابایت).',
+    not_an_image: 'فقط عکس JPEG، PNG یا WebP قبوله.',
+    no_file: 'فایلی انتخاب نشد.',
+    uploads_unwritable: 'سرور نتونست پوشه‌ی عکس‌ها رو بسازه.',
     network: 'اتصال به سرور برقرار نشد.',
   };
   var ACTIONS = {
@@ -304,6 +341,7 @@ tr.click:hover td{ background:var(--color-bg-soft); }
     user_suspended: ['تعلیق کاربر', 'bad'], user_unsuspended: ['رفع تعلیق کاربر', 'good'], user_signed_out: ['خارج کردن کاربر', 'warn'],
     user_deleted: ['حذف کاربر', 'bad'], backup_downloaded: ['دانلود پشتیبان', 'warn'],
     db_cleanup: ['پاک‌سازی دیتابیس', 'warn'], db_check: ['بررسی سلامت دیتابیس', ''],
+    content_saved: ['ذخیره‌ی متن سایت', 'warn'], image_uploaded: ['آپلود عکس', 'warn'], image_reset: ['برگشت عکس به پیش‌فرض', 'warn'],
   };
   var USTATUS = { active: ['فعال', 'good'], suspended: ['معلق', 'bad'] };
   var users = { q: '', filter: 'all', offset: 0 };
@@ -376,7 +414,7 @@ tr.click:hover td{ background:var(--color-bg-soft); }
   function enterDash(s) {
     me = { csrf: s.csrf, email: s.email, permissions: s.permissions || [], isOwner: !!s.is_owner };
     $('who').textContent = 'وارد شده با ' + me.email + (me.isOwner ? ' · مالک' : '');
-    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['system', 'دیتابیس و سرور', 'system.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
+    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['content', 'محتوای سایت', 'content.manage'], ['system', 'دیتابیس و سرور', 'system.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
       .filter(function (t) { return can(t[2]); });
     var nav = $('tabs');
     nav.textContent = '';
@@ -394,8 +432,8 @@ tr.click:hover td{ background:var(--color-bg-soft); }
 
   function openTab(name) {
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
-    ['overview', 'visits', 'users', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
-    ({ overview: loadOverview, visits: loadVisits, system: loadSystem, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
+    ['overview', 'visits', 'users', 'content', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
+    ({ overview: loadOverview, visits: loadVisits, content: loadContent, system: loadSystem, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
       .catch(onAuthError).catch(function (err) { alert(errorText(err)); });
   }
 
@@ -445,6 +483,102 @@ tr.click:hover td{ background:var(--color-bg-soft); }
       fill('v-pages', v.pages, function (p) { return PAGE_NAMES[p] || p; }, '');
       fill('v-refs', v.referrers, function (h) { return h; }, 'ltr');
     });
+  }
+
+  /* ---- site content ---- */
+
+  // What the static pages say today (shown as placeholders; empty = keep it).
+  var CT_DEFAULTS = {
+    fa: { eyebrow: 'یه قدم برای روزهای بهتر', title: 'زمان و عادت‌هات، *یک‌جا*.', text: 'از برنامه‌های روزانه تا عادت‌هایی که می‌خوای بسازی؛ توجیبی کمکت می‌کنه روزهات رو به سبک خودت پیش ببری.' },
+    en: { eyebrow: 'One step toward better days', title: 'Your time and habits, *in one place*.', text: 'From daily plans to the habits you want to build, Toojibee helps you move through your days your own way.' },
+  };
+  var CT_FIELDS = [['eyebrow', 'جمله‌ی کوچیک بالای عنوان'], ['title', 'عنوان اصلی'], ['text', 'متن زیر عنوان']];
+  var SLOT_INFO = {
+    banner: ['بنر بالای برنامه', 'عریض، حداقل ۱۶۰۰ پیکسل پهنا'],
+    hero_mobile_light: ['اسکرین‌شات موبایل · روشن', 'نسبت گوشی (مثل ۷۵۰×۱۶۲۴)'], hero_mobile_dark: ['اسکرین‌شات موبایل · تیره', 'نسبت گوشی (مثل ۷۵۰×۱۶۲۴)'],
+    desktop_light: ['اسکرین‌شات دسکتاپ · روشن', 'نسبت ۱۶۰۰×۱۰۱۸'], desktop_dark: ['اسکرین‌شات دسکتاپ · تیره', 'نسبت ۱۶۰۰×۱۰۱۸'],
+  };
+  var content = null;
+
+  function defaultImage(slot) {
+    if (slot === 'banner') return null;
+    var p = slot.split('.'), lang = p[0], k = p[1];
+    var kind = k.indexOf('hero_mobile') === 0 ? 'mobile' : 'desktop';
+    return '/assets/img/app-home-' + kind + '-' + lang + '-' + (/dark$/.test(k) ? 'dark' : 'light') + '.jpg';
+  }
+
+  function loadContent() {
+    return api('GET', '/content').then(function (c) {
+      content = c;
+      var box = $('ct-fields');
+      box.textContent = '';
+      ['fa', 'en'].forEach(function (l) {
+        var col = el('div', 'lang-col');
+        col.appendChild(el('h3', '', l === 'fa' ? 'فارسی' : 'English'));
+        CT_FIELDS.forEach(function (f) {
+          var id = 'ct-' + l + '-' + f[0];
+          var lab = el('label', '', f[1]); lab.htmlFor = id; col.appendChild(lab);
+          var input = el(f[0] === 'text' ? 'textarea' : 'input');
+          if (f[0] !== 'text') input.type = 'text';
+          input.id = id;
+          input.maxLength = c.limits[f[0]];
+          input.placeholder = CT_DEFAULTS[l][f[0]];
+          input.value = (c.landing[l] && c.landing[l][f[0]]) || '';
+          if (l === 'en') input.dir = 'ltr';
+          col.appendChild(input);
+        });
+        box.appendChild(col);
+      });
+      $('ct-banner-fa').value = c.banner.title_fa || '';
+      $('ct-banner-en').value = c.banner.title_en || '';
+      $('ct-banner-fa').maxLength = $('ct-banner-en').maxLength = c.limits.banner_title;
+      $('ct-img-hint').textContent = 'JPEG، PNG یا WebP تا ۶ مگابایت. ' + (c.gd
+        ? 'عکس خودکار به اندازه‌ی جاش برش می‌خوره، کوچیک می‌شه و به WebP تبدیل می‌شه تا سایت سبک بمونه.'
+        : 'این هاست ابزار تبدیل عکس نداره؛ عکس همون‌طور که هست ذخیره می‌شه، پس خودت سبکش کن.');
+      renderSlots();
+      $('ct-last').textContent = c.last_change ? 'آخرین تغییر: ' + when(c.last_change.updated_at) + (c.last_change.email ? ' · ' + c.last_change.email : '') : '';
+    });
+  }
+
+  function renderSlots() {
+    var box = $('ct-slots');
+    box.textContent = '';
+    content.slots.forEach(function (slot) {
+      var key = slot.indexOf('.') === -1 ? slot : slot.split('.')[1];
+      var lang = slot.indexOf('.') === -1 ? '' : (slot.split('.')[0] === 'fa' ? ' · فارسی' : ' · English');
+      var info = SLOT_INFO[key] || [slot, ''];
+      var custom = content.images[slot];
+      var card = el('div', 'slot');
+      card.appendChild(el('b', '', info[0] + lang));
+      var thumb = el('div', 'thumb');
+      var src = custom || defaultImage(slot);
+      if (src) { var img = el('img'); img.src = src; img.alt = ''; img.loading = 'lazy'; thumb.appendChild(img); }
+      else thumb.appendChild(el('span', 'hint', 'بدون عکس'));
+      card.appendChild(thumb);
+      card.appendChild(el('span', custom ? 'custom' : 'hint', custom ? 'عکس جدید (از پنل)' : 'عکس پیش‌فرض سایت · ' + info[1]));
+      var file = el('input'); file.type = 'file'; file.accept = 'image/jpeg,image/png,image/webp';
+      file.addEventListener('change', function () { if (file.files[0]) uploadImage(slot, file.files[0], card); });
+      card.appendChild(file);
+      if (custom) {
+        var reset = el('button', 'btn ghost', 'برگشت به پیش‌فرض'); reset.type = 'button';
+        reset.addEventListener('click', function () {
+          api('POST', '/content/image/reset', { slot: slot }).then(loadContent).catch(onAuthError).catch(function (e) { alert(errorText(e)); });
+        });
+        card.appendChild(reset);
+      }
+      box.appendChild(card);
+    });
+  }
+
+  function uploadImage(slot, f, card) {
+    if (f.size > 6 * 1024 * 1024) { alert(MESSAGES.too_large); return; }
+    card.appendChild(el('span', 'hint', 'در حال آپلود…'));
+    var fd = new FormData(); fd.append('file', f);
+    fetch('/api/v1/admin/content/image?slot=' + encodeURIComponent(slot), {
+      method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-TJ-Panel': SLUG, 'X-CSRF-Token': me.csrf },
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw { status: r.status, code: d.error }; return d; });
+    }).then(loadContent).catch(onAuthError).catch(function (e) { alert(errorText(e)); renderSlots(); });
   }
 
   /* ---- database and server ---- */
@@ -785,6 +919,14 @@ tr.click:hover td{ background:var(--color-bg-soft); }
       })
       .catch(onAuthError).catch(function (e) { alert(errorText(e)); })
       .then(function () { b.disabled = false; });
+  });
+
+  submitForm($('content-text'), function () {
+    $('ct-saved').classList.add('hidden');
+    var landing = { fa: {}, en: {} };
+    ['fa', 'en'].forEach(function (l) { CT_FIELDS.forEach(function (f) { landing[l][f[0]] = $('ct-' + l + '-' + f[0]).value; }); });
+    return api('PUT', '/content', { landing: landing, banner: { title_fa: $('ct-banner-fa').value, title_en: $('ct-banner-en').value } })
+      .then(function () { $('ct-saved').classList.remove('hidden'); return loadContent(); });
   });
 
   $('sys-refresh').addEventListener('click', function () { loadSystem().catch(onAuthError); });

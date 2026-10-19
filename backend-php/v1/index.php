@@ -12,6 +12,7 @@ require __DIR__ . '/../lib/admin.php';
 require __DIR__ . '/../lib/admin_users.php';
 require __DIR__ . '/../lib/admin_visits.php';
 require __DIR__ . '/../lib/admin_system.php';
+require __DIR__ . '/../lib/content.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -52,6 +53,11 @@ $routes = [
     'GET /admin/users'          => 'tj_admin_users',
     'GET /admin/backup'         => 'tj_admin_backup',
     'GET /admin/visits'         => 'tj_admin_visits',
+    'GET /content'              => 'tj_public_content',
+    'GET /admin/content'        => 'tj_admin_content',
+    'PUT /admin/content'        => 'tj_admin_content_save',
+    'POST /admin/content/image' => 'tj_admin_content_image',
+    'POST /admin/content/image/reset' => 'tj_admin_content_image_reset',
     'GET /admin/system'         => 'tj_admin_system',
     'POST /admin/system/cleanup'=> 'tj_admin_system_cleanup',
     'POST /admin/system/check'  => 'tj_admin_system_check',

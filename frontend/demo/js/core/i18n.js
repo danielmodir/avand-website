@@ -291,6 +291,10 @@ function t(key){ return (STRINGS[lang()] || STRINGS.en)[key] || key; }
    objects, mostly) and would otherwise shadow the translator above. */
 const tr = t;
 
+/* The app banner's picture/title from the admin panel; filled by
+   loadSiteContent() in js/app.js, empty without a backend. */
+var SITE_BANNER = {};
+
 function applyLanguageDom(){
   document.documentElement.setAttribute('lang', lang()==='fa' ? 'fa' : 'en');
   document.body.style.fontFamily = lang()==='fa' ? "'Baloo Bhaijaan 2',system-ui,Tahoma,sans-serif" : "'Baloo Bhaijaan 2',system-ui,sans-serif";
@@ -298,5 +302,6 @@ function applyLanguageDom(){
   var taskLabel = document.getElementById('nav-add-task-label'); if(taskLabel) taskLabel.textContent = t('newTask');
   var habitLabel = document.getElementById('nav-add-habit-label'); if(habitLabel) habitLabel.textContent = t('newHabit');
   var eventLabel = document.getElementById('nav-add-event-label'); if(eventLabel) eventLabel.textContent = t('newEvent');
-  var bannerTitle = document.getElementById('app-banner-title'); if(bannerTitle) bannerTitle.textContent = t('appName');
+  // A title set in the admin panel wins over the app name (SITE_BANNER, loadSiteContent in app.js).
+  var bannerTitle = document.getElementById('app-banner-title'); if(bannerTitle) bannerTitle.textContent = (SITE_BANNER.title && SITE_BANNER.title[lang()]) || t('appName');
 }

@@ -8,6 +8,8 @@ Options -Indexes
   RewriteRule ^v1/index\.php$ - [L]
   # The admin page (served only at its secret address; see panel.php).
   RewriteRule ^panel\.php$ - [L]
+  # The landing pages with admin-edited content (see page.php).
+  RewriteRule ^page\.php$ - [L]
   RewriteRule ^v1(/.*)?$ v1/index.php [L,QSA]
   RewriteRule ^ - [F]
 </IfModule>

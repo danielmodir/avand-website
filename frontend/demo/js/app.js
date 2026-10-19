@@ -159,6 +159,26 @@ function attachAuthPopupDismiss(){
   overlay.addEventListener('click', e => { if(e.target === overlay) closeAuth(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && state.authOpen) closeAuth(); });
 }
+/* The top banner's picture and title, as set in the admin panel (PHP
+   backend: GET /content from our own API). Nothing set, or no backend:
+   the banner keeps its plain look and the app name. */
+function loadSiteContent(){
+  if(!Cloud.siteContent) return;
+  Cloud.siteContent().then(c => {
+    SITE_BANNER = (c && c.banner) || {};
+    const bg = document.getElementById('app-banner-bg');
+    if(bg && SITE_BANNER.image){
+      // Only our own uploads (/uploads/...), never an outside address.
+      if(/^\/uploads\/[a-f0-9]{32}\.(webp|jpg|png)$/.test(SITE_BANNER.image)){
+        bg.style.backgroundImage = `url("${SITE_BANNER.image}")`;
+        bg.classList.add('has-image');
+        document.getElementById('app-banner').classList.add('has-image');
+      }
+    }
+    applyLanguageDom();
+  }).catch(() => { /* offline: keep the plain banner */ });
+}
+
 async function start(){
   // Last palette/mode used on this device, until the account's settings load.
   state.settings.palette = document.documentElement.getAttribute('data-palette') === 'classic' ? 'classic' : 'toojibee';
@@ -184,6 +204,7 @@ async function start(){
   attachAuthPopupDismiss();
   initConnectionWatch();
   boot();
+  loadSiteContent();
   loadOccasionsData();
   hideSplash();
 }

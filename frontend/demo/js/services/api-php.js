@@ -205,6 +205,8 @@
     resetPassword: function (token, password) { return request('POST', '/auth/password/reset', { token: token, password: password }, { auth: false }); },
     verifyEmail: function (token) { return request('POST', '/auth/email/verify', { token: token }, { auth: false }); },
     takeEmailLink: base.takeEmailLink,
+    // Banner picture/title from the admin panel (public, no sign-in).
+    siteContent: function () { return request('GET', '/content', undefined, { auth: false }); },
     loadAll: loadAll,
     onStateChanged: schedulePush,
     saveTask: queued, deleteTask: queued, saveHabit: queued, deleteHabit: queued,

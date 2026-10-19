@@ -10,6 +10,9 @@
   # Admin panel: /p-<random>/ goes to the API's panel.php, which serves
   # the page only for the one secret address and a 404 for any other.
   RewriteRule ^p-[a-z0-9]{24}/?$ api/panel.php [L]
+  # Landing pages: the static HTML plus content edited in the admin
+  # panel, filled in by api/page.php (no extra request in the browser).
+  RewriteRule ^(fa|en)/(index\.html)?$ api/page.php?lang=$1 [L]
 </IfModule>
 
 # --- Our own illustrated 404 page (works at any path depth) ---

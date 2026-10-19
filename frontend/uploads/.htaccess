@@ -1,0 +1,13 @@
+# Images uploaded from the admin panel (backend-php/lib/content.php).
+# Only pictures are ever served from here; nothing in this folder runs.
+Options -Indexes
+<FilesMatch ".*">
+  Require all denied
+</FilesMatch>
+<FilesMatch "\.(webp|jpe?g|png)$">
+  Require all granted
+</FilesMatch>
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Cache-Control "public, max-age=604800"
+</IfModule>

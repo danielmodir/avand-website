@@ -126,6 +126,16 @@ function tj_migrate(PDO $db): void {
         }
         $db->exec('INSERT INTO tj_schema (version) VALUES (4)');
     }
+    if ($v < 5) {
+        // Site content edited in the admin panel (lib/content.php).
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_content (
+            name VARCHAR(40) NOT NULL PRIMARY KEY,
+            value $text NOT NULL,
+            updated_at DATETIME NOT NULL,
+            updated_by $fk NULL
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (5)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.
