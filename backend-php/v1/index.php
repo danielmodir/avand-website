@@ -9,6 +9,7 @@ require __DIR__ . '/../lib/auth.php';
 require __DIR__ . '/../lib/sync.php';
 require __DIR__ . '/../lib/mail.php';
 require __DIR__ . '/../lib/admin.php';
+require __DIR__ . '/../lib/admin_users.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -32,6 +33,7 @@ $routes = [
     'GET /me'                   => 'tj_me',
     'PATCH /me'                 => 'tj_update_me',
     'POST /me/delete'           => 'tj_delete_me',
+    'POST /me/heartbeat'        => 'tj_heartbeat',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header
@@ -45,6 +47,8 @@ $routes = [
     'GET /admin/audit'          => 'tj_admin_audit_list',
     'GET /admin/admins'         => 'tj_admin_list',
     'POST /admin/admins'        => 'tj_admin_create',
+    'GET /admin/users'          => 'tj_admin_users',
+    'GET /admin/backup'         => 'tj_admin_backup',
 ];
 // Unknown /admin/ paths look exactly like any other unknown path.
 if (strpos($path, '/admin/') === 0) tj_admin_gate();
@@ -52,6 +56,15 @@ if (strpos($path, '/admin/') === 0) tj_admin_gate();
 if (preg_match('#^/admin/admins/([a-f0-9]{32})(/delete)?$#', $path, $m)) {
     if ($method === 'PATCH' && empty($m[2])) tj_admin_update($m[1]);
     if ($method === 'POST' && !empty($m[2])) tj_admin_remove($m[1]);
+    tj_fail(405, 'method_not_allowed');
+}
+// One account: /admin/users/<public id>[/suspend|/signout|/delete].
+if (preg_match('#^/admin/users/([a-f0-9]{32})(?:/(suspend|signout|delete))?$#', $path, $m)) {
+    $act = $m[2] ?? '';
+    if ($method === 'GET' && $act === '') tj_admin_user_detail($m[1]);
+    if ($method === 'POST' && $act === 'suspend') tj_admin_user_suspend($m[1]);
+    if ($method === 'POST' && $act === 'signout') tj_admin_user_signout($m[1]);
+    if ($method === 'POST' && $act === 'delete') tj_admin_user_delete($m[1]);
     tj_fail(405, 'method_not_allowed');
 }
 

@@ -211,6 +211,20 @@ function tj_verify_email(): void {
     tj_json(['ok' => true]);
 }
 
+const TJ_HEARTBEAT = 60;  // the app pings this often while open
+const TJ_ONLINE_WINDOW = 150; // seen this recently = online now
+
+/* The app is open: remember when, and add the time since the last ping
+ * (only if it was recent, so a closed app doesn't count). */
+function tj_heartbeat(): void {
+    $u = tj_require_user();
+    $gap = $u['last_seen_at'] ? time() - strtotime($u['last_seen_at'] . ' UTC') : PHP_INT_MAX;
+    $add = ($gap > 0 && $gap <= 2 * TJ_HEARTBEAT) ? $gap : 0;
+    tj_db()->prepare('UPDATE tj_users SET last_seen_at = ?, active_seconds = active_seconds + ? WHERE id = ?')
+        ->execute([tj_now(), $add, $u['id']]);
+    tj_json(['ok' => true, 'next_in' => TJ_HEARTBEAT]);
+}
+
 function tj_me(): void {
     tj_json(tj_public_user(tj_require_user()));
 }

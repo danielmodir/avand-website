@@ -113,6 +113,19 @@ function tj_migrate(PDO $db): void {
         $db->exec('INSERT INTO tj_schema (version) VALUES (2)');
     }
     if ($v < 3) tj_migrate_v3($db, $id, $fk, $tail, $sqlite);
+    if ($v < 4) {
+        // Presence for the admin panel: the app sends a heartbeat every
+        // minute while it's open (POST /me/heartbeat). last_seen_at gives
+        // "online now", active_seconds the total time spent in the app.
+        foreach ([
+            'ALTER TABLE tj_users ADD COLUMN last_seen_at DATETIME NULL',
+            'ALTER TABLE tj_users ADD COLUMN active_seconds INT NOT NULL DEFAULT 0',
+            'CREATE INDEX tj_users_last_seen ON tj_users (last_seen_at)',
+        ] as $sql) {
+            try { $db->exec($sql); } catch (PDOException $e) { /* already there */ }
+        }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (4)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

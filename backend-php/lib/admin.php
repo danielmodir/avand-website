@@ -307,7 +307,9 @@ function tj_admin_overview(): void {
         'users_7d' => $count('SELECT COUNT(*) AS n FROM tj_users WHERE created_at >= ?', [tj_now(-7 * 86400)]),
         'users_verified' => $count('SELECT COUNT(*) AS n FROM tj_users WHERE email_verified_at IS NOT NULL'),
         'signed_in_users' => $count('SELECT COUNT(DISTINCT user_id) AS n FROM tj_sessions WHERE revoked_at IS NULL AND refresh_expires > ?', [tj_now()]),
-        'active_1h' => $count('SELECT COUNT(DISTINCT user_id) AS n FROM tj_sessions WHERE last_used_at >= ?', [tj_now(-3600)]),
+        'active_1h' => $count('SELECT COUNT(*) AS n FROM tj_users WHERE last_seen_at >= ?', [tj_now(-3600)]),
+        'online_now' => $count('SELECT COUNT(*) AS n FROM tj_users WHERE last_seen_at >= ?', [tj_now(-TJ_ONLINE_WINDOW)]),
+        'suspended' => $count("SELECT COUNT(*) AS n FROM tj_users WHERE status = 'suspended'"),
     ]);
 }
 

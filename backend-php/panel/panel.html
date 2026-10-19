@@ -59,6 +59,15 @@ td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
 .code{ direction:ltr; font-weight:800; font-size:var(--font-size-md); letter-spacing:.06em; padding:10px 14px; background:var(--color-bg-soft); border-radius:var(--radius-sm); display:inline-block; margin:6px 0; user-select:all; }
 .stack > * + *{ margin-top:16px; }
 .note{ margin-top:18px; color:var(--color-text-muted); font-size:var(--font-size-xs); }
+.toolbar{ display:flex; gap:8px; flex-wrap:wrap; }
+.toolbar input{ flex:1 1 240px; }
+select{ padding:11px 12px; border-radius:var(--radius-md); border:2px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text); font:inherit; }
+tr.click{ cursor:pointer; }
+tr.click:hover td{ background:var(--color-bg-soft); }
+.dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--color-success); margin-inline-end:6px; }
+.kv{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:10px 16px; margin:12px 0; }
+.kv div{ font-size:var(--font-size-xs); }
+.kv b{ display:block; color:var(--color-text-muted); font-weight:700; }
 .hidden{ display:none !important; }
 </style>
 </head>
@@ -122,9 +131,39 @@ td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
     </div>
     <nav class="tabs" id="tabs"></nav>
 
-    <section id="tab-overview" class="hidden">
+    <section id="tab-overview" class="hidden stack">
       <div class="stats" id="stats"></div>
-      <p class="note">بقیه‌ی ابزارها (مدیریت کاربرها، محتوای سایت، آمار بازدید) مرحله‌به‌مرحله اضافه می‌شن.</p>
+      <div class="card hidden" id="backup-card">
+        <h2>پشتیبان دیتابیس <button class="btn ghost" id="backup" type="button">دانلود پشتیبان</button></h2>
+        <p class="hint">فقط برای مالک. داده‌های پریودی داخل فایل رمزنگاری‌شده می‌مونن؛ کلیدشون (<span dir="ltr">toojibee-secrets.php</span>) جداست. یه نسخه از اون فایل رو هم جای امن نگه دار.</p>
+      </div>
+      <p class="note">ابزارهای محتوای سایت، آمار بازدید و مقاله‌ها مرحله‌به‌مرحله اضافه می‌شن.</p>
+    </section>
+
+    <section id="tab-users" class="hidden stack">
+      <form class="card" id="user-search" novalidate>
+        <div class="toolbar">
+          <input id="u-q" type="text" placeholder="جستجو: ایمیل، نام کاربری یا کد TJ-…" autocomplete="off">
+          <select id="u-filter">
+            <option value="all">همه</option>
+            <option value="online">آنلاین الان</option>
+            <option value="suspended">معلق‌شده</option>
+          </select>
+          <button class="btn" type="submit">جستجو</button>
+        </div>
+        <div class="alert error hidden" role="alert"></div>
+      </form>
+      <div class="card hidden" id="user-detail"></div>
+      <div class="card">
+        <h2><span id="u-count">کاربرها</span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>کد</th><th>نام کاربری</th><th>ایمیل</th><th>وضعیت</th><th>ثبت‌نام</th><th>آخرین حضور</th></tr></thead>
+            <tbody id="users"></tbody>
+          </table>
+        </div>
+        <button class="btn ghost hidden" id="u-more" type="button">بیشتر</button>
+      </div>
     </section>
 
     <section id="tab-admins" class="hidden stack">
@@ -177,8 +216,8 @@ td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
 
   var PERMS = {
     'stats.view': ['دیدن آمار', 'تعداد کاربرها، ثبت‌نام‌ها و کاربرهای فعال'],
-    'users.view': ['دیدن کاربرها', 'اطلاعات حساب‌ها، بدون محتوای کارها و پریود', true],
-    'users.manage': ['مدیریت کاربرها', 'تعلیق، خارج کردن و حذف حساب', true],
+    'users.view': ['دیدن کاربرها', 'اطلاعات حساب‌ها و آمار استفاده، بدون محتوای کارها و پریود'],
+    'users.manage': ['مدیریت کاربرها', 'تعلیق، خارج کردن و حذف حساب'],
     'content.manage': ['محتوای سایت', 'سربرگ، عکس‌ها و متن‌ها', true],
     'articles.review': ['بررسی مقاله‌ها', 'تأیید یا رد مقاله‌ها', true],
     'audit.view': ['گزارش فعالیت', 'دیدن کارهای همه‌ی ادمین‌ها'],
@@ -208,7 +247,17 @@ td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
     logout: ['خروج', ''], setup_done: ['ساخت مالک', 'good'], setup_failed: ['کد راه‌اندازی اشتباه', 'bad'],
     admin_invited: ['دعوت ادمین', 'warn'], invite_accepted: ['پذیرش دعوت', 'good'], invite_failed: ['کد دعوت اشتباه', 'bad'],
     admin_updated: ['تغییر ادمین', 'warn'], admin_removed: ['حذف ادمین', 'bad'],
+    user_suspended: ['تعلیق کاربر', 'bad'], user_unsuspended: ['رفع تعلیق کاربر', 'good'], user_signed_out: ['خارج کردن کاربر', 'warn'],
+    user_deleted: ['حذف کاربر', 'bad'], backup_downloaded: ['دانلود پشتیبان', 'warn'],
   };
+  var USTATUS = { active: ['فعال', 'good'], suspended: ['معلق', 'bad'] };
+  var users = { q: '', filter: 'all', offset: 0 };
+  var dur = function (sec) {
+    sec = Number(sec) || 0;
+    var h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+    return h ? fa(h) + ' ساعت و ' + fa(m) + ' دقیقه' : fa(m) + ' دقیقه';
+  };
+  var kb = function (b) { return fa(Math.max(1, Math.round((Number(b) || 0) / 1024))) + ' کیلوبایت'; };
   var STATUS = { active: ['فعال', 'good'], invited: ['دعوت‌شده', 'warn'], disabled: ['غیرفعال', 'bad'] };
 
   function api(method, path, body) {
@@ -272,7 +321,7 @@ td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
   function enterDash(s) {
     me = { csrf: s.csrf, email: s.email, permissions: s.permissions || [], isOwner: !!s.is_owner };
     $('who').textContent = 'وارد شده با ' + me.email + (me.isOwner ? ' · مالک' : '');
-    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
+    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
       .filter(function (t) { return can(t[2]); });
     var nav = $('tabs');
     nav.textContent = '';
@@ -290,16 +339,95 @@ td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
 
   function openTab(name) {
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
-    ['overview', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
-    ({ overview: loadOverview, admins: loadAdmins, audit: loadAudit })[name]().catch(onAuthError).catch(function (err) { alert(errorText(err)); });
+    ['overview', 'users', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
+    ({ overview: loadOverview, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
+      .catch(onAuthError).catch(function (err) { alert(errorText(err)); });
+  }
+
+  /* ---- users ---- */
+
+  function loadUsers() {
+    var qs = '?q=' + encodeURIComponent(users.q) + '&filter=' + users.filter + '&offset=' + users.offset;
+    return api('GET', '/users' + qs).then(function (res) {
+      var body = $('users');
+      if (users.offset === 0) body.textContent = '';
+      $('u-count').textContent = 'کاربرها (' + fa(res.total) + ')';
+      res.items.forEach(function (u) {
+        var tr = el('tr', 'click');
+        tr.appendChild(el('td', 'ltr', u.code));
+        tr.appendChild(el('td', 'ltr', u.username || '—'));
+        tr.appendChild(el('td', 'ltr', u.email));
+        var st = USTATUS[u.status] || [u.status, ''];
+        var tdS = el('td');
+        if (u.online) tdS.appendChild(el('span', 'dot'));
+        tdS.appendChild(el('span', 'tag ' + st[1], u.online ? 'آنلاین' : st[0]));
+        tr.appendChild(tdS);
+        tr.appendChild(el('td', '', when(u.created_at)));
+        tr.appendChild(el('td', '', when(u.last_seen_at)));
+        tr.addEventListener('click', function () { openUser(u.id); });
+        body.appendChild(tr);
+      });
+      users.offset += res.items.length;
+      $('u-more').classList.toggle('hidden', users.offset >= res.total);
+    });
+  }
+
+  function openUser(id) {
+    return api('GET', '/users/' + id).then(function (u) {
+      var box = $('user-detail');
+      box.textContent = '';
+      var h = el('h2'); h.appendChild(el('span', 'ltr', u.code + ' · ' + (u.username || u.email)));
+      var close = el('button', 'btn ghost', 'بستن'); close.type = 'button';
+      close.addEventListener('click', function () { box.classList.add('hidden'); });
+      h.appendChild(close); box.appendChild(h);
+      var kv = el('div', 'kv');
+      [['ایمیل', u.email + (u.email_verified ? ' ✓' : ' (تأییدنشده)')], ['وضعیت', u.online ? 'آنلاین' : (USTATUS[u.status] || [u.status])[0]],
+       ['جنسیت', u.gender === 'female' ? 'خانم' : u.gender === 'male' ? 'آقا' : '—'], ['سال تولد', u.birth_year ? fa(u.birth_year) : '—'],
+       ['ثبت‌نام', when(u.created_at)], ['آخرین حضور', when(u.last_seen_at)], ['زمان استفاده از برنامه', dur(u.active_seconds)],
+       ['تعداد ذخیره‌ها', fa(u.saves)], ['آخرین ذخیره', when(u.last_save_at)], ['حجم داده', kb(u.data_bytes)],
+       ['دستگاه‌های وارد‌شده', fa(u.devices.length)]].forEach(function (p) {
+        var d = el('div'); d.appendChild(el('b', '', p[0])); d.appendChild(document.createTextNode(p[1])); kv.appendChild(d);
+      });
+      box.appendChild(kv);
+      if (u.devices.length) {
+        var t = el('table'), tb = el('tbody');
+        u.devices.forEach(function (dv) {
+          var tr = el('tr'); tr.appendChild(el('td', 'ltr', dv.user_agent || '—')); tr.appendChild(el('td', '', 'آخرین استفاده: ' + when(dv.last_used_at))); tb.appendChild(tr);
+        });
+        t.appendChild(tb); var w = el('div', 'table-wrap'); w.appendChild(t); box.appendChild(w);
+      }
+      if (can('users.manage')) {
+        var acts = el('div', 'actions'); acts.style.marginTop = '14px';
+        var act = function (label, cls, run) { var b = el('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', run); acts.appendChild(b); };
+        var after = function () { users.offset = 0; return Promise.all([loadUsers(), openUser(id)]); };
+        var fail = function (e) { onAuthError(e); };
+        act(u.status === 'suspended' ? 'رفع تعلیق' : 'تعلیق حساب', 'ghost', function () {
+          api('POST', '/users/' + id + '/suspend', { suspended: u.status !== 'suspended' }).then(after).catch(fail).catch(function (e) { alert(errorText(e)); });
+        });
+        act('خارج کردن از همه‌ی دستگاه‌ها', 'ghost', function () {
+          api('POST', '/users/' + id + '/signout').then(after).catch(fail).catch(function (e) { alert(errorText(e)); });
+        });
+        act('حذف حساب', 'danger', function () {
+          var typed = prompt('حذف کامل و برگشت‌ناپذیر. برای تأیید، ایمیل این کاربر رو تایپ کن:\n' + u.email);
+          if (typed === null) return;
+          api('POST', '/users/' + id + '/delete', { confirm_email: typed.trim() })
+            .then(function () { box.classList.add('hidden'); users.offset = 0; return loadUsers(); })
+            .catch(fail).catch(function (e) { alert(errorText(e)); });
+        });
+        box.appendChild(acts);
+      }
+      box.classList.remove('hidden');
+      box.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
   }
 
   function loadOverview() {
+    $('backup-card').classList.toggle('hidden', !me.isOwner);
     return api('GET', '/overview').then(function (o) {
       var stats = $('stats');
       stats.textContent = '';
-      [['users_total', 'همه‌ی کاربرها'], ['users_today', 'ثبت‌نام امروز'], ['users_7d', 'ثبت‌نام ۷ روز اخیر'],
-       ['users_verified', 'ایمیل تأییدشده'], ['signed_in_users', 'کاربرهای وارد‌شده'], ['active_1h', 'فعال در یک ساعت اخیر']].forEach(function (s) {
+      [['users_total', 'همه‌ی کاربرها'], ['online_now', 'آنلاین الان'], ['active_1h', 'فعال در یک ساعت اخیر'], ['users_today', 'ثبت‌نام امروز'],
+       ['users_7d', 'ثبت‌نام ۷ روز اخیر'], ['users_verified', 'ایمیل تأییدشده'], ['signed_in_users', 'کاربرهای وارد‌شده'], ['suspended', 'حساب‌های معلق']].forEach(function (s) {
         var c = el('div', 'card stat');
         c.appendChild(el('div', 'n', fa(o[s[0]] || 0)));
         c.appendChild(el('div', 'l', s[1]));
@@ -437,6 +565,33 @@ td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
     var email = $('n-email').value.trim();
     return api('POST', '/admins', { email: email, permissions: checkedPerms($('n-perms')) })
       .then(function (r) { $('n-email').value = ''; showInvite(email, r.invite_code); return loadAdmins(); });
+  });
+
+  submitForm($('user-search'), function () {
+    users = { q: $('u-q').value.trim(), filter: $('u-filter').value, offset: 0 };
+    $('user-detail').classList.add('hidden');
+    return loadUsers();
+  });
+  $('u-filter').addEventListener('change', function () { $('user-search').requestSubmit(); });
+  $('u-more').addEventListener('click', function () { loadUsers().catch(onAuthError); });
+
+  // The backup comes through fetch (it needs the panel header), then is
+  // handed to the browser as a download.
+  $('backup').addEventListener('click', function () {
+    var b = $('backup');
+    b.disabled = true;
+    fetch('/api/v1/admin/backup', { headers: { 'X-TJ-Panel': SLUG }, credentials: 'same-origin' })
+      .then(function (r) {
+        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (d) { throw { status: r.status, code: d.error }; });
+        var name = (/filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '') || [])[1] || 'toojibee-backup.sqlite';
+        return r.blob().then(function (blob) {
+          var a = el('a'); a.href = URL.createObjectURL(blob); a.download = name;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        });
+      })
+      .catch(onAuthError).catch(function (e) { alert(errorText(e)); })
+      .then(function () { b.disabled = false; });
   });
 
   $('go-invite').addEventListener('click', function () { show('view-invite'); });

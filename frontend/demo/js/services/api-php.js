@@ -131,6 +131,7 @@
     });
     profile.name = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
     loaded = true;
+    startHeartbeat();
     if (adopt) { dirty = true; schedulePush(); }
     return { profile: profile, settings: data.settings || {}, tasks: data.tasks || [], habits: data.habits || [], events: data.events || [], period: data.period || null };
   }
@@ -172,6 +173,21 @@
 
   // Everything the app saves goes through one debounced document write.
   function queued() { schedulePush(); return Promise.resolve(); }
+
+  // Presence for the admin panel's "online now" and time-in-app: a tiny
+  // ping to our own API once a minute, only while the app is visible and
+  // signed in. Nothing about what the person does is sent.
+  var heartbeatTimer = null;
+  function heartbeat() {
+    if (!hasSession() || document.hidden) return;
+    request('POST', '/me/heartbeat').catch(function () { /* offline: try next minute */ });
+  }
+  function startHeartbeat() {
+    if (heartbeatTimer) return;
+    heartbeat();
+    heartbeatTimer = setInterval(heartbeat, 60000);
+  }
+  global.document.addEventListener('visibilitychange', function () { if (!document.hidden && heartbeatTimer) heartbeat(); });
 
   // Save before the tab goes away (closing, switching apps on a phone).
   global.addEventListener('pagehide', function () { if (dirty) flush().catch(function () {}); });
