@@ -63,6 +63,7 @@ $routes = [
     'GET /admin/articles'       => 'tj_admin_articles',
     'POST /admin/articles'      => 'tj_admin_article_create',
     'GET /admin/system'         => 'tj_admin_system',
+    'GET /admin/system/table'   => 'tj_admin_system_table',
     'POST /admin/system/cleanup'=> 'tj_admin_system_cleanup',
     'POST /admin/system/check'  => 'tj_admin_system_check',
 ];

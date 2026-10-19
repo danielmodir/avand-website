@@ -36,6 +36,65 @@ function tj_meminfo(): ?array {
     return ['total' => $m['MemTotal'], 'used' => max(0, $m['MemTotal'] - $avail)];
 }
 
+/* The live API keeps one SQLite file, but its tables belong to separate
+ * parts of the product, the way the Django backend splits them into
+ * one database per module. The panel shows them grouped like that. */
+const TJ_DB_GROUPS = [
+    'accounts' => ['tj_users', 'tj_sessions', 'tj_tokens', 'tj_attempts'],
+    'userdata' => ['tj_user_data'],
+    'admin'    => ['tj_admins', 'tj_admin_sessions', 'tj_admin_audit'],
+    'content'  => ['tj_content', 'tj_articles'],
+    'system'   => ['tj_schema'],
+];
+/* Tables whose rows may be previewed (personal data and secrets are
+ * never shown: only their structure). */
+const TJ_DB_PREVIEW = ['tj_admins', 'tj_admin_audit', 'tj_content', 'tj_articles', 'tj_schema'];
+const TJ_DB_MASK = '/hash|token|password|secret|enc|^ip$|^data$|^body$|^value$/i';
+
+function tj_db_group(string $table): string {
+    foreach (TJ_DB_GROUPS as $g => $tables) if (in_array($table, $tables, true)) return $g;
+    return 'other';
+}
+
+/* GET /admin/system/table?name=…: one table's columns, indexes, links
+ * to other tables and (for non-sensitive tables) its latest rows. */
+function tj_admin_system_table(): void {
+    tj_admin_require('system.view');
+    if (tj_driver() !== 'sqlite') tj_fail(501, 'not_available');
+    $db = tj_db();
+    $name = (string)($_GET['name'] ?? '');
+    $q = $db->prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?");
+    $q->execute([$name]);
+    $row = $q->fetch();
+    if (!$row || !preg_match('/^[A-Za-z0-9_]+$/', $name)) tj_fail(404, 'not_found');
+    $columns = array_map(function ($c) {
+        return ['name' => $c['name'], 'type' => $c['type'], 'not_null' => (int)$c['notnull'] === 1, 'default' => $c['dflt_value'], 'primary' => (int)$c['pk'] > 0];
+    }, $db->query("PRAGMA table_info($name)")->fetchAll());
+    $indexes = [];
+    foreach ($db->query("PRAGMA index_list($name)")->fetchAll() as $ix) {
+        $cols = array_column($db->query('PRAGMA index_info(' . $db->quote($ix['name']) . ')')->fetchAll(), 'name');
+        $indexes[] = ['name' => $ix['name'], 'unique' => (int)$ix['unique'] === 1, 'columns' => $cols];
+    }
+    $fks = array_map(function ($f) { return ['column' => $f['from'], 'table' => $f['table'], 'to' => $f['to'], 'on_delete' => $f['on_delete']]; },
+        $db->query("PRAGMA foreign_key_list($name)")->fetchAll());
+    $preview = null;
+    if (in_array($name, TJ_DB_PREVIEW, true)) {
+        $order = in_array('id', array_column($columns, 'name'), true) ? ' ORDER BY id DESC' : '';
+        $preview = [];
+        foreach ($db->query("SELECT * FROM $name$order LIMIT 20")->fetchAll() as $r) {
+            foreach ($r as $k => $v) {
+                if ($v !== null && preg_match(TJ_DB_MASK, (string)$k)) $r[$k] = '•••';
+                elseif (is_string($v) && strlen($v) > 120) $r[$k] = (function_exists('mb_substr') ? mb_substr($v, 0, 120) : substr($v, 0, 120)) . '…';
+            }
+            $preview[] = $r;
+        }
+    }
+    tj_json([
+        'name' => $name, 'group' => tj_db_group($name), 'rows' => (int)$db->query("SELECT COUNT(*) FROM $name")->fetchColumn(),
+        'columns' => $columns, 'indexes' => $indexes, 'foreign_keys' => $fks, 'sql' => $row['sql'], 'preview' => $preview,
+    ]);
+}
+
 function tj_ini_bytes(string $v): int {
     $v = trim($v);
     $n = (int)$v;
@@ -66,7 +125,8 @@ function tj_admin_system(): void {
     foreach ($names as $t) {
         if (!preg_match('/^[A-Za-z0-9_]+$/', $t)) continue;
         $idx = $sqlite ? $db->query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND tbl_name = '$t'")->fetchColumn() : null;
-        $tables[] = ['name' => $t, 'rows' => (int)$one("SELECT COUNT(*) FROM $t"), 'bytes' => $sizes[$t] ?? null, 'indexes' => $idx === null ? null : (int)$idx];
+        $tables[] = ['name' => $t, 'group' => tj_db_group($t), 'rows' => (int)$one("SELECT COUNT(*) FROM $t"), 'bytes' => $sizes[$t] ?? null,
+                     'indexes' => $idx === null ? null : (int)$idx, 'previewable' => in_array($t, TJ_DB_PREVIEW, true)];
     }
 
     $dbInfo = ['driver' => tj_driver(), 'schema_version' => (int)$one('SELECT MAX(version) FROM tj_schema')];

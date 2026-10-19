@@ -36,6 +36,9 @@ button{ font:inherit; cursor:pointer; }
 .who{ color:var(--color-text-muted); font-size:var(--font-size-xs); }
 .tabs{ display:flex; gap:6px; background:var(--color-bg-soft); padding:4px; border-radius:var(--radius-md); margin-bottom:18px; overflow-x:auto; }
 .tabs button{ flex:0 0 auto; border:none; background:transparent; padding:9px 16px; border-radius:var(--radius-sm); font-weight:700; color:var(--color-text-muted); }
+.tabs{ scrollbar-width:none; }
+.tabs::-webkit-scrollbar{ display:none; }
+.tabs.wrap{ flex-wrap:wrap; }
 .tabs button.on{ background:var(--color-surface); color:var(--color-text); box-shadow:var(--shadow-soft-sm); }
 .stats{ display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:12px; }
 .stat .n{ font-size:var(--font-size-lg); font-weight:800; }
@@ -206,7 +209,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     <section id="tab-articles" class="hidden stack">
       <div class="card">
         <h2>مقاله‌ها <button class="btn" id="ar-new" type="button">مقاله‌ی جدید</button></h2>
-        <div class="tabs" id="ar-filters"></div>
+        <div class="tabs wrap" id="ar-filters"></div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>عنوان</th><th>زبان</th><th>وضعیت</th><th>نویسنده</th><th>آخرین تغییر</th></tr></thead>
@@ -247,7 +250,9 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <div class="card"><h2>فضای دیسک</h2><div id="sys-disk"></div></div>
       </div>
       <div class="card">
-        <h2>جدول‌های دیتابیس <button class="btn ghost" id="sys-refresh" type="button">به‌روزرسانی</button></h2>
+        <h2>دیتابیس‌ها <button class="btn ghost" id="sys-refresh" type="button">به‌روزرسانی</button></h2>
+        <div class="tabs wrap" id="sys-dbs"></div>
+        <p class="hint" id="sys-db-desc"></p>
         <div class="table-wrap">
           <table>
             <thead><tr><th>جدول</th><th>نام فنی</th><th>تعداد ردیف</th><th>حجم</th><th>ایندکس</th></tr></thead>
@@ -255,6 +260,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
           </table>
         </div>
       </div>
+      <div class="card hidden" id="sys-table"></div>
       <div class="card hidden" id="sys-owner">
         <h2>نگهداری دیتابیس</h2>
         <p class="hint" id="sys-stale"></p>
@@ -769,6 +775,15 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     tj_tokens: 'لینک‌های ایمیل (تأیید/بازیابی)', tj_attempts: 'محدودیت تلاش‌ها', tj_admins: 'ادمین‌ها',
     tj_admin_sessions: 'نشست‌های ادمین', tj_admin_audit: 'گزارش فعالیت ادمین‌ها', tj_schema: 'نسخه‌ی ساختار دیتابیس',
   };
+  var DB_GROUPS = {
+    accounts: ['حساب‌ها و ورود', 'حساب کاربرها، نشست‌های ورود، لینک‌های ایمیل و محدودیت تلاش‌ها.'],
+    userdata: ['داده‌های کاربرها', 'کارها، عادت‌ها، رویدادها، تنظیمات و اطلاعات پریود هر کاربر (پریود رمزنگاری‌شده). محتوا هیچ‌وقت نشون داده نمی‌شه.'],
+    admin: ['پنل ادمین', 'ادمین‌ها، نشست‌هاشون و گزارش فعالیت.'],
+    content: ['محتوا و مقاله‌ها', 'متن و عکس‌های سایت و مقاله‌ها.'],
+    system: ['سیستم', 'نسخه‌ی ساختار دیتابیس (مایگریشن‌ها).'],
+    other: ['سایر', 'جدول‌هایی که به بخش خاصی تعلق ندارن.'],
+  };
+  var sys = { data: null, group: '' };
   var size = function (b) {
     if (b === null || b === undefined) return '—';
     var u = ['بایت', 'کیلوبایت', 'مگابایت', 'گیگابایت', 'ترابایت'], i = 0;
@@ -812,16 +827,9 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       t.appendChild(tb); disk.appendChild(t);
       disk.appendChild(el('div', 'hint', 'نوار بالا کل دیسک سروره (اشتراکی)؛ جدول، فضای خود این حساب. سهمیه‌ی دقیق پلن هاست تو سی‌پنل دیده می‌شه.'));
 
-      var body = $('sys-tables'); body.textContent = '';
-      s.tables.forEach(function (x) {
-        var tr = el('tr');
-        tr.appendChild(el('td', '', TABLE_NAMES[x.name] || x.name));
-        tr.appendChild(el('td', 'ltr', x.name));
-        tr.appendChild(el('td', 'num', fa(x.rows)));
-        tr.appendChild(el('td', 'num', size(x.bytes)));
-        tr.appendChild(el('td', 'num', x.indexes === null ? '—' : fa(x.indexes)));
-        body.appendChild(tr);
-      });
+      sys.data = s;
+      if (!sys.group || !s.tables.some(function (x) { return x.group === sys.group; })) sys.group = s.tables.length ? s.tables[0].group : '';
+      renderDbGroups();
 
       var st = s.stale;
       $('sys-stale').textContent = 'قابل پاک‌سازی: ' + fa(st.sessions) + ' نشست تمام‌شده، ' + fa(st.tokens) + ' لینک ایمیل مصرف‌شده یا منقضی، '
@@ -837,6 +845,67 @@ textarea.tall{ min-height:340px; line-height:1.9; }
        ['افزونه‌ها', s.php.extensions.join(', ')], ['ساعت سرور (UTC)', s.server_time]].forEach(function (r) {
         var tr = el('tr'); tr.appendChild(el('td', '', r[0])); tr.appendChild(el('td', 'ltr', r[1])); info.appendChild(tr);
       });
+    });
+  }
+
+  /* Database chips (one per part of the product) and its tables. */
+  function renderDbGroups() {
+    var s = sys.data, chips = $('sys-dbs');
+    chips.textContent = '';
+    Object.keys(DB_GROUPS).forEach(function (g) {
+      var tables = s.tables.filter(function (x) { return x.group === g; });
+      if (!tables.length) return;
+      var bytes = tables.reduce(function (a, x) { return a + (x.bytes || 0); }, 0);
+      var b = el('button', g === sys.group ? 'on' : '', DB_GROUPS[g][0] + ' · ' + fa(tables.length) + ' جدول' + (bytes ? ' · ' + size(bytes) : ''));
+      b.type = 'button';
+      b.addEventListener('click', function () { sys.group = g; $('sys-table').classList.add('hidden'); renderDbGroups(); });
+      chips.appendChild(b);
+    });
+    $('sys-db-desc').textContent = (DB_GROUPS[sys.group] || ['', ''])[1];
+    var body = $('sys-tables'); body.textContent = '';
+    s.tables.filter(function (x) { return x.group === sys.group; }).forEach(function (x) {
+      var tr = el('tr', 'click');
+      tr.appendChild(el('td', '', (TABLE_NAMES[x.name] || x.name) + (x.previewable ? '' : ' 🔒')));
+      tr.appendChild(el('td', 'ltr', x.name));
+      tr.appendChild(el('td', 'num', fa(x.rows)));
+      tr.appendChild(el('td', 'num', size(x.bytes)));
+      tr.appendChild(el('td', 'num', x.indexes === null ? '—' : fa(x.indexes)));
+      tr.addEventListener('click', function () { openTable(x.name).catch(onAuthError).catch(function (e) { alert(errorText(e)); }); });
+      body.appendChild(tr);
+    });
+  }
+
+  function openTable(name) {
+    return api('GET', '/system/table?name=' + encodeURIComponent(name)).then(function (t) {
+      var box = $('sys-table');
+      box.textContent = '';
+      var h = el('h2'); h.appendChild(el('span', '', (TABLE_NAMES[t.name] || t.name) + ' · ' + fa(t.rows) + ' ردیف'));
+      var close = el('button', 'btn ghost', 'بستن'); close.type = 'button';
+      close.addEventListener('click', function () { box.classList.add('hidden'); });
+      h.appendChild(close); box.appendChild(h);
+      var grid = function (title, head, rows) {
+        box.appendChild(el('h3', 'mt', title));
+        var w = el('div', 'table-wrap'), tb = el('table'), th = el('thead'), hr = el('tr'), bd = el('tbody');
+        head.forEach(function (x) { hr.appendChild(el('th', '', x)); });
+        th.appendChild(hr); tb.appendChild(th);
+        rows.forEach(function (r) { var tr = el('tr'); r.forEach(function (c) { tr.appendChild(el('td', 'ltr', c === null || c === undefined ? '—' : String(c))); }); bd.appendChild(tr); });
+        tb.appendChild(bd); w.appendChild(tb); box.appendChild(w);
+      };
+      grid('ستون‌ها', ['نام', 'نوع', 'کلید اصلی', 'اجباری', 'پیش‌فرض'],
+        t.columns.map(function (c) { return [c.name, c.type || '—', c.primary ? '✓' : '', c.not_null ? '✓' : '', c.default]; }));
+      if (t.indexes.length) grid('ایندکس‌ها', ['نام', 'یکتا', 'ستون‌ها'], t.indexes.map(function (i) { return [i.name, i.unique ? '✓' : '', i.columns.join(', ')]; }));
+      if (t.foreign_keys.length) grid('ارتباط با جدول‌های دیگه', ['ستون', 'جدول', 'ستون مقصد', 'با حذف'], t.foreign_keys.map(function (f) { return [f.column, f.table, f.to, f.on_delete]; }));
+      if (t.preview) {
+        if (!t.preview.length) box.appendChild(el('p', 'hint', 'این جدول هنوز ردیفی نداره.'));
+        else {
+          var cols = Object.keys(t.preview[0]);
+          grid('آخرین ردیف‌ها (حداکثر ۲۰، ستون‌های حساس پوشیده)', cols, t.preview.map(function (r) { return cols.map(function (k) { return r[k]; }); }));
+        }
+      } else {
+        box.appendChild(el('p', 'hint mt', '🔒 این جدول اطلاعات خصوصی کاربرها یا کلیدهای امنیتی داره؛ فقط ساختارش نشون داده می‌شه.'));
+      }
+      box.classList.remove('hidden');
+      box.scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
   }
 
