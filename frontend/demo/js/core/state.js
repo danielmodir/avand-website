@@ -49,7 +49,7 @@ const state = {
   profile: {
     name: '', firstName: '', lastName: '', username: '',
     email: '', phone: '', gender: '', dob: '', photo: null,
-    userId: genUserId('')
+    userId: genUserId()
   },
   settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali', calendarEnabled: { gregorian: true, jalali: true, hijri: true }, planningEnabled: true,
     theme: null, palette: 'toojibee', prefs: {} },

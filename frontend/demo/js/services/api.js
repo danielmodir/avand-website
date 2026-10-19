@@ -315,7 +315,7 @@
     return {
       profile: {
         firstName: p.first_name, lastName: p.last_name, username: p.username || '', email: p.email,
-        phone: p.phone || '', gender: p.gender || '', dob: p.birth_date || '', photo: null, userId: p.public_id,
+        phone: p.phone || '', gender: p.gender || '', dob: p.birth_date || '', photo: null, userId: 'TJ-' + p.public_id,
         name: (p.first_name + ' ' + p.last_name).trim(),
       },
       settings: {
@@ -540,7 +540,7 @@
   // ── connections ──────────────────────────────────────────────────────
   function searchUser(q) {
     return request('GET', '/social/search?q=' + encodeURIComponent(q)).then(function (rows) {
-      return rows.map(function (r) { return { id: r.id, name: r.name, username: r.username, userId: r.public_id }; });
+      return rows.map(function (r) { return { id: r.id, name: r.name, username: r.username, userId: 'TJ-' + r.public_id }; });
     });
   }
   function sendConnectionRequest(id) { return request('POST', '/social/connections/' + id + '/request'); }

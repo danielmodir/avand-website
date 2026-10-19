@@ -5,9 +5,12 @@ const uid = () => Cloud.uuid();
    and name-based rather than a raw code — same style cloud.js derives for
    real accounts (see friendlyUserId() there), just locally random here
    since this is only ever the pre-login placeholder default. */
-const genUserId = (name) => {
-  const base = (name || 'user').replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase() || 'USER';
-  return base + (1000 + Math.floor(Math.random() * 9000));
+/* Same shape as the server's codes (TJ- + 8 random Crockford-base32
+   characters, nothing from the name); used only without a backend. */
+const genUserId = () => {
+  const abc = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return 'TJ-' + Array.from(bytes, b => abc[b % 32]).join('');
 };
 
 const pad = n => String(n).padStart(2, '0');

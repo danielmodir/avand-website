@@ -42,10 +42,14 @@ function tj_new_session(int $userId): array {
     $access = tj_random_token();
     $refresh = tj_random_token();
     $ua = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
-    tj_db()->prepare('INSERT INTO tj_sessions (user_id, access_hash, refresh_hash, access_expires, refresh_expires, user_agent, created_at, last_used_at)
+    $db = tj_db();
+    $db->prepare('INSERT INTO tj_sessions (user_id, access_hash, refresh_hash, access_expires, refresh_expires, user_agent, created_at, last_used_at)
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
         ->execute([$userId, tj_hash($access), tj_hash($refresh), tj_now(TJ_ACCESS_TTL), tj_now(TJ_REFRESH_TTL), $ua, tj_now(), tj_now()]);
-    return ['access_token' => $access, 'refresh_token' => $refresh, 'user_id' => (string)$userId, 'expires_in' => TJ_ACCESS_TTL];
+    // The random public id, never the internal sequential one.
+    $q = $db->prepare('SELECT public_id FROM tj_users WHERE id = ?');
+    $q->execute([$userId]);
+    return ['access_token' => $access, 'refresh_token' => $refresh, 'user_id' => (string)$q->fetch()['public_id'], 'expires_in' => TJ_ACCESS_TTL];
 }
 
 /* The signed-in user for this request, or a 401. */
@@ -63,7 +67,7 @@ function tj_require_user(): array {
 
 function tj_public_user(array $u): array {
     return [
-        'id' => (string)$u['id'], 'email' => $u['email'],
+        'id' => (string)$u['public_id'], 'display_id' => (string)$u['display_id'], 'email' => $u['email'],
         'first_name' => $u['first_name'], 'last_name' => $u['last_name'],
         'username' => $u['username'] ?? null, 'gender' => $u['gender'] ?? null, 'birth_date' => $u['birth_date'] ?? null,
         'email_verified' => $u['email_verified_at'] !== null,
@@ -118,8 +122,9 @@ function tj_register(): void {
     $q->execute([$username]);
     if ($q->fetch()) tj_fail(409, 'username_taken');
 
-    $db->prepare('INSERT INTO tj_users (email, password_hash, first_name, last_name, username, gender, birth_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        ->execute([$email, password_hash($password, PASSWORD_DEFAULT), tj_str($b, 'first_name', 60), tj_str($b, 'last_name', 60), $username, $gender, $birth, tj_now(), tj_now()]);
+    $db->prepare('INSERT INTO tj_users (email, password_hash, first_name, last_name, username, gender, birth_date, public_id, display_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        ->execute([$email, password_hash($password, PASSWORD_DEFAULT), tj_str($b, 'first_name', 60), tj_str($b, 'last_name', 60), $username, $gender, $birth,
+                   tj_new_public_id(), tj_new_display_id($db), tj_now(), tj_now()]);
     $userId = (int)$db->lastInsertId();
 
     $token = tj_issue_email_token($userId, 'verify', 7 * 86400);

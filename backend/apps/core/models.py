@@ -1,5 +1,7 @@
 """toojibee_core: accounts, sign-in, profile, settings, module registry,
 uploaded files, editable content, legal consent and outgoing email."""
+import uuid
+
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.core.validators import MaxValueValidator, RegexValidator
@@ -40,7 +42,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         SUSPENDED = "suspended"
         PENDING_DELETION = "pending_deletion"
 
-    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    # Fully random (uuid4), not time-ordered: an account id says nothing
+    # about when it was made or how many came before it.
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=254, unique=True)
     email_verified_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)

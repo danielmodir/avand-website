@@ -6,6 +6,8 @@ Options -Indexes
   # Apache drops the Authorization header for PHP unless passed on.
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
   RewriteRule ^v1/index\.php$ - [L]
+  # The admin page (served only at its secret address; see panel.php).
+  RewriteRule ^panel\.php$ - [L]
   RewriteRule ^v1(/.*)?$ v1/index.php [L,QSA]
   RewriteRule ^ - [F]
 </IfModule>

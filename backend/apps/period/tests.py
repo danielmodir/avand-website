@@ -19,8 +19,10 @@ class PeriodTests(ApiTestCase):
         self.assertEqual(saved.status_code, 200, saved.content)
         self.assertEqual(self.client.get("/api/v1/period/profile").json()["cycle_length"], 31)
         blob = bytes(PeriodProfile.objects.get().enc_data)
-        self.assertNotIn(b"31", blob)
+        # Long plaintext markers only: a 2-byte one like b"31" shows up in
+        # random ciphertext now and then and made this test flaky.
         self.assertNotIn(b"cycle_length", blob)
+        self.assertNotIn(b'"period_length": 5', blob)
 
     def test_ciphertext_moved_to_another_row_does_not_decrypt(self):
         a, b = str(uuid.uuid4()), str(uuid.uuid4())

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>پنل مدیریت توجیبی</title>
+<!-- Colors, font and dark mode come from the site's own tokens. -->
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<style nonce="{{NONCE}}">
+*{ box-sizing:border-box; }
+body{ margin:0; min-height:100vh; background:var(--color-bg); color:var(--color-text); font-family:var(--font-sans-fa); font-size:var(--font-size-sm); line-height:var(--line-height-normal); }
+.wrap{ max-width:980px; margin:0 auto; padding:24px 16px 48px; }
+.card{ background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-soft-sm); padding:20px; }
+.auth{ max-width:410px; margin:7vh auto 0; }
+.brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:var(--font-size-md); margin-bottom:6px; }
+.brand img{ width:36px; height:36px; }
+.sub{ color:var(--color-text-muted); font-size:var(--font-size-xs); margin:0 0 16px; }
+label{ display:block; font-size:var(--font-size-xs); font-weight:700; margin:12px 0 6px; }
+input[type=email], input[type=password], input[type=text]{ width:100%; padding:12px 14px; border-radius:var(--radius-md); border:2px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text); font:inherit; }
+input:focus{ outline:none; border-color:var(--color-primary); }
+input[dir="ltr"]{ text-align:left; }
+button{ font:inherit; cursor:pointer; }
+.btn{ border:none; border-radius:var(--radius-md); padding:11px 18px; font-weight:800; background:var(--color-primary); color:var(--color-on-primary); }
+.btn:disabled{ opacity:.6; cursor:default; }
+.btn.block{ width:100%; margin-top:18px; }
+.btn.ghost{ background:transparent; color:var(--color-text); border:1px solid var(--color-border); padding:7px 13px; font-weight:700; }
+.btn.danger{ background:transparent; color:var(--color-error); border:1px solid var(--color-error); padding:7px 13px; font-weight:700; }
+.link{ display:block; margin:14px auto 0; background:none; border:none; color:var(--color-link); font-weight:700; font-size:var(--font-size-xs); }
+.alert{ margin-top:14px; padding:10px 12px; border-radius:var(--radius-sm); font-size:var(--font-size-xs); }
+.alert.error{ background:var(--color-error-bg); color:var(--color-error); }
+.alert.ok{ background:var(--color-success-bg); color:var(--color-success); }
+.hint{ color:var(--color-text-muted); font-size:var(--font-size-xs); margin-top:6px; }
+.top{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+.who{ color:var(--color-text-muted); font-size:var(--font-size-xs); }
+.tabs{ display:flex; gap:6px; background:var(--color-bg-soft); padding:4px; border-radius:var(--radius-md); margin-bottom:18px; overflow-x:auto; }
+.tabs button{ flex:0 0 auto; border:none; background:transparent; padding:9px 16px; border-radius:var(--radius-sm); font-weight:700; color:var(--color-text-muted); }
+.tabs button.on{ background:var(--color-surface); color:var(--color-text); box-shadow:var(--shadow-soft-sm); }
+.stats{ display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:12px; }
+.stat .n{ font-size:var(--font-size-lg); font-weight:800; }
+.stat .l{ color:var(--color-text-muted); font-size:var(--font-size-xs); }
+h2{ font-size:var(--font-size-base); margin:0 0 12px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.table-wrap{ overflow-x:auto; }
+table{ width:100%; border-collapse:collapse; font-size:var(--font-size-xs); }
+th, td{ text-align:right; padding:9px 8px; border-bottom:1px solid var(--color-border); vertical-align:top; }
+th{ color:var(--color-text-muted); font-weight:700; white-space:nowrap; }
+td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
+.tag{ display:inline-block; padding:2px 8px; border-radius:var(--radius-full); background:var(--color-bg-soft); white-space:nowrap; margin:1px; }
+.tag.bad{ background:var(--color-error-bg); color:var(--color-error); }
+.tag.good{ background:var(--color-success-bg); color:var(--color-success); }
+.tag.warn{ background:var(--color-warning-bg); color:var(--color-warning); }
+.perms{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px; margin-top:8px; }
+.perm{ display:flex; gap:8px; align-items:flex-start; padding:10px; border:1px solid var(--color-border); border-radius:var(--radius-sm); font-size:var(--font-size-xs); cursor:pointer; margin:0; font-weight:400; }
+.perm b{ display:block; }
+.perm small{ color:var(--color-text-muted); }
+.perm.soon b::after{ content:' (به‌زودی)'; color:var(--color-text-muted); font-weight:400; }
+.actions{ display:flex; gap:6px; flex-wrap:wrap; }
+.code{ direction:ltr; font-weight:800; font-size:var(--font-size-md); letter-spacing:.06em; padding:10px 14px; background:var(--color-bg-soft); border-radius:var(--radius-sm); display:inline-block; margin:6px 0; user-select:all; }
+.stack > * + *{ margin-top:16px; }
+.note{ margin-top:18px; color:var(--color-text-muted); font-size:var(--font-size-xs); }
+.hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- First admin: one-time code from ~/toojibee-admin.php -->
+  <form class="card auth hidden" id="view-setup" novalidate>
+    <div class="brand"><img src="/assets/icons/logo.svg" alt="">پنل مدیریت توجیبی</div>
+    <p class="sub">ساخت اولین ادمین (مالک، با همه‌ی دسترسی‌ها). کد یک‌بارمصرف داخل فایل <b dir="ltr">toojibee-admin.php</b> در پوشه‌ی اصلی هاست (بیرون از public_html) است.</p>
+    <label for="s-code">کد راه‌اندازی</label>
+    <input id="s-code" type="text" dir="ltr" autocomplete="off" spellcheck="false">
+    <label for="s-email">ایمیل ادمین</label>
+    <input id="s-email" type="email" dir="ltr" autocomplete="username">
+    <label for="s-pass">رمز عبور</label>
+    <input id="s-pass" type="password" dir="ltr" autocomplete="new-password">
+    <div class="hint">حداقل ۱۲ کاراکتر، با حرف و عدد یا علامت.</div>
+    <label for="s-pass2">تکرار رمز عبور</label>
+    <input id="s-pass2" type="password" dir="ltr" autocomplete="new-password">
+    <button class="btn block" type="submit">ساخت ادمین و ورود</button>
+    <div class="alert error hidden" role="alert"></div>
+  </form>
+
+  <form class="card auth hidden" id="view-login" novalidate>
+    <div class="brand"><img src="/assets/icons/logo.svg" alt="">پنل مدیریت توجیبی</div>
+    <p class="sub">فقط برای ادمین‌ها.</p>
+    <label for="l-email">ایمیل</label>
+    <input id="l-email" type="email" dir="ltr" autocomplete="username">
+    <label for="l-pass">رمز عبور</label>
+    <input id="l-pass" type="password" dir="ltr" autocomplete="current-password">
+    <button class="btn block" type="submit">ورود</button>
+    <div class="alert error hidden" role="alert"></div>
+    <button class="link" type="button" id="go-invite">کد دعوت دارم</button>
+  </form>
+
+  <!-- A new admin: email + invite code + their own password -->
+  <form class="card auth hidden" id="view-invite" novalidate>
+    <div class="brand"><img src="/assets/icons/logo.svg" alt="">پنل مدیریت توجیبی</div>
+    <p class="sub">با کد دعوتی که ادمین بهت داده، رمز خودت رو بساز. کد ۴۸ ساعت اعتبار داره و یک بار مصرفه.</p>
+    <label for="i-email">ایمیل</label>
+    <input id="i-email" type="email" dir="ltr" autocomplete="username">
+    <label for="i-code">کد دعوت</label>
+    <input id="i-code" type="text" dir="ltr" autocomplete="off" spellcheck="false">
+    <label for="i-pass">رمز عبور</label>
+    <input id="i-pass" type="password" dir="ltr" autocomplete="new-password">
+    <div class="hint">حداقل ۱۲ کاراکتر، با حرف و عدد یا علامت.</div>
+    <label for="i-pass2">تکرار رمز عبور</label>
+    <input id="i-pass2" type="password" dir="ltr" autocomplete="new-password">
+    <button class="btn block" type="submit">ساخت رمز و ورود</button>
+    <div class="alert error hidden" role="alert"></div>
+    <button class="link" type="button" id="back-login">برگشت به ورود</button>
+  </form>
+
+  <div class="hidden" id="view-dash">
+    <div class="top">
+      <div>
+        <div class="brand"><img src="/assets/icons/logo.svg" alt="">پنل مدیریت توجیبی</div>
+        <div class="who" id="who"></div>
+      </div>
+      <button class="btn ghost" id="logout" type="button">خروج</button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+
+    <section id="tab-overview" class="hidden">
+      <div class="stats" id="stats"></div>
+      <p class="note">بقیه‌ی ابزارها (مدیریت کاربرها، محتوای سایت، آمار بازدید) مرحله‌به‌مرحله اضافه می‌شن.</p>
+    </section>
+
+    <section id="tab-admins" class="hidden stack">
+      <form class="card" id="new-admin" novalidate>
+        <h2>افزودن ادمین</h2>
+        <label for="n-email">ایمیل ادمین جدید</label>
+        <input id="n-email" type="email" dir="ltr" autocomplete="off">
+        <label>دسترسی‌ها</label>
+        <div class="perms" id="n-perms"></div>
+        <button class="btn block" type="submit">ساخت کد دعوت</button>
+        <div class="alert error hidden" role="alert"></div>
+        <div class="alert ok hidden" id="invite-out"></div>
+      </form>
+      <div class="card">
+        <h2>ادمین‌ها</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ایمیل</th><th>وضعیت</th><th>دسترسی‌ها</th><th>آخرین ورود</th><th></th></tr></thead>
+            <tbody id="admins"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-audit" class="hidden">
+      <div class="card">
+        <h2>گزارش فعالیت ادمین‌ها <button class="btn ghost" id="refresh" type="button">به‌روزرسانی</button></h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>زمان</th><th>رویداد</th><th>ادمین / جزئیات</th><th>IP</th></tr></thead>
+            <tbody id="audit"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <p class="note">اگه ۳۰ دقیقه کاری نکنی، خودکار خارج می‌شی.</p>
+  </div>
+
+</div>
+<script nonce="{{NONCE}}">
+(function () {
+  'use strict';
+  var SLUG = location.pathname.replace(/^\/+|\/+$/g, '');
+  var me = { csrf: null, email: '', permissions: [], isOwner: false };
+  var allPerms = [];
+  var $ = function (id) { return document.getElementById(id); };
+  var fa = function (n) { return Number(n).toLocaleString('fa-IR'); };
+  var when = function (s) { return s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('fa-IR') : '—'; };
+  var can = function (p) { return me.permissions.indexOf(p) !== -1; };
+
+  var PERMS = {
+    'stats.view': ['دیدن آمار', 'تعداد کاربرها، ثبت‌نام‌ها و کاربرهای فعال'],
+    'users.view': ['دیدن کاربرها', 'اطلاعات حساب‌ها، بدون محتوای کارها و پریود', true],
+    'users.manage': ['مدیریت کاربرها', 'تعلیق، خارج کردن و حذف حساب', true],
+    'content.manage': ['محتوای سایت', 'سربرگ، عکس‌ها و متن‌ها', true],
+    'articles.review': ['بررسی مقاله‌ها', 'تأیید یا رد مقاله‌ها', true],
+    'audit.view': ['گزارش فعالیت', 'دیدن کارهای همه‌ی ادمین‌ها'],
+    'admins.manage': ['مدیریت ادمین‌ها', 'افزودن ادمین و تعیین دسترسی‌ها'],
+  };
+  var MESSAGES = {
+    invalid_credentials: 'ایمیل یا رمز عبور اشتباهه.',
+    locked: 'به‌خاطر تلاش‌های اشتباه، ورود به این حساب ۱۵ دقیقه قفل شده.',
+    throttled: 'تلاش‌ها زیاد شد. چند دقیقه بعد دوباره امتحان کن.',
+    bad_setup_code: 'کد راه‌اندازی درست نیست.',
+    setup_closed: 'راه‌اندازی قبلاً انجام شده. از صفحه‌ی ورود وارد شو.',
+    bad_invite: 'ایمیل یا کد دعوت درست نیست، یا کد منقضی شده.',
+    too_short: 'رمز باید حداقل ۱۲ کاراکتر باشه.',
+    needs_mix: 'رمز باید هم حرف داشته باشه هم عدد یا علامت.',
+    too_long: 'رمز خیلی بلنده.',
+    mismatch: 'رمز و تکرارش یکی نیستن.',
+    validation_error: 'ایمیل معتبر نیست.',
+    email_taken: 'این ایمیل قبلاً ادمین شده.',
+    forbidden: 'این دسترسی رو نداری.',
+    owner_locked: 'دسترسی‌های مالک قابل تغییر نیست.',
+    not_yourself: 'دسترسی‌های خودت رو نمی‌تونی تغییر بدی.',
+    not_authenticated: 'نشستت تموم شده. دوباره وارد شو.',
+    network: 'اتصال به سرور برقرار نشد.',
+  };
+  var ACTIONS = {
+    login_ok: ['ورود موفق', 'good'], login_failed: ['ورود ناموفق', 'bad'], login_locked: ['تلاش در زمان قفل', 'bad'],
+    logout: ['خروج', ''], setup_done: ['ساخت مالک', 'good'], setup_failed: ['کد راه‌اندازی اشتباه', 'bad'],
+    admin_invited: ['دعوت ادمین', 'warn'], invite_accepted: ['پذیرش دعوت', 'good'], invite_failed: ['کد دعوت اشتباه', 'bad'],
+    admin_updated: ['تغییر ادمین', 'warn'], admin_removed: ['حذف ادمین', 'bad'],
+  };
+  var STATUS = { active: ['فعال', 'good'], invited: ['دعوت‌شده', 'warn'], disabled: ['غیرفعال', 'bad'] };
+
+  function api(method, path, body) {
+    var headers = { 'X-TJ-Panel': SLUG };
+    if (body) headers['Content-Type'] = 'application/json';
+    if (method !== 'GET' && me.csrf) headers['X-CSRF-Token'] = me.csrf;
+    return fetch('/api/v1/admin' + path, { method: method, headers: headers, credentials: 'same-origin', body: body ? JSON.stringify(body) : undefined })
+      .catch(function () { throw { code: 'network' }; })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (data) {
+          if (!r.ok) throw { status: r.status, code: data.error, body: data };
+          return data;
+        });
+      });
+  }
+
+  function errorText(err) {
+    if (err && err.code === 'weak_password' && err.body && err.body.reasons) return err.body.reasons.map(function (k) { return MESSAGES[k] || k; }).join(' ');
+    return MESSAGES[err && err.code] || 'یه خطای غیرمنتظره پیش اومد.';
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function show(id) {
+    ['view-setup', 'view-login', 'view-invite', 'view-dash'].forEach(function (v) { $(v).classList.toggle('hidden', v !== id); });
+    var first = $(id).querySelector('input');
+    if (first) first.focus();
+  }
+
+  function setAlert(form, text) {
+    var a = form.querySelector('.alert.error');
+    a.textContent = text || '';
+    a.classList.toggle('hidden', !text);
+  }
+
+  function submitForm(form, run) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      setAlert(form, '');
+      var btn = form.querySelector('button[type=submit]');
+      btn.disabled = true;
+      Promise.resolve().then(run).catch(function (err) {
+        if (err && err.status === 401 && me.csrf) return onAuthError(err);
+        setAlert(form, errorText(err));
+      }).then(function () { btn.disabled = false; });
+    });
+  }
+
+  function onAuthError(err) {
+    if (err && err.status === 401) { me.csrf = null; show('view-login'); setAlert($('view-login'), MESSAGES.not_authenticated); return; }
+    throw err;
+  }
+
+  /* ---- signed in ---- */
+
+  function enterDash(s) {
+    me = { csrf: s.csrf, email: s.email, permissions: s.permissions || [], isOwner: !!s.is_owner };
+    $('who').textContent = 'وارد شده با ' + me.email + (me.isOwner ? ' · مالک' : '');
+    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
+      .filter(function (t) { return can(t[2]); });
+    var nav = $('tabs');
+    nav.textContent = '';
+    tabs.forEach(function (t) {
+      var b = el('button', '', t[1]);
+      b.type = 'button';
+      b.dataset.tab = t[0];
+      b.addEventListener('click', function () { openTab(t[0]); });
+      nav.appendChild(b);
+    });
+    show('view-dash');
+    if (tabs.length) openTab(tabs[0][0]);
+    else nav.appendChild(el('span', 'who', 'هنوز دسترسی‌ای برات تعیین نشده.'));
+  }
+
+  function openTab(name) {
+    Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
+    ['overview', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
+    ({ overview: loadOverview, admins: loadAdmins, audit: loadAudit })[name]().catch(onAuthError).catch(function (err) { alert(errorText(err)); });
+  }
+
+  function loadOverview() {
+    return api('GET', '/overview').then(function (o) {
+      var stats = $('stats');
+      stats.textContent = '';
+      [['users_total', 'همه‌ی کاربرها'], ['users_today', 'ثبت‌نام امروز'], ['users_7d', 'ثبت‌نام ۷ روز اخیر'],
+       ['users_verified', 'ایمیل تأییدشده'], ['signed_in_users', 'کاربرهای وارد‌شده'], ['active_1h', 'فعال در یک ساعت اخیر']].forEach(function (s) {
+        var c = el('div', 'card stat');
+        c.appendChild(el('div', 'n', fa(o[s[0]] || 0)));
+        c.appendChild(el('div', 'l', s[1]));
+        stats.appendChild(c);
+      });
+    });
+  }
+
+  function loadAudit() {
+    return api('GET', '/audit').then(function (res) {
+      var body = $('audit');
+      body.textContent = '';
+      res.items.forEach(function (it) {
+        var tr = el('tr');
+        tr.appendChild(el('td', '', when(it.created_at)));
+        var meta = ACTIONS[it.action] || [it.action, ''];
+        var td = el('td'); td.appendChild(el('span', 'tag ' + meta[1], meta[0])); tr.appendChild(td);
+        tr.appendChild(el('td', 'ltr', [it.admin_email, it.detail].filter(Boolean).join(' · ') || '—'));
+        tr.appendChild(el('td', 'ltr', it.ip));
+        body.appendChild(tr);
+      });
+    });
+  }
+
+  function permBoxes(container, checked, editable) {
+    container.textContent = '';
+    allPerms.forEach(function (p) {
+      var info = PERMS[p] || [p, ''];
+      var lab = el('label', 'perm' + (info[2] ? ' soon' : ''));
+      var cb = el('input'); cb.type = 'checkbox'; cb.value = p; cb.checked = checked.indexOf(p) !== -1;
+      // You can only hand out access you have yourself.
+      cb.disabled = !editable || !can(p);
+      var txt = el('span'); txt.appendChild(el('b', '', info[0])); txt.appendChild(el('small', '', info[1]));
+      lab.appendChild(cb); lab.appendChild(txt);
+      container.appendChild(lab);
+    });
+  }
+
+  function checkedPerms(container) {
+    return Array.prototype.filter.call(container.querySelectorAll('input[type=checkbox]'), function (c) { return c.checked; }).map(function (c) { return c.value; });
+  }
+
+  function showInvite(email, code) {
+    var out = $('invite-out');
+    out.textContent = '';
+    out.appendChild(el('div', '', 'کد دعوت برای ' + email + ' (فقط همین یک بار نشون داده می‌شه، ۴۸ ساعت اعتبار داره):'));
+    out.appendChild(el('div', 'code', code));
+    out.appendChild(el('div', '', 'آدرس همین پنل و این کد رو از یه راه امن به خودش بده. با «کد دعوت دارم» رمزش رو می‌سازه.'));
+    out.classList.remove('hidden');
+  }
+
+  function loadAdmins() {
+    return api('GET', '/admins').then(function (res) {
+      allPerms = res.all_permissions;
+      permBoxes($('n-perms'), ['stats.view'], true);
+      var body = $('admins');
+      body.textContent = '';
+      res.items.forEach(function (a) {
+        var tr = el('tr');
+        tr.appendChild(el('td', 'ltr', a.email));
+        var st = STATUS[a.status];
+        var tdS = el('td'); tdS.appendChild(el('span', 'tag ' + st[1], a.is_owner ? 'مالک' : st[0])); tr.appendChild(tdS);
+        var tdP = el('td');
+        if (a.is_owner) tdP.appendChild(el('span', 'tag', 'همه‌ی دسترسی‌ها'));
+        else if (!a.permissions.length) tdP.textContent = '—';
+        else a.permissions.forEach(function (p) { tdP.appendChild(el('span', 'tag', (PERMS[p] || [p])[0])); });
+        tr.appendChild(tdP);
+        tr.appendChild(el('td', '', when(a.last_login_at)));
+        var tdA = el('td');
+        var self = a.email === me.email;
+        if (!a.is_owner && !self) {
+          var box = el('div', 'actions');
+          var edit = el('button', 'btn ghost', 'دسترسی‌ها'); edit.type = 'button';
+          edit.addEventListener('click', function () { editPerms(tr, a); });
+          var tog = el('button', 'btn ghost', a.status === 'disabled' ? 'فعال کردن' : 'غیرفعال کردن'); tog.type = 'button';
+          tog.addEventListener('click', function () {
+            api('PATCH', '/admins/' + a.id, { disabled: a.status !== 'disabled' }).then(loadAdmins).catch(onAuthError).catch(function (e) { alert(errorText(e)); });
+          });
+          box.appendChild(edit); box.appendChild(tog);
+          if (a.status === 'invited') {
+            var re = el('button', 'btn ghost', 'کد دعوت جدید'); re.type = 'button';
+            re.addEventListener('click', function () {
+              api('PATCH', '/admins/' + a.id, { new_invite: true }).then(function (r) { showInvite(a.email, r.invite_code); window.scrollTo(0, 0); return loadAdmins(); })
+                .catch(onAuthError).catch(function (e) { alert(errorText(e)); });
+            });
+            box.appendChild(re);
+          }
+          var del = el('button', 'btn danger', 'حذف'); del.type = 'button';
+          del.addEventListener('click', function () {
+            if (prompt('برای حذف این ادمین، ایمیلش رو تایپ کن:\n' + a.email) !== a.email) return;
+            api('POST', '/admins/' + a.id + '/delete').then(loadAdmins).catch(onAuthError).catch(function (e) { alert(errorText(e)); });
+          });
+          box.appendChild(del);
+          tdA.appendChild(box);
+        }
+        tr.appendChild(tdA);
+        body.appendChild(tr);
+      });
+    });
+  }
+
+  function editPerms(tr, a) {
+    var row = el('tr'), td = el('td');
+    td.colSpan = 5;
+    var perms = el('div', 'perms');
+    permBoxes(perms, a.permissions, true);
+    var save = el('button', 'btn', 'ذخیره‌ی دسترسی‌ها'); save.type = 'button';
+    save.addEventListener('click', function () {
+      api('PATCH', '/admins/' + a.id, { permissions: checkedPerms(perms) }).then(loadAdmins).catch(onAuthError).catch(function (e) { alert(errorText(e)); });
+    });
+    td.appendChild(perms); td.appendChild(el('div', 'actions')).appendChild(save);
+    row.appendChild(td);
+    if (tr.nextSibling && tr.nextSibling.dataset && tr.nextSibling.dataset.editor) tr.parentNode.removeChild(tr.nextSibling);
+    else { row.dataset.editor = '1'; tr.parentNode.insertBefore(row, tr.nextSibling); }
+  }
+
+  /* ---- forms ---- */
+
+  submitForm($('view-setup'), function () {
+    if ($('s-pass').value !== $('s-pass2').value) throw { code: 'mismatch' };
+    return api('POST', '/setup', { code: $('s-code').value, email: $('s-email').value.trim(), password: $('s-pass').value })
+      .then(function (r) { $('s-pass').value = $('s-pass2').value = ''; enterDash(r); });
+  });
+  submitForm($('view-login'), function () {
+    return api('POST', '/login', { email: $('l-email').value.trim(), password: $('l-pass').value })
+      .then(function (r) { $('l-pass').value = ''; enterDash(r); });
+  });
+  submitForm($('view-invite'), function () {
+    if ($('i-pass').value !== $('i-pass2').value) throw { code: 'mismatch' };
+    return api('POST', '/invite/accept', { email: $('i-email').value.trim(), code: $('i-code').value, password: $('i-pass').value })
+      .then(function (r) { $('i-pass').value = $('i-pass2').value = ''; enterDash(r); });
+  });
+  submitForm($('new-admin'), function () {
+    $('invite-out').classList.add('hidden');
+    var email = $('n-email').value.trim();
+    return api('POST', '/admins', { email: email, permissions: checkedPerms($('n-perms')) })
+      .then(function (r) { $('n-email').value = ''; showInvite(email, r.invite_code); return loadAdmins(); });
+  });
+
+  $('go-invite').addEventListener('click', function () { show('view-invite'); });
+  $('back-login').addEventListener('click', function () { show('view-login'); });
+  $('logout').addEventListener('click', function () {
+    api('POST', '/logout').catch(function () {}).then(function () { me.csrf = null; show('view-login'); });
+  });
+  $('refresh').addEventListener('click', function () { loadAudit().catch(onAuthError); });
+
+  api('GET', '/state').then(function (s) {
+    if (s.signed_in) enterDash(s);
+    else show(s.setup_needed ? 'view-setup' : 'view-login');
+  }).catch(function (err) { document.body.textContent = errorText(err); });
+})();
+</script>
+</body>
+</html>

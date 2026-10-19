@@ -8,6 +8,7 @@ require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/auth.php';
 require __DIR__ . '/../lib/sync.php';
 require __DIR__ . '/../lib/mail.php';
+require __DIR__ . '/../lib/admin.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -33,7 +34,26 @@ $routes = [
     'POST /me/delete'           => 'tj_delete_me',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
+    // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header
+    // carries the panel's secret address.
+    'GET /admin/state'          => 'tj_admin_state',
+    'POST /admin/setup'         => 'tj_admin_setup',
+    'POST /admin/login'         => 'tj_admin_login',
+    'POST /admin/logout'        => 'tj_admin_logout',
+    'POST /admin/invite/accept' => 'tj_admin_accept_invite',
+    'GET /admin/overview'       => 'tj_admin_overview',
+    'GET /admin/audit'          => 'tj_admin_audit_list',
+    'GET /admin/admins'         => 'tj_admin_list',
+    'POST /admin/admins'        => 'tj_admin_create',
 ];
+// Unknown /admin/ paths look exactly like any other unknown path.
+if (strpos($path, '/admin/') === 0) tj_admin_gate();
+// One admin: /admin/admins/<public id> (PATCH) and .../delete (POST).
+if (preg_match('#^/admin/admins/([a-f0-9]{32})(/delete)?$#', $path, $m)) {
+    if ($method === 'PATCH' && empty($m[2])) tj_admin_update($m[1]);
+    if ($method === 'POST' && !empty($m[2])) tj_admin_remove($m[1]);
+    tj_fail(405, 'method_not_allowed');
+}
 
 $handler = $routes["$method $path"] ?? null;
 if ($handler === null) {

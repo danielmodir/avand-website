@@ -30,7 +30,11 @@ function loadLocalData(){
   if(Array.isArray(saved.tasks)) state.tasks = saved.tasks;
   if(Array.isArray(saved.habits)) state.habits = saved.habits;
   if(Array.isArray(saved.events)) state.events = saved.events;
-  if(saved.profile) state.profile = Object.assign({}, state.profile, saved.profile);
+  if(saved.profile){
+    state.profile = Object.assign({}, state.profile, saved.profile);
+    // Older saves had a name-based code (SARA1234): use a random one.
+    if(!/^TJ-[0-9A-Z]{8}$/.test(state.profile.userId || '')) state.profile.userId = genUserId();
+  }
   // Device-level choices (palette, language, prefs) were already restored
   // in start(); keep those, take the rest of the saved settings.
   if(saved.settings){

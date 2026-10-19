@@ -125,7 +125,9 @@
       email: me.email,
       firstName: (data.profile && data.profile.firstName) || me.first_name || '',
       lastName: (data.profile && data.profile.lastName) || me.last_name || '',
-      userId: (data.profile && data.profile.userId) || ('TJ' + String(me.id).padStart(4, '0')),
+      // Always the server's random code (an older copy in the synced
+      // document could still hold the old sequential TJ0012-style id).
+      userId: 'TJ-' + me.display_id,
     });
     profile.name = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
     loaded = true;

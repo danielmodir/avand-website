@@ -112,6 +112,92 @@ function tj_migrate(PDO $db): void {
         }
         $db->exec('INSERT INTO tj_schema (version) VALUES (2)');
     }
+    if ($v < 3) tj_migrate_v3($db, $id, $fk, $tail, $sqlite);
+}
+
+/* v3: random account ids, and the admin panel's own tables.
+ * The numeric id stays internal (foreign keys); what leaves the server
+ * is public_id (128 random bits) and display_id (8 random characters,
+ * shown as TJ-XXXXXXXX) — neither says when or in what order an account
+ * was made. Existing accounts get theirs here. */
+function tj_migrate_v3(PDO $db, string $id, string $fk, string $tail, bool $sqlite): void {
+    foreach ([
+        'ALTER TABLE tj_users ADD COLUMN public_id CHAR(32) NULL',
+        'ALTER TABLE tj_users ADD COLUMN display_id VARCHAR(8) NULL',
+        'CREATE UNIQUE INDEX tj_users_public_id ON tj_users (public_id)',
+        'CREATE UNIQUE INDEX tj_users_display_id ON tj_users (display_id)',
+    ] as $sql) {
+        try { $db->exec($sql); } catch (PDOException $e) { /* already there */ }
+    }
+    foreach ($db->query('SELECT id FROM tj_users WHERE public_id IS NULL')->fetchAll() as $row) {
+        $db->prepare('UPDATE tj_users SET public_id = ?, display_id = ? WHERE id = ?')
+            ->execute([tj_new_public_id(), tj_new_display_id($db), $row['id']]);
+    }
+    // is_owner: the first admin, has every permission and can't be
+    // changed by others. permissions: JSON list (lib/admin.php
+    // TJ_ADMIN_PERMISSIONS). A new admin starts with an invite (hash
+    // only) and sets their own password; password_hash is '' until then.
+    $db->exec("CREATE TABLE IF NOT EXISTS tj_admins (
+        id $id,
+        public_id CHAR(32) NOT NULL UNIQUE,
+        email VARCHAR(254) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL DEFAULT '',
+        is_owner INT NOT NULL DEFAULT 0,
+        permissions TEXT NOT NULL,
+        invite_hash CHAR(64) NULL,
+        invite_expires DATETIME NULL,
+        disabled_at DATETIME NULL,
+        created_by $fk NULL,
+        failed_logins INT NOT NULL DEFAULT 0,
+        locked_until DATETIME NULL,
+        last_login_at DATETIME NULL,
+        created_at DATETIME NOT NULL
+    )$tail");
+    $db->exec("CREATE TABLE IF NOT EXISTS tj_admin_sessions (
+        id $id,
+        admin_id $fk NOT NULL,
+        token_hash CHAR(64) NOT NULL UNIQUE,
+        ip VARCHAR(45) NOT NULL DEFAULT '',
+        user_agent VARCHAR(255) NOT NULL DEFAULT '',
+        created_at DATETIME NOT NULL,
+        last_seen_at DATETIME NOT NULL,
+        revoked_at DATETIME NULL,
+        FOREIGN KEY (admin_id) REFERENCES tj_admins(id) ON DELETE CASCADE
+    )$tail");
+    // Append-only: nothing in the API updates or deletes these rows.
+    $db->exec("CREATE TABLE IF NOT EXISTS tj_admin_audit (
+        id $id,
+        admin_id $fk NULL,
+        action VARCHAR(40) NOT NULL,
+        detail VARCHAR(500) NOT NULL DEFAULT '',
+        ip VARCHAR(45) NOT NULL DEFAULT '',
+        created_at DATETIME NOT NULL
+    )$tail");
+    $db->exec('INSERT INTO tj_schema (version) VALUES (3)');
+    // Creates ~/toojibee-admin.php (panel address + one-time setup code)
+    // right away, so the owner can find it in File Manager.
+    if (function_exists('tj_admin_settings')) tj_admin_settings();
+}
+
+/* ---- random ids ---- */
+
+// Crockford base32: no I, L, O, U, so a shared code can't be misread.
+const TJ_CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+function tj_random_code(int $len): string {
+    $s = '';
+    for ($i = 0; $i < $len; $i++) $s .= TJ_CODE_ALPHABET[random_int(0, 31)];
+    return $s;
+}
+
+function tj_new_public_id(): string {
+    return bin2hex(random_bytes(16));
+}
+
+function tj_new_display_id(PDO $db): string {
+    $q = $db->prepare('SELECT 1 FROM tj_users WHERE display_id = ?');
+    do { $code = tj_random_code(8); $q->execute([$code]); } while ($q->fetch());
+    return $code;
 }
 
 function tj_migrate_v1(PDO $db, string $id, string $fk, string $tail, string $text, bool $sqlite): void {

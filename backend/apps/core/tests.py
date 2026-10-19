@@ -54,7 +54,8 @@ class AuthFlowTests(ApiTestCase):
     def test_register_provisions_profile_settings_and_default_desktops(self):
         client = self.register()
         me = client.get("/api/v1/me").json()
-        self.assertRegex(me["profile"]["public_id"], r"^SARA\d{4}$")
+        self.assertRegex(me["profile"]["public_id"], r"^[0-9A-HJKMNP-TV-Z]{8}$")
+        self.assertEqual(User.objects.get(email="user@example.com").id.version, 4)  # random, not time-ordered
         self.assertEqual(me["settings"]["calendar_primary"], "jalali")
         self.assertEqual([m["key"] for m in me["modules"]], ["occasions", "planning", "social"])
         self.assertTrue(EmailOutbox.objects.filter(template="verify_email").exists())

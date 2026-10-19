@@ -7,6 +7,9 @@
   RewriteCond %{HTTPS} !=on [OR]
   RewriteCond %{HTTP_HOST} ^www\. [NC]
   RewriteRule ^ https://toojibee.ir%{REQUEST_URI} [L,R=301]
+  # Admin panel: /p-<random>/ goes to the API's panel.php, which serves
+  # the page only for the one secret address and a 404 for any other.
+  RewriteRule ^p-[a-z0-9]{24}/?$ api/panel.php [L]
 </IfModule>
 
 # --- Our own illustrated 404 page (works at any path depth) ---

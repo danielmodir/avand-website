@@ -1,7 +1,6 @@
 """Account lifecycle and sign-in sessions."""
-import random
 import re
-import string
+import secrets
 from datetime import timedelta
 
 from django.conf import settings
@@ -132,24 +131,24 @@ def revoke_all_sessions(user, reason, except_session=None):
 
 # ── registration ─────────────────────────────────────────────────────────
 
-def _public_id_base(first_name, email):
-    letters = re.sub(r"[^A-Za-z]", "", first_name or "") or re.sub(r"[^A-Za-z]", "", email.split("@")[0])
-    return (letters.upper() + "USER")[:4]
+# Crockford base32: no I, L, O, U (nothing to misread when it's shared).
+PUBLIC_ID_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
 
-def generate_public_id(first_name, email):
-    base = _public_id_base(first_name, email)
-    for _ in range(20):
-        candidate = base + "".join(random.choices(string.digits, k=4))
+def generate_public_id(first_name=None, email=None):
+    """The short code people share to find each other (shown as TJ-XXXXXXXX):
+    8 characters from a CSPRNG, nothing derived from the name, email or
+    sign-up order."""
+    while True:
+        candidate = "".join(secrets.choice(PUBLIC_ID_ALPHABET) for _ in range(8))
         if not Profile.objects.filter(public_id=candidate).exists():
             return candidate
-    return "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 
 def provision_user(user, first_name="", last_name="", username=None, gender=None, birth_date=None):
     """Profile, settings and default desktops for a brand-new account."""
     Profile.objects.create(
-        user=user, first_name=first_name[:60], last_name=last_name[:60], public_id=generate_public_id(first_name or username, user.email),
+        user=user, first_name=first_name[:60], last_name=last_name[:60], public_id=generate_public_id(),
         username=username, gender=gender, birth_date=birth_date,
     )
     UserSettings.objects.create(user=user)
