@@ -68,6 +68,15 @@ tr.click:hover td{ background:var(--color-bg-soft); }
 .kv{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:10px 16px; margin:12px 0; }
 .kv div{ font-size:var(--font-size-xs); }
 .kv b{ display:block; color:var(--color-text-muted); font-weight:700; }
+.chart{ display:flex; align-items:flex-end; gap:3px; height:180px; padding-top:8px; direction:ltr; }
+.chart .day{ flex:1; display:flex; align-items:flex-end; justify-content:center; gap:1px; height:100%; position:relative; }
+.chart .bar{ flex:1; border-radius:3px 3px 0 0; min-height:2px; }
+.bar.views, .sw.views{ background:var(--color-primary); }
+.bar.visitors, .sw.visitors{ background:var(--color-secondary); }
+.legend{ font-size:var(--font-size-xs); color:var(--color-text-muted); font-weight:400; display:flex; align-items:center; gap:6px; }
+.sw{ display:inline-block; width:10px; height:10px; border-radius:3px; }
+.two{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; }
+.num{ text-align:left; color:var(--color-text-muted); }
 .hidden{ display:none !important; }
 </style>
 </head>
@@ -138,6 +147,19 @@ tr.click:hover td{ background:var(--color-bg-soft); }
         <p class="hint">فقط برای مالک. داده‌های پریودی داخل فایل رمزنگاری‌شده می‌مونن؛ کلیدشون (<span dir="ltr">toojibee-secrets.php</span>) جداست. یه نسخه از اون فایل رو هم جای امن نگه دار.</p>
       </div>
       <p class="note">ابزارهای محتوای سایت، آمار بازدید و مقاله‌ها مرحله‌به‌مرحله اضافه می‌شن.</p>
+    </section>
+
+    <section id="tab-visits" class="hidden stack">
+      <div class="stats" id="v-stats"></div>
+      <div class="card">
+        <h2>۳۰ روز اخیر <span class="legend"><i class="sw views"></i>بازدید صفحه <i class="sw visitors"></i>بازدیدکننده</span></h2>
+        <div class="chart" id="v-chart"></div>
+        <p class="hint" id="v-note"></p>
+      </div>
+      <div class="two">
+        <div class="card"><h2>صفحه‌های پربازدید</h2><table><tbody id="v-pages"></tbody></table></div>
+        <div class="card"><h2>از کجا اومدن</h2><table><tbody id="v-refs"></tbody></table></div>
+      </div>
     </section>
 
     <section id="tab-users" class="hidden stack">
@@ -321,7 +343,7 @@ tr.click:hover td{ background:var(--color-bg-soft); }
   function enterDash(s) {
     me = { csrf: s.csrf, email: s.email, permissions: s.permissions || [], isOwner: !!s.is_owner };
     $('who').textContent = 'وارد شده با ' + me.email + (me.isOwner ? ' · مالک' : '');
-    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
+    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
       .filter(function (t) { return can(t[2]); });
     var nav = $('tabs');
     nav.textContent = '';
@@ -339,9 +361,57 @@ tr.click:hover td{ background:var(--color-bg-soft); }
 
   function openTab(name) {
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
-    ['overview', 'users', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
-    ({ overview: loadOverview, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
+    ['overview', 'visits', 'users', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
+    ({ overview: loadOverview, visits: loadVisits, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
       .catch(onAuthError).catch(function (err) { alert(errorText(err)); });
+  }
+
+  /* ---- site visits (from the host's access logs) ---- */
+
+  var PAGE_NAMES = { '/': 'صفحه‌ی اصلی', '/fa/': 'لندینگ فارسی', '/en/': 'لندینگ انگلیسی', '/demo/': 'برنامه (وب‌اپ)' };
+
+  function loadVisits() {
+    return api('GET', '/visits').then(function (v) {
+      var sum = function (list, k) { return list.reduce(function (a, d) { return a + d[k]; }, 0); };
+      var days = v.days, last7 = days.slice(-7), today = days[days.length - 1] || { views: 0, visitors: 0 };
+      var stats = $('v-stats');
+      stats.textContent = '';
+      [[today.visitors, 'بازدیدکننده‌ی امروز'], [today.views, 'بازدید صفحه امروز'], [sum(last7, 'visitors'), 'بازدیدکننده ۷ روز اخیر'],
+       [sum(days, 'visitors'), 'بازدیدکننده ۳۰ روز اخیر'], [sum(days, 'views'), 'بازدید صفحه ۳۰ روز اخیر'],
+       [v.devices.mobile + v.devices.desktop ? Math.round(v.devices.mobile * 100 / (v.devices.mobile + v.devices.desktop)) + '٪' : '—', 'با موبایل']].forEach(function (s) {
+        var c = el('div', 'card stat');
+        c.appendChild(el('div', 'n', typeof s[0] === 'number' ? fa(s[0]) : s[0]));
+        c.appendChild(el('div', 'l', s[1]));
+        stats.appendChild(c);
+      });
+      var chart = $('v-chart'), max = Math.max(1, Math.max.apply(null, days.map(function (d) { return d.views; })));
+      chart.textContent = '';
+      days.forEach(function (d) {
+        var col = el('div', 'day');
+        col.title = new Date(d.day + 'T12:00:00').toLocaleDateString('fa-IR') + ' · ' + fa(d.views) + ' بازدید · ' + fa(d.visitors) + ' بازدیدکننده';
+        ['views', 'visitors'].forEach(function (k) {
+          var b = el('div', 'bar ' + k);
+          b.style.height = (d[k] * 100 / max) + '%';
+          col.appendChild(b);
+        });
+        chart.appendChild(col);
+      });
+      $('v-note').textContent = !v.logs_found ? 'هنوز فایل لاگی از هاست پیدا نشد.'
+        : 'آمار از لاگ‌های خود هاست ساخته می‌شه که روزی یک بار به‌روز می‌شن' + (v.data_until ? '؛ آخرین داده: ' + new Date(v.data_until.replace(' ', 'T')).toLocaleString('fa-IR') : '') + '. ربات‌ها شمرده نمی‌شن و IP کسی ذخیره نمی‌شه.';
+      var fill = function (id, rows, name, cls) {
+        var body = $(id);
+        body.textContent = '';
+        if (!rows.length) { var tr = el('tr'); tr.appendChild(el('td', 'hint', 'هنوز چیزی نیست.')); body.appendChild(tr); return; }
+        rows.forEach(function (r) {
+          var tr = el('tr');
+          tr.appendChild(el('td', cls, name(r.name)));
+          tr.appendChild(el('td', 'num', fa(r.count)));
+          body.appendChild(tr);
+        });
+      };
+      fill('v-pages', v.pages, function (p) { return PAGE_NAMES[p] || p; }, '');
+      fill('v-refs', v.referrers, function (h) { return h; }, 'ltr');
+    });
   }
 
   /* ---- users ---- */
