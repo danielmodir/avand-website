@@ -87,7 +87,7 @@ function tj_admin_password_problems(string $pw): array {
     $r = [];
     if ((function_exists('mb_strlen') ? mb_strlen($pw, 'UTF-8') : strlen($pw)) < TJ_ADMIN_MIN_PASSWORD) $r[] = 'too_short';
     if (!preg_match('/\p{L}/u', $pw) || !preg_match('/[^\p{L}]/u', $pw)) $r[] = 'needs_mix';
-    if (strlen($pw) > 200) $r[] = 'too_long';
+    if (strlen($pw) > 200 || strpos($pw, "\0") !== false) $r[] = 'too_long';
     return $r;
 }
 
@@ -239,7 +239,7 @@ function tj_admin_login(): void {
     $a = $q->fetch() ?: null;
     // Same work and answer for unknown, disabled or not-yet-activated admins.
     $usable = $a && $a['password_hash'] !== '' && $a['disabled_at'] === null;
-    $ok = password_verify($password, $usable ? $a['password_hash'] : password_hash(random_bytes(16), PASSWORD_DEFAULT));
+    $ok = password_verify($password, $usable ? $a['password_hash'] : tj_dummy_hash());
     if ($usable && $a['locked_until'] !== null && $a['locked_until'] > tj_now()) {
         tj_admin_audit((int)$a['id'], 'login_locked', $email);
         tj_fail(429, 'locked');

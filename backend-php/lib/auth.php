@@ -20,6 +20,7 @@ function tj_password_problems(string $password): array {
     $len = function_exists('mb_strlen') ? mb_strlen($password, 'UTF-8') : strlen($password);
     if ($len < TJ_MIN_PASSWORD) $reasons[] = 'Password must be at least ' . TJ_MIN_PASSWORD . ' characters.';
     if (strlen($password) > 200) $reasons[] = 'Password is too long.';
+    if (strpos($password, "\0") !== false) $reasons[] = 'Password contains an invalid character.'; // bcrypt can't hash it
     if (!preg_match('/\p{L}/u', $password) || !preg_match('/[^\p{L}]/u', $password)) $reasons[] = 'Password must contain a letter and a number or symbol.';
     return $reasons;
 }
@@ -145,7 +146,7 @@ function tj_login(): void {
     $q->execute([$email]);
     $user = $q->fetch();
     // Same answer (and similar time) whether or not the address exists.
-    $hash = $user ? $user['password_hash'] : password_hash(random_bytes(16), PASSWORD_DEFAULT);
+    $hash = $user ? $user['password_hash'] : tj_dummy_hash();
     if (!password_verify($password, $hash) || !$user) tj_fail(401, 'invalid_credentials');
     if ($user['status'] !== 'active') tj_fail(403, 'account_suspended');
     if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {

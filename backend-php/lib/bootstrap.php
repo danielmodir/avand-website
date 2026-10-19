@@ -298,6 +298,16 @@ function tj_random_token(): string {
     return rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
 }
 
+/* A real bcrypt hash of a random hex string, for checking a password
+ * against when the account doesn't exist (same timing either way). Hex,
+ * not raw bytes: bcrypt in PHP 8.3+ throws on a NUL byte, which raw
+ * random bytes contain now and then (that was a 500 on ~6% of sign-ins
+ * with an unknown email). */
+function tj_dummy_hash(): string {
+    static $h = null;
+    return $h ?? ($h = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT));
+}
+
 function tj_hash(string $token): string {
     return hash('sha256', $token);
 }
