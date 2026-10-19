@@ -13,6 +13,9 @@
   # Landing pages: the static HTML plus content edited in the admin
   # panel, filled in by api/page.php (no extra request in the browser).
   RewriteRule ^(fa|en)/(index\.html)?$ api/page.php?lang=$1 [L]
+  # Articles published from the admin panel (api/articles.php).
+  RewriteRule ^(fa|en)/articles/?$ api/articles.php?lang=$1 [L]
+  RewriteRule ^(fa|en)/articles/([a-z0-9-]+)/?$ api/articles.php?lang=$1&slug=$2 [L]
 </IfModule>
 
 # --- Our own illustrated 404 page (works at any path depth) ---

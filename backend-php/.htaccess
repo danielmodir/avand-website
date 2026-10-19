@@ -10,6 +10,7 @@ Options -Indexes
   RewriteRule ^panel\.php$ - [L]
   # The landing pages with admin-edited content (see page.php).
   RewriteRule ^page\.php$ - [L]
+  RewriteRule ^articles\.php$ - [L]
   RewriteRule ^v1(/.*)?$ v1/index.php [L,QSA]
   RewriteRule ^ - [F]
 </IfModule>

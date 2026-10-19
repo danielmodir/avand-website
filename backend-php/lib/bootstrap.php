@@ -136,6 +136,30 @@ function tj_migrate(PDO $db): void {
         )$tail");
         $db->exec('INSERT INTO tj_schema (version) VALUES (5)');
     }
+    if ($v < 6) {
+        // Articles written and reviewed in the admin panel (lib/articles.php).
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_articles (
+            id $id,
+            public_id CHAR(32) NOT NULL UNIQUE,
+            lang VARCHAR(2) NOT NULL,
+            slug VARCHAR(80) NOT NULL,
+            title VARCHAR(160) NOT NULL,
+            summary VARCHAR(300) NOT NULL DEFAULT '',
+            body $text NOT NULL,
+            cover VARCHAR(80) NULL,
+            status VARCHAR(12) NOT NULL DEFAULT 'draft',
+            review_note VARCHAR(500) NULL,
+            author_id $fk NULL,
+            reviewer_id $fk NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            submitted_at DATETIME NULL,
+            published_at DATETIME NULL,
+            UNIQUE (lang, slug)
+        )$tail");
+        try { $db->exec('CREATE INDEX tj_articles_list ON tj_articles (lang, status, published_at)'); } catch (PDOException $e) { /* already there */ }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (6)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

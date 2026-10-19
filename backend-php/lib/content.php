@@ -152,6 +152,19 @@ function tj_admin_content_image(): void {
     $me = tj_admin_require('content.manage');
     $slot = (string)($_GET['slot'] ?? '');
     if (!in_array($slot, tj_content_slots(), true)) tj_fail(400, 'bad_slot');
+    [$w, $h] = $slot === 'banner' ? TJ_BANNER_SIZE : TJ_IMAGE_SLOTS[substr($slot, 3)];
+    $url = tj_save_upload_image($w, $h);
+    $c = tj_content_get();
+    tj_remove_upload($c['images'][$slot] ?? null);
+    $c['images'][$slot] = $url;
+    tj_content_save($c, (int)$me['id']);
+    tj_admin_audit((int)$me['id'], 'image_uploaded', $slot);
+    tj_json(['url' => $url], 201);
+}
+
+/* The uploaded $_FILES['file'], checked and saved in /uploads, fitted to
+ * w×h (h = 0: keep the ratio). Returns its /uploads/... address. */
+function tj_save_upload_image(int $w, int $h): string {
     $f = $_FILES['file'] ?? null;
     if (!$f || ($f['error'] ?? 1) !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
         tj_fail(400, in_array($f['error'] ?? 0, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) ? 'too_large' : 'no_file');
@@ -163,7 +176,6 @@ function tj_admin_content_image(): void {
 
     $dir = tj_uploads_dir();
     $name = bin2hex(random_bytes(16));
-    [$w, $h] = $slot === 'banner' ? TJ_BANNER_SIZE : TJ_IMAGE_SLOTS[substr($slot, 3)];
     $src = function_exists('imagewebp') ? @imagecreatefromstring((string)file_get_contents($f['tmp_name'])) : false;
     if ($src) {
         $out = tj_image_fit($src, $w, $h);
@@ -176,12 +188,7 @@ function tj_admin_content_image(): void {
         if (!move_uploaded_file($f['tmp_name'], "$dir/$file")) tj_fail(500, 'save_failed');
     }
     @chmod("$dir/$file", 0644);
-    $c = tj_content_get();
-    tj_remove_upload($c['images'][$slot] ?? null);
-    $c['images'][$slot] = "/uploads/$file";
-    tj_content_save($c, (int)$me['id']);
-    tj_admin_audit((int)$me['id'], 'image_uploaded', $slot);
-    tj_json(['url' => "/uploads/$file"], 201);
+    return "/uploads/$file";
 }
 
 function tj_admin_content_image_reset(): void {

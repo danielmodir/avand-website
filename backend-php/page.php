@@ -13,7 +13,9 @@ $html = (string)@file_get_contents($file);
 try {
     require __DIR__ . '/lib/bootstrap.php';
     require __DIR__ . '/lib/content.php';
+    require __DIR__ . '/lib/articles.php';
     $html = tj_render_landing($html, $lang);
+    $html = tj_footer_with_articles($html, $lang);
 } catch (Throwable $e) {
     error_log('[toojibee-page] ' . $e->getMessage());
 }

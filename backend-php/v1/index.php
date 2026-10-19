@@ -13,6 +13,7 @@ require __DIR__ . '/../lib/admin_users.php';
 require __DIR__ . '/../lib/admin_visits.php';
 require __DIR__ . '/../lib/admin_system.php';
 require __DIR__ . '/../lib/content.php';
+require __DIR__ . '/../lib/articles.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -58,6 +59,8 @@ $routes = [
     'PUT /admin/content'        => 'tj_admin_content_save',
     'POST /admin/content/image' => 'tj_admin_content_image',
     'POST /admin/content/image/reset' => 'tj_admin_content_image_reset',
+    'GET /admin/articles'       => 'tj_admin_articles',
+    'POST /admin/articles'      => 'tj_admin_article_create',
     'GET /admin/system'         => 'tj_admin_system',
     'POST /admin/system/cleanup'=> 'tj_admin_system_cleanup',
     'POST /admin/system/check'  => 'tj_admin_system_check',
@@ -68,6 +71,14 @@ if (strpos($path, '/admin/') === 0) tj_admin_gate();
 if (preg_match('#^/admin/admins/([a-f0-9]{32})(/delete)?$#', $path, $m)) {
     if ($method === 'PATCH' && empty($m[2])) tj_admin_update($m[1]);
     if ($method === 'POST' && !empty($m[2])) tj_admin_remove($m[1]);
+    tj_fail(405, 'method_not_allowed');
+}
+// One article: /admin/articles/<public id> (GET, PATCH) and .../<action> (POST).
+if (preg_match('#^/admin/articles/([a-f0-9]{32})(?:/(submit|approve|reject|unpublish|delete|cover|cover-remove))?$#', $path, $m)) {
+    $act = $m[2] ?? '';
+    if ($method === 'GET' && $act === '') tj_admin_article($m[1]);
+    if ($method === 'PATCH' && $act === '') tj_admin_article_update($m[1]);
+    if ($method === 'POST' && $act !== '') tj_admin_article_action($m[1], $act);
     tj_fail(405, 'method_not_allowed');
 }
 // One account: /admin/users/<public id>[/suspend|/signout|/delete].

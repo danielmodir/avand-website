@@ -40,6 +40,7 @@ const TJ_ADMIN_PERMISSIONS = [
     'users.view',       // see accounts (no task or period content)
     'users.manage',     // suspend, sign out, delete accounts
     'content.manage',   // site header, images, texts
+    'articles.write',   // write articles and send them for review
     'articles.review',  // approve or reject articles
     'system.view',      // database tables, disk, memory, server
     'audit.view',       // the admins' activity log

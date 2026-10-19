@@ -463,6 +463,31 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .content-page p { max-width: 65ch; color: var(--color-text); }
 .content-page p + p { margin-top: var(--space-4); }
 
+/* ===== Articles (live host only: rendered by api/articles.php) ===== */
+.article-list { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }
+@media (min-width: 720px) { .article-list { grid-template-columns: repeat(2, 1fr); } }
+.article-card {
+  display: flex; flex-direction: column; overflow: hidden; text-decoration: none; color: var(--color-text);
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft-sm); transition: transform var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+}
+.article-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft-lg); }
+.article-card img { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.article-card-body { display: block; padding: var(--space-4) var(--space-5) var(--space-5); }
+.article-card h2 { font-size: var(--font-size-md); margin: 0 0 var(--space-2) 0; line-height: var(--line-height-tight); }
+.article-card p { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0 0 var(--space-3) 0; }
+.article-date { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.article { max-width: 720px; }
+.article .article-back { display: inline-block; color: var(--color-link); font-size: var(--font-size-sm); margin-bottom: var(--space-4); }
+.article h1 { margin-bottom: var(--space-2); }
+.article .article-date { margin: 0 0 var(--space-5) 0; }
+.article-cover { width: 100%; height: auto; border-radius: var(--radius-lg); margin-bottom: var(--space-5); display: block; }
+.article-body { line-height: 1.95; }
+.article-body h2 { font-size: var(--font-size-md); margin: var(--space-6) 0 var(--space-3) 0; }
+.article-body p, .article-body ul { margin: 0 0 var(--space-4) 0; max-width: none; }
+.article-body ul { padding-inline-start: var(--space-5); }
+.article-body a { color: var(--color-link); }
+
 /* ===== Download page ===== */
 .download-meta {
   display: grid; grid-template-columns: 1fr; gap: var(--space-3);
