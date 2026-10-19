@@ -508,6 +508,9 @@ function runFriendSearchNow(){
 }
 
 function updateNav(){
+  // A resize while the page is still loading (a phone's address bar
+  // sliding away) can land before the partials are injected.
+  if(!document.getElementById('fab-add')) return;
   /* The add menu only makes sense when the Planning desktop is on —
      there'd be nowhere for a new task/habit/event to show up otherwise
      (see Management's "Workspace desktops" toggles). */

@@ -11,6 +11,7 @@ require __DIR__ . '/../lib/mail.php';
 require __DIR__ . '/../lib/admin.php';
 require __DIR__ . '/../lib/admin_users.php';
 require __DIR__ . '/../lib/admin_visits.php';
+require __DIR__ . '/../lib/admin_system.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -51,6 +52,9 @@ $routes = [
     'GET /admin/users'          => 'tj_admin_users',
     'GET /admin/backup'         => 'tj_admin_backup',
     'GET /admin/visits'         => 'tj_admin_visits',
+    'GET /admin/system'         => 'tj_admin_system',
+    'POST /admin/system/cleanup'=> 'tj_admin_system_cleanup',
+    'POST /admin/system/check'  => 'tj_admin_system_check',
 ];
 // Unknown /admin/ paths look exactly like any other unknown path.
 if (strpos($path, '/admin/') === 0) tj_admin_gate();

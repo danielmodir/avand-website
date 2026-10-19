@@ -77,6 +77,10 @@ tr.click:hover td{ background:var(--color-bg-soft); }
 .sw{ display:inline-block; width:10px; height:10px; border-radius:3px; }
 .two{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; }
 .num{ text-align:left; color:var(--color-text-muted); }
+.meter{ height:12px; border-radius:var(--radius-full); background:var(--color-bg-soft); overflow:hidden; margin:10px 0 6px; }
+.meter > i{ display:block; height:100%; background:var(--color-secondary); border-radius:var(--radius-full); }
+.meter.warn > i{ background:var(--color-primary); }
+.meter.bad > i{ background:var(--color-error); }
 .hidden{ display:none !important; }
 </style>
 </head>
@@ -162,6 +166,33 @@ tr.click:hover td{ background:var(--color-bg-soft); }
       </div>
     </section>
 
+    <section id="tab-system" class="hidden stack">
+      <div class="stats" id="sys-stats"></div>
+      <div class="two">
+        <div class="card"><h2>حافظه‌ی رم (سهم این هاست)</h2><div id="sys-mem"></div></div>
+        <div class="card"><h2>فضای دیسک</h2><div id="sys-disk"></div></div>
+      </div>
+      <div class="card">
+        <h2>جدول‌های دیتابیس <button class="btn ghost" id="sys-refresh" type="button">به‌روزرسانی</button></h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>جدول</th><th>نام فنی</th><th>تعداد ردیف</th><th>حجم</th><th>ایندکس</th></tr></thead>
+            <tbody id="sys-tables"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card hidden" id="sys-owner">
+        <h2>نگهداری دیتابیس</h2>
+        <p class="hint" id="sys-stale"></p>
+        <div class="actions">
+          <button class="btn ghost" id="sys-cleanup" type="button">پاک‌سازی و بهینه‌سازی</button>
+          <button class="btn ghost" id="sys-check" type="button">بررسی سلامت دیتابیس</button>
+        </div>
+        <div class="alert hidden" id="sys-result"></div>
+      </div>
+      <div class="card"><h2>سرور و PHP</h2><table><tbody id="sys-info"></tbody></table></div>
+    </section>
+
     <section id="tab-users" class="hidden stack">
       <form class="card" id="user-search" novalidate>
         <div class="toolbar">
@@ -242,6 +273,7 @@ tr.click:hover td{ background:var(--color-bg-soft); }
     'users.manage': ['مدیریت کاربرها', 'تعلیق، خارج کردن و حذف حساب'],
     'content.manage': ['محتوای سایت', 'سربرگ، عکس‌ها و متن‌ها', true],
     'articles.review': ['بررسی مقاله‌ها', 'تأیید یا رد مقاله‌ها', true],
+    'system.view': ['دیتابیس و سرور', 'جدول‌ها، حجم دیتابیس، دیسک، رم و وضعیت سرور'],
     'audit.view': ['گزارش فعالیت', 'دیدن کارهای همه‌ی ادمین‌ها'],
     'admins.manage': ['مدیریت ادمین‌ها', 'افزودن ادمین و تعیین دسترسی‌ها'],
   };
@@ -271,6 +303,7 @@ tr.click:hover td{ background:var(--color-bg-soft); }
     admin_updated: ['تغییر ادمین', 'warn'], admin_removed: ['حذف ادمین', 'bad'],
     user_suspended: ['تعلیق کاربر', 'bad'], user_unsuspended: ['رفع تعلیق کاربر', 'good'], user_signed_out: ['خارج کردن کاربر', 'warn'],
     user_deleted: ['حذف کاربر', 'bad'], backup_downloaded: ['دانلود پشتیبان', 'warn'],
+    db_cleanup: ['پاک‌سازی دیتابیس', 'warn'], db_check: ['بررسی سلامت دیتابیس', ''],
   };
   var USTATUS = { active: ['فعال', 'good'], suspended: ['معلق', 'bad'] };
   var users = { q: '', filter: 'all', offset: 0 };
@@ -343,7 +376,7 @@ tr.click:hover td{ background:var(--color-bg-soft); }
   function enterDash(s) {
     me = { csrf: s.csrf, email: s.email, permissions: s.permissions || [], isOwner: !!s.is_owner };
     $('who').textContent = 'وارد شده با ' + me.email + (me.isOwner ? ' · مالک' : '');
-    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
+    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['system', 'دیتابیس و سرور', 'system.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
       .filter(function (t) { return can(t[2]); });
     var nav = $('tabs');
     nav.textContent = '';
@@ -361,8 +394,8 @@ tr.click:hover td{ background:var(--color-bg-soft); }
 
   function openTab(name) {
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
-    ['overview', 'visits', 'users', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
-    ({ overview: loadOverview, visits: loadVisits, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
+    ['overview', 'visits', 'users', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
+    ({ overview: loadOverview, visits: loadVisits, system: loadSystem, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
       .catch(onAuthError).catch(function (err) { alert(errorText(err)); });
   }
 
@@ -412,6 +445,96 @@ tr.click:hover td{ background:var(--color-bg-soft); }
       fill('v-pages', v.pages, function (p) { return PAGE_NAMES[p] || p; }, '');
       fill('v-refs', v.referrers, function (h) { return h; }, 'ltr');
     });
+  }
+
+  /* ---- database and server ---- */
+
+  var TABLE_NAMES = {
+    tj_users: 'حساب‌های کاربرها', tj_user_data: 'داده‌های ذخیره‌شده‌ی کاربرها', tj_sessions: 'نشست‌های ورود کاربرها',
+    tj_tokens: 'لینک‌های ایمیل (تأیید/بازیابی)', tj_attempts: 'محدودیت تلاش‌ها', tj_admins: 'ادمین‌ها',
+    tj_admin_sessions: 'نشست‌های ادمین', tj_admin_audit: 'گزارش فعالیت ادمین‌ها', tj_schema: 'نسخه‌ی ساختار دیتابیس',
+  };
+  var size = function (b) {
+    if (b === null || b === undefined) return '—';
+    var u = ['بایت', 'کیلوبایت', 'مگابایت', 'گیگابایت', 'ترابایت'], i = 0;
+    b = Number(b);
+    while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+    return (i ? b.toLocaleString('fa-IR', { maximumFractionDigits: 1 }) : fa(b)) + ' ' + u[i];
+  };
+  function meter(box, used, total, label) {
+    var pct = total ? Math.min(100, used * 100 / total) : 0;
+    var m = el('div', 'meter' + (pct > 90 ? ' bad' : pct > 75 ? ' warn' : ''));
+    var bar = el('i'); bar.style.width = pct + '%'; m.appendChild(bar);
+    box.appendChild(m);
+    box.appendChild(el('div', 'hint', label || (size(used) + ' از ' + size(total) + ' (' + fa(Math.round(pct)) + '٪)')));
+  }
+
+  function loadSystem() {
+    $('sys-owner').classList.toggle('hidden', !me.isOwner);
+    return api('GET', '/system').then(function (s) {
+      var d = s.database, dbBytes = (d.file_bytes || 0) + (d.wal_bytes || 0);
+      var rows = s.tables.reduce(function (a, t) { return a + t.rows; }, 0);
+      var used = s.disk.reduce(function (a, x) { return a + x.bytes; }, 0);
+      var stats = $('sys-stats');
+      stats.textContent = '';
+      [[size(dbBytes), 'حجم دیتابیس'], [fa(s.tables.length), 'تعداد جدول‌ها'], [fa(rows), 'کل ردیف‌ها'],
+       [size(used), 'فضای استفاده‌شده‌ی هاست'], [s.memory ? size(s.memory.used) : '—', 'رم در حال استفاده'],
+       [s.load ? s.load.map(function (x) { return x.toLocaleString('fa-IR'); }).join(' · ') : '—', 'بار سرور (۱، ۵، ۱۵ دقیقه)']].forEach(function (x) {
+        var c = el('div', 'card stat'); c.appendChild(el('div', 'n', x[0])); c.appendChild(el('div', 'l', x[1])); stats.appendChild(c);
+      });
+
+      var mem = $('sys-mem'); mem.textContent = '';
+      if (s.memory) meter(mem, s.memory.used, s.memory.total);
+      else mem.appendChild(el('div', 'hint', 'هاست اطلاعات رم رو در اختیار نمی‌ذاره.'));
+      mem.appendChild(el('div', 'hint', 'سقف رم هر درخواست PHP: ' + size(s.php.memory_limit) + ' · مصرف همین درخواست: ' + size(s.php.request_memory_peak)));
+
+      var disk = $('sys-disk'); disk.textContent = '';
+      if (s.disk_device.total) meter(disk, s.disk_device.total - s.disk_device.free, s.disk_device.total);
+      var t = el('table'), tb = el('tbody');
+      s.disk.forEach(function (x) {
+        var tr = el('tr'); tr.appendChild(el('td', '', x.label)); tr.appendChild(el('td', 'num', size(x.bytes) + (x.partial ? '+' : ''))); tb.appendChild(tr);
+      });
+      t.appendChild(tb); disk.appendChild(t);
+      disk.appendChild(el('div', 'hint', 'نوار بالا کل دیسک سروره (اشتراکی)؛ جدول، فضای خود این حساب. سهمیه‌ی دقیق پلن هاست تو سی‌پنل دیده می‌شه.'));
+
+      var body = $('sys-tables'); body.textContent = '';
+      s.tables.forEach(function (x) {
+        var tr = el('tr');
+        tr.appendChild(el('td', '', TABLE_NAMES[x.name] || x.name));
+        tr.appendChild(el('td', 'ltr', x.name));
+        tr.appendChild(el('td', 'num', fa(x.rows)));
+        tr.appendChild(el('td', 'num', size(x.bytes)));
+        tr.appendChild(el('td', 'num', x.indexes === null ? '—' : fa(x.indexes)));
+        body.appendChild(tr);
+      });
+
+      var st = s.stale;
+      $('sys-stale').textContent = 'قابل پاک‌سازی: ' + fa(st.sessions) + ' نشست تمام‌شده، ' + fa(st.tokens) + ' لینک ایمیل مصرف‌شده یا منقضی، '
+        + fa(st.attempts) + ' ردیف قدیمی محدودیت تلاش، ' + fa(st.admin_sessions) + ' نشست ادمین تمام‌شده. داده‌های کاربرها دست نمی‌خوره. فضای خالی داخل فایل دیتابیس: '
+        + size((d.free_pages || 0) * (d.page_size || 0)) + '.';
+
+      var info = $('sys-info'); info.textContent = '';
+      var up = s.uptime_seconds ? Math.floor(s.uptime_seconds / 86400) : null;
+      [['دیتابیس', (d.driver === 'sqlite' ? 'SQLite ' : 'MySQL ') + d.engine_version + (d.journal_mode ? ' · ' + d.journal_mode : '')],
+       ['نسخه‌ی ساختار', fa(d.schema_version)], ['PHP', s.php.version], ['وب‌سرور', s.server_software || '—'],
+       ['پردازنده‌ها', s.cpus ? fa(s.cpus) : '—'], ['روشن بودن سرور', up === null ? '—' : fa(up) + ' روز'],
+       ['حداکثر آپلود', size(s.php.upload_max) + ' (فرم: ' + size(s.php.post_max) + ')'], ['حداکثر زمان اجرا', fa(s.php.max_execution) + ' ثانیه'],
+       ['افزونه‌ها', s.php.extensions.join(', ')], ['ساعت سرور (UTC)', s.server_time]].forEach(function (r) {
+        var tr = el('tr'); tr.appendChild(el('td', '', r[0])); tr.appendChild(el('td', 'ltr', r[1])); info.appendChild(tr);
+      });
+    });
+  }
+
+  function systemAction(path, btn, okText) {
+    var out = $('sys-result');
+    btn.disabled = true;
+    out.classList.add('hidden');
+    api('POST', path).then(function (r) {
+      out.className = 'alert ' + (r.ok === false ? 'error' : 'ok');
+      out.textContent = okText(r);
+      return loadSystem();
+    }).catch(onAuthError).catch(function (e) { out.className = 'alert error'; out.textContent = errorText(e); })
+      .then(function () { btn.disabled = false; });
   }
 
   /* ---- users ---- */
@@ -662,6 +785,14 @@ tr.click:hover td{ background:var(--color-bg-soft); }
       })
       .catch(onAuthError).catch(function (e) { alert(errorText(e)); })
       .then(function () { b.disabled = false; });
+  });
+
+  $('sys-refresh').addEventListener('click', function () { loadSystem().catch(onAuthError); });
+  $('sys-cleanup').addEventListener('click', function (e) {
+    systemAction('/system/cleanup', e.currentTarget, function (r) { return 'انجام شد: ' + fa(r.removed) + ' ردیف بی‌استفاده پاک شد و دیتابیس بهینه شد.'; });
+  });
+  $('sys-check').addEventListener('click', function (e) {
+    systemAction('/system/check', e.currentTarget, function (r) { return r.ok ? 'دیتابیس سالمه.' : 'مشکل پیدا شد: ' + r.result.join(' | '); });
   });
 
   $('go-invite').addEventListener('click', function () { show('view-invite'); });
