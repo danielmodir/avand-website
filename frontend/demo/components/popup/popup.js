@@ -8,8 +8,6 @@ let formWeekdays = new Set();
 
 let formDraft = {};
 
-let miniCalCursor = new Date(today);
-
 function findItem(type, id){
   if(type === 'task') return findTaskOrSub(id).item; // tasks and subtasks share the editor
   const key = type === 'task' ? 'tasks' : type === 'habit' ? 'habits' : 'events';
@@ -38,7 +36,6 @@ function resetFormDraft(type, existing){
   formPhotos = existing ? [...(existing.photos||[])] : [];
   formSubtasks = existing ? (existing.subtasks || []).map(s => ({...s})) : [];
   formWeekdays = new Set(existing ? (existing.recurrence?.weekdays||[]) : []);
-  miniCalCursor = new Date(formDraft.date);
 }
 
 function openPopup(type, originEl, existing){
@@ -64,6 +61,10 @@ function openPopup(type, originEl, existing){
   }
 
   popup.innerHTML = `
+    <div class="popup-topbar">
+      <span class="popup-topbar-title">${existing ? typeLabel(type) : t('new' + type[0].toUpperCase() + type.slice(1))}</span>
+      <button type="button" class="popup-close" data-action="close-popup" aria-label="${t('closeBtn')}">${ICONS.close}</button>
+    </div>
     <div class="popup-body"></div>
     <button class="pop-submit" id="popup-submit" data-action="submit-popup">${existing?t('saveChanges'):t('add') + ' ' + typeLabel(type)}</button>
   `;
@@ -130,8 +131,7 @@ function renderPopupSubView(){
   const sub = state.popupSubView;
   const type = state.popupType;
   let title = '', content = '';
-  if(sub === 'calendar'){ title = t('dateTitle'); content = miniCalendarHtml(); }
-  else if(sub === 'repeat'){ title = t('repeatTitle'); content = repeatSubviewHtml(type); }
+  if(sub === 'repeat'){ title = t('repeatTitle'); content = repeatSubviewHtml(type); }
   else if(sub === 'notification'){ title = t('reminderTitle'); content = notificationSubviewHtml(); }
   return `
     <div class="popup-subview-header">
@@ -140,72 +140,6 @@ function renderPopupSubView(){
     </div>
     ${content}
   `;
-}
-
-function miniCalendarHtml(){
-  const cells = monthMatrix(miniCalCursor);
-  const disp = displayMonthYear(miniCalCursor);
-  return `
-    <div class="cal-topbar" style="margin-bottom:10px;">
-      <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="mini-cal-prev" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
-      <span class="cal-label" style="font-size:16px; min-width:0;">${disp.monthLabel} ${disp.yearLabel}</span>
-      <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="mini-cal-next" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
-    </div>
-    <div class="mini-cal-weekday">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
-    <div class="mini-cal-grid" id="mini-cal-grid">${cells.map(d => miniCalCellHtml(d)).join('')}</div>
-    <div class="mini-cal-hint">${t('tapOrDrag')}</div>
-  `;
-}
-
-function miniCalCellHtml(d){
-  const inMonth = cellInCurrentMonth(d, miniCalCursor);
-  const key = dateKey(d);
-  let rangeClass = '';
-  if(formDraft.timeMode === 'range'){
-    if(key === formDraft.date && key === formDraft.endDate) rangeClass = 'range-single';
-    else if(key === formDraft.date) rangeClass = 'range-start';
-    else if(key === formDraft.endDate) rangeClass = 'range-end';
-    else if(key > formDraft.date && key < formDraft.endDate) rangeClass = 'in-range';
-  } else if(key === formDraft.date){
-    rangeClass = 'range-single';
-  }
-  const isToday = sameDay(d, today);
-  return `<div class="mini-cal-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${rangeClass}" data-date="${key}">${dayCellDateHtml(d)}</div>`;
-}
-
-function refreshMiniCalGrid(){
-  const grid = document.getElementById('mini-cal-grid');
-  if(!grid) return;
-  grid.innerHTML = monthMatrix(miniCalCursor).map(d => miniCalCellHtml(d)).join('');
-  attachMiniCalGesture();
-}
-
-function attachMiniCalGesture(){
-  const grid = document.getElementById('mini-cal-grid');
-  if(!grid) return;
-  let dragStartKey = null, dragging = false;
-  grid.addEventListener('pointerdown', e => {
-    const cell = e.target.closest('.mini-cal-cell');
-    if(!cell) return;
-    dragStartKey = cell.dataset.date; dragging = true;
-    formDraft.timeMode = 'single'; formDraft.date = dragStartKey; formDraft.endDate = dragStartKey;
-    refreshMiniCalGrid();
-    e.stopPropagation();
-  });
-  grid.addEventListener('pointermove', e => {
-    if(!dragging) return;
-    const cell = e.target.closest('.mini-cal-cell');
-    if(!cell) return;
-    const key = cell.dataset.date;
-    if(key === dragStartKey) return;
-    formDraft.timeMode = 'range';
-    if(key < dragStartKey){ formDraft.date = key; formDraft.endDate = dragStartKey; }
-    else { formDraft.date = dragStartKey; formDraft.endDate = key; }
-    refreshMiniCalGrid();
-  });
-  const end = () => { dragging = false; };
-  grid.addEventListener('pointerup', end);
-  grid.addEventListener('pointercancel', end);
 }
 
 function repeatSubviewHtml(type){
@@ -293,9 +227,7 @@ function wireMainFormInteractivity(){
 
 function wireSubviewInteractivity(){
   const sub = state.popupSubView;
-  if(sub === 'calendar'){
-    attachMiniCalGesture();
-  } else if(sub === 'repeat'){
+  if(sub === 'repeat'){
     document.getElementById('rec-mode-select')?.addEventListener('change', e => {
       formDraft.recurrence.mode = e.target.value === 'none' ? null : e.target.value;
       renderPopupBody();

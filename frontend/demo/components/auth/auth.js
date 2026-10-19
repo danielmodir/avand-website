@@ -5,9 +5,16 @@
    Views: login · signup · forgot (email a reset link) · reset (choose a
    new password, opened from that link). Everything talks to the real
    API through Cloud.*; nothing here is simulated. */
-let authDraft = { name:'', email:'', password:'' };
+/* Sign-up asks for a username (not a real name), email, password, gender
+   and date of birth — all required. The API checks the same rules. */
+const EMPTY_AUTH_DRAFT = { username:'', email:'', password:'', gender:'', dob:'' };
+const EMPTY_AUTH_ERRORS = { username:'', email:'', password:'', gender:'', dob:'', general:'' };
+let authDraft = { ...EMPTY_AUTH_DRAFT };
 
-let authErrors = { name:'', email:'', password:'', general:'' };
+let authErrors = { ...EMPTY_AUTH_ERRORS };
+
+const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;   // same as the Django model / PHP API
+const MIN_SIGNUP_AGE = 9;
 
 let authBusy = false;
 let authNotice = '';            // green confirmation line (reset link sent, password changed…)
@@ -20,14 +27,14 @@ function openAuth(tab, reason){
   state.authTab = tab || state.authTab || 'login';
   state.authOpen = true;
   state.authReason = reason || null;
-  authErrors = { name:'', email:'', password:'', general:'' };
+  authErrors = { ...EMPTY_AUTH_ERRORS };
   authNotice = '';
   state.navExpanded = false;
   if(authProviders === null && Cloud.isConfigured()){
     Cloud.authProviders().then(p => { authProviders = p; renderAuth(); }).catch(() => { authProviders = { google:false }; });
   }
   render();
-  setTimeout(() => document.getElementById(state.authTab === 'signup' ? 'auth-name' : 'auth-email')?.focus(), 80);
+  setTimeout(() => document.getElementById(state.authTab === 'signup' ? 'auth-username' : 'auth-email')?.focus(), 80);
 }
 
 function closeAuth(){
@@ -38,14 +45,28 @@ function closeAuth(){
   render();
 }
 
+/* 8+ characters with at least one letter and one digit or symbol. */
+function passwordProblem(pw){
+  if([...pw].length < MIN_PASSWORD) return t('passwordTooShort');
+  if(!/\p{L}/u.test(pw) || !/[^\p{L}]/u.test(pw)) return t('passwordNeedsMix');
+  return '';
+}
+
 function validateAuth(){
   const tab = state.authTab;
-  const errs = { name:'', email:'', password:'', general:'' };
-  if(tab === 'signup' && !authDraft.name.trim()) errs.name = t('nameRequired');
-  if(tab !== 'reset' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authDraft.email.trim())) errs.email = t('emailInvalid');
-  if(tab !== 'forgot' && authDraft.password.length < MIN_PASSWORD) errs.password = t('passwordTooShort');
+  const errs = { ...EMPTY_AUTH_ERRORS };
+  const d = authDraft;
+  if(tab === 'signup'){
+    if(!USERNAME_RE.test(d.username.trim().toLowerCase())) errs.username = t('usernameInvalid');
+    if(!d.gender) errs.gender = t('genderRequired');
+    if(!d.dob) errs.dob = t('dobRequired');
+    else if(d.dob > dateYearsAgo(MIN_SIGNUP_AGE)) errs.dob = t('dobTooYoung');
+  }
+  if(tab !== 'reset' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) errs.email = t('emailInvalid');
+  if(tab === 'login'){ if(d.password.length < MIN_PASSWORD) errs.password = t('passwordTooShort'); }
+  else if(tab !== 'forgot') errs.password = passwordProblem(d.password);
   authErrors = errs;
-  return !errs.name && !errs.email && !errs.password;
+  return !Object.values(errs).some(Boolean);
 }
 
 /* Server error codes (apps/common/exceptions.py) -> friendly text. */
@@ -54,6 +75,7 @@ function authErrorMessage(err){
   const byCode = {
     invalid_credentials: 'errInvalidCredentials',
     email_taken: 'errEmailTaken',
+    username_taken: 'errUsernameTaken',
     account_suspended: 'errSuspended',
     invalid_or_expired_token: 'errLinkExpired',
     throttled: 'errTooManyTries',
@@ -70,7 +92,7 @@ function renderAuthScreen(){
   const errClass = f => authErrors[f] ? 'field has-error' : 'field';
   const errMsg = f => authErrors[f] ? `<div class="auth-field-error">${authErrors[f]}</div>` : '';
   const input = (id, type, key, field, autocomplete) =>
-    `<div class="${errClass(field)}"><input type="${type}" id="${id}" placeholder="${t(key)}" value="${escapeAttr(authDraft[field])}" autocomplete="${autocomplete}" ${type === 'email' ? 'dir="ltr"' : ''}>${errMsg(field)}</div>`;
+    `<div class="${errClass(field)}"><input type="${type}" id="${id}" placeholder="${t(key)}" value="${escapeAttr(authDraft[field])}" autocomplete="${autocomplete}" ${type === 'email' || field === 'username' ? 'dir="ltr" autocapitalize="off" spellcheck="false"' : ''}>${errMsg(field)}</div>`;
   const general = authErrors.general ? `<div class="auth-alert error" role="alert">${escapeHtml(authErrors.general)}</div>` : '';
   const notice = authNotice ? `<div class="auth-alert ok" role="status">${escapeHtml(authNotice)}</div>` : '';
   const submit = (labelKey) => `<button class="btn btn-primary auth-submit" data-action="auth-submit" ${authBusy?'disabled':''}>${authBusy ? t('authSubmitting') : t(labelKey)}</button>`;
@@ -103,10 +125,19 @@ function renderAuthScreen(){
       </div>
       ${google}${general}${notice}
       <div class="auth-form">
-        ${!isLogin ? input('auth-name', 'text', 'fullName', 'name', 'name') : ''}
+        ${!isLogin ? input('auth-username', 'text', 'username', 'username', 'username') : ''}
         ${input('auth-email', 'email', 'email', 'email', 'email')}
         ${input('auth-password', 'password', 'password', 'password', isLogin ? 'current-password' : 'new-password')}
         ${!isLogin ? `<div class="auth-hint">${t('passwordHint')}</div>` : ''}
+        ${!isLogin ? `
+          <div class="${errClass('gender')}">
+            <div class="auth-choice" role="radiogroup" aria-label="${t('gender')}">
+              ${['female','male'].map(g => `<button type="button" role="radio" aria-checked="${authDraft.gender===g}" class="${authDraft.gender===g?'active':''}" data-gender="${g}">${t(g)}</button>`).join('')}
+            </div>${errMsg('gender')}
+          </div>
+          <div class="${errClass('dob')}">
+            <button type="button" class="date-field-btn ${authDraft.dob?'':'empty'}" id="auth-dob">${authDraft.dob ? formatDateLabel(authDraft.dob) : t('dateOfBirth')}${ICONS.calendarIcon}</button>${errMsg('dob')}
+          </div>` : ''}
         ${submit(isLogin ? 'logInBtn' : 'createAccountBtn')}
       </div>
       ${isLogin ? `<button type="button" class="auth-link" data-action="auth-tab" data-val="forgot">${t('forgotPassword')}</button>` : ''}
@@ -122,7 +153,14 @@ function renderAuthScreen(){
 
 function wireAuthInteractivity(){
   const bind = (id, field) => document.getElementById(id)?.addEventListener('input', e => { authDraft[field] = e.target.value; });
-  bind('auth-name', 'name'); bind('auth-email', 'email'); bind('auth-password', 'password');
+  bind('auth-username', 'username'); bind('auth-email', 'email'); bind('auth-password', 'password');
+  document.querySelectorAll('#auth-screen [data-gender]').forEach(b => b.addEventListener('click', () => {
+    authDraft.gender = b.dataset.gender; authErrors.gender = ''; renderAuth();
+  }));
+  document.getElementById('auth-dob')?.addEventListener('click', () => openDatePicker({
+    title: t('dateOfBirth'), value: authDraft.dob, max: dateYearsAgo(MIN_SIGNUP_AGE), min: dateYearsAgo(110),
+    onPick: v => { authDraft.dob = v; authErrors.dob = ''; renderAuth(); },
+  }));
   document.querySelectorAll('#auth-screen input').forEach(inp => inp.addEventListener('keydown', e => {
     if(e.key === 'Enter') document.querySelector('#auth-screen [data-action="auth-submit"]')?.click();
   }));
@@ -149,7 +187,7 @@ async function submitAuth(){
   authNotice = '';
   if(!validateAuth()){ renderAuth(); return; }
   const tab = state.authTab;
-  const email = authDraft.email.trim(), password = authDraft.password, name = authDraft.name.trim();
+  const email = authDraft.email.trim(), password = authDraft.password;
   authBusy = true;
   renderAuth();
   try{
@@ -164,12 +202,17 @@ async function submitAuth(){
       authNotice = t('passwordChanged');
     } else {
       if(tab === 'login') await Cloud.signIn(email, password);
-      else await Cloud.signUp(email, password, name);
+      else await Cloud.signUp({ email, password, username: authDraft.username.trim().toLowerCase(), gender: authDraft.gender, dob: authDraft.dob });
       await enterSignedIn();
       if(tab === 'signup') showToast(t('checkEmailToVerify'));
     }
   }catch(err){
-    authErrors.general = authErrorMessage(err);
+    // Field rules the server rejected (PHP: fields, Django: detail).
+    const fields = err && (err.body?.fields || err.body?.detail);
+    const fieldMsg = { username:'usernameInvalid', gender:'genderRequired', birth_date:'dobTooYoung' };
+    const hits = fields && typeof fields === 'object' ? Object.keys(fieldMsg).filter(k => fields[k]) : [];
+    if(hits.length && err.code !== 'weak_password') hits.forEach(k => { authErrors[k === 'birth_date' ? 'dob' : k] = t(fieldMsg[k]); });
+    else authErrors.general = authErrorMessage(err);
   }finally{
     authBusy = false;
     render();
@@ -182,8 +225,8 @@ async function enterSignedIn(){
   state.guest = false;
   state.authOpen = false;
   state.authScreen = false;
-  authDraft = { name:'', email:'', password:'' };
-  authErrors = { name:'', email:'', password:'', general:'' };
+  authDraft = { ...EMPTY_AUTH_DRAFT };
+  authErrors = { ...EMPTY_AUTH_ERRORS };
   render();
 }
 

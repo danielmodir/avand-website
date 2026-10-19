@@ -72,10 +72,20 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'home-pick-year'){ state.homeDate = setYearOf(state.homeDate, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }
   if(action === 'submit-popup'){ submitPopup(); return; }
   if(action === 'notification-coming-soon'){ showToast(t('notificationComingSoon')); return; }
-  if(action === 'open-subview'){ state.popupSubView = el.dataset.sub; if(el.dataset.sub==='calendar'){ miniCalCursor = new Date(formDraft.date); } renderPopupBody(); return; }
+  if(action === 'open-subview' && el.dataset.sub === 'calendar'){
+    // The item's date (or a range: press and drag) in the small date picker.
+    openDatePicker({
+      title: t('dateTitle'), range: true, value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
+      onPick: (start, end) => {
+        formDraft.date = start; formDraft.endDate = end;
+        formDraft.timeMode = start === end ? 'single' : 'range';
+        renderPopupBody();
+      },
+    });
+    return;
+  }
+  if(action === 'open-subview'){ state.popupSubView = el.dataset.sub; renderPopupBody(); return; }
   if(action === 'close-subview'){ state.popupSubView = null; renderPopupBody(); return; }
-  if(action === 'mini-cal-prev'){ miniCalCursor = stepMonth(miniCalCursor, -1); renderPopupBody(); return; }
-  if(action === 'mini-cal-next'){ miniCalCursor = stepMonth(miniCalCursor, 1); renderPopupBody(); return; }
 
   if(action === 'pick-month'){ state.calCursor = setMonthOf(state.calCursor, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
   if(action === 'pick-year'){ state.calCursor = setYearOf(state.calCursor, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }
@@ -130,29 +140,14 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'close-auth'){ closeAuth(); return; }
   if(action === 'auth-tab'){
     state.authTab = el.dataset.val;
-    authErrors = { name:'', email:'', password:'', general:'' };
+    authErrors = { ...EMPTY_AUTH_ERRORS };
     authNotice = '';
     renderAuth();
-    document.getElementById(state.authTab === 'signup' ? 'auth-name' : 'auth-email')?.focus();
+    document.getElementById(state.authTab === 'signup' ? 'auth-username' : 'auth-email')?.focus();
     return;
   }
   if(action === 'auth-submit'){ submitAuth(); return; }
   if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){ state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); render(); return; }
-  if(action === 'toggle-dob-picker'){
-    state.dobPickerOpen = !state.dobPickerOpen;
-    if(state.dobPickerOpen) dobCalCursor = state.profile.dob ? new Date(state.profile.dob + 'T00:00:00') : new Date(today);
-    render();
-    return;
-  }
-  if(action === 'dob-cal-prev'){ dobCalCursor = stepMonth(dobCalCursor, -1); render(); return; }
-  if(action === 'dob-cal-next'){ dobCalCursor = stepMonth(dobCalCursor, 1); render(); return; }
-  if(action === 'pick-dob'){
-    state.profile.dob = el.dataset.date;
-    state.dobPickerOpen = false;
-    cloudSync(() => Cloud.saveProfile(state.profile));
-    render();
-    return;
-  }
   if(action === 'copy-user-id'){
     copyText(state.profile.userId);
     showToast(t('idCopied'));

@@ -12,7 +12,7 @@ client: `frontend/demo/js/services/api-php.js`).
 |---|---|---|
 | GET | /health | DB reachable |
 | GET | /auth/providers | `{password:true, google:false}` |
-| POST | /auth/register | email, password (8+), first_name, last_name → tokens; sends a verify email |
+| POST | /auth/register | all required: email, password (8+, a letter and a digit/symbol), username (`a-z 0-9 _ .`, 3-30, unique), gender (`female`/`male`), birth_date (at least 9 years ago) → tokens; sends a verify email |
 | POST | /auth/login | → tokens |
 | POST | /auth/refresh | rotates the refresh token |
 | POST | /auth/logout | |

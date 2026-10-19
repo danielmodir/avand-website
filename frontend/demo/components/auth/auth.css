@@ -56,6 +56,10 @@
 .auth-form input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--primary-soft); }
 .auth-form .field.has-error input{ border-color:var(--danger); }
 .auth-form .field.has-error input:focus{ box-shadow:0 0 0 5px var(--danger-soft); }
+.auth-choice{ display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:14px; border:2px solid transparent; }
+.auth-choice button{ flex:1; border:none; background:transparent; padding:10px; border-radius:11px; font-size:13.5px; font-weight:700; color:var(--text-muted); cursor:pointer; font-family:inherit; }
+.auth-choice button.active{ background:var(--primary); color:var(--on-primary); }
+.auth-form .field.has-error .auth-choice{ border-color:var(--danger); }
 .auth-field-error{ color:var(--danger); font-size:12px; margin-top:6px; }
 .auth-submit{ width:100%; margin-top:10px; padding:15px; border-radius:14px; font-size:14px; }
 .auth-google{

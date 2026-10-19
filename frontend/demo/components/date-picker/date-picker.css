@@ -1,0 +1,48 @@
+/* ===== small date-picker popup (date-picker.js) =====
+   Reuses the main calendar's .cal-topbar / .weekday-header / .day-cell
+   look, in a compact card above everything (also above the sign-in popup). */
+.dp-overlay{
+  position:fixed; inset:0; z-index:120; display:flex; align-items:center; justify-content:center; padding:16px;
+  background:var(--overlay); opacity:0; pointer-events:none; transition:opacity .2s ease;
+}
+.dp-overlay.show{ opacity:1; pointer-events:auto; }
+.dp-card{
+  width:330px; max-width:100%; max-height:calc(100dvh - 32px); overflow-y:auto; scrollbar-width:none;
+  background:var(--card); border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow);
+  padding:12px 14px 14px; transform:scale(.94); transition:transform .24s cubic-bezier(.22,1,.36,1);
+}
+.dp-card::-webkit-scrollbar{ display:none; }
+.dp-overlay.show .dp-card{ transform:scale(1); }
+.dp-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; min-height:34px; }
+.dp-title{ font-size:14px; font-weight:800; }
+.dp-x{ flex:0 0 auto; }
+.dp-topbar{ margin-bottom:8px; }
+.dp-topbar .cal-label{ font-size:17px; border:none; background:none; color:var(--text); font-family:inherit; touch-action:manipulation; }
+.dp-topbar .cal-label.on{ background:var(--primary-soft); color:var(--primary); }
+.dp-topbar .cal-corner-arrow{ padding:0; }
+.dp-topbar .cal-corner-arrow:disabled{ opacity:.25; cursor:default; }
+.dp-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; touch-action:none; }
+.dp-grid .day-cell{ font-size:13px; --day-circle:min(36px, 94%); --day-circle-r:18px; }
+.dp-grid .day-cell.dp-off{ opacity:.18; cursor:default; }
+.dp-grid .day-cell.dp-between .day-cell-bg{ opacity:1; transform:translate(-50%,-50%) scale(1); background:var(--primary-soft); }
+.dp-hint{ text-align:center; font-size:11px; color:var(--text-muted); margin-top:8px; }
+.dp-pick-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.dp-pick-grid.dp-years{ max-height:244px; overflow-y:auto; scrollbar-width:none; }
+.dp-pick-grid.dp-years::-webkit-scrollbar{ display:none; }
+.dp-pick-grid button{
+  border:none; background:var(--bg-soft); color:var(--text); border-radius:12px; padding:11px 4px;
+  font-size:13px; font-weight:700; font-family:inherit; cursor:pointer;
+}
+.dp-pick-grid button.active{ background:var(--primary); color:var(--on-primary); }
+.dp-done{ width:100%; margin-top:12px; padding:12px; border-radius:14px; }
+.dp-done:disabled{ opacity:.5; }
+
+/* A form field that opens the picker (sign-up, Profile, period setup). */
+.date-field-btn{
+  width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  border:2px solid transparent; background:var(--bg-soft); border-radius:14px; padding:14px 16px;
+  font-size:14px; color:var(--text); font-family:inherit; cursor:pointer; text-align:start;
+}
+.date-field-btn.empty{ color:var(--text-muted); }
+.date-field-btn svg{ width:16px; height:16px; flex:0 0 auto; color:var(--text-muted); }
+.field.has-error .date-field-btn{ border-color:var(--danger); }

@@ -13,11 +13,29 @@ function tj_valid_email(string $email): bool {
     return strlen($email) <= 254 && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
+/* 8+ characters with at least one letter and at least one digit or
+ * symbol — same rule as the app's form and the Django API. */
 function tj_password_problems(string $password): array {
     $reasons = [];
-    if (strlen($password) < TJ_MIN_PASSWORD) $reasons[] = 'Password must be at least ' . TJ_MIN_PASSWORD . ' characters.';
+    $len = function_exists('mb_strlen') ? mb_strlen($password, 'UTF-8') : strlen($password);
+    if ($len < TJ_MIN_PASSWORD) $reasons[] = 'Password must be at least ' . TJ_MIN_PASSWORD . ' characters.';
     if (strlen($password) > 200) $reasons[] = 'Password is too long.';
+    if (!preg_match('/\p{L}/u', $password) || !preg_match('/[^\p{L}]/u', $password)) $reasons[] = 'Password must contain a letter and a number or symbol.';
     return $reasons;
+}
+
+const TJ_MIN_AGE = 9;
+
+/* Latin letters, digits, _ and . only (no spaces, emoji or other
+ * scripts), 3-30 long; stored lowercase. Same as the Django model. */
+function tj_valid_username(string $u): bool {
+    return (bool)preg_match('/^[a-z0-9_.]{3,30}$/', $u);
+}
+
+function tj_valid_birth_date(string $d): bool {
+    if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $d, $m) || !checkdate((int)$m[2], (int)$m[3], (int)$m[1])) return false;
+    $latest = gmdate('Y-m-d', strtotime('-' . TJ_MIN_AGE . ' years'));
+    return $d <= $latest && (int)$m[1] >= (int)gmdate('Y') - 120;
 }
 
 function tj_new_session(int $userId): array {
@@ -47,6 +65,7 @@ function tj_public_user(array $u): array {
     return [
         'id' => (string)$u['id'], 'email' => $u['email'],
         'first_name' => $u['first_name'], 'last_name' => $u['last_name'],
+        'username' => $u['username'] ?? null, 'gender' => $u['gender'] ?? null, 'birth_date' => $u['birth_date'] ?? null,
         'email_verified' => $u['email_verified_at'] !== null,
     ];
 }
@@ -78,9 +97,15 @@ function tj_register(): void {
     $b = tj_body();
     $email = strtolower(tj_str($b, 'email', 254));
     $password = is_string($b['password'] ?? null) ? $b['password'] : '';
+    $username = strtolower(tj_str($b, 'username', 60));
+    $gender = tj_str($b, 'gender', 10);
+    $birth = tj_str($b, 'birth_date', 10);
     tj_throttle('register', tj_client_ip(), 10, 3600);
     $errors = [];
     if (!tj_valid_email($email)) $errors['email'] = ['Enter a valid email address.'];
+    if (!tj_valid_username($username)) $errors['username'] = ['invalid'];
+    if (!in_array($gender, ['female', 'male'], true)) $errors['gender'] = ['required'];
+    if (!tj_valid_birth_date($birth)) $errors['birth_date'] = ['invalid'];
     $problems = tj_password_problems($password);
     if ($problems) tj_fail(400, 'weak_password', ['reasons' => $problems] + ($errors ? ['fields' => $errors] : []));
     if ($errors) tj_fail(400, 'validation_error', ['fields' => $errors]);
@@ -89,9 +114,12 @@ function tj_register(): void {
     $q = $db->prepare('SELECT id FROM tj_users WHERE email = ?');
     $q->execute([$email]);
     if ($q->fetch()) tj_fail(409, 'email_taken');
+    $q = $db->prepare('SELECT id FROM tj_users WHERE username = ?');
+    $q->execute([$username]);
+    if ($q->fetch()) tj_fail(409, 'username_taken');
 
-    $db->prepare('INSERT INTO tj_users (email, password_hash, first_name, last_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
-        ->execute([$email, password_hash($password, PASSWORD_DEFAULT), tj_str($b, 'first_name', 60), tj_str($b, 'last_name', 60), tj_now(), tj_now()]);
+    $db->prepare('INSERT INTO tj_users (email, password_hash, first_name, last_name, username, gender, birth_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        ->execute([$email, password_hash($password, PASSWORD_DEFAULT), tj_str($b, 'first_name', 60), tj_str($b, 'last_name', 60), $username, $gender, $birth, tj_now(), tj_now()]);
     $userId = (int)$db->lastInsertId();
 
     $token = tj_issue_email_token($userId, 'verify', 7 * 86400);

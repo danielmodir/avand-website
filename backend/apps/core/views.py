@@ -30,7 +30,10 @@ class RegisterView(PublicView):
         data = s.RegisterSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         v = data.validated_data
-        user = accounts.register(request, v["email"], v["password"], v.get("first_name", ""), v.get("last_name", ""), v.get("consents"))
+        user = accounts.register(
+            request, v["email"], v["password"], v.get("first_name", ""), v.get("last_name", ""), v.get("consents"),
+            username=v["username"], gender=v["gender"], birth_date=v["birth_date"],
+        )
         return Response(accounts.start_session(user, request, v), status=status.HTTP_201_CREATED)
 
 

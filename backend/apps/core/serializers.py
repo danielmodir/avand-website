@@ -1,4 +1,5 @@
 import zoneinfo
+from datetime import date
 
 from rest_framework import serializers
 
@@ -17,12 +18,35 @@ class SessionMetaSerializer(serializers.Serializer):
     device_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
 
 
+MIN_SIGNUP_AGE = 9
+
+
 class RegisterSerializer(SessionMetaSerializer):
+    """Sign-up asks for a username (not a real name), gender and birth
+    date; all required. Same rules as the app's form and the PHP API."""
     email = serializers.EmailField(max_length=254)
     password = serializers.CharField(max_length=128, trim_whitespace=False)
+    username = serializers.RegexField(r"^[A-Za-z0-9_.]{3,30}$", max_length=30)
+    gender = serializers.ChoiceField(choices=Profile.Gender.choices)
+    birth_date = serializers.DateField()
     first_name = serializers.CharField(max_length=60, required=False, allow_blank=True)
     last_name = serializers.CharField(max_length=60, required=False, allow_blank=True)
     consents = ConsentSerializer(many=True, required=False)
+
+    def validate_username(self, value):
+        return value.lower()
+
+    def validate_birth_date(self, value):
+        today = date.today()
+        try:
+            latest = today.replace(year=today.year - MIN_SIGNUP_AGE)
+        except ValueError:  # 29 Feb
+            latest = today.replace(year=today.year - MIN_SIGNUP_AGE, day=28)
+        if value > latest:
+            raise serializers.ValidationError("too_young")
+        if value.year < today.year - 120:
+            raise serializers.ValidationError("invalid_date")
+        return value
 
 
 class LoginSerializer(SessionMetaSerializer):

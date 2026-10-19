@@ -294,7 +294,7 @@ function periodQuizStepHtml(){
       <div class="period-quiz-step">
         <div class="field">
           <label class="field-label">${t('periodQ1')}</label>
-          <input type="date" id="period-q1" value="${escapeAttr(p.lastStart)}" max="${dateKey(today)}">
+          <button type="button" class="date-field-btn" id="period-q1" value="${escapeAttr(p.lastStart)}">${p.lastStart ? formatDateLabel(p.lastStart) : t('periodQ1')}${ICONS.calendarIcon}</button>
         </div>
         <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
       </div>
@@ -326,7 +326,10 @@ function renderPeriodQuiz(){
   const p = state.period;
   const dots = [1,2,3].map(n => `<span class="${p.step===n?'active':''}"></span>`).join('');
   document.getElementById('period-quiz-body').innerHTML = `<div class="period-quiz-dots">${dots}</div>${periodQuizStepHtml()}`;
-  document.getElementById('period-q1')?.addEventListener('input', e => { state.period.lastStart = e.target.value; });
+  document.getElementById('period-q1')?.addEventListener('click', () => openDatePicker({
+    title: t('periodQ1'), value: state.period.lastStart, max: dateKey(today), min: dateYearsAgo(1),
+    onPick: v => { state.period.lastStart = v; renderPeriodQuiz(); },
+  }));
   document.getElementById('period-q2')?.addEventListener('input', e => { const v = Number(e.target.value); if(v>0) state.period.cycleLength = v; });
   document.getElementById('period-q3')?.addEventListener('input', e => { const v = Number(e.target.value); if(v>0) state.period.periodLength = v; });
 }

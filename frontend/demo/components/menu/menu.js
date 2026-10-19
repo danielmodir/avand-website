@@ -106,39 +106,9 @@ function renderProfilePage(){
   `;
 }
 
-let dobCalCursor = new Date(today);
-
 function dobLabel(p){
-  if(!p.dob) return t('dateOfBirth');
-  const d = new Date(p.dob + 'T00:00:00');
-  if(isNaN(d)) return t('dateOfBirth');
-  const disp = displayMonthYear(d);
-  return `${displayDayNum(d)} ${disp.monthLabel} ${disp.yearLabel}`;
-}
-
-/* Same app-themed month grid as the add-popup's date subview
-   (miniCalendarHtml), but its own cursor/markup — that one is wired to
-   formDraft's single/range task-date selection, which doesn't apply
-   here (a birthdate is always a single pick), so reusing it directly
-   would mean threading an isHome-style flag through drag-range logic
-   that should never run for this field. */
-function dobCalendarHtml(p){
-  const cells = monthMatrix(dobCalCursor);
-  const disp = displayMonthYear(dobCalCursor);
-  return `
-    <div class="dob-cal-popover">
-      <div class="cal-topbar" style="margin-bottom:10px;">
-        <div class="cal-corner-arrow ${lang()==='fa'?'right':'left'}" data-action="dob-cal-prev" aria-label="${t('prev')}">${lang()==='fa'?ICONS.chevronRight:ICONS.chevronLeft}</div>
-        <span class="cal-label" style="font-size:16px; min-width:0;">${disp.monthLabel} ${disp.yearLabel}</span>
-        <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="dob-cal-next" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
-      </div>
-      <div class="mini-cal-weekday">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
-      <div class="mini-cal-grid" id="dob-cal-grid">${cells.map(d => {
-        const key = dateKey(d);
-        return `<div class="mini-cal-cell ${cellInCurrentMonth(d,dobCalCursor)?'':'other-month'} ${p.dob===key?'range-single':''}" data-action="pick-dob" data-date="${key}">${displayDayNum(d)}</div>`;
-      }).join('')}</div>
-    </div>
-  `;
+  if(!p.dob || isNaN(new Date(p.dob + 'T00:00:00'))) return t('dateOfBirth');
+  return formatDateLabel(p.dob);
 }
 
 function renderProfileEditPage(){
@@ -157,15 +127,14 @@ function renderProfileEditPage(){
       <div class="field"><input type="text" id="profile-last-name" value="${escapeAttr(p.lastName)}" placeholder="${t('lastName')}"></div>
     </div>
     <div class="field"><input type="text" id="profile-username" value="${escapeAttr(p.username)}" placeholder="${t('username')}"></div>
-    <div class="field dob-field-wrap">
-      <div class="dob-field-btn" id="profile-dob-btn" data-action="toggle-dob-picker">${dobLabel(p)}</div>
-      ${state.dobPickerOpen ? dobCalendarHtml(p) : ''}
+    <div class="field">
+      <button type="button" class="dob-field-btn" id="profile-dob-btn">${dobLabel(p)}</button>
     </div>
     <div class="field">
       <select class="settings-select" id="profile-gender-select" style="width:100%;">
-        <option value="male" ${p.gender==='male'?'selected':''}>${t('male')}</option>
+        ${p.gender === 'female' || p.gender === 'male' ? '' : `<option value="" selected disabled>${t('gender')}</option>`}
         <option value="female" ${p.gender==='female'?'selected':''}>${t('female')}</option>
-        <option value="other" ${p.gender==='other'?'selected':''}>${t('genderOther')}</option>
+        <option value="male" ${p.gender==='male'?'selected':''}>${t('male')}</option>
       </select>
     </div>
 
@@ -492,6 +461,11 @@ function wireMenuInteractivity(){
   document.getElementById('profile-first-name')?.addEventListener('input', e => { state.profile.firstName = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-username')?.addEventListener('input', e => { state.profile.username = e.target.value; syncProfileName(); scheduleProfileSave(); });
+  // Same picker and the same minimum age as sign-up.
+  document.getElementById('profile-dob-btn')?.addEventListener('click', () => openDatePicker({
+    title: t('dateOfBirth'), value: state.profile.dob, max: dateYearsAgo(MIN_SIGNUP_AGE), min: dateYearsAgo(110),
+    onPick: v => { state.profile.dob = v; cloudSync(() => Cloud.saveProfile(state.profile)); render(); },
+  }));
   document.getElementById('profile-gender-select')?.addEventListener('change', e => { state.profile.gender = e.target.value; cloudSync(() => Cloud.saveProfile(state.profile)); render(); });
   document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
   document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; scheduleProfileSave(); });

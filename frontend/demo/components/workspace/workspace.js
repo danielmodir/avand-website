@@ -1,10 +1,8 @@
 function renderHome(){
   const d = state.homeDate;
   const {tasks, habits, events} = itemsForDate(d);
-  /* The overall progress-ring card is desktop-only now (mobile home
-     starts blank — see renderItemSections) — #page-home is shared markup
-     between both breakpoints, so this has to branch on viewport here
-     rather than via CSS alone. */
+  /* The day summary card follows its setting (planningDaySummary) on
+     both phone and desktop. */
   return renderDesktops(d, {tasks, habits, events});
 }
 
@@ -41,7 +39,7 @@ function renderDesktops(d, data){
   if(state.settings.planningEnabled && !state.guest){
     panes.push({ key:'planning', html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
-      ${window.innerWidth >= 960 && pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
+      ${pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
       ${renderItemSections(tasks,pref('planningShowHabits') ? habits : [], pref('planningShowEvents') ? events : [], d)}
     ` });
   }

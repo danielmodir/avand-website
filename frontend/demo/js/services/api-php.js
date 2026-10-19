@@ -83,9 +83,9 @@
   }
 
   // ── auth ──────────────────────────────────────────────────────────────
-  async function signUp(email, password, name) {
-    var parts = (name || '').trim().split(/\s+/);
-    storeSession(await request('POST', '/auth/register', { email: email, password: password, first_name: parts.shift() || '', last_name: parts.join(' ') }, { auth: false }));
+  // f: { email, password, username, gender, dob } — all required (auth.js).
+  async function signUp(f) {
+    storeSession(await request('POST', '/auth/register', { email: f.email, password: f.password, username: f.username, gender: f.gender, birth_date: f.dob }, { auth: false }));
   }
   async function signIn(email, password) {
     storeSession(await request('POST', '/auth/login', { email: email, password: password }, { auth: false }));
@@ -117,7 +117,11 @@
     var local = readLocalDeviceData();
     var adopt = isEmpty(data) && local && !isEmpty(local);
     if (adopt) data = { profile: local.profile, settings: local.settings, tasks: local.tasks, habits: local.habits, events: local.events, period: local.period };
-    var profile = Object.assign({}, data.profile || {}, {
+    // What was given at sign-up, until the person changes it in Profile.
+    var given = { username: me.username || '', gender: me.gender || '', dob: me.birth_date || '' };
+    var saved = Object.assign({}, data.profile || {});
+    Object.keys(given).forEach(function (k) { if (!saved[k]) delete saved[k]; });
+    var profile = Object.assign(given, saved, {
       email: me.email,
       firstName: (data.profile && data.profile.firstName) || me.first_name || '',
       lastName: (data.profile && data.profile.lastName) || me.last_name || '',

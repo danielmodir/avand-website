@@ -96,7 +96,25 @@ function tj_migrate(PDO $db): void {
 
     $db->exec("CREATE TABLE IF NOT EXISTS tj_schema (version INT NOT NULL)$tail");
     $v = (int)($db->query('SELECT MAX(version) AS v FROM tj_schema')->fetch()['v'] ?? 0);
-    if ($v >= 1) return;
+    if ($v < 1) tj_migrate_v1($db, $id, $fk, $tail, $text, $sqlite);
+    if ($v < 2) {
+        // Sign-up asks for a username (instead of a real name), gender and
+        // birth date. Accounts made before this have them empty.
+        // Each step tolerates having been done already (two first
+        // requests racing each other).
+        foreach ([
+            'ALTER TABLE tj_users ADD COLUMN username VARCHAR(30) NULL',
+            'ALTER TABLE tj_users ADD COLUMN gender VARCHAR(10) NULL',
+            'ALTER TABLE tj_users ADD COLUMN birth_date DATE NULL',
+            'CREATE UNIQUE INDEX tj_users_username ON tj_users (username)',
+        ] as $sql) {
+            try { $db->exec($sql); } catch (PDOException $e) { /* already there */ }
+        }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (2)');
+    }
+}
+
+function tj_migrate_v1(PDO $db, string $id, string $fk, string $tail, string $text, bool $sqlite): void {
 
     $db->exec("CREATE TABLE IF NOT EXISTS tj_users (
         id $id,

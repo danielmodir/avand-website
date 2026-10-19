@@ -86,14 +86,8 @@
   background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px;
 }
 .profile-edit-form .field input:focus{ outline:none; border-bottom-color:var(--primary); box-shadow:none; }
-.dob-field-btn{ background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; font-size:14px; color:var(--text); cursor:pointer; transition:border-color .2s ease; }
+.dob-field-btn{ display:block; width:100%; text-align:start; font-family:inherit; background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; font-size:14px; color:var(--text); cursor:pointer; transition:border-color .2s ease; }
 .dob-field-btn:hover{ border-bottom-color:var(--primary); }
-.dob-field-wrap{ position:relative; }
-.dob-cal-popover{ position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:20; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); font-size:12px; }
-.dob-cal-popover .cal-label{ font-size:13px !important; }
-.dob-cal-popover .mini-cal-cell{ font-size:11px; }
-.dob-cal-popover .cal-corner-arrow{ width:26px; height:26px; }
-.dob-cal-popover .cal-corner-arrow svg{ width:13px; height:13px; }
 /* ===== Menu page ===== */
 .menu-avatar{ width:48px; height:48px; border-radius:50%; background:var(--primary); color:var(--on-primary); font-weight:700; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
 .menu-list{ display:flex; flex-direction:column; gap:12px; }

@@ -77,4 +77,5 @@ function render(){
   } else {
     stopPeriodTipsRotator();
   }
+  syncBackSteps(); // Back closes what's open (js/core/back-nav.js)
 }

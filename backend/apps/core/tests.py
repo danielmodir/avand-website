@@ -61,11 +61,38 @@ class AuthFlowTests(ApiTestCase):
 
     def test_duplicate_email_and_weak_password_are_rejected(self):
         self.register()
-        again = APIClient().post("/api/v1/auth/register", {"email": "USER@example.com", "password": PASSWORD}, format="json")
+        rest = {"username": "another", "gender": "male", "birth_date": "1990-01-01"}
+        again = APIClient().post("/api/v1/auth/register", {"email": "USER@example.com", "password": PASSWORD, **rest}, format="json")
         self.assertEqual(again.status_code, 409)
-        weak = APIClient().post("/api/v1/auth/register", {"email": "b@example.com", "password": "12345678"}, format="json")
+        weak = APIClient().post("/api/v1/auth/register", {"email": "b@example.com", "password": "12345678", **rest}, format="json")
         self.assertEqual(weak.status_code, 400)
         self.assertEqual(weak.json()["error"], "weak_password")
+
+    def test_signup_requires_username_gender_and_an_age_of_nine(self):
+        from datetime import date
+
+        def attempt(**over):
+            body = {"email": "c@example.com", "password": PASSWORD, "username": "sara_95", "gender": "female", "birth_date": "1995-05-20", **over}
+            return APIClient().post("/api/v1/auth/register", body, format="json")
+
+        for missing in ("username", "gender", "birth_date"):
+            body = {"email": "c@example.com", "password": PASSWORD, "username": "sara_95", "gender": "female", "birth_date": "1995-05-20"}
+            del body[missing]
+            self.assertEqual(APIClient().post("/api/v1/auth/register", body, format="json").status_code, 400, missing)
+        self.assertEqual(attempt(username="sara 95").status_code, 400)
+        self.assertEqual(attempt(username="سارا").status_code, 400)
+        self.assertEqual(attempt(gender="other").status_code, 400)
+        self.assertEqual(attempt(birth_date=date.today().replace(year=date.today().year - 8).isoformat()).status_code, 400)
+        letters_only = attempt(password="abcdefghij")
+        self.assertEqual(letters_only.json()["error"], "weak_password")
+        ok = attempt(username="Sara_95")
+        self.assertEqual(ok.status_code, 201, ok.content)
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {ok.json()['access_token']}")
+        profile = client.get("/api/v1/me").json()["profile"]
+        self.assertEqual((profile["username"], profile["gender"], profile["birth_date"]), ("sara_95", "female", "1995-05-20"))
+        taken = attempt(email="d@example.com", username="SARA_95")
+        self.assertEqual((taken.status_code, taken.json()["error"]), (409, "username_taken"))
 
     def test_login_failure_does_not_reveal_whether_the_email_exists(self):
         self.register()

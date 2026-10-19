@@ -22,10 +22,18 @@ from .email import queue_email
 
 
 def check_password_strength(password, user):
+    """Django's validators (8+ characters, not common, not all digits…)
+    plus the app's own rule: at least one letter and at least one digit
+    or symbol."""
+    reasons = []
     try:
         password_validation.validate_password(password, user)
     except ValidationError as exc:
-        raise ApiError("weak_password", 400, extra={"reasons": exc.messages})
+        reasons = list(exc.messages)
+    if not re.search(r"[^\W\d_]", password) or not re.search(r"[\d\W_]", password):
+        reasons.append("Password must contain a letter and a number or symbol.")
+    if reasons:
+        raise ApiError("weak_password", 400, extra={"reasons": reasons})
 
 
 # ── audit ────────────────────────────────────────────────────────────────
@@ -138,9 +146,12 @@ def generate_public_id(first_name, email):
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 
-def provision_user(user, first_name="", last_name=""):
+def provision_user(user, first_name="", last_name="", username=None, gender=None, birth_date=None):
     """Profile, settings and default desktops for a brand-new account."""
-    Profile.objects.create(user=user, first_name=first_name[:60], last_name=last_name[:60], public_id=generate_public_id(first_name, user.email))
+    Profile.objects.create(
+        user=user, first_name=first_name[:60], last_name=last_name[:60], public_id=generate_public_id(first_name or username, user.email),
+        username=username, gender=gender, birth_date=birth_date,
+    )
     UserSettings.objects.create(user=user)
     now = timezone.now()
     for position, module in enumerate(Module.objects.filter(is_active=True, default_enabled=True)):
@@ -156,17 +167,19 @@ def record_consents(user, consents, request):
 
 
 @transaction.atomic
-def register(request, email, password, first_name="", last_name="", consents=None):
+def register(request, email, password, first_name="", last_name="", consents=None, username=None, gender=None, birth_date=None):
     email = User.objects.normalize_email(email).lower()
     candidate = User(email=email)
     check_password_strength(password, candidate)
+    if username and Profile.objects.filter(username=username).exists():
+        raise ApiError("username_taken", 409)
     try:
         with transaction.atomic():
             user = User.objects.create_user(email, password)
     except IntegrityError:
         log_event(request, AuthEvent.Event.REGISTER, False, email=email)
         raise ApiError("email_taken", 409)
-    provision_user(user, first_name, last_name)
+    provision_user(user, first_name, last_name, username, gender, birth_date)
     record_consents(user, consents, request)
     send_email_verification(user)
     log_event(request, AuthEvent.Event.REGISTER, True, user)

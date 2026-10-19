@@ -103,10 +103,10 @@
   }
 
   // ── auth ──────────────────────────────────────────────────────────────
-  async function signUp(email, password, name) {
-    var parts = (name || '').trim().split(/\s+/);
+  // f: { email, password, username, gender, dob } — all required (auth.js).
+  async function signUp(f) {
     var tokens = await request('POST', '/auth/register', Object.assign({
-      email: email, password: password, first_name: parts.shift() || '', last_name: parts.join(' '),
+      email: f.email, password: f.password, username: f.username, gender: f.gender, birth_date: f.dob,
     }, deviceMeta()), { auth: false });
     storeSession(tokens);
   }

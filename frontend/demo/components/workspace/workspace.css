@@ -66,6 +66,11 @@
 .stat-mini{ font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:7px; }
 .stat-mini b{ color:var(--text); font-weight:700; margin-inline-start:auto; }
 .stat-dot{ width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+@media (max-width:959px){
+  .stat-card{ padding:12px 14px; gap:14px; margin-bottom:14px; border-radius:16px; }
+  .stat-ring-wrap, .stat-ring{ width:62px; height:62px; }
+  .stat-ring-label{ font-size:13px; }
+}
 /* fa: mirror the card (ring on the right, values on the left edge), same
    physical-swap approach as the other .lang-fa row overrides. */
 .device.lang-fa .stat-card{ flex-direction:row-reverse; }

@@ -21,7 +21,6 @@ const state = {
      sys: 'gregorian'|'jalali'|'hijri'|null, home: which widget (desktop
      calendar vs. the mobile/home one) it belongs to. */
   secDropdown: { kind: null, sys: null, home: false },
-  dobPickerOpen: false,
   desktopTitleMenuOpen: false,
   expandedTasks: {}, // task id -> true while its subtask list is shown
   selection: null,   // { type: 'task'|'subtask'|'habit', id } while a row is selected (glow + menu)
