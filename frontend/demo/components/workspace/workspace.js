@@ -29,11 +29,31 @@ function renderOccasionsPane(d, events){
    (reuses renderPeriodPage()'s body, just with the banner header instead
    of the Settings back-button header) — shown only when the profile's
    gender is 'female', same gate Settings/Management already used. */
+/* Articles the admin panel placed on this desk (SITE_ARTICLES, loaded
+   from our own API in js/app.js): a row of cards that open the article
+   on the site. Nothing without a backend or when none are placed. */
+function renderArticleStrip(place){
+  const list = (SITE_ARTICLES[lang()] || {})[place] || [];
+  if(!list.length) return '';
+  // Only our own addresses: the article page and /uploads covers.
+  const safe = list.filter(a => /^\/(fa|en)\/articles\/[a-z0-9-]+\/$/.test(a.url) && (!a.cover || /^\/uploads\/[a-f0-9]{32}\.(webp|jpg|png)$/.test(a.cover)));
+  if(!safe.length) return '';
+  return `
+    <div class="section-title desk-articles-title">${t('articlesTitle')}</div>
+    <div class="desk-articles">${safe.map(a => `
+      <a class="desk-article" href="${a.url}" target="_blank" rel="noopener">
+        ${a.cover ? `<img src="${a.cover}" alt="" loading="lazy">` : ''}
+        <span class="desk-article-title">${escapeHtml(a.title)}</span>
+        ${a.summary ? `<span class="desk-article-sub">${escapeHtml(a.summary)}</span>` : ''}
+      </a>`).join('')}
+    </div>`;
+}
+
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = [];
   if(pref('occasionsEnabled')){
-    panes.push({ key:'occasionsDesktop', html: renderOccasionsPane(d, events) });
+    panes.push({ key:'occasionsDesktop', html: renderOccasionsPane(d, events) + renderArticleStrip('app_main') });
   }
   // Guests only browse the calendar and occasions; planning needs an account.
   if(state.settings.planningEnabled && !state.guest){
@@ -41,10 +61,11 @@ function renderDesktops(d, data){
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
       ${pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
       ${renderItemSections(tasks,pref('planningShowHabits') ? habits : [], pref('planningShowEvents') ? events : [], d)}
+      ${renderArticleStrip('app_planning')}
     ` });
   }
   if(state.profile.gender === 'female' && state.period.enabled){
-    panes.push({ key:'periodDesktop', html: renderPeriodPage('') });
+    panes.push({ key:'periodDesktop', html: renderPeriodPage('') + renderArticleStrip('app_period') });
   }
   /* Every desktop switched off: on a phone the app becomes a full-screen
      month calendar (no workspace box under it); on desktop the calendar

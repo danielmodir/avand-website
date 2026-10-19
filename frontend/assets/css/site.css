@@ -477,6 +477,9 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .article-card h2 { font-size: var(--font-size-md); margin: 0 0 var(--space-2) 0; line-height: var(--line-height-tight); }
 .article-card p { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0 0 var(--space-3) 0; }
 .article-date { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.article-card h3 { font-size: var(--font-size-md); margin: 0 0 var(--space-2) 0; line-height: var(--line-height-tight); }
+.landing-articles-more { margin-top: var(--space-5); text-align: center; }
+.landing-articles-more a { color: var(--color-link); font-weight: 700; }
 .article { max-width: 720px; }
 .article .article-back { display: inline-block; color: var(--color-link); font-size: var(--font-size-sm); margin-bottom: var(--space-4); }
 .article h1 { margin-bottom: var(--space-2); }

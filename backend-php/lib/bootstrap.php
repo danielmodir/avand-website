@@ -160,6 +160,11 @@ function tj_migrate(PDO $db): void {
         try { $db->exec('CREATE INDEX tj_articles_list ON tj_articles (lang, status, published_at)'); } catch (PDOException $e) { /* already there */ }
         $db->exec('INSERT INTO tj_schema (version) VALUES (6)');
     }
+    if ($v < 7) {
+        // Where each article is shown (lib/articles.php TJ_ARTICLE_PLACES).
+        try { $db->exec("ALTER TABLE tj_articles ADD COLUMN placements VARCHAR(200) NOT NULL DEFAULT '[\"list\"]'"); } catch (PDOException $e) { /* already there */ }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (7)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

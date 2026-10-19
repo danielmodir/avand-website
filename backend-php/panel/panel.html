@@ -224,6 +224,9 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <div class="hint">آدرس فقط حروف کوچیک انگلیسی، عدد و خط تیره. خالی بذاری خودش یکی می‌سازه.</div>
         <label for="ar-title">عنوان</label><input id="ar-title" type="text" maxlength="160">
         <label for="ar-summary">خلاصه (زیر عنوان تو لیست، و برای گوگل)</label><input id="ar-summary" type="text" maxlength="300">
+        <label>نمایش در</label>
+        <div class="perms" id="ar-places"></div>
+        <div class="hint">صفحه‌ی خود مقاله همیشه با آدرسش باز می‌شه؛ این‌ها فقط جاهایی‌ان که مقاله توشون معرفی می‌شه.</div>
         <label for="ar-body">متن</label>
         <textarea id="ar-body" class="tall"></textarea>
         <div class="hint">قالب ساده: خط خالی = پاراگراف جدید · <span dir="ltr">## عنوان</span> = زیرعنوان · خط‌هایی که با <span dir="ltr">-</span> شروع بشن = فهرست · <span dir="ltr">**پررنگ**</span> · <span dir="ltr">[متن](https://...)</span> = لینک</div>
@@ -637,6 +640,23 @@ textarea.tall{ min-height:340px; line-height:1.9; }
 
   var AR_STATUS = { draft: ['پیش‌نویس', ''], pending: ['در انتظار بررسی', 'warn'], published: ['منتشرشده', 'good'], rejected: ['ردشده', 'bad'] };
   var ar = { status: '', current: null, canReview: false, canWrite: false };
+  var AR_PLACES = [
+    ['list', 'صفحه‌ی مقاله‌های سایت', 'لیست toojibee.ir/fa/articles'],
+    ['landing', 'صفحه‌ی اصلی سایت', 'بخش «مقاله‌ها» تو لندینگ (۳ تای آخر)'],
+    ['app_main', 'برنامه · میز کار اصلی', 'زیر مناسبت‌های روز'],
+    ['app_planning', 'برنامه · میز کار برنامه‌ریزی', 'زیر کارها و عادت‌ها'],
+    ['app_period', 'برنامه · میز کار پریود', 'تو میز کار پریود'],
+  ];
+  function arPlaceBoxes(checked) {
+    var box = $('ar-places');
+    box.textContent = '';
+    AR_PLACES.forEach(function (p) {
+      var lab = el('label', 'perm');
+      var cb = el('input'); cb.type = 'checkbox'; cb.value = p[0]; cb.checked = checked.indexOf(p[0]) !== -1;
+      var txt = el('span'); txt.appendChild(el('b', '', p[1])); txt.appendChild(el('small', '', p[2]));
+      lab.appendChild(cb); lab.appendChild(txt); box.appendChild(lab);
+    });
+  }
 
   function loadArticles() {
     return api('GET', '/articles' + (ar.status ? '?status=' + ar.status : '')).then(function (res) {
@@ -674,6 +694,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     $('ar-title').value = a ? a.title : '';
     $('ar-summary').value = a ? a.summary : '';
     $('ar-body').value = a ? a.body : '';
+    arPlaceBoxes(a ? (a.placements || []) : ['list']);
     ['ar-title', 'ar-summary', 'ar-body'].forEach(function (id) { $(id).dir = $('ar-lang').value === 'en' ? 'ltr' : 'rtl'; });
     var note = $('ar-note');
     note.textContent = a && a.status === 'rejected' && a.review_note ? 'دلیل رد: ' + a.review_note : '';
@@ -698,6 +719,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     var editable = !a || ar.canReview || (mine && (a.status === 'draft' || a.status === 'rejected'));
     var add = function (label, cls, fn) { var b = el('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', fn); box.appendChild(b); };
     ['ar-lang', 'ar-slug', 'ar-title', 'ar-summary', 'ar-body', 'ar-cover'].forEach(function (id) { $(id).disabled = !editable; });
+    Array.prototype.forEach.call($('ar-places').querySelectorAll('input'), function (c) { c.disabled = !editable; });
     if (editable) add('ذخیره', '', function () { arSave().catch(arFail); });
     if (a) add('پیش‌نمایش', 'ghost', function () { $('ar-preview').classList.toggle('hidden'); });
     if (a && mine && (a.status === 'draft' || a.status === 'rejected')) add('فرستادن برای بررسی', 'ghost', function () { arSave().then(function () { return arAct('submit'); }).catch(arFail); });
@@ -726,7 +748,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   }
 
   function arSave() {
-    var body = { lang: $('ar-lang').value, slug: $('ar-slug').value.trim(), title: $('ar-title').value.trim(), summary: $('ar-summary').value.trim(), body: $('ar-body').value };
+    var body = { lang: $('ar-lang').value, slug: $('ar-slug').value.trim(), title: $('ar-title').value.trim(), summary: $('ar-summary').value.trim(), body: $('ar-body').value,
+      placements: checkedPerms($('ar-places')) };
     var req = ar.current ? api('PATCH', '/articles/' + ar.current.id, body) : api('POST', '/articles', body);
     return req.then(function (a) { return openArticle(a.id); }).then(loadArticles);
   }

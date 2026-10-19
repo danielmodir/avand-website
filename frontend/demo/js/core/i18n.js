@@ -19,7 +19,7 @@ const STRINGS = {
     primarySystemBadge:'Shown as the big number', primarySystem:'Primary calendar', primarySystemSub:'Which one shows as the big number',
     atLeastOneCalendar:'At least one calendar has to stay on',
     prev:'Previous', next:'Next',
-    noOccasionsToday:'No occasions on this day.',
+    noOccasionsToday:'No occasions on this day.', articlesTitle:'Articles',
     hijriComingSoon:'Hijri calendar support is coming soon',
     showLabels:'Show labels', showLabelsSub:'Text under New Task / Habit / Event',
     sun:'Sun', mon:'Mon',
@@ -160,7 +160,7 @@ const STRINGS = {
     primarySystemBadge:'به‌عنوان عدد بزرگ نشون داده می‌شه', primarySystem:'تقویم اصلی', primarySystemSub:'کدوم به‌عنوان عدد بزرگ نشون داده بشه',
     atLeastOneCalendar:'حداقل یک تقویم باید روشن بمونه',
     prev:'قبلی', next:'بعدی',
-    noOccasionsToday:'مناسبتی برای این روز ثبت نشده.',
+    noOccasionsToday:'مناسبتی برای این روز ثبت نشده.', articlesTitle:'مقاله‌ها',
     hijriComingSoon:'پشتیبانی از تقویم قمری به‌زودی اضافه می‌شه',
     showLabels:'نمایش برچسب', showLabelsSub:'متن زیر افزودن کار/عادت/رویداد',
     sun:'یک', mon:'دو',
@@ -294,6 +294,9 @@ const tr = t;
 /* The app banner's picture/title from the admin panel; filled by
    loadSiteContent() in js/app.js, empty without a backend. */
 var SITE_BANNER = {};
+/* Articles placed on the app's desks in the admin panel:
+   { fa: { app_main:[…], app_planning:[…], app_period:[…] }, en: {…} }. */
+var SITE_ARTICLES = {};
 
 function applyLanguageDom(){
   document.documentElement.setAttribute('lang', lang()==='fa' ? 'fa' : 'en');

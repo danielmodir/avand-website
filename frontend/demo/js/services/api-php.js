@@ -207,6 +207,8 @@
     takeEmailLink: base.takeEmailLink,
     // Banner picture/title from the admin panel (public, no sign-in).
     siteContent: function () { return request('GET', '/content', undefined, { auth: false }); },
+    // Articles the admin panel placed on the app's desks (public).
+    featuredArticles: function () { return request('GET', '/articles/featured', undefined, { auth: false }); },
     loadAll: loadAll,
     onStateChanged: schedulePush,
     saveTask: queued, deleteTask: queued, saveHabit: queued, deleteHabit: queued,

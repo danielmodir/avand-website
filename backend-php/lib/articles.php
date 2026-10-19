@@ -12,6 +12,65 @@
 declare(strict_types=1);
 
 const TJ_ARTICLE_STATUSES = ['draft', 'pending', 'published', 'rejected'];
+/* Where a published article shows up ("show in" in the panel):
+ * list         the site's /fa|en/articles/ page
+ * landing      a section on the landing page (page.php)
+ * app_main     the app's main desk (occasions pane)
+ * app_planning the app's planning desk
+ * app_period   the app's period desk
+ * Its own page (/articles/<slug>/) works whatever is ticked. */
+const TJ_ARTICLE_PLACES = ['list', 'landing', 'app_main', 'app_planning', 'app_period'];
+const TJ_ARTICLE_PLACE_LIMIT = 6;
+
+function tj_article_places(array $a): array {
+    $p = json_decode((string)($a['placements'] ?? '["list"]'), true);
+    return is_array($p) ? array_values(array_intersect(TJ_ARTICLE_PLACES, $p)) : ['list'];
+}
+
+/* Published articles of one language shown in $place, newest first. */
+function tj_articles_in(string $lang, string $place, int $limit = 0): array {
+    $out = [];
+    foreach (tj_published_articles($lang) as $a) {
+        if (!in_array($place, tj_article_places($a), true)) continue;
+        $out[] = $a;
+        if ($limit && count($out) >= $limit) break;
+    }
+    return $out;
+}
+
+/* GET /articles/featured: what the app's desks show, both languages. */
+function tj_public_featured_articles(): void {
+    $out = [];
+    foreach (['fa', 'en'] as $l) {
+        foreach (['app_main', 'app_planning', 'app_period'] as $p) {
+            $out[$l][$p] = array_map(function ($a) use ($l) {
+                return ['title' => $a['title'], 'summary' => $a['summary'], 'cover' => $a['cover'], 'url' => '/' . $l . '/articles/' . $a['slug'] . '/'];
+            }, tj_articles_in($l, $p, TJ_ARTICLE_PLACE_LIMIT));
+        }
+    }
+    tj_json($out);
+}
+
+/* The landing page's "articles" section, before the closing call to
+ * action; nothing when no article is placed there. */
+function tj_landing_articles(string $html, string $lang): string {
+    $list = tj_articles_in($lang, 'landing', 3);
+    if (!$list) return $html;
+    $h = function (string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); };
+    $cards = '';
+    foreach ($list as $a) {
+        $cards .= '<a class="article-card" href="/' . $lang . '/articles/' . $h($a['slug']) . '/">'
+            . ($a['cover'] ? '<img src="' . $h($a['cover']) . '" alt="" loading="lazy" width="1600" height="900">' : '')
+            . '<span class="article-card-body"><h3>' . $h($a['title']) . '</h3>'
+            . ($a['summary'] !== '' ? '<p>' . $h($a['summary']) . '</p>' : '') . '</span></a>';
+    }
+    $title = $lang === 'fa' ? 'مقاله‌ها' : 'Articles';
+    $all = $lang === 'fa' ? 'همه‌ی مقاله‌ها' : 'All articles';
+    $section = '<section class="section landing-articles" aria-labelledby="articles-title">'
+        . '<h2 id="articles-title">' . $title . '</h2><div class="article-list">' . $cards . '</div>'
+        . '<p class="landing-articles-more"><a href="/' . $lang . '/articles/">' . $all . '</a></p></section>' . "\n\n    ";
+    return preg_replace_callback('#<section class="section cta-band"#', function ($m) use ($section) { return $section . $m[0]; }, $html, 1);
+}
 const TJ_ARTICLE_COVER = [1600, 900];
 
 /* "## heading", "- list item", blank line = new paragraph,
@@ -41,7 +100,7 @@ function tj_article_html(string $body): string {
 function tj_article_public(array $a, bool $withBody = false): array {
     $o = [
         'id' => $a['public_id'], 'lang' => $a['lang'], 'slug' => $a['slug'], 'title' => $a['title'], 'summary' => $a['summary'],
-        'cover' => $a['cover'], 'status' => $a['status'], 'review_note' => $a['review_note'],
+        'cover' => $a['cover'], 'status' => $a['status'], 'review_note' => $a['review_note'], 'placements' => tj_article_places($a),
         'author' => $a['author_email'] ?? null, 'reviewer' => $a['reviewer_email'] ?? null,
         'created_at' => $a['created_at'], 'updated_at' => $a['updated_at'], 'submitted_at' => $a['submitted_at'], 'published_at' => $a['published_at'],
         'url' => '/' . $a['lang'] . '/articles/' . $a['slug'] . '/',
@@ -96,6 +155,10 @@ function tj_article_fields(array $b, ?array $current): array {
     $other = $q->fetch();
     if ($other && (!$current || $other['public_id'] !== $current['public_id'])) tj_fail(409, 'slug_taken');
     $f['slug'] = $slug;
+    $places = array_key_exists('placements', $b) && is_array($b['placements'])
+        ? array_values(array_intersect(TJ_ARTICLE_PLACES, $b['placements']))
+        : ($current ? tj_article_places($current) : ['list']);
+    $f['placements'] = json_encode($places);
     return $f;
 }
 
@@ -130,8 +193,8 @@ function tj_admin_article_create(): void {
     if (!in_array('articles.write', tj_admin_perms($me), true)) tj_fail(403, 'forbidden');
     $f = tj_article_fields(tj_body(), null);
     $pid = tj_new_public_id();
-    tj_db()->prepare('INSERT INTO tj_articles (public_id, lang, slug, title, summary, body, status, author_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        ->execute([$pid, $f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], 'draft', $me['id'], tj_now(), tj_now()]);
+    tj_db()->prepare('INSERT INTO tj_articles (public_id, lang, slug, title, summary, body, placements, status, author_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        ->execute([$pid, $f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], $f['placements'], 'draft', $me['id'], tj_now(), tj_now()]);
     tj_admin_audit((int)$me['id'], 'article_created', $f['lang'] . '/' . $f['slug']);
     tj_json(tj_article_public(tj_article_find($pid), true), 201);
 }
@@ -142,8 +205,8 @@ function tj_admin_article_update(string $id): void {
     // Writers edit while it's theirs to edit; reviewers any time.
     if (!tj_article_can_review($me) && !in_array($a['status'], ['draft', 'rejected'], true)) tj_fail(409, 'locked_in_review');
     $f = tj_article_fields(tj_body(), $a);
-    tj_db()->prepare('UPDATE tj_articles SET lang = ?, slug = ?, title = ?, summary = ?, body = ?, updated_at = ? WHERE id = ?')
-        ->execute([$f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], tj_now(), $a['id']]);
+    tj_db()->prepare('UPDATE tj_articles SET lang = ?, slug = ?, title = ?, summary = ?, body = ?, placements = ?, updated_at = ? WHERE id = ?')
+        ->execute([$f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], $f['placements'], tj_now(), $a['id']]);
     tj_admin_audit((int)$me['id'], 'article_edited', $f['lang'] . '/' . $f['slug']);
     tj_json(tj_article_public(tj_article_find($id), true));
 }
@@ -206,10 +269,7 @@ function tj_published_articles(string $lang): array {
 /* Adds "Articles" to a page's footer links once something is published
  * in that language (landing via page.php, and the article pages). */
 function tj_footer_with_articles(string $html, string $lang): string {
-    if (strpos($html, '/articles/"') !== false) return $html;
-    $q = tj_db()->prepare("SELECT 1 FROM tj_articles WHERE lang = ? AND status = 'published' LIMIT 1");
-    $q->execute([$lang]);
-    if (!$q->fetch()) return $html;
+    if (strpos($html, '<li><a href="/' . $lang . '/articles/">') !== false || !tj_articles_in($lang, 'list', 1)) return $html;
     $li = '<li><a href="/' . $lang . '/articles/">' . ($lang === 'fa' ? 'مقاله‌ها' : 'Articles') . '</a></li>';
     return preg_replace_callback('#(<ul class="footer-links">)#', function ($m) use ($li) { return $m[1] . "\n        " . $li; }, $html, 1);
 }

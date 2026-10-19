@@ -16,6 +16,7 @@ try {
     require __DIR__ . '/lib/articles.php';
     $html = tj_render_landing($html, $lang);
     $html = tj_footer_with_articles($html, $lang);
+    $html = tj_landing_articles($html, $lang); // articles ticked "landing page"
 } catch (Throwable $e) {
     error_log('[toojibee-page] ' . $e->getMessage());
 }

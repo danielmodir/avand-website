@@ -59,7 +59,7 @@ $tpl = str_replace('../../', '/', $tpl); // pages live at different depths here
 
 try {
     if ($slug === '') {
-        $list = tj_published_articles($lang);
+        $list = tj_articles_in($lang, 'list'); // only those ticked "articles page"
         $path = "/$lang/articles/";
         $title = $T['list'] . ' — ' . $T['site'];
         $desc = $T['list_desc'];

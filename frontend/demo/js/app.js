@@ -177,6 +177,9 @@ function loadSiteContent(){
     }
     applyLanguageDom();
   }).catch(() => { /* offline: keep the plain banner */ });
+  if(Cloud.featuredArticles){
+    Cloud.featuredArticles().then(a => { SITE_ARTICLES = a || {}; render(); }).catch(() => {});
+  }
 }
 
 async function start(){

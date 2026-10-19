@@ -55,6 +55,7 @@ $routes = [
     'GET /admin/backup'         => 'tj_admin_backup',
     'GET /admin/visits'         => 'tj_admin_visits',
     'GET /content'              => 'tj_public_content',
+    'GET /articles/featured'    => 'tj_public_featured_articles',
     'GET /admin/content'        => 'tj_admin_content',
     'PUT /admin/content'        => 'tj_admin_content_save',
     'POST /admin/content/image' => 'tj_admin_content_image',
