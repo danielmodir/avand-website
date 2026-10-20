@@ -85,7 +85,8 @@ class TaskSerializer(OwnedSerializer):
 
     class Meta:
         model = Task
-        fields = SYNC_FIELDS + ["parent_id", "category_id", "title", "description", "pinned", "sort_order", "start_date", "end_date"] \
+        fields = SYNC_FIELDS + ["parent_id", "category_id", "title", "description", "pinned", "sort_order", "start_date", "end_date",
+                                "start_time", "end_time"] \
             + RECURRENCE_FIELDS + REMINDER_FIELDS + ["origin_task_id", "origin_date"]
         read_only_fields = READ_ONLY
 
@@ -96,6 +97,10 @@ class TaskSerializer(OwnedSerializer):
         self.check_schedule(attrs)
         if merged(attrs, self.instance, "reminder_type") == "before_start":
             raise ApiError("invalid_reminder_type")
+        # Same day: the end time can't come before the start time.
+        start_time, end_time = merged(attrs, self.instance, "start_time"), merged(attrs, self.instance, "end_time")
+        if start_time is not None and end_time is not None and not merged(attrs, self.instance, "end_date") and end_time <= start_time:
+            raise ApiError("end_before_start")
 
         parent_id = merged(attrs, self.instance, "parent_id")
         if parent_id is not None:

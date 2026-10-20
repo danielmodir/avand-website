@@ -8,7 +8,10 @@
      range: false,          // true: tap a day, or press and drag for a range
      min, max: 'YYYY-MM-DD' (optional; days outside can't be picked),
      title: '…',
-     onPick(value, end)     // single mode closes on the first tap
+     time: { start, end },  // optional: start time, and an end time that
+                            // only opens with the "end time" tick
+     onPick(value, end, time) // single mode closes on the first tap;
+                              // time = { start, end } ('' = none)
    })
 
    It's its own element on top of everything (not part of render()) and
@@ -25,6 +28,7 @@ function openDatePicker(opts){
     title: opts.title || '', range: !!opts.range, min, max, onPick: opts.onPick,
     value, end: opts.range ? (opts.end || value) : '',
     cursor: new Date(start + 'T00:00:00'), view: 'days',
+    time: opts.time ? { start: opts.time.start || '', end: opts.time.end || '', hasEnd: !!opts.time.end } : null,
   };
   let el = document.getElementById('date-picker');
   if(!el){
@@ -48,9 +52,25 @@ function closeDatePicker(){
 }
 
 function dpFinish(){
-  const { onPick, value, end, range } = dp;
+  const { onPick, value, end, range, time } = dp;
+  let picked = null;
+  if(time){
+    picked = { start: time.start || '', end: time.hasEnd ? (time.end || '') : '' };
+    if(time.hasEnd && !picked.end){ showToast(t('endTimeRequired')); return; }
+    // Same day: the end can't come before the start.
+    if(picked.start && picked.end && (!range || (end || value) === value) && picked.end <= picked.start){ showToast(t('endBeforeStart')); return; }
+  }
   closeDatePicker();
-  if(onPick && value) onPick(value, range ? (end || value) : value);
+  if(onPick && value) onPick(value, range ? (end || value) : value, picked);
+}
+
+function dpTimeHtml(){
+  const tm = dp.time;
+  return `<div class="dp-time">
+    <label class="dp-time-row"><span>${t('startTime')}</span><input type="time" id="dp-start" value="${tm.start}" dir="ltr"></label>
+    <label class="dp-time-check"><input type="checkbox" id="dp-has-end" ${tm.hasEnd ? 'checked' : ''}><span>${t('endTimeToggle')}</span></label>
+    <label class="dp-time-row ${tm.hasEnd ? '' : 'off'}"><span>${t('endTime')}</span><input type="time" id="dp-end" value="${tm.end}" dir="ltr" ${tm.hasEnd ? '' : 'disabled'}></label>
+  </div>`;
 }
 
 /* First day of the month `d` is in (primary calendar system). */
@@ -94,7 +114,8 @@ function renderDatePicker(){
     body = `
       <div class="weekday-header">${weekdayOrder().map(i => `<span>${weekdayShort(i)}</span>`).join('')}</div>
       <div class="month-grid dp-grid" id="dp-grid">${monthMatrix(dp.cursor).map(dpCellHtml).join('')}</div>
-      ${dp.range ? `<div class="dp-hint">${t('tapOrDrag')}</div>` : ''}`;
+      ${dp.range ? `<div class="dp-hint">${t('tapOrDrag')}</div>` : ''}
+      ${dp.time ? dpTimeHtml() : ''}`;
   }
   el.innerHTML = `
     <div class="dp-card" role="dialog" aria-modal="true" aria-label="${escapeAttr(dp.title)}" dir="${fa ? 'rtl' : 'ltr'}">
@@ -155,6 +176,20 @@ function wireDatePicker(el){
     dp.value = lo; dp.end = hi;
     renderDatePicker();
   });
+  // Time fields (dp.time): kept in dp so re-renders of the grid keep them.
+  el.addEventListener('input', e => {
+    if(!dp || !dp.time) return;
+    if(e.target.id === 'dp-start') dp.time.start = e.target.value;
+    else if(e.target.id === 'dp-end') dp.time.end = e.target.value;
+  });
+  el.addEventListener('change', e => {
+    if(!dp || !dp.time || e.target.id !== 'dp-has-end') return;
+    dp.time.hasEnd = e.target.checked;
+    if(!dp.time.hasEnd) dp.time.end = '';
+    renderDatePicker();
+    if(dp.time.hasEnd) document.getElementById('dp-end')?.focus();
+  });
+
   const end = () => { anchor = null; };
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);

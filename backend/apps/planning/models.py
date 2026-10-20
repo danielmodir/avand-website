@@ -102,6 +102,10 @@ class Task(UserOwnedSyncModel, Recurrence, Reminder):
     sort_order = models.IntegerField(default=0)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True, help_text="Deadline; empty = single day.")
+    # Optional time of day: when to start, and (only if set) by when to
+    # finish. Once it has passed an unticked task counts as not done.
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
     origin_task = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     origin_date = models.DateField(null=True, blank=True)
 

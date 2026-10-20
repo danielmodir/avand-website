@@ -32,6 +32,35 @@ function findTaskOrSub(id){
   return { item: null, parent: null };
 }
 
+/* ============ ITEM COLORS ============
+   Settings → Planning lets each kind have its own color: the tick, the
+   day-summary dot and chart, the calendar dots and the full-screen chips.
+   state.settings.itemColors = { task, habit, event }: '#RRGGBB', or
+   missing for the default (tasks: the theme's own primary). */
+const ITEM_COLOR_DEFAULTS = { task: null, habit: '#4CC38A', event: '#D9B65C' };
+const ITEM_COLOR_CHOICES = ['#EB7D00', '#E5484D', '#E93D82', '#8E4EC6', '#3E63DD', '#0EA5B7', '#30A46C', '#D9B65C'];
+
+function itemColor(kind){ return state.settings.itemColors?.[kind] || ITEM_COLOR_DEFAULTS[kind]; }
+
+/* --task-color etc. on #device (defaults in items.css); called by render(). */
+function applyItemColors(){
+  const dev = document.getElementById('device');
+  ['task', 'habit', 'event'].forEach(k => {
+    const c = state.settings.itemColors?.[k];
+    if(c) dev.style.setProperty(`--${k}-color`, c); else dev.style.removeProperty(`--${k}-color`);
+    // Text/tick on that color: dark on light colors, white on dark ones.
+    const hex = c || ITEM_COLOR_DEFAULTS[k];
+    if(hex) dev.style.setProperty(`--${k}-on`, colorIsLight(hex) ? '#1A1708' : '#FFFFFF'); else dev.style.removeProperty(`--${k}-on`);
+  });
+}
+
+function colorIsLight(hex){
+  const n = parseInt(hex.slice(1), 16);
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const L = 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return L > 0.4;
+}
+
 /* ============ DONE / NOT DONE PER DAY ============
    A one-off task keeps its state in done / skipped. A repeating task is
    ticked separately on every day it occurs (statusByDate, keyed by
@@ -40,8 +69,37 @@ function findTaskOrSub(id){
 function isRecurringTask(task){ return !!task.recurrence?.mode; }
 
 function taskStatusOn(task, key){
-  if(!isRecurringTask(task)) return task.done ? 'done' : task.skipped ? 'not_done' : null;
-  return task.statusByDate?.[key] || null;
+  const set = !isRecurringTask(task) ? (task.done ? 'done' : task.skipped ? 'not_done' : null) : (task.statusByDate?.[key] || null);
+  // Not ticked and its time is over: "not done" by itself (it can still be
+  // ticked as done afterwards — an explicit status always wins).
+  return set || (taskOverdue(task, key) ? 'not_done' : null);
+}
+
+/* A task's time is over: its last day has passed, or on that day its end
+   time (else its start time) has. A repeating task: per occurrence. */
+function taskOverdue(task, key){
+  const deadline = isRecurringTask(task) ? key : (task.timeMode === 'range' && task.endDate ? task.endDate : task.date);
+  if(!deadline) return false;
+  const now = new Date();
+  const todayKey = dateKey(now);
+  if(deadline !== todayKey) return deadline < todayKey;
+  const hm = task.endTime || task.startTime;
+  if(!hm) return false;
+  const [h, m] = hm.split(':').map(Number);
+  return now.getHours() * 60 + now.getMinutes() >= h * 60 + m;
+}
+
+/* "۱۰:۰۰ – ۱۲:۳۰" (or just the start) for an item with a time. */
+function itemTimeLabel(item){
+  if(!item.startTime) return '';
+  return dig(item.startTime) + (item.endTime ? ' – ' + dig(item.endTime) : '');
+}
+
+/* Once a minute (js/app.js): repaint task checkboxes whose time just ran
+   out, in place — no full render. */
+function refreshOverdueTasks(){
+  state.tasks.forEach(syncTaskDom);
+  updateDayStatsInPlace();
 }
 
 function setTaskStatusOn(task, key, status){
@@ -70,6 +128,7 @@ function taskRow(task, key){
       <div class="checkbox ${done?'checked':''} ${skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" data-date="${key}" role="checkbox" aria-checked="${done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${done?ICONS.check:skipped?ICONS.close:''}</div>
       <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${task.id}">
         <p class="item-title">${escapeHtml(task.title)}</p>
+        ${task.startTime ? `<span class="item-time" dir="ltr">${itemTimeLabel(task)}</span>` : ''}
       </div>
       <button class="star-mini ${task.pinned?'active':''}" data-action="toggle-pin" data-id="${task.id}" aria-label="${task.pinned?t('unpinBtn'):t('pinBtn')}">${ICONS.star}</button>
       ${subs.length ? `<button type="button" class="subtask-toggle ${open?'open':''}" data-action="toggle-subtasks" data-id="${task.id}" aria-label="${t('subtasksLabel')}" aria-expanded="${open}">${ICONS.chevronDown}</button>` : ''}
@@ -104,10 +163,13 @@ function habitRow(h, date){
   </div>`;
 }
 
+// An event's time: its own start time, else its reminder time.
+function eventTime(e){ return e.startTime || (e.notification?.type === 'time' ? e.notification.time : null); }
+
 function sortEvents(events){
   return [...events].sort((a,b) => {
-    const at = a.notification?.type === 'time' ? a.notification.time : null;
-    const bt = b.notification?.type === 'time' ? b.notification.time : null;
+    const at = eventTime(a);
+    const bt = eventTime(b);
     if(at && bt) return at.localeCompare(bt);
     if(at && !bt) return -1;
     if(!at && bt) return 1;
@@ -116,7 +178,7 @@ function sortEvents(events){
 }
 
 function eventCard(e){
-  const time = e.notification?.type === 'time' ? e.notification.time : '';
+  const time = e.startTime ? itemTimeLabel(e) : (eventTime(e) || '');
   return `<div class="event-card" data-action="edit-item" data-type="event" data-id="${e.id}">
     <button class="mini-btn event-del" data-action="delete-event" data-id="${e.id}" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>
     ${time?`<span class="event-time">${time}</span>`:''}

@@ -228,6 +228,7 @@ async function enterSignedIn(){
   authDraft = { ...EMPTY_AUTH_DRAFT };
   authErrors = { ...EMPTY_AUTH_ERRORS };
   render();
+  acceptPendingInvite(); // opened a friend's invite link before signing in (app.js)
 }
 
 /* Shown while boot() is checking a saved session against the backend

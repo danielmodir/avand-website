@@ -271,6 +271,7 @@
         id: row.id, title: row.title, category: catNames[row.category_id] || '', description: row.description || '',
         photos: [], photoFileIds: photosByTask[row.id] || [], pinned: row.pinned,
         timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
+        startTime: row.start_time ? row.start_time.slice(0, 5) : null, endTime: row.end_time ? row.end_time.slice(0, 5) : null,
         recurrence: recurrence, notification: reminderFromApi(row),
         statusByDate: recurrence.mode ? Object.assign({}, occ[row.id] || {}) : {},
         subtasks: subs.map(function (s) {
@@ -304,6 +305,7 @@
       versions['events:' + row.id] = row.version;
       return {
         id: row.id, title: row.title, timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
+        startTime: row.start_time ? row.start_time.slice(0, 5) : null, endTime: row.end_time ? row.end_time.slice(0, 5) : null,
         recurrence: recurrenceFromApi(row), notification: reminderFromApi(row),
       };
     });
@@ -325,6 +327,7 @@
         planningEnabled: planning ? planning.enabled : true,
         theme: st.theme, palette: st.palette || 'toojibee',
         prefs: prefsFromApi(st.preferences || {}),
+        itemColors: st.item_colors || {},
       },
       tasks: tasks, habits: habits, events: events,
     };
@@ -409,7 +412,7 @@
       var categoryId = await ensureCategory(task.category);
       await putVersioned('tasks', task.id, Object.assign({
         parent_id: null, category_id: categoryId, title: task.title, description: task.description || '',
-        pinned: !!task.pinned,
+        pinned: !!task.pinned, start_time: task.startTime || null, end_time: task.endTime || null,
       }, datesToApi(task), recurrenceToApi(task.recurrence, true), reminderToApi(task.notification)));
 
       if (task.recurrence && task.recurrence.mode) {
@@ -470,7 +473,10 @@
 
   function saveEvent(evt) {
     return enqueue('event:' + evt.id, function () {
-      return putVersioned('events', evt.id, Object.assign({ title: evt.title, all_day: true },
+      // A start time makes it a timed event (the API needs start_time then).
+      var timed = !!evt.startTime;
+      return putVersioned('events', evt.id, Object.assign({ title: evt.title, all_day: !timed,
+        start_time: timed ? evt.startTime : null, end_time: timed && evt.endTime ? evt.endTime : null },
         datesToApi(evt), recurrenceToApi(evt.recurrence, true), reminderToApi(evt.notification)));
     });
   }
@@ -525,7 +531,7 @@
       var body = {
         language: s.language, calendar_primary: s.calendarSystem, calendars_enabled: enabled,
         week_start: s.weekStartDay, notifications_enabled: !!s.notifications, show_add_menu_labels: !!s.showAddMenuLabels,
-        palette: s.palette || 'toojibee', preferences: prefsToApi(s.prefs || {}),
+        palette: s.palette || 'toojibee', preferences: prefsToApi(s.prefs || {}), item_colors: s.itemColors || {},
       };
       if (s.theme === 'light' || s.theme === 'dark') body.theme = s.theme;
       var send = function (v) { return request('PATCH', '/me/settings', Object.assign({ version: v }, body)); };
@@ -548,6 +554,22 @@
   function removeConnection(id) { return request('DELETE', '/social/connections/' + id); }
   function blockUser(id) { return request('PUT', '/social/blocks/' + id); }
   function unblockUser(id) { return request('DELETE', '/social/blocks/' + id); }
+  // Personal invite link (Django: an Invite row; redeeming makes friends).
+  async function inviteToken() {
+    var rows = await request('GET', '/social/invites');
+    var usable = rows.filter(function (r) { return r.usable; })[0];
+    return usable ? usable.code : (await request('POST', '/social/invites')).code;
+  }
+  async function resetInviteToken() {
+    var rows = await request('GET', '/social/invites');
+    await Promise.all(rows.map(function (r) { return request('DELETE', '/social/invites/' + r.id); }));
+    return (await request('POST', '/social/invites')).code;
+  }
+  function acceptInvite(token) {
+    return request('POST', '/social/invites/' + encodeURIComponent(String(token).toLowerCase()) + '/redeem').then(function (r) {
+      return { status: 'accepted', friend: r.inviter };
+    });
+  }
   function listConnections() {
     return request('GET', '/social/connections').then(function (rows) {
       return rows.map(function (r) { return { id: r.id, name: r.name, phone: '', status: r.status, userId: r.public_id ? 'TJ-' + r.public_id : '' }; });
@@ -579,6 +601,7 @@
     saveEvent: saveEvent, deleteEvent: deleteEvent, saveProfile: saveProfile, saveSettings: saveSettings,
     searchUser: searchUser, sendConnectionRequest: sendConnectionRequest, respondConnectionRequest: respondConnectionRequest,
     removeConnection: removeConnection, blockUser: blockUser, unblockUser: unblockUser, listConnections: listConnections,
+    inviteToken: inviteToken, resetInviteToken: resetInviteToken, acceptInvite: acceptInvite,
     calendarYear: calendarYear,
   });
   global.Cloud = api;

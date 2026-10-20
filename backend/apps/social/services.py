@@ -89,18 +89,26 @@ def create_invite(me, max_uses=None):
 
 
 def redeem_invite(me, code):
-    """Called once, right after sign-up: links the new user to the inviter
-    and sends them a connection request on the invitee's behalf."""
+    """Someone opened an invite link: they and the inviter are friends at
+    once (sharing the link was the inviter's yes). Opening it again is
+    harmless. A block between the two still wins, without saying so."""
     with transaction.atomic(using=DB):
         invite = Invite.objects.select_for_update().filter(code=code).first()
         if invite is None or not invite.is_usable or str(invite.inviter_user_id) == str(me):
             raise ApiError("invalid_invite", 404)
-        if InviteRedemption.objects.filter(invitee_user_id=me).exists():
-            raise ApiError("already_invited", 409)
-        InviteRedemption.objects.create(invite=invite, invitee_user_id=me)
-        invite.uses += 1
-        invite.save(update_fields=["uses"])
-    send_request(me, invite.inviter_user_id)
+        if not InviteRedemption.objects.filter(invite=invite, invitee_user_id=me).exists():
+            InviteRedemption.objects.create(invite=invite, invitee_user_id=me)
+            invite.uses += 1
+            invite.save(update_fields=["uses"])
+        a, b, row = _lock_pair(me, invite.inviter_user_id)
+        if row is None:
+            Connection.objects.create(user_a=a, user_b=b, status=Connection.Status.ACCEPTED, requested_by=invite.inviter_user_id,
+                                      responded_at=timezone.now())
+        elif row.status == Connection.Status.BLOCKED:
+            raise ApiError("invalid_invite", 404)
+        elif row.status == Connection.Status.PENDING:
+            row.status, row.responded_at = Connection.Status.ACCEPTED, timezone.now()
+            row.save()
     return invite
 
 

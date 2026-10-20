@@ -170,11 +170,10 @@ function attachDayCellGestures(gridEl, isHome){
     const d = new Date(btn.dataset.date);
     if(btn.classList.contains('other-month')){
       if(isHome) state.homeDate = d; else state.calCursor = d;
+      render(); // another month: the calendar itself changes
     } else {
-      state.selectedDate = d;
-      state.homeDate = d;
+      selectDay(d); // same month: only the selection and the desk (render.js)
     }
-    render();
   });
   gridEl.addEventListener('pointercancel', clearPress);
   gridEl.addEventListener('contextmenu', e => e.preventDefault());
@@ -573,8 +572,8 @@ function syncBackTodayButton(){
   const r = box.getBoundingClientRect();
   btn.style.left = (r.left + r.width / 2) + 'px';
   btn.style.bottom = 'auto';
-  // Just above the calendar's bottom edge, with a small gap (not on the line).
-  btn.style.top = (r.bottom - btn.offsetHeight - BACK_TODAY_GAP) + 'px';
+  // Under the calendar's frame, with a small gap — never over its days.
+  btn.style.top = (r.bottom + BACK_TODAY_GAP) + 'px';
 }
 const BACK_TODAY_GAP = 8;
 

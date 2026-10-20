@@ -33,12 +33,13 @@ class SocialTests(ApiTestCase):
         self.assertEqual(self.sara.post(f"/api/v1/social/connections/{self.ali_id}/request").status_code, 404)
         self.assertEqual(self.sara.get("/api/v1/social/search", {"q": "ali_k"}).json(), [])
 
-    def test_invite_redemption_creates_a_request(self):
+    def test_invite_link_makes_friends_at_once(self):
         code = self.sara.post("/api/v1/social/invites").json()["code"]
         newbie = self.register("new@example.com", "Neda")
         self.assertEqual(newbie.post(f"/api/v1/social/invites/{code}/redeem").status_code, 200)
-        self.assertEqual(self.statuses(self.sara), {newbie.tokens["user_id"]: "pending-incoming"})
-        self.assertEqual(newbie.post(f"/api/v1/social/invites/{code}/redeem").status_code, 409)
+        self.assertEqual(self.statuses(self.sara), {newbie.tokens["user_id"]: "accepted"})
+        self.assertEqual(newbie.post(f"/api/v1/social/invites/{code}/redeem").status_code, 200)  # again: harmless
+        self.assertEqual(self.sara.post(f"/api/v1/social/invites/{code}/redeem").status_code, 404)  # own link
 
     def test_reports(self):
         ok = self.sara.post("/api/v1/social/reports", {"user_id": self.ali_id, "reason": "spam"}, format="json")

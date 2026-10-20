@@ -98,10 +98,11 @@ function refreshCalendarRanges(){
    Toggle via the handle (tap or drag) — see attachHomeCalDrag(). Picking
    a date in the expanded grid also collapses back to the strip. */
 /* Whether a day gets the small "has plans" dot (Planning settings). */
-function dayHasPlans(day){
-  if(!pref('planningCalendarDots') || !state.settings.planningEnabled) return false;
+/* One dot per kind the day has, in that kind's color (Settings → Planning). */
+function dayDotsHtml(day){
+  if(!pref('planningCalendarDots') || !state.settings.planningEnabled) return '';
   const {tasks, events} = itemsForDate(day);
-  return tasks.length || events.length;
+  return (tasks.length ? '<span class="dot-task"></span>' : '') + (events.length ? '<span class="dot-event"></span>' : '');
 }
 
 /* fullScreen: every workspace desktop is off (phone only) — the widget is
@@ -114,13 +115,12 @@ function renderHomeCalWidget(fullScreen){
   if(fullScreen) state.calDensity = 'full';
   const cellHtml = (day, i) => {
     const inMonth = cellInCurrentMonth(day, d);
-    const hasAny = dayHasPlans(day);
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
     const rng = rangeCellClass(day, ranges, i % 7);
     return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(day)?'holiday':''} ${periodPhaseClass(day, i % 7)} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
       <span class="day-cell-bg" aria-hidden="true"></span>${rangeDotHtml(rng)}${dayCellDateHtml(day)}
-      <div class="day-dots">${hasAny?'<span></span>':''}</div>
+      <div class="day-dots">${dayDotsHtml(day)}</div>
     </button>`;
   };
   const monthDropdown = state.monthDropdownOpen ? `
@@ -190,13 +190,12 @@ function renderCalendar(){
       <div class="month-grid" id="cal-month-grid">
         ${cells.map((d, i) => {
           const inMonth = cellInCurrentMonth(d, c);
-          const hasAny = dayHasPlans(d);
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
           const rng = rangeCellClass(d, ranges, i % 7);
           return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(d)?'holiday':''} ${periodPhaseClass(d, i % 7)} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
             <span class="day-cell-bg" aria-hidden="true"></span>${rangeDotHtml(rng)}${dayCellDateHtml(d)}
-            <div class="day-dots">${hasAny?'<span></span>':''}</div>
+            <div class="day-dots">${dayDotsHtml(d)}</div>
           </button>`;
         }).join('')}
       </div>`;
@@ -279,12 +278,12 @@ function calFullChips(day){
   }
   const { tasks, events } = itemsForDate(day);
   sortEvents(events).forEach(e => {
-    const time = e.notification?.type === 'time' ? e.notification.time : '';
-    chips.push(`<span class="cf-chip cf-event" data-action="edit-item" data-type="event" data-id="${e.id}">${time ? `<b dir="ltr">${time}</b> ` : ''}${escapeHtml(e.title)}</span>`);
+    const time = eventTime(e);
+    chips.push(`<span class="cf-chip cf-event" data-action="edit-item" data-type="event" data-id="${e.id}">${time ? `<b dir="ltr">${dig(time)}</b> ` : ''}${escapeHtml(e.title)}</span>`);
   });
   tasks.forEach(tk => {
-    const done = taskStatusOn(tk, key) === 'done';
-    chips.push(`<span class="cf-chip cf-task ${done?'done':''}" data-action="edit-item" data-type="task" data-id="${tk.id}">${escapeHtml(tk.title)}</span>`);
+    const st = taskStatusOn(tk, key);
+    chips.push(`<span class="cf-chip cf-task ${st === 'done' ? 'done' : st === 'not_done' ? 'missed' : ''}" data-action="edit-item" data-type="task" data-id="${tk.id}">${tk.startTime ? `<b dir="ltr">${dig(tk.startTime)}</b> ` : ''}${escapeHtml(tk.title)}</span>`);
   });
   return chips;
 }

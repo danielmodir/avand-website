@@ -199,8 +199,14 @@ async function refreshConnections(){
   if(REAL_LOGIN_DISABLED || !Cloud.hasSession()) return; // nothing to load without a session (was a 401)
   try{ state.connections = await Cloud.listConnections(); }
   catch(e){ /* keep whatever was already loaded */ }
+  if(!state.inviteToken && Cloud.inviteToken){
+    try{ state.inviteToken = await Cloud.inviteToken(); }catch(e){ /* the card shows … */ }
+  }
   render();
 }
+
+/* This app's own address + the invite code, e.g. https://toojibee.ir/demo/#invite=… */
+function inviteUrl(token){ return new URL('./', location.href).href + '#invite=' + encodeURIComponent(token); }
 
 function runConnectionAction(btn, fn){
   btn.disabled = true;
@@ -232,12 +238,26 @@ function renderFriendsPage(){
   const outgoing = state.connections.filter(c=>c.status==='pending-outgoing');
   const blocked = state.connections.filter(c=>c.status==='blocked');
   const nothingYet = !incoming.length && !accepted.length && !outgoing.length;
-  return `
-    ${subHeader(t('connections'))}
+  // Personal invite link (backend: GET /social/invite): whoever opens it
+  // becomes a friend right away. Without that API: the site + my code.
+  const inviteHtml = Cloud.inviteToken ? `
+    <div class="invite-card">
+      <div class="lbl">${t('inviteLinkTitle')}</div>
+      <div class="sub">${t('inviteLinkSub')}</div>
+      <div class="invite-link-box" dir="ltr">${state.inviteToken ? escapeHtml(inviteUrl(state.inviteToken)) : '…'}</div>
+      <div class="invite-actions">
+        <button type="button" class="btn btn-primary btn-small" data-action="copy-invite-link" ${state.inviteToken ? '' : 'disabled'}>${ICONS.copyIcon}<span>${t('copyLink')}</span></button>
+        ${navigator.share ? `<button type="button" class="btn btn-outline btn-small" data-action="share-invite-link" ${state.inviteToken ? '' : 'disabled'}>${ICONS.linkIcon}<span>${t('shareLink')}</span></button>` : ''}
+        <button type="button" class="btn btn-outline btn-small" data-action="reset-invite-link" ${state.inviteToken ? '' : 'disabled'}>${t('newLink')}</button>
+      </div>
+    </div>` : `
     <div class="settings-row">
       <div style="min-width:0;"><div class="lbl">${t('inviteLink')}</div><div class="sub" style="overflow:hidden; text-overflow:ellipsis;" dir="ltr">toojibee.ir · ${escapeHtml(state.profile.userId)}</div></div>
       <span class="link-btn" data-action="copy-invite-link" aria-label="${t('copyBtn')}">${ICONS.copyIcon}</span>
-    </div>
+    </div>`;
+  return `
+    ${subHeader(t('connections'))}
+    ${inviteHtml}
     <div class="search-capsule" style="margin-top:16px;">
       <input type="text" id="friend-search" value="${escapeAttr(state.friendSearch)}" placeholder="${t('friendsSearchPlaceholder')}">
       <button type="button" class="search-capsule-btn" id="friend-search-btn" aria-label="${t('searchResults')}">${ICONS.searchIcon}</button>
@@ -440,6 +460,19 @@ function renderPlanningSettings(){
     ${prefRow('planningCalendarDots', 'prefCalendarDots', 'prefCalendarDotsSub')}
     ${prefRow('planningShowEvents', 'prefPlanningEvents', 'prefPlanningEventsSub')}
     ${prefRow('planningShowHabits', 'prefPlanningHabits', 'prefPlanningHabitsSub')}
+    <div class="section-title">${t('itemColors')}</div>
+    <div class="sub" style="margin:-6px 2px 10px 2px;">${t('itemColorsSub')}</div>
+    ${[['task','tasks'], ['habit','habits'], ['event','events']].map(([kind, label]) => {
+      const cur = state.settings.itemColors?.[kind] || null;
+      const def = ITEM_COLOR_DEFAULTS[kind] || 'var(--primary)';
+      return `<div class="color-row">
+        <div class="lbl">${t(label)}</div>
+        <div class="color-swatches" role="radiogroup" aria-label="${t(label)}">
+          <button type="button" class="color-swatch ${cur ? '' : 'active'}" data-action="set-item-color" data-kind="${kind}" data-color="" style="--c:${def}" role="radio" aria-checked="${!cur}" aria-label="${t('defaultColor')}" title="${t('defaultColor')}"></button>
+          ${ITEM_COLOR_CHOICES.filter(c => c !== ITEM_COLOR_DEFAULTS[kind]).map(c => `<button type="button" class="color-swatch ${cur === c ? 'active' : ''}" data-action="set-item-color" data-kind="${kind}" data-color="${c}" style="--c:${c}" role="radio" aria-checked="${cur === c}" aria-label="${c}"></button>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}
   `;
 }
 
@@ -617,10 +650,16 @@ function updateNav(){
     backBtn.classList.toggle('show', !sameDay(state.calCursor, today) || !sameDay(state.homeDate, today));
     const boxEl = document.getElementById('page-calendar');
     if(boxEl){
+      // Under the calendar, never over its days: just below the month
+      // grid; if the column is too short for that, below the frame itself.
       const boxRect = boxEl.getBoundingClientRect();
+      const gridEl = document.getElementById('cal-month-grid') || document.getElementById('cal-content');
+      const h = backBtn.offsetHeight || 39;
+      let top = (gridEl ? gridEl.getBoundingClientRect().bottom : boxRect.bottom) + 12;
+      if(top + h > boxRect.bottom - BACK_TODAY_GAP) top = Math.min(boxRect.bottom + BACK_TODAY_GAP, window.innerHeight - h - 6);
       backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
       backBtn.style.bottom = 'auto';
-      backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight - BACK_TODAY_GAP) + 'px'; // above the edge, not on it
+      backBtn.style.top = top + 'px';
     }
   } else {
     /* Below 960px, the merged home widget IS the calendar (no separate

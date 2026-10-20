@@ -69,6 +69,7 @@ const state = {
      'blocked' | 'blocked-by-them' (search results, not in this list yet,
      have no status field at all). */
   connections: [],
+  inviteToken: null, // my personal invite link's code (Friends page)
   friendSearch: '',
   friendSearchResults: [],
   friendSearchBusy: false,

@@ -1,9 +1,39 @@
 let lastRenderedMenuSub = null; // which menu page the last render showed (entrance animations)
 
+/* Picking a day on a calendar: move the "selected" circle and rebuild only
+   the desk under it (that day's items) — not the whole page, so nothing
+   flashes or restarts (the calendars, their scroll and animations stay). */
+function selectDay(d){
+  state.selectedDate = d; state.homeDate = d;
+  const key = dateKey(d);
+  document.querySelectorAll('#cal-month-grid .day-cell[data-date], #home-cal-grid .day-cell[data-date]').forEach(c => {
+    const on = c.dataset.date === key;
+    c.classList.toggle('selected', on);
+    c.setAttribute('aria-pressed', String(on));
+  });
+  const home = document.getElementById('page-home');
+  const old = home && home.querySelector(':scope > .desktop-box');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = renderHome();
+  const fresh = tmp.querySelector(':scope > .desktop-box');
+  if(!old || !fresh){ render(); return; }
+  old.replaceWith(fresh);
+  if(state.daySheetOpen) renderDaySheet();
+  attachDesktopPager();
+  attachSwipeToDelete(home);
+  positionHomeCalGrid();
+  updateNav();
+  animateDayStats();
+  if(state.profile.gender === 'female' && state.period.enabled){ startPeriodTipsRotator(); attachPeriodWheel(); }
+  scheduleLocalSave();
+  syncBackSteps();
+}
+
 function render(){
   scheduleLocalSave(); // no-backend mode: keep this device's data (local-store.js)
   if(Cloud.onStateChanged) Cloud.onStateChanged(); // PHP backend: debounced account sync (api-php.js)
   applyLanguageDom();
+  applyItemColors(); // task / habit / event colors (items.js)
   renderAuth();
   renderBootScreen();
   /* Desktop's calendar column only ever shows Monthly (see SPEC.md

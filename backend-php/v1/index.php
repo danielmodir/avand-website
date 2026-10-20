@@ -43,6 +43,9 @@ $routes = [
     'POST /me/password'         => 'tj_change_password',
     'GET /social/search'        => 'tj_social_search',
     'GET /social/connections'   => 'tj_social_list',
+    'GET /social/invite'        => 'tj_social_invite',
+    'POST /social/invite/reset' => 'tj_social_invite_reset',
+    'POST /social/invite/accept'=> 'tj_social_invite_accept',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header

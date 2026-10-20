@@ -94,10 +94,13 @@ document.getElementById('device').addEventListener('click', (e) => {
     // The item's date (or a range: press and drag) in the small date picker.
     openDatePicker({
       // Within a year back and five years ahead (it used to allow 1926).
-      title: t('dateTitle'), range: true, min: dateYearsAgo(1), max: dateKey(stepYear(today, 5)), value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
-      onPick: (start, end) => {
+      // A new task or event can't go on a day that has passed.
+      title: t('dateTitle'), range: true, min: state.editingId ? dateYearsAgo(1) : dateKey(today), max: dateKey(stepYear(today, 5)), value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
+      time: { start: formDraft.startTime, end: formDraft.endTime },
+      onPick: (start, end, time) => {
         formDraft.date = start; formDraft.endDate = end;
         formDraft.timeMode = start === end ? 'single' : 'range';
+        if(time){ formDraft.startTime = time.start; formDraft.endTime = time.end; }
         renderPopupBody();
       },
     });
@@ -190,6 +193,15 @@ document.getElementById('device').addEventListener('click', (e) => {
     render();
     return;
   }
+  if(action === 'set-item-color'){
+    const kind = el.dataset.kind, color = el.dataset.color;
+    if(!['task', 'habit', 'event'].includes(kind) || (color && !/^#[0-9A-Fa-f]{6}$/.test(color))) return;
+    state.settings.itemColors = Object.assign({}, state.settings.itemColors);
+    if(color) state.settings.itemColors[kind] = color; else delete state.settings.itemColors[kind];
+    cloudSync(() => Cloud.saveSettings(state.settings));
+    haptic(10); render();
+    return;
+  }
   if(action === 'toggle-pref'){
     setPref(el.dataset.key, !pref(el.dataset.key));
     render();
@@ -202,9 +214,21 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'copy-invite-link'){
-    // There is no invite page: the site link plus the code to search for.
-    copyText(`https://toojibee.ir/ — ${t('myCode')}: ${state.profile.userId}`);
-    showToast(t('inviteLinkCopied'));
+    // My personal invite link (opening it makes us friends); without that
+    // API, the site link plus the code to search for.
+    if(state.inviteToken){ copyText(inviteUrl(state.inviteToken)); showToast(t('inviteLinkCopiedNew')); }
+    else { copyText(`https://toojibee.ir/ — ${t('myCode')}: ${state.profile.userId}`); showToast(t('inviteLinkCopied')); }
+    return;
+  }
+  if(action === 'share-invite-link'){
+    if(state.inviteToken && navigator.share) navigator.share({ title: t('appName'), text: t('inviteShareText'), url: inviteUrl(state.inviteToken) }).catch(() => {});
+    return;
+  }
+  if(action === 'reset-invite-link'){
+    if(!Cloud.resetInviteToken || !confirm(t('newLinkConfirm'))) return;
+    el.disabled = true;
+    Cloud.resetInviteToken().then(tok => { state.inviteToken = tok; showToast(t('newLinkDone')); render(); })
+      .catch(() => { showToast(t('saveFailed')); el.disabled = false; });
     return;
   }
   if(action === 'connect-request'){ runConnectionAction(el, () => Cloud.sendConnectionRequest(el.dataset.id)); return; }

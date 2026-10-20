@@ -128,3 +128,22 @@
 .device.lang-fa .event-del{ right:auto; left:6px; }
 .event-del::before{ content:''; position:absolute; inset:-5px; }
 .event-del svg{ width:10px; height:10px; }
+/* A task's start (– end) time, next to its title. */
+.item-time{ flex:0 0 auto; font-size:11px; font-weight:700; color:var(--text-muted); white-space:nowrap; }
+/* Item colors (Settings → Planning; items.js applyItemColors sets the
+   chosen ones inline on #device, these are the defaults). */
+.device{ --task-color:var(--primary); --habit-color:#4CC38A; --event-color:#D9B65C; }
+.device .checkbox[data-action="toggle-task"], .device .checkbox[data-action="toggle-subtask"]{ border-color:var(--task-color); }
+.device .checkbox[data-action="toggle-task"].checked, .device .checkbox[data-action="toggle-subtask"].checked{
+  background:var(--task-color); border-color:var(--task-color); box-shadow:0 0 0 4px color-mix(in srgb, var(--task-color) 18%, transparent);
+}
+.device .checkbox[data-action="toggle-habit"]{ border-color:var(--habit-color); }
+.device .checkbox[data-action="toggle-habit"].checked{
+  background:var(--habit-color); border-color:var(--habit-color); box-shadow:0 0 0 4px color-mix(in srgb, var(--habit-color) 18%, transparent);
+}
+.device .checkbox.skipped{ background:var(--danger); border-color:var(--danger); box-shadow:none; }
+.device .event-card{ border-top:3px solid var(--event-color); }
+.device .event-time{ color:var(--event-color); }
+.device{ --task-on:var(--on-primary); }
+.device .checkbox[data-action="toggle-task"].checked svg, .device .checkbox[data-action="toggle-subtask"].checked svg{ fill:var(--task-on); }
+.device .checkbox[data-action="toggle-habit"].checked svg{ fill:var(--habit-on, #fff); }

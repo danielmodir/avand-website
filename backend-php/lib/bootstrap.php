@@ -223,6 +223,17 @@ function tj_migrate(PDO $db): void {
         )$tail");
         $db->exec('INSERT INTO tj_schema (version) VALUES (9)');
     }
+    if ($v < 10) {
+        // Personal invite link (lib/social.php): whoever opens it becomes a
+        // friend. Random, made on first use, can be replaced (old one dies).
+        foreach ([
+            'ALTER TABLE tj_users ADD COLUMN invite_token VARCHAR(24) NULL',
+            'CREATE UNIQUE INDEX tj_users_invite_token ON tj_users (invite_token)',
+        ] as $sql) {
+            try { $db->exec($sql); } catch (PDOException $e) { /* already there */ }
+        }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (10)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

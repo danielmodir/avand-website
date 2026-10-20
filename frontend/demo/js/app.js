@@ -43,7 +43,7 @@ function refreshTodayIfDayChanged(){
   render();
 }
 
-setInterval(refreshTodayIfDayChanged, 60000);
+setInterval(() => { refreshTodayIfDayChanged(); refreshOverdueTasks(); }, 60000);
 
 document.addEventListener('visibilitychange', () => { if(!document.hidden) refreshTodayIfDayChanged(); });
 
@@ -69,6 +69,7 @@ function enterGuestMode(){
   state.authScreen = false;
   state.tasks = []; state.habits = []; state.events = [];
   state.connections = [];
+  state.inviteToken = null;
   state.profile = Object.assign({}, state.profile, { name:'', firstName:'', lastName:'', username:'', email:'', phone:'', gender:'', dob:'', photo:null });
   state.activeDesktopIndex = 0;
   state.selection = null;
@@ -142,6 +143,33 @@ async function boot(){
   }
   handleEmailLink();
   openAuthFromLink();
+  if(!state.guest && !state.bootError) acceptPendingInvite();
+  else if(state.guest && pendingInvite() && !state.authOpen) openAuth('signup', 'inviteSignInFirst');
+}
+
+/* A friend's invite link (/demo/#invite=CODE): remembered until the person
+   is signed in (it may take a sign-up first), then it makes them friends. */
+const PENDING_INVITE_KEY = 'toojibee-pending-invite';
+function pendingInvite(){ try{ return localStorage.getItem(PENDING_INVITE_KEY) || ''; }catch(e){ return ''; } }
+(function takeInviteFromLink(){
+  const m = /[#&]invite=([A-Za-z0-9]{6,32})/.exec(location.hash);
+  if(!m) return;
+  try{ localStorage.setItem(PENDING_INVITE_KEY, m[1]); }catch(e){ /* private mode: lost after sign-up */ }
+  history.replaceState(null, '', location.pathname + location.search);
+})();
+
+async function acceptPendingInvite(){
+  const code = pendingInvite();
+  if(!code || !Cloud.acceptInvite || !Cloud.hasSession()) return;
+  try{ localStorage.removeItem(PENDING_INVITE_KEY); }catch(e){ /* ignore */ }
+  try{
+    const r = await Cloud.acceptInvite(code);
+    const name = r && r.friend && r.friend.name ? r.friend.name : '';
+    showToast(t('inviteAccepted').replace('{name}', name));
+    if(state.menuSubView === 'friends') refreshConnections();
+  }catch(err){
+    showToast(t(err && err.code === 'own_invite' ? 'inviteOwn' : err && err.status === 404 ? 'inviteInvalid' : 'saveFailed'));
+  }
 }
 
 /* The landing page's "Log in" button links to /demo/#login (#signup also

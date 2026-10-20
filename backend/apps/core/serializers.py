@@ -1,3 +1,4 @@
+import re
 import zoneinfo
 from datetime import date
 
@@ -157,6 +158,15 @@ class SettingsSerializer(serializers.ModelSerializer):
         merged = dict(self.instance.preferences or {}) if self.instance else {}
         merged.update(value)
         return merged
+
+    def validate_item_colors(self, value):
+        """{"task"|"habit"|"event": "#RRGGBB" or null}; nothing else."""
+        if not isinstance(value, dict) or set(value) - {"task", "habit", "event"}:
+            raise serializers.ValidationError("Only task, habit and event.")
+        for v in value.values():
+            if v is not None and not (isinstance(v, str) and re.fullmatch(r"#[0-9A-Fa-f]{6}", v)):
+                raise serializers.ValidationError("Colors are #RRGGBB or null.")
+        return {k: v for k, v in value.items() if v}
 
     def validate_timezone(self, value):
         if value not in zoneinfo.available_timezones():

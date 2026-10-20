@@ -272,6 +272,10 @@
     removeConnection: function (id) { return request('DELETE', '/social/connections/' + id); },
     blockUser: function (id) { return request('PUT', '/social/blocks/' + id); },
     unblockUser: function (id) { return request('DELETE', '/social/blocks/' + id); },
+    // Personal invite link: whoever opens it becomes a friend.
+    inviteToken: function () { return request('GET', '/social/invite').then(function (r) { return r.token; }); },
+    resetInviteToken: function () { return request('POST', '/social/invite/reset').then(function (r) { return r.token; }); },
+    acceptInvite: function (token) { return request('POST', '/social/invite/accept', { token: token }); },
     calendarYear: unsupported,
   });
   global.Cloud = api;

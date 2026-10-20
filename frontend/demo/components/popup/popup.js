@@ -23,6 +23,9 @@ function resetFormDraft(type, existing){
     // A new item goes on the day picked in the calendar (homeDate), not today.
     date: existing ? existing.date : dateKey(state.homeDate || today),
     endDate: existing ? (existing.endDate || existing.date) : dateKey(state.homeDate || today),
+    // 'HH:MM' or '' — the end time only when "end time" was ticked.
+    startTime: existing ? (existing.startTime || '') : '',
+    endTime: existing ? (existing.endTime || '') : '',
     recurrence: {
       mode: existing ? (existing.recurrence?.mode || null) : (type === 'habit' ? 'interval' : null),
       interval: existing ? (existing.recurrence?.interval || 1) : 1
@@ -89,7 +92,7 @@ function closePopup(){
 /* ---- main form body (per type) ---- */
 function popupIconRow(type){
   const icons = [];
-  if(type !== 'habit') icons.push({ key:'calendar', icon:ICONS.calendarIcon, set: formDraft.timeMode==='range' || formDraft.date !== dateKey(today) });
+  if(type !== 'habit') icons.push({ key:'calendar', icon:ICONS.calendarIcon, set: formDraft.timeMode==='range' || formDraft.date !== dateKey(today) || !!formDraft.startTime || !!formDraft.endTime });
   if(!state.editingParentId) icons.push({ key:'repeat', icon:ICONS.repeatIcon, set: !!formDraft.recurrence.mode });
   icons.push({ key:'notification', icon:ICONS.bellIcon, set: !!formDraft.notification.type, disabled:true });
   return `<div class="popup-icon-row">${icons.map(i => `<div class="popup-icon-btn ${i.set?'set':''} ${i.disabled?'disabled':''}" data-action="${i.disabled?'notification-coming-soon':'open-subview'}" data-sub="${i.key}">${i.icon}</div>`).join('')}</div>`;
@@ -265,7 +268,10 @@ function submitPopup(){
     recurrence.interval = n;
   }
   if(type !== 'habit' && recurrence.mode && formDraft.timeMode === 'range' && formDraft.endDate !== formDraft.date){ showToast(t('rangeNoRepeat')); return; }
+  // A new task or event can't be put on a day that has already passed.
+  if(!state.editingId && (type === 'task' || type === 'event') && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
   const notification = { ...formDraft.notification };
+  const times = { startTime: formDraft.startTime || null, endTime: formDraft.endTime || null };
   if(type === 'task' && state.editingParentId){
     // Editing a subtask: update it inside its parent and save the parent.
     const parent = state.tasks.find(x => x.id === state.editingParentId);
@@ -278,6 +284,7 @@ function submitPopup(){
         timeMode: formDraft.timeMode,
         date: formDraft.date,
         endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
+        ...times,
         notification
       });
       cloudSync(() => Cloud.saveTask(parent));
@@ -298,6 +305,7 @@ function submitPopup(){
       timeMode: formDraft.timeMode,
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
+      ...times,
       recurrence, notification
     };
     // A new, unticked subtask makes a finished parent unfinished again.
@@ -320,6 +328,7 @@ function submitPopup(){
       timeMode: formDraft.timeMode,
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
+      ...times,
       recurrence, notification
     };
     upsert('events', obj);

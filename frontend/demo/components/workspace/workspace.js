@@ -234,25 +234,37 @@ function attachDesktopPager(){
    animateDayStats() (called from render()), not just on first paint. */
 const STAT_RING_CIRC = 2 * Math.PI * 42;
 
+/* The day's numbers for the card: what share of the ring each kind's
+   done items fill (tasks then habits, each in its own color). */
+function dayStats(d){
+  const key = dateKey(d);
+  const { tasks, habits } = itemsForDate(d);
+  const doneTasks = tasks.filter(x => taskStatusOn(x, key) === 'done').length;
+  const doneHabits = habits.filter(h => h.completedDates.includes(key)).length;
+  const total = tasks.length + habits.length;
+  return {
+    tasks, habits, doneTasks, doneHabits,
+    pct: total ? Math.round((doneTasks + doneHabits) / total * 100) : 0,
+    taskFrac: total ? doneTasks / total : 0, habitFrac: total ? doneHabits / total : 0,
+  };
+}
+
 function renderDayStatsCard(tasks, habits, events, d){
-  const doneTasks = tasks.filter(x => taskStatusOn(x, dateKey(d)) === 'done').length;
-  const doneHabits = habits.filter(h => h.completedDates.includes(dateKey(d))).length;
-  const totalDoable = tasks.length + habits.length;
-  const donePct = totalDoable ? Math.round((doneTasks + doneHabits) / totalDoable * 100) : 0;
+  const s = dayStats(d);
   return `
-    <div class="stat-card" id="day-stat-card" data-pct="${donePct}">
+    <div class="stat-card" id="day-stat-card" data-pct="${s.pct}" data-task-frac="${s.taskFrac}" data-habit-frac="${s.habitFrac}">
       <div class="stat-ring-wrap">
         <svg viewBox="0 0 100 100" class="stat-ring">
           <circle cx="50" cy="50" r="42" class="stat-ring-track"></circle>
-          <circle cx="50" cy="50" r="42" class="stat-ring-progress" id="stat-ring-progress"
-            stroke-dasharray="${STAT_RING_CIRC}" stroke-dashoffset="${STAT_RING_CIRC}"></circle>
+          <circle cx="50" cy="50" r="42" class="stat-ring-progress stat-ring-habits" id="stat-ring-habits" stroke-dasharray="0 ${STAT_RING_CIRC}"></circle>
+          <circle cx="50" cy="50" r="42" class="stat-ring-progress stat-ring-tasks" id="stat-ring-progress" stroke-dasharray="0 ${STAT_RING_CIRC}"></circle>
         </svg>
         <div class="stat-ring-label"><span id="stat-ring-pct">0%</span></div>
       </div>
       <div class="stat-mini-list">
-        <div class="stat-mini"><span class="stat-dot" style="background:var(--primary)"></span>${t('tasks')} <b>${dig(doneTasks)}/${dig(tasks.length)}</b></div>
-        <div class="stat-mini"><span class="stat-dot" style="background:#4CC38A"></span>${t('habits')} <b>${dig(doneHabits)}/${dig(habits.length)}</b></div>
-        <div class="stat-mini"><span class="stat-dot" style="background:#D9B65C"></span>${t('events')} <b>${dig(events.length)}</b></div>
+        <div class="stat-mini"><span class="stat-dot" style="background:var(--task-color)"></span>${t('tasks')} <b>${dig(s.doneTasks)}/${dig(tasks.length)}</b></div>
+        <div class="stat-mini"><span class="stat-dot" style="background:var(--habit-color)"></span>${t('habits')} <b>${dig(s.doneHabits)}/${dig(habits.length)}</b></div>
+        <div class="stat-mini"><span class="stat-dot" style="background:var(--event-color)"></span>${t('events')} <b>${dig(events.length)}</b></div>
       </div>
     </div>
   `;
@@ -261,11 +273,17 @@ function renderDayStatsCard(tasks, habits, events, d){
 function animateDayStats(){
   const card = document.getElementById('day-stat-card');
   const ring = document.getElementById('stat-ring-progress');
+  const habitRing = document.getElementById('stat-ring-habits');
   const label = document.getElementById('stat-ring-pct');
   if(!card || !ring || !label) return;
   const pct = Number(card.dataset.pct) || 0;
-  const offset = STAT_RING_CIRC * (1 - pct / 100);
-  requestAnimationFrame(() => { ring.style.strokeDashoffset = offset; });
+  // Tasks' arc first, the habits' arc right after it.
+  const taskLen = STAT_RING_CIRC * (Number(card.dataset.taskFrac) || 0);
+  const habitLen = STAT_RING_CIRC * (Number(card.dataset.habitFrac) || 0);
+  requestAnimationFrame(() => {
+    ring.style.strokeDasharray = `${taskLen} ${STAT_RING_CIRC}`;
+    if(habitRing){ habitRing.style.strokeDasharray = `${habitLen} ${STAT_RING_CIRC}`; habitRing.style.strokeDashoffset = -taskLen; }
+  });
 
   const start = Number(label.dataset.animFrom || 0);
   const duration = 500;
@@ -288,17 +306,14 @@ function animateDayStats(){
 function updateDayStatsInPlace(){
   const card = document.getElementById('day-stat-card');
   if(!card) return;
-  const d = state.homeDate;
-  const {tasks, habits} = itemsForDate(d);
-  const doneTasks = tasks.filter(x => taskStatusOn(x, dateKey(d)) === 'done').length;
-  const doneHabits = habits.filter(h => h.completedDates.includes(dateKey(d))).length;
-  const totalDoable = tasks.length + habits.length;
-  const donePct = totalDoable ? Math.round((doneTasks + doneHabits) / totalDoable * 100) : 0;
-  card.dataset.pct = donePct;
+  const s = dayStats(state.homeDate);
+  card.dataset.pct = s.pct;
+  card.dataset.taskFrac = s.taskFrac;
+  card.dataset.habitFrac = s.habitFrac;
   animateDayStats();
   const counts = card.querySelectorAll('.stat-mini b');
-  if(counts[0]) counts[0].textContent = `${dig(doneTasks)}/${dig(tasks.length)}`;
-  if(counts[1]) counts[1].textContent = `${dig(doneHabits)}/${dig(habits.length)}`;
+  if(counts[0]) counts[0].textContent = `${dig(s.doneTasks)}/${dig(s.tasks.length)}`;
+  if(counts[1]) counts[1].textContent = `${dig(s.doneHabits)}/${dig(s.habits.length)}`;
 }
 
 /* Expand/collapse the merged calendar widget — reversed from the old

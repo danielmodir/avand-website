@@ -339,6 +339,9 @@ class UserSettings(models.Model):
     theme = models.CharField(max_length=10, choices=Theme.choices, default=Theme.SYSTEM)
     palette = models.CharField(max_length=10, choices=Palette.choices, default=Palette.TOOJIBEE)
     preferences = models.JSONField(default=dict, blank=True)
+    # Color of tasks / habits / events (ticks, day summary, chart):
+    # {"task": "#RRGGBB" | null, ...}; null or missing = the default.
+    item_colors = models.JSONField(default=dict, blank=True)
     notifications_enabled = models.BooleanField(default=True)
     show_add_menu_labels = models.BooleanField(default=True)
     discoverable_by_username = models.BooleanField(default=True)

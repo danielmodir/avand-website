@@ -46,3 +46,10 @@
 .date-field-btn.empty{ color:var(--text-muted); }
 .date-field-btn svg{ width:16px; height:16px; flex:0 0 auto; color:var(--text-muted); }
 .field.has-error .date-field-btn{ border-color:var(--danger); }
+/* Start time, and the end time that only opens with its tick (add popup). */
+.dp-time{ display:flex; flex-direction:column; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+.dp-time-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13px; font-weight:600; }
+.dp-time-row input{ width:auto; min-width:120px; padding:8px 10px; border-radius:10px; }
+.dp-time-row.off{ opacity:.45; }
+.dp-time-check{ display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; user-select:none; }
+.dp-time-check input{ width:18px; height:18px; accent-color:var(--primary); margin:0; }

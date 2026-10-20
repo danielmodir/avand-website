@@ -170,6 +170,56 @@ function tj_social_block(string $publicId): void {
     tj_json(['status' => 'blocked']);
 }
 
+/* ---- personal invite link ---- */
+
+function tj_social_new_invite_token(): string {
+    $q = tj_db()->prepare('SELECT 1 FROM tj_users WHERE invite_token = ?');
+    do { $tok = tj_random_code(20); $q->execute([$tok]); } while ($q->fetch());
+    return $tok;
+}
+
+/* GET /social/invite — my link's token (made on first use). */
+function tj_social_invite(): void {
+    $me = tj_require_user();
+    $tok = (string)($me['invite_token'] ?? '');
+    if ($tok === '') {
+        $tok = tj_social_new_invite_token();
+        tj_db()->prepare('UPDATE tj_users SET invite_token = ? WHERE id = ?')->execute([$tok, $me['id']]);
+    }
+    tj_json(['token' => $tok]);
+}
+
+/* POST /social/invite/reset — a new link; the old one stops working. */
+function tj_social_invite_reset(): void {
+    $me = tj_require_user();
+    tj_throttle('invite_reset', (string)$me['id'], 10, 3600);
+    $tok = tj_social_new_invite_token();
+    tj_db()->prepare('UPDATE tj_users SET invite_token = ? WHERE id = ?')->execute([$tok, $me['id']]);
+    tj_json(['token' => $tok]);
+}
+
+/* POST /social/invite/accept {token} — opened someone's link: we're
+ * friends now (no request to answer: sharing the link was the yes). */
+function tj_social_invite_accept(): void {
+    $me = tj_require_user();
+    tj_throttle('invite_accept', (string)$me['id'], 30, 3600);
+    $tok = strtoupper(trim((string)(tj_body()['token'] ?? '')));
+    if (!preg_match('/^[0-9A-HJKMNP-TV-Z]{20}$/', $tok)) tj_fail(404, 'invite_not_found');
+    $q = tj_db()->prepare("SELECT * FROM tj_users WHERE invite_token = ? AND status = 'active'");
+    $q->execute([$tok]);
+    $owner = $q->fetch();
+    if (!$owner) tj_fail(404, 'invite_not_found');
+    $a = (int)$me['id']; $b = (int)$owner['id'];
+    if ($a === $b) tj_fail(400, 'own_invite');
+    if (tj_social_blocked($a, $b) || tj_social_blocked($b, $a)) tj_fail(404, 'invite_not_found');
+    $db = tj_db();
+    $row = tj_social_row($a, $b);
+    if ($row) $db->prepare("UPDATE tj_connections SET status = 'accepted', updated_at = ? WHERE id = ?")->execute([tj_now(), $row['id']]);
+    else $db->prepare("INSERT INTO tj_connections (requester_id, addressee_id, status, created_at, updated_at) VALUES (?, ?, 'accepted', ?, ?)")
+        ->execute([$b, $a, tj_now(), tj_now()]);
+    tj_json(['status' => 'accepted', 'friend' => tj_social_card($owner, 'accepted')]);
+}
+
 /* DELETE /social/blocks/<id>. */
 function tj_social_unblock(string $publicId): void {
     $me = tj_require_user();

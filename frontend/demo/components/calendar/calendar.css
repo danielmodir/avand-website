@@ -305,3 +305,11 @@
   .cf-chip{ font-size:12px; padding:2px 7px; }
 }
 @media (prefers-reduced-motion:reduce){ #cal-full-root.cf-enter .cal-full{ animation:none; } }
+/* Plan dots in each kind's color (dayDotsHtml); the full-screen chips too. */
+.day-dots span.dot-task{ background:var(--task-color, var(--primary)); }
+.day-dots span.dot-event{ background:var(--event-color, var(--primary)); }
+.day-cell.selected .day-dots span{ background:var(--on-primary); }
+.cf-event{ background:var(--event-color); color:var(--event-on, var(--on-primary)); }
+.cf-task{ background:color-mix(in srgb, var(--task-color) 22%, transparent); box-shadow:inset 3px 0 0 var(--task-color); }
+.cal-full[dir="rtl"] .cf-task{ box-shadow:inset -3px 0 0 var(--task-color); }
+.cf-task.missed{ text-decoration:line-through; color:var(--danger); }
