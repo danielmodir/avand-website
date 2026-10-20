@@ -42,7 +42,7 @@ function tj_meminfo(): ?array {
 const TJ_DB_GROUPS = [
     'accounts' => ['tj_users', 'tj_sessions', 'tj_tokens', 'tj_attempts'],
     'userdata' => ['tj_user_data'],
-    'social'   => ['tj_connections', 'tj_blocks'],
+    'social'   => ['tj_connections', 'tj_blocks', 'tj_period_shares'],
     'admin'    => ['tj_admins', 'tj_admin_sessions', 'tj_admin_audit'],
     'content'  => ['tj_content', 'tj_articles', 'tj_hijri_months'],
     'system'   => ['tj_schema'],

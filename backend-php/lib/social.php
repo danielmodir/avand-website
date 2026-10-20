@@ -155,6 +155,7 @@ function tj_social_remove(string $publicId): void {
     $other = tj_social_other($me, $publicId);
     tj_db()->prepare('DELETE FROM tj_connections WHERE (requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?)')
         ->execute([$me['id'], $other['id'], $other['id'], $me['id']]);
+    tj_period_shares_drop((int)$me['id'], (int)$other['id']); // not friends: no more sharing
     tj_json(['status' => 'none']);
 }
 
@@ -165,9 +166,85 @@ function tj_social_block(string $publicId): void {
     $db = tj_db();
     $db->prepare('DELETE FROM tj_connections WHERE (requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?)')
         ->execute([$me['id'], $other['id'], $other['id'], $me['id']]);
+    tj_period_shares_drop((int)$me['id'], (int)$other['id']);
     if (!tj_social_blocked((int)$me['id'], (int)$other['id']))
         $db->prepare('INSERT INTO tj_blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)')->execute([$me['id'], $other['id'], tj_now()]);
     tj_json(['status' => 'blocked']);
+}
+
+/* ---- period sharing ----
+ * The owner chooses up to 3 friends; each of them sees only what's needed
+ * to draw her cycle (last start, cycle and period length), read from her
+ * own encrypted record when they look, so it's always current. Removing a
+ * friend or blocking ends it. */
+const TJ_PERIOD_SHARE_MAX = 3;
+
+function tj_social_are_friends(int $a, int $b): bool {
+    $r = tj_social_row($a, $b);
+    return $r !== null && $r['status'] === 'accepted';
+}
+
+function tj_period_shares_drop(int $a, int $b): void {
+    tj_db()->prepare('DELETE FROM tj_period_shares WHERE (owner_id = ? AND viewer_id = ?) OR (owner_id = ? AND viewer_id = ?)')->execute([$a, $b, $b, $a]);
+}
+
+/* GET /period/shares — who I share my cycle with. */
+function tj_period_shares_get(): void {
+    $me = tj_require_user();
+    $q = tj_db()->prepare('SELECT u.public_id, u.display_id, u.username FROM tj_period_shares s JOIN tj_users u ON u.id = s.viewer_id
+                           WHERE s.owner_id = ? ORDER BY s.created_at');
+    $q->execute([$me['id']]);
+    tj_json(array_map(function ($u) { return tj_social_card($u, 'accepted'); }, $q->fetchAll()));
+}
+
+/* PUT /period/shares {viewers: [public id, …]} — the whole list (0–3 friends). */
+function tj_period_shares_put(): void {
+    $me = tj_require_user();
+    $ids = tj_body()['viewers'] ?? null;
+    if (!is_array($ids) || count($ids) > TJ_PERIOD_SHARE_MAX) tj_fail(400, 'too_many', ['max' => TJ_PERIOD_SHARE_MAX]);
+    $viewers = [];
+    foreach (array_unique($ids) as $pid) {
+        if (!is_string($pid) || !preg_match('/^[a-f0-9]{32}$/', $pid)) tj_fail(400, 'validation_error');
+        $q = tj_db()->prepare("SELECT id FROM tj_users WHERE public_id = ? AND status = 'active'");
+        $q->execute([$pid]);
+        $id = (int)($q->fetch()['id'] ?? 0);
+        if (!$id || !tj_social_are_friends((int)$me['id'], $id)) tj_fail(400, 'not_a_friend');
+        $viewers[] = $id;
+    }
+    $db = tj_db();
+    tj_tx_begin($db);
+    try {
+        $db->prepare('DELETE FROM tj_period_shares WHERE owner_id = ?')->execute([$me['id']]);
+        $ins = $db->prepare('INSERT INTO tj_period_shares (owner_id, viewer_id, created_at) VALUES (?, ?, ?)');
+        foreach ($viewers as $v) $ins->execute([$me['id'], $v, tj_now()]);
+        tj_tx_commit($db);
+    } catch (Throwable $e) {
+        tj_tx_rollback($db);
+        throw $e;
+    }
+    tj_period_shares_get();
+}
+
+/* GET /period/shared-with-me — cycles friends share with me, only while
+ * we're still friends and their tracker is set up. */
+function tj_period_shared_with_me(): void {
+    $me = tj_require_user();
+    $q = tj_db()->prepare("SELECT u.id, u.public_id, u.display_id, u.username FROM tj_period_shares s JOIN tj_users u ON u.id = s.owner_id
+                           WHERE s.viewer_id = ? AND u.status = 'active' ORDER BY s.created_at");
+    $q->execute([$me['id']]);
+    $out = [];
+    foreach ($q->fetchAll() as $u) {
+        if (!tj_social_are_friends((int)$me['id'], (int)$u['id'])) continue;
+        $p = tj_sync_read((int)$u['id'])['data']['period'] ?? null;
+        if (!is_array($p) || empty($p['enabled']) || ($p['step'] ?? null) !== 'done'
+            || !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($p['lastStart'] ?? ''))) continue;
+        $out[] = tj_social_card($u, 'accepted') + ['period' => [
+            'lastStart' => $p['lastStart'],
+            'cycleLength' => max(21, min(45, (int)($p['cycleLength'] ?? 28))),
+            'periodLength' => max(2, min(10, (int)($p['periodLength'] ?? 5))),
+        ]];
+    }
+    tj_json($out);
 }
 
 /* ---- personal invite link ---- */

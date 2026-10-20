@@ -276,6 +276,15 @@
     inviteToken: function () { return request('GET', '/social/invite').then(function (r) { return r.token; }); },
     resetInviteToken: function () { return request('POST', '/social/invite/reset').then(function (r) { return r.token; }); },
     acceptInvite: function (token) { return request('POST', '/social/invite/accept', { token: token }); },
+    // Period sharing: the friends I show my cycle to (max 3), and the
+    // cycles friends show me.
+    periodShares: function () { return request('GET', '/period/shares').then(socialRows); },
+    savePeriodShares: function (ids) { return request('PUT', '/period/shares', { viewers: ids }).then(socialRows); },
+    sharedPeriods: function () {
+      return request('GET', '/period/shared-with-me').then(function (rows) {
+        return (rows || []).map(function (r) { return { id: r.id, name: r.name, userId: 'TJ-' + r.public_id, period: r.period }; });
+      });
+    },
     calendarYear: unsupported,
   });
   global.Cloud = api;

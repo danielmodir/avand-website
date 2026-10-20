@@ -30,3 +30,55 @@
 .switch.on .knob{ right:22px; background:var(--primary); }
 .device.lang-fa .switch .knob{ right:auto; left:2px; }
 .device.lang-fa .switch.on .knob{ right:auto; left:22px; }
+
+/* ===== themed dropdowns and time picker (js/core/dropdown.js) ===== */
+.tj-native-hidden{ display:none !important; }
+.tj-select, .tj-time{
+  display:inline-flex; align-items:center; justify-content:space-between; gap:8px;
+  background:var(--surface-2, var(--bg-soft)); color:var(--text); border:1px solid var(--edge, var(--border));
+  border-radius:10px; padding:8px 10px 8px 12px; min-height:36px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer;
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+.device.lang-fa .tj-select{ padding:8px 12px 8px 10px; }
+.tj-select:hover, .tj-time:hover{ border-color:var(--primary); }
+.tj-select:focus-visible, .tj-time:focus-visible, .tj-select[aria-expanded="true"], .tj-time[aria-expanded="true"]{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }
+.tj-select:disabled, .tj-time:disabled{ opacity:.5; cursor:default; }
+.tj-select-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tj-chevron{ width:16px; height:16px; flex:0 0 auto; color:var(--text-muted); transition:transform .2s ease; }
+.tj-select[aria-expanded="true"] .tj-chevron{ transform:rotate(180deg); color:var(--primary); }
+.tj-time{ min-width:110px; justify-content:center; font-variant-numeric:tabular-nums; }
+.tj-time svg{ width:15px; height:15px; color:var(--primary); }
+.tj-time.empty span{ color:var(--text-muted); }
+
+.tj-menu{
+  position:absolute; z-index:130; max-height:260px; overflow-y:auto; padding:6px; border-radius:14px;
+  background:var(--surface-solid, var(--card)); border:1px solid var(--edge-strong, var(--border));
+  box-shadow:var(--shadow-soft-lg, var(--shadow)), var(--edge-highlight, 0 0 0 transparent);
+  scrollbar-width:thin; animation:tj-menu-in .16s cubic-bezier(.22,1,.36,1);
+}
+@keyframes tj-menu-in{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce){ .tj-menu{ animation:none; } }
+.tj-option{
+  display:flex; align-items:center; gap:8px; width:100%; border:none; background:transparent; color:var(--text);
+  font:inherit; font-size:13px; font-weight:600; text-align:start; padding:9px 12px; border-radius:9px; cursor:pointer;
+}
+.tj-option:hover{ background:var(--bg-soft); }
+.tj-option.active{ background:var(--primary-soft); color:var(--primary); }
+.tj-option:disabled{ opacity:.45; cursor:default; }
+.tj-time-menu{ max-height:none; overflow:visible; padding:8px; min-width:220px !important; }
+.tj-time-head{ display:flex; justify-content:space-around; gap:6px; font-size:11px; font-weight:700; color:var(--text-muted); padding:2px 0 6px; }
+.tj-time-cols{ display:flex; gap:6px; }
+.tj-time-col{ flex:1; max-height:190px; overflow-y:auto; scrollbar-width:none; display:flex; flex-direction:column; gap:2px; }
+.tj-time-col::-webkit-scrollbar{ display:none; }
+.tj-time-col .tj-option{ justify-content:center; font-variant-numeric:tabular-nums; padding:8px 0; }
+.tj-time-foot{ display:flex; gap:8px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+.tj-time-foot button{ flex:1; white-space:nowrap; border:none; border-radius:10px; padding:9px; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
+.tj-time-clear{ background:var(--bg-soft); color:var(--text-muted); }
+.tj-time-done{ background:var(--primary); color:var(--on-primary); }
+.tj-menu-note{ font-size:11px; font-weight:700; color:var(--text-muted); padding:4px 10px 6px; }
+.tj-menu-empty{ font-size:12.5px; color:var(--text-muted); padding:10px; max-width:240px; line-height:1.7; }
+.tj-check .tj-checkbox{ width:18px; height:18px; border-radius:6px; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.tj-check.active .tj-checkbox{ background:var(--primary); border-color:var(--primary); }
+.tj-check .tj-checkbox svg{ width:12px; height:12px; fill:var(--on-primary); }
+.tj-option svg{ width:15px; height:15px; flex:0 0 auto; }
+.tj-time-head span{ flex:1; text-align:center; }

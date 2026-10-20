@@ -145,3 +145,30 @@
 }
 .period-quiz-sheet.show{ transform:translate(-50%,0); }
 }
+
+/* Several cycles on the desk (own + shared by friends): arrows beside the
+   ring, dots under it; someone else's cycle gets their name, a faint line
+   and the phase they're in now above the ring. */
+.period-wheel-wrap{ position:relative; }
+.period-view-arrow{
+  position:absolute; top:50%; transform:translateY(-50%); width:34px; height:34px; border-radius:50%;
+  border:1px solid var(--border); background:var(--card); color:var(--text); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; z-index:2; transition:color .2s ease, border-color .2s ease, transform .15s ease;
+}
+.period-view-arrow svg{ width:15px; height:15px; }
+.period-view-arrow:hover{ color:var(--primary); border-color:var(--primary); }
+.period-view-arrow:active{ transform:translateY(-50%) scale(.9); }
+.period-view-arrow.prev{ inset-inline-start:0; }
+.period-view-arrow.next{ inset-inline-end:0; }
+.period-view-switch{ position:relative; height:40px; margin-top:10px; }
+.period-view-dots{ display:flex; justify-content:center; gap:6px; margin-top:6px; }
+.period-view-dots span{ width:6px; height:6px; border-radius:50%; background:var(--border); transition:width .2s ease, background .2s ease; }
+.period-view-dots span.active{ width:16px; border-radius:4px; background:var(--period-flow, var(--primary)); }
+.period-owner{ text-align:center; margin-bottom:10px; }
+.period-owner-name{ font-size:15px; font-weight:800; padding-bottom:8px; border-bottom:1px solid var(--border); opacity:.95; }
+.period-owner-now{ font-size:12.5px; font-weight:700; margin-top:8px; }
+
+/* Settings: who I share with. */
+.period-share-row .period-share-btn{ flex:0 0 auto; max-width:46%; }
+.period-share-names{ font-size:12px; color:var(--text-muted); margin:-4px 4px 10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.device.lang-fa .period-share-names{ text-align:right; }

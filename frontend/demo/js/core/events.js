@@ -193,6 +193,12 @@ document.getElementById('device').addEventListener('click', (e) => {
     render();
     return;
   }
+  if(action === 'period-view-step'){
+    const n = periodViews().length;
+    if(n > 1){ state.periodViewIndex = (periodViewIndex() + Number(el.dataset.dir) + n) % n; haptic(10); render(); }
+    return;
+  }
+  if(action === 'period-share-open'){ openPeriodShareMenu(el); return; }
   if(action === 'set-item-color'){
     const kind = el.dataset.kind, color = el.dataset.color;
     if(!['task', 'habit', 'event'].includes(kind) || (color && !/^#[0-9A-Fa-f]{6}$/.test(color))) return;

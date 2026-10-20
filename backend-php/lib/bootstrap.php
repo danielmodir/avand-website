@@ -234,6 +234,20 @@ function tj_migrate(PDO $db): void {
         }
         $db->exec('INSERT INTO tj_schema (version) VALUES (10)');
     }
+    if ($v < 11) {
+        // Period sharing (lib/social.php): the owner picks up to 3 friends
+        // who may see her cycle. Ends by itself when they stop being friends.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_period_shares (
+            owner_id $fk NOT NULL,
+            viewer_id $fk NOT NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY (owner_id, viewer_id),
+            FOREIGN KEY (owner_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY (viewer_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        try { $db->exec('CREATE INDEX tj_period_shares_viewer ON tj_period_shares (viewer_id)'); } catch (PDOException $e) { /* already there */ }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (11)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

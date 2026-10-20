@@ -24,7 +24,7 @@ function selectDay(d){
   positionHomeCalGrid();
   updateNav();
   animateDayStats();
-  if(state.profile.gender === 'female' && state.period.enabled){ startPeriodTipsRotator(); attachPeriodWheel(); }
+  if(periodViews().length){ startPeriodTipsRotator(); attachPeriodWheel(); }
   scheduleLocalSave();
   syncBackSteps();
 }
@@ -105,7 +105,7 @@ function render(){
      does, regardless of which میزکار the pager is currently scrolled
      to. (Previously gated on menuSubView==='period', a Management route
      that no longer exists now that period settings moved to Settings.) */
-  if(state.profile.gender === 'female' && state.period.enabled){
+  if(periodViews().length){ // own cycle, or one a friend shares (period.js)
     startPeriodTipsRotator();
     attachPeriodWheel();
   } else {

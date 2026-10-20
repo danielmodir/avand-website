@@ -6,20 +6,23 @@
 /* Cycle and period length as used everywhere: clamped to the setup's
    ranges, so data saved before those limits (a 3-day cycle, a 40-day
    period) can't break the ring, the calendar or the predictions. */
-function periodCycleLen(){ return Math.min(45, Math.max(21, Number(state.period.cycleLength) || 28)); }
-function periodLen(){ return Math.min(10, Math.max(2, Number(state.period.periodLength) || 5), periodCycleLen() - 1); }
+/* Every function below takes the cycle to work on (`pd`): the person's own
+   state.period by default, or a friend's that was shared with them
+   (state.sharedPeriods, see periodViews()). */
+function periodCycleLen(pd = state.period){ return Math.min(45, Math.max(21, Number(pd.cycleLength) || 28)); }
+function periodLen(pd = state.period){ return Math.min(10, Math.max(2, Number(pd.periodLength) || 5), periodCycleLen(pd) - 1); }
 
-function computePeriodCycleStart(){
-  const p = { lastStart: state.period.lastStart, cycleLength: periodCycleLen() };
+function computePeriodCycleStart(pd = state.period){
+  const p = { lastStart: pd.lastStart, cycleLength: periodCycleLen(pd) };
   const lastStart = new Date(p.lastStart + 'T00:00:00');
   const daysSince = Math.round((today - lastStart) / 86400000);
   const cyclesPassed = Math.floor(daysSince / p.cycleLength);
   return addDays(lastStart, cyclesPassed * p.cycleLength);
 }
 
-function periodDayCategories(){
-  const p = { cycleLength: periodCycleLen(), periodLength: periodLen() };
-  const currentCycleStart = computePeriodCycleStart();
+function periodDayCategories(pd = state.period){
+  const p = { cycleLength: periodCycleLen(pd), periodLength: periodLen(pd) };
+  const currentCycleStart = computePeriodCycleStart(pd);
   const cats = new Array(30).fill('normal');
   const rank = { normal:0, fertile:1, pms:2, period:3 };
   for(let k=-1;k<=2;k++){
@@ -42,11 +45,17 @@ function periodDayCategories(){
   return cats;
 }
 
-function periodSummaryText(cats){
+function periodSummaryText(cats, own = true, pd = state.period){
   const nextPeriodIdx = cats.indexOf('period');
-  if(nextPeriodIdx === 0) return t('periodStartsToday');
+  if(nextPeriodIdx === 0){
+    // In it today: "starts today" only on its first day, else which day it is.
+    const day = daysBetween(computePeriodCycleStart(pd), today) + 1;
+    if(day <= 1) return t(own ? 'periodStartsToday' : 'periodStartsTodayOther');
+    return lang() === 'fa' ? `روز ${dig(day)} عادت ماهانه` : `Period day ${day}`;
+  }
   if(nextPeriodIdx > 0){
-    return lang()==='fa' ? `${dig(nextPeriodIdx)} روز تا پریود بعدیت` : `${nextPeriodIdx} day${nextPeriodIdx===1?'':'s'} until your next period`;
+    if(lang() === 'fa') return `${dig(nextPeriodIdx)} روز تا عادت ماهانه‌ی بعدی${own ? 'ت' : 'ش'}`;
+    return `${nextPeriodIdx} day${nextPeriodIdx===1?'':'s'} until ${own ? 'your' : 'their'} next period`;
   }
   return '';
 }
@@ -64,20 +73,20 @@ const PERIOD_PHASE_LABEL = { period:'legendPeriod', pms:'legendPms', fertile:'le
 /* Called for every calendar cell (periodPhaseOn), so it's worked out once
    per cycle/period length and reused. */
 let periodSegCache = { key: '', value: null };
-function periodCycleSegments(){
-  const len = periodCycleLen();
-  const key = len + '|' + periodLen();
+function periodCycleSegments(pd = state.period){
+  const len = periodCycleLen(pd), plen = periodLen(pd);
+  const key = len + '|' + plen;
   if(periodSegCache.key === key) return periodSegCache.value;
-  periodSegCache = { key, value: buildPeriodSegments(len) };
+  periodSegCache = { key, value: buildPeriodSegments(len, plen) };
   return periodSegCache.value;
 }
 
-function buildPeriodSegments(len){
+function buildPeriodSegments(len, plen){
   const cats = new Array(len).fill('normal');
   const ovulation = len - 14;
   for(let d = ovulation - 4; d <= ovulation + 1; d++) if(d >= 0 && d < len) cats[d] = 'fertile';
   for(let d = len - 5; d < len; d++) if(d >= 0) cats[d] = 'pms';
-  for(let d = 0; d < periodLen(); d++) cats[d] = 'period';
+  for(let d = 0; d < plen; d++) cats[d] = 'period';
   const segments = [];
   cats.forEach((cat, day) => {
     const last = segments[segments.length - 1];
@@ -95,29 +104,36 @@ function periodArcPath(cx, cy, r, a0, a1){
   return `M ${x0} ${y0} A ${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`;
 }
 
-function periodWheelSvg(){
+function periodWheelSvg(pd = state.period){
   const size = 240, c = size / 2, r = 94, gap = 0.035; // radians between arcs
-  const { len, segments } = periodCycleSegments();
+  const { len, segments } = periodCycleSegments(pd);
   const angle = day => (day / len) * 2 * Math.PI - Math.PI / 2;
   const arcs = segments.map((s, i) => {
     const a0 = angle(s.start) + gap / 2, a1 = angle(s.start + s.len) - gap / 2;
     return `<path class="period-arc" data-seg="${i}" d="${periodArcPath(c, c, r, a0, a1)}" stroke="${PERIOD_PHASE_COLOR[s.cat]}" tabindex="0" role="button" aria-label="${escapeAttr(t(PERIOD_PHASE_LABEL[s.cat]))}"></path>`;
   }).join('');
-  const todayIdx = Math.min(len - 1, Math.max(0, daysBetween(computePeriodCycleStart(), today)));
+  const todayIdx = Math.min(len - 1, Math.max(0, daysBetween(computePeriodCycleStart(pd), today)));
   const ta = angle(todayIdx + 0.5);
   const todayDot = `<circle class="period-today-dot" cx="${(c + r * Math.cos(ta)).toFixed(2)}" cy="${(c + r * Math.sin(ta)).toFixed(2)}" r="7"></circle>`;
   return `<svg viewBox="0 0 ${size} ${size}" class="period-wheel">${arcs}${todayDot}</svg>`;
 }
 
-function periodCenterDefault(cats){
-  const p = state.period;
-  const day = daysBetween(computePeriodCycleStart(), today) + 1;
-  const sub = lang() === 'fa' ? `روز ${dig(day)} از ${dig(periodCycleLen())}` : `Day ${day} of ${periodCycleLen()}`;
-  return `<span class="period-center-main">${periodSummaryText(cats)}</span><span class="period-center-sub">${sub}</span>`;
+function periodCenterDefault(cats, pd = state.period, own = true){
+  const day = daysBetween(computePeriodCycleStart(pd), today) + 1;
+  const sub = lang() === 'fa' ? `روز ${dig(day)} از ${dig(periodCycleLen(pd))}` : `Day ${day} of ${periodCycleLen(pd)}`;
+  return `<span class="period-center-main">${periodSummaryText(cats, own, pd)}</span><span class="period-center-sub">${sub}</span>`;
 }
 
-function periodCenterForSegment(s){
-  const from = addDays(computePeriodCycleStart(), s.start), to = addDays(from, s.len - 1);
+/* The phase a cycle is in today: { seg, day } (day 1 = the phase's first). */
+function periodPhaseToday(pd){
+  const { len, segments } = periodCycleSegments(pd);
+  const idx = Math.min(len - 1, Math.max(0, daysBetween(computePeriodCycleStart(pd), today)));
+  const seg = segments.find(s => idx >= s.start && idx < s.start + s.len) || segments[0];
+  return { seg, day: idx - seg.start + 1 };
+}
+
+function periodCenterForSegment(s, pd = state.period){
+  const from = addDays(computePeriodCycleStart(pd), s.start), to = addDays(from, s.len - 1);
   const days = lang() === 'fa' ? `${dig(s.len)} روز` : `${s.len} day${s.len === 1 ? '' : 's'}`;
   const range = s.len === 1 ? shortDate(from) : `${shortDate(from)} – ${shortDate(to)}`;
   const color = PERIOD_PHASE_INK[s.cat];
@@ -141,14 +157,16 @@ function attachPeriodWheel(){
   const wrap = document.querySelector('.period-wheel-wrap');
   if(!wrap) return;
   const center = wrap.querySelector('.period-wheel-center');
-  const { segments } = periodCycleSegments();
+  // The cycle drawn on screen: own, or a friend's (only her own is on the calendar).
+  const view = periodViews()[periodViewIndex()] || { own: true, p: state.period };
+  const { segments } = periodCycleSegments(view.p);
   const defaultHtml = center.innerHTML;
   let pinned = null; // tapped arc stays highlighted until tapped again
   const show = i => {
     wrap.querySelectorAll('.period-arc').forEach(a => a.classList.toggle('active', a.dataset.seg === String(i)));
     wrap.classList.toggle('has-active', i !== null);
-    center.innerHTML = i === null ? defaultHtml : periodCenterForSegment(segments[i]);
-    focusPhaseOnCalendar(i === null ? null : segments[i]);
+    center.innerHTML = i === null ? defaultHtml : periodCenterForSegment(segments[i], view.p);
+    if(view.own) focusPhaseOnCalendar(i === null ? null : segments[i]);
   };
   focusPhaseOnCalendar(null); // a fresh render starts with nothing focused
   wrap.querySelectorAll('.period-arc').forEach(arc => {
@@ -185,18 +203,120 @@ function renderPeriodSettings(){
         <div class="lbl">${t('editAnswers')}</div>
         ${ICONS.chevronRightSmall}
       </div>
+      ${Cloud.periodShares && Cloud.hasSession() ? periodShareRowHtml() : ''}
     ` : ''}
   `;
+}
+
+/* ---- sharing my cycle with friends (up to PERIOD_SHARE_MAX) ----
+   They see the ring and where I am in it on their period desk; nothing
+   else. Picked from my friends in a themed menu (js/core/dropdown.js). */
+const PERIOD_SHARE_MAX = 3;
+let periodSharesLoading = false;
+
+function loadPeriodShares(){
+  if(periodSharesLoading || !Cloud.periodShares) return;
+  periodSharesLoading = true;
+  Promise.all([Cloud.periodShares(), Cloud.listConnections()])
+    .then(([shares, conns]) => { state.periodShares = shares; state.connections = conns; render(); })
+    .catch(() => { state.periodShares = state.periodShares || []; })
+    .finally(() => { periodSharesLoading = false; });
+}
+
+function periodShareLabel(){
+  const list = state.periodShares || [];
+  return list.length ? list.map(s => s.name).join(lang() === 'fa' ? '، ' : ', ') : t('periodShareNone');
+}
+
+function periodShareRowHtml(){
+  if(state.periodShares === null) loadPeriodShares();
+  const n = (state.periodShares || []).length;
+  return `
+    <div class="settings-row period-share-row">
+      <div style="min-width:0;"><div class="lbl">${t('periodShareWith')}</div><div class="sub" id="period-share-sub">${t('periodShareSub')}</div></div>
+      <button type="button" class="tj-select period-share-btn" id="period-share-btn" data-action="period-share-open" aria-haspopup="listbox" aria-expanded="false" ${state.periodShares === null ? 'disabled' : ''}>
+        <span class="tj-select-label">${state.periodShares === null ? '…' : (n ? (lang() === 'fa' ? `${dig(n)} نفر` : `${n} ${n === 1 ? 'friend' : 'friends'}`) : t('periodShareNoneShort'))}</span>${TJ_CHEVRON}
+      </button>
+    </div>
+    ${n ? `<div class="period-share-names" dir="ltr">${escapeHtml(periodShareLabel())}</div>` : ''}`;
+}
+
+function periodShareMenuHtml(){
+  const friends = (state.connections || []).filter(c => c.status === 'accepted');
+  if(!friends.length) return `<div class="tj-menu-empty">${t('periodShareNoFriends')}</div>
+    <button type="button" class="tj-option" data-go="friends">${ICONS.linkIcon || ''}<span>${t('connections')}</span></button>`;
+  const chosen = new Set((state.periodShares || []).map(s => s.id));
+  const full = chosen.size >= PERIOD_SHARE_MAX;
+  return `<div class="tj-menu-note">${t('periodShareMax')}</div>
+    <div role="listbox" aria-multiselectable="true">${friends.map(f => {
+      const on = chosen.has(f.id);
+      return `<button type="button" class="tj-option tj-check ${on ? 'active' : ''}" role="option" aria-selected="${on}" data-id="${f.id}" ${!on && full ? 'disabled' : ''}>
+        <span class="tj-checkbox">${on ? ICONS.check : ''}</span><span dir="ltr">${escapeHtml(f.name)}</span></button>`;
+    }).join('')}</div>`;
+}
+
+function openPeriodShareMenu(btn){
+  if(tjMenuOwner === btn){ closeTjMenu(); return; }
+  const m = tjMenu(btn, periodShareMenuHtml(), 'period-share-menu');
+  m.addEventListener('click', e => {
+    if(e.target.closest('[data-go="friends"]')){ closeTjMenu(); state.menuSubView = 'friends'; render(); refreshConnections(); return; }
+    const b = e.target.closest('.tj-option[data-id]');
+    if(!b || b.disabled) return;
+    const before = state.periodShares || [];
+    const ids = before.map(s => s.id);
+    const next = ids.includes(b.dataset.id) ? ids.filter(x => x !== b.dataset.id) : [...ids, b.dataset.id];
+    if(next.length > PERIOD_SHARE_MAX){ showToast(t('periodShareMax')); return; }
+    // Show it at once, then save; put it back if the save fails.
+    const friend = state.connections.find(c => c.id === b.dataset.id);
+    state.periodShares = next.map(id => before.find(s => s.id === id) || friend);
+    m.innerHTML = periodShareMenuHtml();
+    Cloud.savePeriodShares(next).then(list => { state.periodShares = list; })
+      .catch(err => { state.periodShares = before; showToast(err && err.code === 'not_a_friend' ? t('errUserGone') : t('saveFailed')); })
+      .finally(() => { if(tjMenuEl === m) m.innerHTML = periodShareMenuHtml(); refreshPeriodShareRow(); });
+    refreshPeriodShareRow();
+  });
+}
+
+/* The row's label and the names under it, in place (the menu stays open). */
+function refreshPeriodShareRow(){
+  const row = document.querySelector('.period-share-row');
+  if(!row) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = periodShareRowHtml();
+  const label = tmp.querySelector('.tj-select-label');
+  if(label) row.querySelector('.tj-select-label').innerHTML = label.innerHTML;
+  row.nextElementSibling?.classList.contains('period-share-names') && row.nextElementSibling.remove();
+  const names = tmp.querySelector('.period-share-names');
+  if(names) row.after(names);
 }
 
 /* میزکار pane content only (see renderDesktops) — no settings controls
    here at all (enable toggle, calendar reminder, edit-answers all moved
    to Settings → Period / renderPeriodSettings() above); this just shows
    the current status and tips. */
+/* The cycles the period desk shows: her own (if she tracks one) and every
+   friend's that was shared with this person (Settings → period →
+   "Share with…" on the friend's side). A man sees the desk only when
+   someone shared with him. */
+function periodViews(){
+  const views = [];
+  if(state.profile.gender === 'female' && state.period.enabled) views.push({ own: true, p: state.period });
+  (state.sharedPeriods || []).forEach(s => views.push({
+    own: false, name: s.name, userId: s.userId,
+    p: Object.assign({ enabled: true, step: 'done' }, s.period),
+  }));
+  return views;
+}
+function periodViewIndex(){
+  const n = periodViews().length;
+  return n ? Math.min(Math.max(0, state.periodViewIndex || 0), n - 1) : 0;
+}
+
 function renderPeriodPage(headerHtml){
   if(headerHtml === undefined) headerHtml = '';
-  const p = state.period;
-  if(!p.enabled){
+  const views = periodViews();
+  const view = views[periodViewIndex()];
+  if(!view){
     return `
       <div class="period-themed">
       ${headerHtml}
@@ -204,19 +324,40 @@ function renderPeriodPage(headerHtml){
       </div>
     `;
   }
+  const p = view.p;
+  const many = views.length > 1;
+  // Left/right arrows beside the ring when there's more than one cycle.
+  const arrows = many ? `
+    <button type="button" class="period-view-arrow prev" data-action="period-view-step" data-dir="-1" aria-label="${t('prev')}">${lang()==='fa' ? ICONS.chevronRight : ICONS.chevronLeft}</button>
+    <button type="button" class="period-view-arrow next" data-action="period-view-step" data-dir="1" aria-label="${t('next')}">${lang()==='fa' ? ICONS.chevronLeft : ICONS.chevronRight}</button>` : '';
+  // Someone else's cycle: their username, a faint line, and where they are now.
+  const owner = view.own ? '' : (() => {
+    const { seg, day } = periodPhaseToday(p);
+    const phase = lang() === 'fa' ? `الان: ${t(PERIOD_PHASE_LABEL[seg.cat])} · روز ${dig(day)} از ${dig(seg.len)}`
+      : `Now: ${t(PERIOD_PHASE_LABEL[seg.cat])} · day ${day} of ${seg.len}`;
+    return `<div class="period-owner">
+      <div class="period-owner-name" dir="ltr">${escapeHtml(view.name || '')}</div>
+      <div class="period-owner-now" style="color:${PERIOD_PHASE_INK[seg.cat]}">${phase}</div>
+    </div>`;
+  })();
+  const dots = many ? `<div class="period-view-dots">${views.map((_, i) => `<span class="${i === periodViewIndex() ? 'active' : ''}"></span>`).join('')}</div>` : '';
   const trackerBody = p.step !== 'done' ? `
     <div class="store-card">
       <div class="empty-hint">${t('periodTrackerDesc')}</div>
       <button class="btn btn-primary" style="width:100%; margin-top:12px;" data-action="period-quiz-start">${ICONS.dropIcon} ${t('startBtn')}</button>
+      ${many ? `<div class="period-view-switch">${arrows}</div>${dots}` : ''}
     </div>
   ` : (() => {
-    const cats = periodDayCategories();
+    const cats = periodDayCategories(p);
     return `
       <div class="store-card">
+        ${owner}
         <div class="period-wheel-wrap">
-          ${periodWheelSvg()}
-          <div class="period-wheel-center" dir="${lang()==='fa'?'rtl':'ltr'}" aria-live="polite">${periodCenterDefault(cats)}</div>
+          ${periodWheelSvg(p)}
+          <div class="period-wheel-center" dir="${lang()==='fa'?'rtl':'ltr'}" aria-live="polite">${periodCenterDefault(cats, p, view.own)}</div>
+          ${arrows}
         </div>
+        ${dots}
         <div class="period-legend">
           <span class="period-legend-item"><span class="dot" style="background:var(--period-flow);"></span>${t('legendPeriod')}</span>
           <span class="period-legend-item"><span class="dot" style="background:var(--period-pms);"></span>${t('legendPms')}</span>
@@ -230,8 +371,7 @@ function renderPeriodPage(headerHtml){
     <div class="period-themed">
     ${headerHtml}
     ${trackerBody}
-    <div class="section-title">${t('tipsTitle')}</div>
-    ${periodTipsHtml()}
+    ${state.profile.gender === 'female' ? `<div class="section-title">${t('tipsTitle')}</div>${periodTipsHtml()}` : ''}
     </div>
   `;
 }

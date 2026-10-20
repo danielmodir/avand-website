@@ -46,6 +46,9 @@ $routes = [
     'GET /social/invite'        => 'tj_social_invite',
     'POST /social/invite/reset' => 'tj_social_invite_reset',
     'POST /social/invite/accept'=> 'tj_social_invite_accept',
+    'GET /period/shares'        => 'tj_period_shares_get',
+    'PUT /period/shares'        => 'tj_period_shares_put',
+    'GET /period/shared-with-me'=> 'tj_period_shared_with_me',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header

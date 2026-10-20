@@ -64,7 +64,7 @@ function renderDesktops(d, data){
       ${renderArticleStrip('app_planning')}
     ` });
   }
-  if(state.profile.gender === 'female' && state.period.enabled){
+  if(periodViews().length){ // her own cycle and/or ones friends share with this person
     panes.push({ key:'periodDesktop', html: renderPeriodPage('') + renderArticleStrip('app_period') });
   }
   /* Every desktop switched off: on a phone the app becomes a full-screen

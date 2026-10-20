@@ -70,6 +70,9 @@ const state = {
      have no status field at all). */
   connections: [],
   inviteToken: null, // my personal invite link's code (Friends page)
+  sharedPeriods: [],    // cycles friends share with me: [{ id, name, userId, period }]
+  periodViewIndex: 0,   // which cycle the period desk shows (period.js periodViews)
+  periodShares: null,   // friends I share my cycle with (null = not loaded yet)
   friendSearch: '',
   friendSearchResults: [],
   friendSearchBusy: false,

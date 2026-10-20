@@ -70,6 +70,7 @@ function enterGuestMode(){
   state.tasks = []; state.habits = []; state.events = [];
   state.connections = [];
   state.inviteToken = null;
+  state.sharedPeriods = []; state.periodShares = null; state.periodViewIndex = 0;
   state.profile = Object.assign({}, state.profile, { name:'', firstName:'', lastName:'', username:'', email:'', phone:'', gender:'', dob:'', photo:null });
   state.activeDesktopIndex = 0;
   state.selection = null;
@@ -143,7 +144,7 @@ async function boot(){
   }
   handleEmailLink();
   openAuthFromLink();
-  if(!state.guest && !state.bootError) acceptPendingInvite();
+  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); }
   else if(state.guest && pendingInvite() && !state.authOpen) openAuth('signup', 'inviteSignInFirst');
 }
 
@@ -157,6 +158,19 @@ function pendingInvite(){ try{ return localStorage.getItem(PENDING_INVITE_KEY) |
   try{ localStorage.setItem(PENDING_INVITE_KEY, m[1]); }catch(e){ /* private mode: lost after sign-up */ }
   history.replaceState(null, '', location.pathname + location.search);
 })();
+
+/* Cycles friends share with me (period desk). Again whenever the app comes
+   back to the foreground, so a new share or a stopped one shows up. */
+async function loadSharedPeriods(){
+  if(!Cloud.sharedPeriods || !Cloud.hasSession() || state.guest) return;
+  try{
+    const list = await Cloud.sharedPeriods();
+    if(JSON.stringify(list) === JSON.stringify(state.sharedPeriods)) return;
+    state.sharedPeriods = list;
+    render();
+  }catch(e){ /* offline: keep what we had */ }
+}
+document.addEventListener('visibilitychange', () => { if(!document.hidden) loadSharedPeriods(); });
 
 async function acceptPendingInvite(){
   const code = pendingInvite();
