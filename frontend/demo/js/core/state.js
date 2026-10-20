@@ -160,7 +160,9 @@ function occursOnDate(item, date){
     return diff >= 0 && diff % Math.max(1, rec.interval||1) === 0;
   }
   if(rec.mode === 'weekdays'){
-    return dKey >= item.date && (rec.weekdays||[]).includes(date.getDay());
+    // Saved before days were required: show it on its own date at least.
+    if(!(rec.weekdays||[]).length) return dKey === item.date;
+    return dKey >= item.date && rec.weekdays.includes(date.getDay());
   }
   return dKey === item.date;
 }
@@ -169,7 +171,7 @@ function habitOccursOnDate(habit, date){
   const dKey = dateKey(date);
   if(dKey < habit.startDate) return false;
   const rec = habit.recurrence;
-  if(rec.mode === 'weekdays') return (rec.weekdays||[]).includes(date.getDay());
+  if(rec.mode === 'weekdays') return (rec.weekdays||[]).length ? rec.weekdays.includes(date.getDay()) : dKey === habit.startDate;
   const diff = daysBetween(new Date(habit.startDate), date);
   return diff % Math.max(1, rec.interval||1) === 0;
 }

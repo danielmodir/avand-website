@@ -86,6 +86,13 @@
   background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px;
 }
 .profile-edit-form .field input:focus{ outline:none; border-bottom-color:var(--primary); box-shadow:none; }
+.profile-edit-form .field input[type=password]{ background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; }
+/* Gender, birth date and email: shown, not editable. */
+.locked-field{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 2px; border-bottom:2px dashed var(--border); font-size:14px; }
+.locked-field span{ color:var(--text-muted); font-size:12.5px; }
+.locked-field b{ font-weight:700; }
+.profile-hint{ font-size:11.5px; color:var(--text-muted); margin-top:4px; }
+.delete-account-btn{ background:transparent; color:var(--danger); border:1px solid var(--danger); }
 .dob-field-btn{ display:block; width:100%; text-align:start; font-family:inherit; background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; padding:10px 2px; font-size:14px; color:var(--text); cursor:pointer; transition:border-color .2s ease; }
 .dob-field-btn:hover{ border-bottom-color:var(--primary); }
 /* ===== Menu page ===== */

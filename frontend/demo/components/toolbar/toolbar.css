@@ -50,7 +50,29 @@
 .nav-add-item{ position:relative; z-index:2; width:100%; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:4px 14px; color:var(--text); cursor:pointer; }
 .nav-add-item svg{width:16px; height:16px; fill:var(--primary);}
 .nav-add-item span{font-size:13px; font-weight:600;}
+/* Opening the add menu: the items rise in one after another with a soft
+   spring, the closest to the + first; closing is quick and all at once.
+   The + itself turns into × and gives a short press bounce. */
+.fab-menu{ transition:opacity .18s ease, transform .3s cubic-bezier(.22,1,.36,1); }
+.fab-menu .nav-add-item{
+  opacity:0; transform:translateY(14px) scale(.92);
+  transition:opacity .16s ease, transform .16s ease, background-color .2s ease;
+}
+.fab-menu.show .nav-add-item{
+  opacity:1; transform:none;
+  transition:opacity .26s ease, transform .42s cubic-bezier(.34,1.56,.64,1), background-color .2s ease;
+}
+.fab-menu.show .nav-add-item:nth-child(3){ transition-delay:0s, 0s, 0s; }
+.fab-menu.show .nav-add-item:nth-child(2){ transition-delay:.05s, .05s, 0s; }
+.fab-menu.show .nav-add-item:nth-child(1){ transition-delay:.1s, .1s, 0s; }
+.fab-menu .nav-add-item:active{ transform:scale(.96); }
+.fab-add.active{ transform:scale(1.06); box-shadow:0 10px 26px color-mix(in srgb, var(--primary) 55%, transparent); }
+.fab-add.active:active{ transform:scale(.97); }
+@media (prefers-reduced-motion:reduce){
+  .fab-menu, .fab-menu .nav-add-item, .fab-menu.show .nav-add-item, .fab-add svg{ transition:opacity .15s ease !important; transform:none !important; }
+}
 @media (min-width: 960px){
+.fab-menu .nav-add-item{ transform:translateX(14px) scale(.92); }
 /* Desktop: the same .toolbar flips from a bottom-center row to a
    column pinned to the right edge — single source of truth, no
    separate desktop-only elements to keep in sync with mobile's. */

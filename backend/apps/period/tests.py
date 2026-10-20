@@ -7,8 +7,7 @@ from apps.period.services import purge_user
 
 class PeriodTests(ApiTestCase):
     def setUp(self):
-        self.client = self.register()
-        self.set_gender(self.client, "female")
+        self.client = self.register(gender="female")  # fixed at sign-up
 
     def test_only_available_to_eligible_profiles(self):
         other = self.register("m@example.com", "Ali")

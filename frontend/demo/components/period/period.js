@@ -3,8 +3,14 @@
    repeated every cycleLength; PMS = the 5 days before each predicted
    period; ovulation/fertile window = ~14 days before each predicted
    period (the luteal phase is the relatively constant part of a cycle). */
+/* Cycle and period length as used everywhere: clamped to the setup's
+   ranges, so data saved before those limits (a 3-day cycle, a 40-day
+   period) can't break the ring, the calendar or the predictions. */
+function periodCycleLen(){ return Math.min(45, Math.max(21, Number(state.period.cycleLength) || 28)); }
+function periodLen(){ return Math.min(10, Math.max(2, Number(state.period.periodLength) || 5), periodCycleLen() - 1); }
+
 function computePeriodCycleStart(){
-  const p = state.period;
+  const p = { lastStart: state.period.lastStart, cycleLength: periodCycleLen() };
   const lastStart = new Date(p.lastStart + 'T00:00:00');
   const daysSince = Math.round((today - lastStart) / 86400000);
   const cyclesPassed = Math.floor(daysSince / p.cycleLength);
@@ -12,7 +18,7 @@ function computePeriodCycleStart(){
 }
 
 function periodDayCategories(){
-  const p = state.period;
+  const p = { cycleLength: periodCycleLen(), periodLength: periodLen() };
   const currentCycleStart = computePeriodCycleStart();
   const cats = new Array(30).fill('normal');
   const rank = { normal:0, fertile:1, pms:2, period:3 };
@@ -55,14 +61,23 @@ const PERIOD_PHASE_COLOR = { period:'var(--period-flow)', pms:'var(--period-pms)
 const PERIOD_PHASE_INK = { period:'var(--period-flow-ink)', pms:'var(--period-pms-ink)', fertile:'var(--period-fertile-ink)', normal:'var(--text)' };
 const PERIOD_PHASE_LABEL = { period:'legendPeriod', pms:'legendPms', fertile:'legendFertile', normal:'legendRegular' };
 
+/* Called for every calendar cell (periodPhaseOn), so it's worked out once
+   per cycle/period length and reused. */
+let periodSegCache = { key: '', value: null };
 function periodCycleSegments(){
-  const p = state.period;
-  const len = Math.max(15, p.cycleLength);
+  const len = periodCycleLen();
+  const key = len + '|' + periodLen();
+  if(periodSegCache.key === key) return periodSegCache.value;
+  periodSegCache = { key, value: buildPeriodSegments(len) };
+  return periodSegCache.value;
+}
+
+function buildPeriodSegments(len){
   const cats = new Array(len).fill('normal');
   const ovulation = len - 14;
   for(let d = ovulation - 4; d <= ovulation + 1; d++) if(d >= 0 && d < len) cats[d] = 'fertile';
   for(let d = len - 5; d < len; d++) if(d >= 0) cats[d] = 'pms';
-  for(let d = 0; d < Math.min(p.periodLength, len); d++) cats[d] = 'period';
+  for(let d = 0; d < periodLen(); d++) cats[d] = 'period';
   const segments = [];
   cats.forEach((cat, day) => {
     const last = segments[segments.length - 1];
@@ -97,7 +112,7 @@ function periodWheelSvg(){
 function periodCenterDefault(cats){
   const p = state.period;
   const day = daysBetween(computePeriodCycleStart(), today) + 1;
-  const sub = lang() === 'fa' ? `روز ${dig(day)} از ${dig(p.cycleLength)}` : `Day ${day} of ${p.cycleLength}`;
+  const sub = lang() === 'fa' ? `روز ${dig(day)} از ${dig(periodCycleLen())}` : `Day ${day} of ${periodCycleLen()}`;
   return `<span class="period-center-main">${periodSummaryText(cats)}</span><span class="period-center-sub">${sub}</span>`;
 }
 
@@ -287,25 +302,36 @@ function startPeriodTipsRotator(){
   viewport.addEventListener('pointercancel', end);
 }
 
+/* Sensible ranges for the setup answers (it used to accept a 3-day cycle,
+   a 40-day period or a start date a year ago). */
+const PERIOD_LIMITS = { lastStartDays: 45, cycle: [21, 45], period: [2, 10] };
+
+/* The quiz works on a draft; the real setup only changes on "Finish", so
+   closing it half way leaves an existing setup exactly as it was. */
+let periodDraft = null;
+
 function periodQuizStepHtml(){
-  const p = state.period;
-  if(p.step === 1){
+  const d = periodDraft;
+  const err = d.error ? `<div class="auth-field-error">${escapeHtml(d.error)}</div>` : '';
+  if(d.step === 1){
     return `
       <div class="period-quiz-step">
         <div class="field">
           <label class="field-label">${t('periodQ1')}</label>
-          <button type="button" class="date-field-btn" id="period-q1" value="${escapeAttr(p.lastStart)}">${p.lastStart ? formatDateLabel(p.lastStart) : t('periodQ1')}${ICONS.calendarIcon}</button>
+          <button type="button" class="date-field-btn" id="period-q1">${d.lastStart ? formatDateLabel(d.lastStart) : t('periodQ1')}${ICONS.calendarIcon}</button>
+          <div class="period-q-hint">${t('periodQ1Hint')}</div>${err}
         </div>
         <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
       </div>
     `;
   }
-  if(p.step === 2){
+  if(d.step === 2){
     return `
       <div class="period-quiz-step">
         <div class="field">
           <label class="field-label">${t('periodQ2')}</label>
-          <input type="number" id="period-q2" value="${p.cycleLength}" min="15" max="60">
+          <input type="number" inputmode="numeric" id="period-q2" value="${d.cycleLength}" min="${PERIOD_LIMITS.cycle[0]}" max="${PERIOD_LIMITS.cycle[1]}">
+          <div class="period-q-hint">${t('periodQ2Hint')}</div>${err}
         </div>
         <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
       </div>
@@ -315,7 +341,8 @@ function periodQuizStepHtml(){
     <div class="period-quiz-step">
       <div class="field">
         <label class="field-label">${t('periodQ3')}</label>
-        <input type="number" id="period-q3" value="${p.periodLength}" min="1" max="14">
+        <input type="number" inputmode="numeric" id="period-q3" value="${d.periodLength}" min="${PERIOD_LIMITS.period[0]}" max="${PERIOD_LIMITS.period[1]}">
+        <div class="period-q-hint">${t('periodQ3Hint')}</div>${err}
       </div>
       <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-finish">${t('finishBtn')}</button>
     </div>
@@ -323,25 +350,60 @@ function periodQuizStepHtml(){
 }
 
 function renderPeriodQuiz(){
-  const p = state.period;
-  const dots = [1,2,3].map(n => `<span class="${p.step===n?'active':''}"></span>`).join('');
+  const d = periodDraft;
+  if(!d) return;
+  const dots = [1,2,3].map(n => `<span class="${d.step===n?'active':''}"></span>`).join('');
   document.getElementById('period-quiz-body').innerHTML = `<div class="period-quiz-dots">${dots}</div>${periodQuizStepHtml()}`;
   document.getElementById('period-q1')?.addEventListener('click', () => openDatePicker({
-    title: t('periodQ1'), value: state.period.lastStart, max: dateKey(today), min: dateYearsAgo(1),
-    onPick: v => { state.period.lastStart = v; renderPeriodQuiz(); },
+    title: t('periodQ1'), value: d.lastStart, max: dateKey(today), min: dateKey(addDays(today, -PERIOD_LIMITS.lastStartDays)),
+    onPick: v => { d.lastStart = v; d.error = ''; renderPeriodQuiz(); },
   }));
-  document.getElementById('period-q2')?.addEventListener('input', e => { const v = Number(e.target.value); if(v>0) state.period.cycleLength = v; });
-  document.getElementById('period-q3')?.addEventListener('input', e => { const v = Number(e.target.value); if(v>0) state.period.periodLength = v; });
+  document.getElementById('period-q2')?.addEventListener('input', e => { d.cycleLength = e.target.value; });
+  document.getElementById('period-q3')?.addEventListener('input', e => { d.periodLength = e.target.value; });
+}
+
+/* "Next" / "Finish": check this step's answer, stay on it with a message
+   if it's out of range. */
+function periodQuizNext(){
+  const d = periodDraft;
+  const inRange = (v, [lo, hi]) => Number.isInteger(v) && v >= lo && v <= hi;
+  if(d.step === 1){
+    const oldest = dateKey(addDays(today, -PERIOD_LIMITS.lastStartDays));
+    if(!d.lastStart || d.lastStart > dateKey(today) || d.lastStart < oldest){ d.error = t('periodQ1Hint'); renderPeriodQuiz(); return; }
+    d.step = 2;
+  } else if(d.step === 2){
+    const v = Number(d.cycleLength);
+    if(!inRange(v, PERIOD_LIMITS.cycle)){ d.error = t('periodCycleInvalid'); renderPeriodQuiz(); return; }
+    d.cycleLength = v; d.step = 3;
+  } else {
+    const v = Number(d.periodLength);
+    if(!inRange(v, PERIOD_LIMITS.period) || v >= d.cycleLength){ d.error = t('periodLengthInvalid'); renderPeriodQuiz(); return; }
+    Object.assign(state.period, { lastStart: d.lastStart, cycleLength: d.cycleLength, periodLength: v, step: 'done' });
+    periodDraft = null;
+    closePeriodQuiz();
+    render();
+    return;
+  }
+  d.error = '';
+  renderPeriodQuiz();
 }
 
 function openPeriodQuiz(){
-  state.period.step = 1;
+  const p = state.period;
+  const oldest = dateKey(addDays(today, -PERIOD_LIMITS.lastStartDays));
+  // Start from the current setup; a start date that's too old becomes the
+  // latest predicted start (still inside the window), else today.
+  let last = p.lastStart;
+  if(p.step === 'done' && last && last < oldest){ const c = dateKey(computePeriodCycleStart()); last = c >= oldest ? c : null; }
+  if(!last || last < oldest || last > dateKey(today)) last = null;
+  periodDraft = { step: 1, lastStart: last, cycleLength: p.cycleLength || 28, periodLength: p.periodLength || 5, error: '' };
   document.getElementById('period-quiz-overlay').classList.add('show');
   document.getElementById('period-quiz-sheet').classList.add('show');
   renderPeriodQuiz();
 }
 
 function closePeriodQuiz(){
+  periodDraft = null; // cancelled: the existing setup is untouched
   document.getElementById('period-quiz-overlay').classList.remove('show');
   document.getElementById('period-quiz-sheet').classList.remove('show');
 }

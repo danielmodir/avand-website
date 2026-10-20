@@ -462,6 +462,8 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .content-page h1 { font-size: var(--font-size-xl); margin: 0 0 var(--space-5) 0; }
 .content-page p { max-width: 65ch; color: var(--color-text); }
 .content-page p + p { margin-top: var(--space-4); }
+.content-page ul { max-width: 65ch; padding-inline-start: var(--space-5); margin: var(--space-3) 0 var(--space-4); }
+.content-page li + li { margin-top: var(--space-2); }
 
 /* ===== Articles (live host only: rendered by api/articles.php) ===== */
 .article-list { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }

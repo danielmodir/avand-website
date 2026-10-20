@@ -111,6 +111,20 @@ class ProfileSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         return value.lower() if value else None
 
+    # Gender and birth date come from sign-up and are fixed: they can only
+    # be filled in when still empty (accounts made before sign-up asked).
+    def _set_once(self, field, value):
+        current = getattr(self.instance, field, None) if self.instance else None
+        if current not in (None, "") and value != current:
+            raise serializers.ValidationError("locked")
+        return value if value not in ("",) else current
+
+    def validate_gender(self, value):
+        return self._set_once("gender", value)
+
+    def validate_birth_date(self, value):
+        return self._set_once("birth_date", value)
+
     def validate_phone(self, value):
         return value or None
 

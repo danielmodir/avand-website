@@ -43,19 +43,34 @@
   <main id="main">
     <section class="content-page">
       <h1>Toojibee Privacy Policy</h1>
-      <p>Last updated: October 2026. This reflects the product's actual current state, not a finalized legal document for a complete product.</p>
+      <p>Last updated: November 2026 (Aban 1405). This page says exactly what happens in Toojibee today.</p>
 
       <h2>This website</h2>
-      <p>Toojibee's marketing site (the page you're reading) has no forms, no cookies, and no third-party analytics, and it doesn't collect any personal information from visitors. The only thing kept in your browser is your light or dark theme choice (in the browser's local storage, not a cookie) so the site looks the same next time; it never leaves your device. The only thing this site might ever receive from you is the app installer (APK) you knowingly choose to download.</p>
+      <p>Toojibee's pages have no forms, cookies, tracking code or third-party analytics. Like any website, our host writes a log line for each visit (IP address, browser, page and time); we only count visits and popular pages from those logs and never store anyone's IP or browser. Your light/dark theme and language choice stay in your own browser.</p>
 
-      <h2>The web preview</h2>
-      <p>The web version opened from the "Try web preview" button currently runs entirely inside your browser: there's no sign-up, nothing you enter is sent to any server, and it's gone when you close or reload the page.</p>
-      <p>Before accounts and sync between devices go live, this page will be updated to say exactly what is stored, where, and for how long. At that point, a sign-in token will be kept in your browser's local storage to keep you signed in, and removed when you sign out.</p>
+      <h2>Your account in the web app</h2>
+      <p>To create tasks, habits and events you make an account. This is kept on Toojibee's own server (hosted in Iran):</p>
+      <ul>
+        <li><b>Account details:</b> email, username, gender, date of birth and your password (only as a bcrypt hash; the password itself is never stored). First and last name and phone number are optional.</li>
+        <li><b>Your content:</b> tasks, habits, events, settings and profile photo, so they're on all your devices.</li>
+        <li><b>Cycle data:</b> stored encrypted (AES-256), with the key kept apart from the database.</li>
+        <li><b>Sign-in and security:</b> a session per device you sign in on, with its browser type, so you stay signed in; to stop password guessing, sign-in attempts are counted (hashed) for a short time, at most a day.</li>
+        <li><b>Presence:</b> while the app is open it sends a small "I'm here" ping once a minute, which only records when you were last seen and your total time in the app; nothing about what you do is sent.</li>
+      </ul>
+      <p>To keep you signed in, a sign-in token is kept in your browser and removed when you sign out.</p>
 
+      <h2>Who can see your data</h2>
+      <p>Your data is never sold or given to anyone else. The Toojibee team has an admin panel for support and upkeep that shows account details (such as email, username, sign-up date and last seen) and usage numbers (such as the number of saves); the content of your tasks, habits, events and cycle data is not shown there. Every admin action is logged.</p>
+
+      <h2>Emails</h2>
+      <p>We only send the emails an account needs (confirming your address, resetting your password), never marketing.</p>
+
+      <h2>Deleting your account</h2>
+      <p>Any time, from Profile → Edit profile → Delete my account; your account and all its data are removed from the database. Database backups may hold an older copy for a short while.</p>
       <h2>Accounts from earlier versions</h2>
       <p>If you created an account in an earlier preview version (up to October 2026), that account's data (email, hashed password, profile, tasks, habits, events and connections) was kept on Supabase's infrastructure — a cloud service whose servers are located outside Iran. To have it fully deleted, contact us at the email below.</p>
       <h2>Security</h2>
-      <p>This site is served over HTTPS. No tracking code or third-party script is loaded.</p>
+      <p>All traffic is encrypted with HTTPS. No tracking code or third-party script is loaded on the site or in the app.</p>
 
       <h2>Contact us</h2>
       <p>For any privacy questions, contact us at: <a href="mailto:fozooncompany@gmail.com">fozooncompany@gmail.com</a></p>

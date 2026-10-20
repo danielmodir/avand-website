@@ -557,7 +557,20 @@
   // ── public calendar data ─────────────────────────────────────────────
   function calendarYear(jalaliYear) { return request('GET', '/calendar/occasions?year=' + jalaliYear, undefined, { auth: false }); }
 
+  // ── account ──────────────────────────────────────────────────────────
+  function changePassword(current, next) {
+    return request('POST', '/auth/password/change', { current_password: current, new_password: next });
+  }
+  // The Django API schedules deletion (30 days, signing in cancels it)
+  // and signs every device out; the password is checked on the PHP API.
+  async function deleteAccount() {
+    await request('POST', '/auth/account/deletion');
+    clearSession();
+    resetCaches();
+  }
+
   Object.assign(api, {
+    changePassword: changePassword, deleteAccount: deleteAccount,
     uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,
     signUp: signUp, signIn: signIn, signInWithGoogle: signInWithGoogle, consumeOAuthRedirect: consumeOAuthRedirect, signOut: signOut,
     authProviders: authProviders, forgotPassword: forgotPassword, resetPassword: resetPassword, verifyEmail: verifyEmail, takeEmailLink: takeEmailLink,

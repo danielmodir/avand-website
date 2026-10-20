@@ -20,8 +20,9 @@ function resetFormDraft(type, existing){
     category: existing ? (existing.category || '') : '',
     description: existing ? (existing.description || '') : '',
     timeMode: existing ? (existing.timeMode || 'single') : 'single',
-    date: existing ? existing.date : dateKey(state.selectedDate || today),
-    endDate: existing ? (existing.endDate || existing.date) : dateKey(state.selectedDate || today),
+    // A new item goes on the day picked in the calendar (homeDate), not today.
+    date: existing ? existing.date : dateKey(state.homeDate || today),
+    endDate: existing ? (existing.endDate || existing.date) : dateKey(state.homeDate || today),
     recurrence: {
       mode: existing ? (existing.recurrence?.mode || null) : (type === 'habit' ? 'interval' : null),
       interval: existing ? (existing.recurrence?.interval || 1) : 1
@@ -71,7 +72,9 @@ function openPopup(type, originEl, existing){
   render();
   if(originStyle) popup.style.transformOrigin = originStyle;
   overlay.classList.add('show');
-  requestAnimationFrame(() => popup.classList.add('show'));
+  // Only if it's still open by then (a very quick close, or Back, used to
+  // leave a dead popup on screen).
+  requestAnimationFrame(() => { if(state.popupOpen) popup.classList.add('show'); });
 
   renderPopupBody();
   setTimeout(() => { if(!existing) document.getElementById('f-title')?.focus(); }, 200);
@@ -253,6 +256,15 @@ function submitPopup(){
   if(!title) return;
   const type = state.popupType;
   const recurrence = { mode: formDraft.recurrence.mode, interval: formDraft.recurrence.interval, weekdays: Array.from(formWeekdays) };
+  // Repeat settings that would hide the item or make no sense: say so
+  // instead of saving something that never shows up.
+  if(recurrence.mode === 'weekdays' && !recurrence.weekdays.length){ showToast(t('weekdaysRequired')); return; }
+  if(recurrence.mode === 'interval'){
+    const n = Math.round(Number(recurrence.interval));
+    if(!(n >= 1 && n <= 7)){ showToast(t('intervalRange')); return; }
+    recurrence.interval = n;
+  }
+  if(type !== 'habit' && recurrence.mode && formDraft.timeMode === 'range' && formDraft.endDate !== formDraft.date){ showToast(t('rangeNoRepeat')); return; }
   const notification = { ...formDraft.notification };
   if(type === 'task' && state.editingParentId){
     // Editing a subtask: update it inside its parent and save the parent.
@@ -296,7 +308,8 @@ function submitPopup(){
       id: state.editingId || uid(),
       title,
       recurrence, notification,
-      startDate: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(today),
+      // A new habit starts on the day picked in the calendar.
+      startDate: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(state.homeDate || today),
       completedDates: state.editingId ? findItem('habit', state.editingId).completedDates : []
     };
     upsert('habits', obj);

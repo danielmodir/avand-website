@@ -27,6 +27,13 @@ if(!window.__densityBreakpointWatcher){
   });
 }
 
+/* Which way a sideways drag/scroll goes, matching the arrow buttons: in
+   Persian the calendar is right-to-left (the "next" arrow is on the
+   left), so dragging the content to the right shows the next month; in
+   English it's the other way round. 1 = forward, -1 = back. */
+function calDragDir(dx){ return (lang() === 'fa' ? dx > 0 : dx < 0) ? 1 : -1; }
+function calWheelDir(deltaX){ return (lang() === 'fa' ? deltaX < 0 : deltaX > 0) ? 1 : -1; }
+
 /* Horizontal wheel/trackpad scroll over the month grid steps the month,
    matching the arrow buttons' own right=previous/left=next convention —
    scrolling "right" (deltaX>0) goes back, "left" (deltaX<0) goes
@@ -58,7 +65,7 @@ function attachCalWheelMonthNav(el, stepFn){
     if(acc > 140){
       acc = 0;
       settling = true;
-      stepFn(e.deltaX > 0 ? -1 : 1);
+      stepFn(calWheelDir(e.deltaX));
       setTimeout(() => { settling = false; }, 500);
     }
   }, { passive:false });
@@ -319,7 +326,7 @@ function attachHomeHeaderSwipe(){
   header.addEventListener('pointerup', e => {
     if(startX === null) return;
     const dx = e.clientX - startX;
-    if(moved && Math.abs(dx) > 40) shiftHomeDay(dx < 0 ? 1 : -1);
+    if(moved && Math.abs(dx) > 40) shiftHomeDay(calDragDir(dx));
     startX = null;
   });
 }
@@ -422,8 +429,8 @@ function attachHomeCalDrag(){
     const dx = e.clientX - startX, dy = e.clientY - startY;
     if(axis === 'x' && Math.abs(dx) > 50){
       // Horizontal: previous/next week (collapsed) or month (expanded),
-      // sliding in the swipe's direction. Left swipe = forward.
-      const dir = dx < 0 ? 1 : -1;
+      // sliding in the swipe's direction (calDragDir: mirrored in Persian).
+      const dir = calDragDir(dx);
       slideHomeCalDate(dir, () => {
         state.homeDate = state.calDensity === 'full' ? stepMonth(state.homeDate, dir) : addDays(state.homeDate, dir*7);
       });
@@ -469,7 +476,10 @@ function slideHomeCalDate(dir, updateFn){
   const slide = document.getElementById('home-cal-slide');
   if(!slide){ updateFn(); render(); return; }
   slide.style.transition = 'transform .16s ease, opacity .16s ease';
-  slide.style.transform = `translateX(${dir > 0 ? '-28px' : '28px'})`;
+  // The old month leaves the way the finger went, the new one comes from
+  // the other side (mirrored for the right-to-left Persian calendar).
+  const away = (dir > 0) === (lang() === 'fa') ? 28 : -28;
+  slide.style.transform = `translateX(${away}px)`;
   slide.style.opacity = '0';
   setTimeout(() => {
     updateFn();
@@ -477,7 +487,7 @@ function slideHomeCalDate(dir, updateFn){
     const s2 = document.getElementById('home-cal-slide');
     if(!s2) return;
     s2.style.transition = 'none';
-    s2.style.transform = `translateX(${dir > 0 ? '28px' : '-28px'})`;
+    s2.style.transform = `translateX(${-away}px)`;
     s2.style.opacity = '0';
     requestAnimationFrame(() => {
       s2.style.transition = 'transform .2s cubic-bezier(.4,0,.2,1), opacity .2s ease';

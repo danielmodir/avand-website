@@ -38,6 +38,7 @@ $routes = [
     'PATCH /me'                 => 'tj_update_me',
     'POST /me/delete'           => 'tj_delete_me',
     'POST /me/heartbeat'        => 'tj_heartbeat',
+    'POST /me/password'         => 'tj_change_password',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header

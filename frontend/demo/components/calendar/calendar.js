@@ -270,7 +270,7 @@ function initCalendarWheelSwipe(){
     if(Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
     if(Math.abs(e.deltaX) < 30 || Date.now() - lastWheelNav < 400) return;
     lastWheelNav = Date.now();
-    const dir = e.deltaX > 0 ? 1 : -1;
+    const dir = calWheelDir(e.deltaX); // same direction as the arrows, mirrored in Persian
     if(state.calMode === 'month') shiftMonthRoll(dir);
     else if(state.calMode === 'week') shiftWeek(dir);
     else shiftDay(dir);

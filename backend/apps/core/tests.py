@@ -95,6 +95,18 @@ class AuthFlowTests(ApiTestCase):
         taken = attempt(email="d@example.com", username="SARA_95")
         self.assertEqual((taken.status_code, taken.json()["error"]), (409, "username_taken"))
 
+    def test_gender_and_birth_date_are_fixed_after_sign_up(self):
+        client = self.register()
+        version = client.get("/api/v1/me/profile").json()["version"]
+        changed = client.patch("/api/v1/me/profile", {"gender": "female", "version": version}, format="json")
+        self.assertEqual(changed.status_code, 400)
+        changed = client.patch("/api/v1/me/profile", {"birth_date": "2001-01-01", "version": version}, format="json")
+        self.assertEqual(changed.status_code, 400)
+        same = client.patch("/api/v1/me/profile", {"gender": "male", "birth_date": "1995-05-20", "first_name": "Sam", "version": version}, format="json")
+        self.assertEqual(same.status_code, 200, same.content)
+        bad_username = client.patch("/api/v1/me/profile", {"username": "with space", "version": same.json()["version"]}, format="json")
+        self.assertEqual(bad_username.status_code, 400)
+
     def test_login_failure_does_not_reveal_whether_the_email_exists(self):
         self.register()
         wrong_pw = APIClient().post("/api/v1/auth/login", {"email": "user@example.com", "password": "nope-nope-1"}, format="json")
@@ -177,13 +189,11 @@ class ProfileAndSettingsTests(ApiTestCase):
         self.assertEqual(client.patch("/api/v1/me/settings", {"palette": "neon", "version": v}, format="json").status_code, 400)
 
     def test_period_desktop_only_appears_for_eligible_profiles(self):
-        client = self.register()
-        self.set_gender(client, "female")
+        client = self.register(gender="female")
         enabled = client.patch("/api/v1/me/modules/period", {"enabled": True}, format="json")
         self.assertEqual(enabled.status_code, 200)
         self.assertIn("period", [m["key"] for m in client.get("/api/v1/me/modules").json()])
-        other = self.register("m@example.com", "Ali")
-        self.set_gender(other, "male")
+        other = self.register("m@example.com", "Ali", gender="male")
         self.assertEqual(other.patch("/api/v1/me/modules/period", {"enabled": True}, format="json").status_code, 404)
 
 

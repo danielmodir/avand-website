@@ -229,14 +229,59 @@ function tj_me(): void {
     tj_json(tj_public_user(tj_require_user()));
 }
 
+/* PATCH /me: only the fields sent change.
+ * - username: same rules as sign-up, and unique.
+ * - gender, birth_date: can be set once (accounts made before sign-up
+ *   asked for them); after that they're fixed and changes are refused.
+ * - first_name, last_name: free. Email can't be changed here. */
 function tj_update_me(): void {
     $u = tj_require_user();
     $b = tj_body();
-    tj_db()->prepare('UPDATE tj_users SET first_name = ?, last_name = ?, updated_at = ? WHERE id = ?')
-        ->execute([tj_str($b, 'first_name', 60), tj_str($b, 'last_name', 60), tj_now(), $u['id']]);
-    $u['first_name'] = tj_str($b, 'first_name', 60);
-    $u['last_name'] = tj_str($b, 'last_name', 60);
+    $db = tj_db();
+    $set = [];
+    foreach (['first_name', 'last_name'] as $k) if (array_key_exists($k, $b)) $set[$k] = tj_str($b, $k, 60);
+    if (array_key_exists('username', $b)) {
+        $username = strtolower(tj_str($b, 'username', 60));
+        if (!tj_valid_username($username)) tj_fail(400, 'validation_error', ['fields' => ['username' => ['invalid']]]);
+        $q = $db->prepare('SELECT 1 FROM tj_users WHERE username = ? AND id <> ?');
+        $q->execute([$username, $u['id']]);
+        if ($q->fetch()) tj_fail(409, 'username_taken');
+        $set['username'] = $username;
+    }
+    if (array_key_exists('gender', $b)) {
+        $g = tj_str($b, 'gender', 10);
+        if ($u['gender'] !== null && $u['gender'] !== '' && $g !== $u['gender']) tj_fail(409, 'locked', ['field' => 'gender']);
+        if (!in_array($g, ['female', 'male'], true)) tj_fail(400, 'validation_error', ['fields' => ['gender' => ['invalid']]]);
+        $set['gender'] = $g;
+    }
+    if (array_key_exists('birth_date', $b)) {
+        $d = tj_str($b, 'birth_date', 10);
+        if ($u['birth_date'] !== null && $u['birth_date'] !== '' && $d !== $u['birth_date']) tj_fail(409, 'locked', ['field' => 'birth_date']);
+        if (!tj_valid_birth_date($d)) tj_fail(400, 'validation_error', ['fields' => ['birth_date' => ['invalid']]]);
+        $set['birth_date'] = $d;
+    }
+    if ($set) {
+        $cols = implode(', ', array_map(function ($k) { return "$k = ?"; }, array_keys($set)));
+        $db->prepare("UPDATE tj_users SET $cols, updated_at = ? WHERE id = ?")->execute(array_merge(array_values($set), [tj_now(), $u['id']]));
+        $u = array_merge($u, $set);
+    }
     tj_json(tj_public_user($u));
+}
+
+/* POST /me/password: the current password and a new one; every other
+ * device is signed out, this one stays signed in. */
+function tj_change_password(): void {
+    $u = tj_require_user();
+    $b = tj_body();
+    tj_throttle('password_change', (string)$u['id'], 10, 3600);
+    $current = is_string($b['current_password'] ?? null) ? $b['current_password'] : '';
+    if (!password_verify($current, $u['password_hash'])) tj_fail(401, 'invalid_credentials');
+    $new = is_string($b['new_password'] ?? null) ? $b['new_password'] : '';
+    if ($problems = tj_password_problems($new)) tj_fail(400, 'weak_password', ['reasons' => $problems]);
+    $db = tj_db();
+    $db->prepare('UPDATE tj_users SET password_hash = ?, updated_at = ? WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), tj_now(), $u['id']]);
+    $db->prepare('UPDATE tj_sessions SET revoked_at = ? WHERE user_id = ? AND id <> ? AND revoked_at IS NULL')->execute([tj_now(), $u['id'], $u['session_id']]);
+    tj_json(['ok' => true]);
 }
 
 /* Deleting the account removes the user row; sessions, tokens and the

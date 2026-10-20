@@ -75,7 +75,8 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-subview' && el.dataset.sub === 'calendar'){
     // The item's date (or a range: press and drag) in the small date picker.
     openDatePicker({
-      title: t('dateTitle'), range: true, value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
+      // Within a year back and five years ahead (it used to allow 1926).
+      title: t('dateTitle'), range: true, min: dateYearsAgo(1), max: dateKey(stepYear(today, 5)), value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
       onPick: (start, end) => {
         formDraft.date = start; formDraft.endDate = end;
         formDraft.timeMode = start === end ? 'single' : 'range';
@@ -183,7 +184,8 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'copy-invite-link'){
-    copyText(`toojibee.ir/invite/${state.profile.userId}`);
+    // There is no invite page: the site link plus the code to search for.
+    copyText(`https://toojibee.ir/ — ${t('myCode')}: ${state.profile.userId}`);
     showToast(t('inviteLinkCopied'));
     return;
   }
@@ -235,29 +237,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'close-period-quiz'){ closePeriodQuiz(); return; }
-  if(action === 'period-quiz-next'){
-    const s = state.period.step;
-    if(s === 1){
-      const v = document.getElementById('period-q1')?.value;
-      if(!v) return;
-      state.period.lastStart = v;
-      state.period.step = 2;
-    } else if(s === 2){
-      const v = Number(document.getElementById('period-q2')?.value);
-      if(v > 0) state.period.cycleLength = v;
-      state.period.step = 3;
-    }
-    renderPeriodQuiz();
-    return;
-  }
-  if(action === 'period-quiz-finish'){
-    const v = Number(document.getElementById('period-q3')?.value);
-    if(v > 0) state.period.periodLength = v;
-    state.period.step = 'done';
-    closePeriodQuiz();
-    render();
-    return;
-  }
+  if(action === 'period-quiz-next' || action === 'period-quiz-finish'){ periodQuizNext(); return; }
   if(action === 'logout-user'){
     /* Logging out now needs a 3s press-and-hold (see attachLogoutHold()),
        not a plain tap — a quick click just shows a hint toast instead. */

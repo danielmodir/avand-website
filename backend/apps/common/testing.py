@@ -20,7 +20,3 @@ class ApiTestCase(APITestCase):
         client.tokens = tokens
         return client
 
-    def set_gender(self, client, gender):
-        version = client.get("/api/v1/me/profile").json()["version"]
-        response = client.patch("/api/v1/me/profile", {"gender": gender, "version": version}, format="json")
-        self.assertEqual(response.status_code, 200, response.content)

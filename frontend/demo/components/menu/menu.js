@@ -79,7 +79,7 @@ function renderProfilePage(){
 
     <div class="section-title" style="margin-top:22px;">${t('accountInfo')}</div>
     <div class="menu-list">
-      ${Cloud.supportsSocial === false ? '' : `<div class="menu-item-row" data-action="menu-nav" data-sub="friends">
+      ${Cloud.supportsSocial === false || !Cloud.isConfigured() ? '' : `<div class="menu-item-row" data-action="menu-nav" data-sub="friends">
         <div class="menu-item-icon">${ICONS.peopleIcon}</div>
         <div class="menu-item-label">${t('connections')} <span class="count">${dig(state.connections.filter(c=>c.status==='accepted').length)}</span></div>
         ${ICONS.chevronRightSmall}
@@ -99,10 +99,12 @@ function renderProfilePage(){
         <span class="soon-badge">${t('comingSoon')}</span>
       </div>
     </div>
+    ${/* No backend = no account: nothing to log out of (it used to wipe
+         this device's data). */ REAL_LOGIN_DISABLED ? '' : `
     <button class="btn btn-outline logout-hold-btn" style="margin-top:22px; color:var(--danger); border-color:var(--danger);" data-action="logout-user">
       <span class="logout-hold-fill"></span>
       <span class="logout-hold-label">${t('logout')}</span>
-    </button>
+    </button>`}
   `;
 }
 
@@ -126,21 +128,32 @@ function renderProfileEditPage(){
       <div class="field"><input type="text" id="profile-first-name" value="${escapeAttr(p.firstName)}" placeholder="${t('firstName')}"></div>
       <div class="field"><input type="text" id="profile-last-name" value="${escapeAttr(p.lastName)}" placeholder="${t('lastName')}"></div>
     </div>
-    <div class="field"><input type="text" id="profile-username" value="${escapeAttr(p.username)}" placeholder="${t('username')}"></div>
+    <div class="field"><input type="text" id="profile-username" dir="ltr" autocapitalize="off" spellcheck="false" value="${escapeAttr(p.username)}" placeholder="${t('username')}">
+      <div class="profile-hint">${t('usernameHint')}</div></div>
+    ${/* Gender and birth date are fixed once set (sign-up asks for both);
+         an empty one (older account, or no backend) can be filled in once. */''}
     <div class="field">
-      <button type="button" class="dob-field-btn" id="profile-dob-btn">${dobLabel(p)}</button>
+      ${p.dob ? `<div class="locked-field"><span>${t('dateOfBirth')}</span><b>${dobLabel(p)}</b></div>`
+        : `<button type="button" class="dob-field-btn" id="profile-dob-btn">${dobLabel(p)}</button><div class="profile-hint">${t('setOnceHint')}</div>`}
     </div>
     <div class="field">
+      ${p.gender === 'female' || p.gender === 'male' ? `<div class="locked-field"><span>${t('gender')}</span><b>${t(p.gender)}</b></div>` : `
       <select class="settings-select" id="profile-gender-select" style="width:100%;">
-        ${p.gender === 'female' || p.gender === 'male' ? '' : `<option value="" selected disabled>${t('gender')}</option>`}
-        <option value="female" ${p.gender==='female'?'selected':''}>${t('female')}</option>
-        <option value="male" ${p.gender==='male'?'selected':''}>${t('male')}</option>
-      </select>
+        <option value="" selected disabled>${t('gender')}</option>
+        <option value="female">${t('female')}</option>
+        <option value="male">${t('male')}</option>
+      </select><div class="profile-hint">${t('setOnceHint')}</div>`}
     </div>
 
     <div class="section-title">${t('contactInfo')}</div>
-    <div class="field"><input type="email" id="profile-email" value="${escapeAttr(p.email)}" placeholder="${t('email')}"></div>
+    ${p.email ? `<div class="field"><div class="locked-field"><span>${t('email')}</span><b dir="ltr">${escapeHtml(p.email)}</b></div></div>` : ''}
     <div class="field"><input type="tel" id="profile-phone" value="${escapeAttr(p.phone)}" placeholder="${t('phoneNumber')}"></div>
+    ${Cloud.isConfigured() && !state.guest && Cloud.changePassword ? `
+      <div class="section-title">${t('accountSecurity')}</div>
+      <div class="field"><input type="password" id="pw-current" autocomplete="current-password" placeholder="${t('currentPassword')}"></div>
+      <div class="field"><input type="password" id="pw-new" autocomplete="new-password" placeholder="${t('newPassword')}"><div class="profile-hint">${t('passwordHint')}</div></div>
+      <button type="button" class="btn btn-outline" id="pw-change" style="width:100%;">${t('changePasswordBtn')}</button>
+      <button type="button" class="btn delete-account-btn" id="account-delete" style="width:100%; margin-top:18px;">${t('deleteAccountBtn')}</button>` : ''}
     </div>
   `;
 }
@@ -213,7 +226,7 @@ function renderFriendsPage(){
   return `
     ${subHeader(t('connections'))}
     <div class="settings-row">
-      <div style="min-width:0;"><div class="lbl">${t('inviteLink')}</div><div class="sub" style="overflow:hidden; text-overflow:ellipsis;">toojibee.ir/invite/${escapeHtml(state.profile.userId)}</div></div>
+      <div style="min-width:0;"><div class="lbl">${t('inviteLink')}</div><div class="sub" style="overflow:hidden; text-overflow:ellipsis;" dir="ltr">toojibee.ir · ${escapeHtml(state.profile.userId)}</div></div>
       <span class="link-btn" data-action="copy-invite-link" aria-label="${t('copyBtn')}">${ICONS.copyIcon}</span>
     </div>
     <div class="search-capsule" style="margin-top:16px;">
@@ -460,15 +473,49 @@ function scheduleProfileSave(){
 function wireMenuInteractivity(){
   document.getElementById('profile-first-name')?.addEventListener('input', e => { state.profile.firstName = e.target.value; syncProfileName(); scheduleProfileSave(); });
   document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); scheduleProfileSave(); });
-  document.getElementById('profile-username')?.addEventListener('input', e => { state.profile.username = e.target.value; syncProfileName(); scheduleProfileSave(); });
-  // Same picker and the same minimum age as sign-up.
+  // Username: same rules as sign-up, checked when the field is left; the
+  // server also checks it's not taken (then the old one comes back).
+  document.getElementById('profile-username')?.addEventListener('change', e => {
+    const before = state.profile.username;
+    const v = e.target.value.trim().toLowerCase();
+    if(v === before) return;
+    if(!USERNAME_RE.test(v)){ showToast(t('usernameInvalid')); e.target.value = before || ''; return; }
+    state.profile.username = v; e.target.value = v; syncProfileName();
+    Promise.resolve(Cloud.saveProfile(state.profile)).catch(err => {
+      state.profile.username = before; syncProfileName(); render();
+      showToast(err && err.code === 'username_taken' ? t('errUsernameTaken') : t('saveFailed'));
+    });
+  });
+  // Gender and birth date: only when still empty, once, after a confirm.
+  const setOnce = (field, value) => {
+    if(!confirm(t('setOnceConfirm'))) { render(); return; }
+    state.profile[field] = value;
+    Promise.resolve(Cloud.saveProfile(state.profile)).catch(() => showToast(t('saveFailed')));
+    render();
+  };
   document.getElementById('profile-dob-btn')?.addEventListener('click', () => openDatePicker({
     title: t('dateOfBirth'), value: state.profile.dob, max: dateYearsAgo(MIN_SIGNUP_AGE), min: dateYearsAgo(110),
-    onPick: v => { state.profile.dob = v; cloudSync(() => Cloud.saveProfile(state.profile)); render(); },
+    onPick: v => setOnce('dob', v),
   }));
-  document.getElementById('profile-gender-select')?.addEventListener('change', e => { state.profile.gender = e.target.value; cloudSync(() => Cloud.saveProfile(state.profile)); render(); });
+  document.getElementById('profile-gender-select')?.addEventListener('change', e => setOnce('gender', e.target.value));
   document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
-  document.getElementById('profile-email')?.addEventListener('input', e => { state.profile.email = e.target.value; scheduleProfileSave(); });
+  document.getElementById('pw-change')?.addEventListener('click', () => {
+    const cur = document.getElementById('pw-current').value, next = document.getElementById('pw-new').value;
+    const problem = passwordProblem(next);
+    if(!cur || problem){ showToast(problem || t('currentPasswordRequired')); return; }
+    Cloud.changePassword(cur, next).then(() => {
+      document.getElementById('pw-current').value = ''; document.getElementById('pw-new').value = '';
+      showToast(t('passwordChangedToast'));
+    }).catch(err => showToast(authErrorMessage(err)));
+  });
+  document.getElementById('account-delete')?.addEventListener('click', () => {
+    const pw = prompt(t('deleteAccountPrompt'));
+    if(pw === null) return;
+    Cloud.deleteAccount(pw).then(() => {
+      enterGuestMode(); state.menuPanelOpen = false; state.menuSubView = null; render();
+      showToast(t('accountDeleted'));
+    }).catch(err => showToast(authErrorMessage(err)));
+  });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; cloudSync(() => Cloud.saveSettings(state.settings)); render(); });
   document.getElementById('primary-calendar-select')?.addEventListener('change', e => {
     state.settings.calendarSystem = e.target.value;
@@ -601,24 +648,17 @@ function initFabAndMenuInteractions(){
       state.menuPanelOpen = false; render();
       return;
     }
+    /* The person stays on whatever desk they're on (no jump to planning),
+       and nothing else is redrawn: only the button and its menu change,
+       so the open/close animation runs smoothly (toolbar.css). */
     state.navExpanded = !state.navExpanded;
-    if(state.navExpanded){
-      /* Opening the add menu should bring the میزکار pager to the
-         "planning" pane (index 1, always right after occasions) — the
-         one whatever you're about to add actually shows up on —
-         instead of leaving it wherever it happened to be scrolled.
-         render() rebuilds the pager right below, which restores to
-         whatever index is set here instantly (see attachDesktopPager),
-         so there's no point also animating a scroll on the old,
-         about-to-be-replaced wrap element. */
-      state.activeDesktopIndex = 1;
-    }
-    render();
+    haptic(10);
+    updateNav();
   });
   // tap outside the fab-menu collapses it
   document.getElementById('device').addEventListener('pointerdown', (e) => {
     if(state.navExpanded && !e.target.closest('#fab-add, #fab-menu')){
-      state.navExpanded = false; render();
+      state.navExpanded = false; updateNav();
     }
   });
 }
@@ -668,6 +708,7 @@ function attachMenuSwipeClose(){
 }
 
 function doLogout(){
+  if(REAL_LOGIN_DISABLED) return; // no account to sign out of
   Cloud.signOut();
   enterGuestMode();
   state.menuPanelOpen = false;

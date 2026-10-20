@@ -202,6 +202,11 @@ function renderItemSections(tasks, habits, events, date){
 function applyQuicksetState(cb, wantDone, markSkipped){
   const action = cb.dataset.action;
   const isSkipped = !!markSkipped && !wantDone;
+  // Nothing can be done (or "not done") on a day that hasn't come yet;
+  // clearing an old mark on such a day is still allowed.
+  const sub = action === 'toggle-subtask' ? state.tasks.find(x => x.id === cb.dataset.taskId)?.subtasks?.find(s => s.id === cb.dataset.subId) : null;
+  const day = cb.dataset.date || sub?.date || cb.closest('[data-date]')?.dataset.date;
+  if((wantDone || isSkipped) && day && day > dateKey(today)){ showToast(t('futureNotYet')); haptic(20); return; }
   if(action === 'toggle-task'){
     const task = state.tasks.find(x => x.id === cb.dataset.id);
     if(!task) return;

@@ -117,11 +117,10 @@
     var local = readLocalDeviceData();
     var adopt = isEmpty(data) && local && !isEmpty(local);
     if (adopt) data = { profile: local.profile, settings: local.settings, tasks: local.tasks, habits: local.habits, events: local.events, period: local.period };
-    // What was given at sign-up, until the person changes it in Profile.
-    var given = { username: me.username || '', gender: me.gender || '', dob: me.birth_date || '' };
-    var saved = Object.assign({}, data.profile || {});
-    Object.keys(given).forEach(function (k) { if (!saved[k]) delete saved[k]; });
-    var profile = Object.assign(given, saved, {
+    // Username, gender and birth date live on the account itself (the
+    // server checks them); the synced document's copy never overrides them.
+    server = { username: me.username || '', gender: me.gender || '', dob: me.birth_date || '' };
+    var profile = Object.assign({}, data.profile || {}, server, {
       email: me.email,
       firstName: (data.profile && data.profile.firstName) || me.first_name || '',
       lastName: (data.profile && data.profile.lastName) || me.last_name || '',
@@ -159,11 +158,27 @@
         version = (await request('PUT', '/sync', body)).version;
       } catch (err) {
         if (err.status !== 409) { dirty = true; throw err; }
-        version = err.body.current.version;          // another device saved first
+        // Another device saved first: keep what it added (tasks, habits,
+        // events this device doesn't have and didn't delete), then write.
+        var current = err.body.current;
+        if (mergeFromServer(current.data || {}) && global.render) global.render();
+        version = current.version;
         version = (await request('PUT', '/sync', { version: version, data: snapshot() })).version;
       }
     })();
     try { await pushing; } finally { pushing = null; }
+  }
+
+  function mergeFromServer(data) {
+    var added = false;
+    ['tasks', 'habits', 'events'].forEach(function (k) {
+      var mine = {};
+      (state[k] || []).forEach(function (x) { mine[x.id] = true; });
+      (data[k] || []).forEach(function (x) {
+        if (x && x.id && !mine[x.id] && !deleted[x.id]) { state[k].push(x); added = true; }
+      });
+    });
+    return added;
   }
 
   function onSaveError(err) {
@@ -173,6 +188,29 @@
 
   // Everything the app saves goes through one debounced document write.
   function queued() { schedulePush(); return Promise.resolve(); }
+
+  /* The account's own fields as the server last confirmed them. */
+  var server = { username: '', gender: '', dob: '' };
+
+  /* Profile: the document as usual, plus the account fields that changed
+   * (username; gender/birth date only fill an empty value, the server
+   * refuses anything else). Rejects with the server's error, e.g.
+   * username_taken, so the screen can put the old value back. */
+  function saveProfile(p) {
+    schedulePush();
+    var body = {};
+    if ((p.username || '') !== server.username) body.username = p.username || '';
+    if (p.gender && !server.gender) body.gender = p.gender;
+    if (p.dob && !server.dob) body.birth_date = p.dob;
+    if (!Object.keys(body).length || !hasSession()) return Promise.resolve();
+    return request('PATCH', '/me', body).then(function (me) {
+      server = { username: me.username || '', gender: me.gender || '', dob: me.birth_date || '' };
+    });
+  }
+
+  // Deletions this session, so a merge after a 409 doesn't bring them back.
+  var deleted = {};
+  function queuedDelete(id) { if (id) deleted[id] = true; return queued(); }
 
   // Presence for the admin panel's "online now" and time-in-app: a tiny
   // ping to our own API once a minute, only while the app is visible and
@@ -211,8 +249,12 @@
     featuredArticles: function () { return request('GET', '/articles/featured', undefined, { auth: false }); },
     loadAll: loadAll,
     onStateChanged: schedulePush,
-    saveTask: queued, deleteTask: queued, saveHabit: queued, deleteHabit: queued,
-    saveEvent: queued, deleteEvent: queued, saveProfile: queued, saveSettings: queued,
+    saveTask: queued, deleteTask: queuedDelete, saveHabit: queued, deleteHabit: queuedDelete,
+    saveEvent: queued, deleteEvent: queuedDelete, saveProfile: saveProfile, saveSettings: queued,
+    changePassword: function (current, next) { return request('POST', '/me/password', { current_password: current, new_password: next }); },
+    deleteAccount: function (password) {
+      return request('POST', '/me/delete', { password: password }).then(function () { clearTimeout(pushTimer); dirty = false; clearSession(); version = 0; loaded = false; });
+    },
     searchUser: function () { return Promise.resolve([]); },
     listConnections: function () { return Promise.resolve([]); },
     sendConnectionRequest: unsupported, respondConnectionRequest: unsupported,

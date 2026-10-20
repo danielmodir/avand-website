@@ -36,7 +36,7 @@ function openDatePicker(opts){
   }
   renderDatePicker();
   queueBackSync(); // Back closes the picker (js/core/back-nav.js)
-  requestAnimationFrame(() => el.classList.add('show'));
+  requestAnimationFrame(() => { if(dp) el.classList.add('show'); }); // not if closed in the meantime
 }
 
 function closeDatePicker(){

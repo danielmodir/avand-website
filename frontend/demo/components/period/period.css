@@ -132,6 +132,7 @@
 .period-quiz-body{ padding:6px 22px 28px 22px; overflow-y:auto; scrollbar-width:none; }
 .period-quiz-body::-webkit-scrollbar{ display:none; }
 .period-quiz-step{ animation:stagger-in .32s cubic-bezier(.4,0,.2,1) both; }
+.period-q-hint{ font-size:11.5px; color:var(--text-muted); margin-top:6px; }
 .period-quiz-dots{ display:flex; justify-content:center; gap:6px; margin-bottom:18px; }
 .period-quiz-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); }
 .period-quiz-dots span.active{ background:var(--primary); }
