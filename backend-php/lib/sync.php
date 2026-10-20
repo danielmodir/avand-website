@@ -54,14 +54,14 @@ function tj_sync_put(): void {
     if (strlen($json) > TJ_MAX_SYNC_BYTES) tj_fail(413, 'too_large');
 
     $db = tj_db();
-    $db->beginTransaction();
+    tj_tx_begin($db);
     try {
         $q = $db->prepare('SELECT version FROM tj_user_data WHERE user_id = ?' . (tj_driver() === 'mysql' ? ' FOR UPDATE' : ''));
         $q->execute([$userId]);
         $row = $q->fetch();
         $current = $row ? (int)$row['version'] : 0;
         if ($base !== $current) {
-            $db->rollBack();
+            tj_tx_rollback($db);
             tj_fail(409, 'version_conflict', ['current' => tj_sync_read($userId)]);
         }
         if ($row) {
@@ -69,9 +69,9 @@ function tj_sync_put(): void {
         } else {
             $db->prepare('INSERT INTO tj_user_data (user_id, data, version, updated_at) VALUES (?, ?, ?, ?)')->execute([$userId, $json, 1, tj_now()]);
         }
-        $db->commit();
+        tj_tx_commit($db);
     } catch (Throwable $e) {
-        if ($db->inTransaction()) $db->rollBack();
+        tj_tx_rollback($db);
         throw $e;
     }
     tj_json(['version' => $current + 1]);

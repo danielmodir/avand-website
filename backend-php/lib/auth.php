@@ -220,8 +220,10 @@ function tj_heartbeat(): void {
     $u = tj_require_user();
     $gap = $u['last_seen_at'] ? time() - strtotime($u['last_seen_at'] . ' UTC') : PHP_INT_MAX;
     $add = ($gap > 0 && $gap <= 2 * TJ_HEARTBEAT) ? $gap : 0;
-    tj_db()->prepare('UPDATE tj_users SET last_seen_at = ?, active_seconds = active_seconds + ? WHERE id = ?')
-        ->execute([tj_now(), $add, $u['id']]);
+    try {
+        tj_db()->prepare('UPDATE tj_users SET last_seen_at = ?, active_seconds = active_seconds + ? WHERE id = ?')
+            ->execute([tj_now(), $add, $u['id']]);
+    } catch (PDOException $e) { /* database busy: the next ping counts it */ }
     tj_json(['ok' => true, 'next_in' => TJ_HEARTBEAT]);
 }
 

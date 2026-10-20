@@ -66,11 +66,16 @@ function tj_admin_hijri_months_save(): void {
         }
     }
     $db = tj_db();
-    $db->beginTransaction();
-    $db->exec('DELETE FROM tj_hijri_months');
-    $ins = $db->prepare('INSERT INTO tj_hijri_months (hijri_year, hijri_month, starts_on, forecast, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?)');
-    foreach ($clean as $c) $ins->execute([$c['hy'], $c['hm'], $c['d'], $c['f'], tj_now(), $me['id']]);
-    $db->commit();
+    tj_tx_begin($db);
+    try {
+        $db->exec('DELETE FROM tj_hijri_months');
+        $ins = $db->prepare('INSERT INTO tj_hijri_months (hijri_year, hijri_month, starts_on, forecast, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?)');
+        foreach ($clean as $c) $ins->execute([$c['hy'], $c['hm'], $c['d'], $c['f'], tj_now(), $me['id']]);
+        tj_tx_commit($db);
+    } catch (Throwable $e) {
+        tj_tx_rollback($db);
+        throw $e;
+    }
     tj_admin_audit((int)$me['id'], 'hijri_months_saved', count($clean) . ' months');
     tj_json(['months' => tj_hijri_months()]);
 }

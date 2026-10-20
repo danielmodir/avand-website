@@ -74,11 +74,30 @@ function tj_db(): PDO {
     ]);
     if (tj_driver() === 'sqlite') {
         $db->exec('PRAGMA foreign_keys = ON');
-        $db->exec('PRAGMA busy_timeout = 5000'); // wait, don't fail, when two requests write at once
+        $db->exec('PRAGMA busy_timeout = 10000'); // wait, don't fail, when two requests write at once
         $db->exec('PRAGMA journal_mode = WAL');
     }
     tj_migrate($db);
     return $db;
+}
+
+/* A transaction that will write. On SQLite it takes the write lock up
+ * front (BEGIN IMMEDIATE): a plain BEGIN that reads first and writes later
+ * can't wait for another writer — SQLite fails it at once with "database
+ * is locked" (seen on saves), busy_timeout or not. */
+function tj_tx_begin(PDO $db): void {
+    if (tj_driver() === 'sqlite') $db->exec('BEGIN IMMEDIATE');
+    else $db->beginTransaction();
+}
+function tj_tx_commit(PDO $db): void {
+    if (tj_driver() === 'sqlite') $db->exec('COMMIT');
+    else $db->commit();
+}
+function tj_tx_rollback(PDO $db): void {
+    try {
+        if (tj_driver() === 'sqlite') $db->exec('ROLLBACK');
+        elseif ($db->inTransaction()) $db->rollBack();
+    } catch (Throwable $e) { /* nothing open */ }
 }
 
 function tj_driver(): string {

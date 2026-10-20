@@ -152,7 +152,9 @@ function tj_admin_current(bool $required = true): ?array {
         if ($origin !== '' && $origin !== 'https://' . ($_SERVER['HTTP_HOST'] ?? '')) tj_fail(403, 'bad_origin');
         if (!hash_equals(tj_admin_csrf($token), (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''))) tj_fail(403, 'bad_csrf');
     }
-    tj_db()->prepare('UPDATE tj_admin_sessions SET last_seen_at = ? WHERE id = ?')->execute([tj_now(), $row['session_id']]);
+    // Best effort: a busy database must not fail the request over a timestamp.
+    try { tj_db()->prepare('UPDATE tj_admin_sessions SET last_seen_at = ? WHERE id = ?')->execute([tj_now(), $row['session_id']]); }
+    catch (PDOException $e) { /* next request updates it */ }
     $row['token'] = $token;
     return $row;
 }
