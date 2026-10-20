@@ -7,6 +7,15 @@
   RewriteCond %{HTTPS} !=on [OR]
   RewriteCond %{HTTP_HOST} ^www\. [NC]
   RewriteRule ^ https://toojibee.ir%{REQUEST_URI} [L,R=301]
+  # The bare domain picks a language on the server (search engines send no
+  # Accept-Language, so they land on Persian, the main site); x-default in
+  # hreflang still points here. 302: it depends on the visitor.
+  RewriteCond %{HTTP:Accept-Language} ^en [NC]
+  RewriteRule ^(index\.html)?$ /en/ [R=302,L]
+  RewriteRule ^(index\.html)?$ /fa/ [R=302,L]
+  # One address per landing page: /fa/index.html -> /fa/.
+  RewriteCond %{THE_REQUEST} \s/(fa|en)/index\.html[\s?]
+  RewriteRule ^(fa|en)/index\.html$ /$1/ [R=301,L]
   # Admin panel: /p-<random>/ goes to the API's panel.php, which serves
   # the page only for the one secret address and a 404 for any other.
   RewriteRule ^p-[a-z0-9]{24}/?$ api/panel.php [L]

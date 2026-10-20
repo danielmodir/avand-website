@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +8,9 @@
   /* Auto-pick a language instead of making every visitor tap a button:
      English only if the browser/system language clearly says so,
      everything else (Persian, unset, anything ambiguous) defaults to
-     Persian — priority stays with fa per the repo owner's request. The
-     chooser buttons below still work normally as a fallback (JS
-     disabled, or this script's own redirect gets interrupted). */
+     Persian — priority stays with fa per the repo owner's request. On the
+     live host the server already does this (.htaccess); this page is the
+     fallback (GitHub Pages, or JS-less visitors use the links below). */
   (function(){
     try{
       var navLang = ((navigator.language || (navigator.languages && navigator.languages[0]) || '') + '').toLowerCase();
@@ -19,23 +19,38 @@
     }catch(e){}
   })();
 </script>
-<title>Toojibee</title>
-<meta name="description" content="Toojibee — choose your language / زبان خود را انتخاب کنید.">
+<title>توجیبی | Toojibee — تقویم شمسی و برنامه‌ریزی روزانه</title>
+<meta name="description" content="توجیبی؛ تقویم شمسی، قمری و میلادی با مناسبت‌ها، به‌همراه برنامه‌ریزی روزانه، کارها، عادت‌ها و یادآورها. Toojibee: a Persian calendar and daily planner.">
 <link rel="canonical" href="https://toojibee.ir/">
 <link rel="alternate" hreflang="en" href="https://toojibee.ir/en/">
 <link rel="alternate" hreflang="fa" href="https://toojibee.ir/fa/">
 <link rel="alternate" hreflang="x-default" href="https://toojibee.ir/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="توجیبی">
+<meta property="og:title" content="توجیبی | Toojibee — تقویم شمسی و برنامه‌ریزی روزانه">
+<meta property="og:description" content="تقویم شمسی، قمری و میلادی با مناسبت‌ها، به‌همراه برنامه‌ریزی روزانه، کارها، عادت‌ها و یادآورها.">
+<meta property="og:url" content="https://toojibee.ir/">
+<meta property="og:image" content="https://toojibee.ir/assets/icons/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://toojibee.ir/assets/icons/og-image.png">
 <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/css/tokens.css?v=2026-10-20.3">
-<link rel="stylesheet" href="assets/css/site.css?v=2026-10-20.3">
+<link rel="stylesheet" href="assets/css/tokens.css?v=2026-10-20.4">
+<link rel="stylesheet" href="assets/css/site.css?v=2026-10-20.4">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","@id":"https://toojibee.ir/#site","name":"توجیبی","alternateName":["Toojibee","toojibee.ir"],"url":"https://toojibee.ir/","inLanguage":["fa","en"]}</script>
 </head>
 <body>
-<div class="chooser">
+<main class="chooser">
   <img class="brand-mark" src="assets/icons/logo.svg" style="width:64px;height:64px;" alt="" aria-hidden="true">
+  <h1>توجیبی <span lang="en" dir="ltr">· Toojibee</span></h1>
+  <p>تقویم شمسی، قمری و میلادی با مناسبت‌ها، به‌همراه برنامه‌ریزی روزانه، کارها، عادت‌ها و یادآورها.</p>
+  <p lang="en" dir="ltr">A Persian, Hijri and Gregorian calendar with daily planning, tasks, habits and reminders.</p>
   <div class="chooser-buttons">
     <a class="btn btn-primary" href="fa/" lang="fa" dir="rtl">فارسی</a>
     <a class="btn btn-outline" href="en/" lang="en" dir="ltr">English</a>
   </div>
-</div>
+  <p><a href="fa/today/">تاریخ امروز</a> · <a href="en/today/" lang="en">Today's date</a></p>
+</main>
 </body>
 </html>

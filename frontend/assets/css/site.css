@@ -447,7 +447,11 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
   min-height: 100vh; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: var(--space-6); text-align: center;
 }
-.chooser-buttons { display: flex; gap: var(--space-3); }
+.chooser { gap: var(--space-4); padding: 0 var(--space-4); }
+.chooser h1 { margin: 0; font-size: var(--font-size-xl); }
+.chooser p { margin: 0; max-width: 46ch; color: var(--color-text-muted); }
+.chooser a:not(.btn) { color: var(--color-link); }
+.chooser-buttons { display: flex; gap: var(--space-3); margin: var(--space-2) 0; }
 .chooser-buttons .btn { min-width: 140px; }
 
 /* ===== Notice banners (demo preview / legal draft) ===== */
@@ -539,3 +543,7 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .today-day .today-occasions li { font-size: var(--font-size-sm); }
 .today-page .today-cta { margin-top: var(--space-6); }
 .today-page .today-note { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.today-faq { margin: 0; max-width: 65ch; }
+.today-faq dt { font-weight: 700; margin-top: var(--space-3); }
+.today-faq dd { margin: var(--space-1) 0 0 0; color: var(--color-text-muted); }
+.today-page ul.today-month li { font-size: var(--font-size-sm); }

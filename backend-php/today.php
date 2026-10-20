@@ -68,6 +68,35 @@ try {
             . ($x['occasions'] ? $occ($x['occasions']) : '') . '</li>';
     }
 
+    // This Jalali month's occasions (the page also answers "تقویم مهر ۱۴۰۵").
+    [, $tjm, $tjd] = tj_jalali((int)$now->format('Y'), (int)$now->format('n'), (int)$now->format('j'));
+    $monthList = '';
+    for ($d = (clone $now)->modify('-' . ($tjd - 1) . ' days'), $i = 0; $i < 31; $i++, $d->modify('+1 day')) {
+        [, $m2, $d2] = tj_jalali((int)$d->format('Y'), (int)$d->format('n'), (int)$d->format('j'));
+        if ($m2 !== $tjm) break;
+        $x = $describe($d);
+        foreach ($x['occasions'] as $o) {
+            $monthList .= '<li' . ($o['holiday'] ? ' class="holiday"' : '') . '><b>' . tj_h($x['jalali']) . '</b> — ' . tj_h($o['title'])
+                . ($o['holiday'] ? ' <span class="today-tag">' . ($fa ? 'تعطیل' : 'holiday') . '</span>' : '') . '</li>';
+        }
+    }
+    $monthName = $fa ? TJ_JALALI_MONTHS[$tjm - 1] . ' ' . tj_fa_digits((string)$today['jy']) : TJ_JALALI_MONTHS_EN[$tjm - 1] . ' ' . $today['jy'];
+
+    // Short questions and answers people search for (also as FAQPage data).
+    $occNames = implode($fa ? '، ' : ', ', array_map(function ($o) { return $o['title']; }, $today['occasions']));
+    $faq = $fa ? [
+        ['امروز چندمه؟', "امروز {$today['weekday']} {$today['jalali']} است."],
+        ['امروز به قمری چه تاریخیه؟', "امروز به قمری {$today['hijri']} است (بر اساس تقویم رسمی کشور)."],
+        ['امروز به میلادی چندمه؟', "امروز به میلادی {$today['gregorian']} است."],
+        ['امروز تعطیله؟', ($holiday ? 'بله، امروز تعطیل رسمی است.' : 'نه، امروز تعطیل رسمی نیست.') . ($occNames !== '' ? " مناسبت امروز: $occNames." : '')],
+    ] : [
+        ["What is today's date in Iran?", "Today is {$today['weekday']} {$today['jalali']} in the Solar Hijri (Persian) calendar."],
+        ['What is the Hijri date today?', "Today is {$today['hijri']} in the Hijri calendar (Iran's official calendar)."],
+        ['What is the Gregorian date today?', "Today is {$today['gregorian']}."],
+        ['Is today a holiday in Iran?', ($holiday ? 'Yes, today is an official holiday in Iran.' : 'No, today is not an official holiday in Iran.') . ($occNames !== '' ? " Today's occasions: $occNames." : '')],
+    ];
+    $faqHtml = '<dl class="today-faq">' . implode('', array_map(function ($q) { return '<dt>' . tj_h($q[0]) . '</dt><dd>' . tj_h($q[1]) . '</dd>'; }, $faq)) . '</dl>';
+
     $T = $fa
         ? ['h1' => 'تاریخ امروز', 'solar' => 'خورشیدی (شمسی)', 'lunar' => 'قمری', 'greg' => 'میلادی', 'occ' => 'مناسبت‌های امروز', 'week' => 'هفت روز آینده',
            'off' => 'امروز تعطیل رسمیه.', 'on' => 'امروز تعطیل رسمی نیست.', 'cta' => 'دیدن تقویم کامل و برنامه‌ریزی روزت در توجیبی',
@@ -89,6 +118,8 @@ try {
         . '<p class="today-status' . ($holiday ? ' off' : '') . '">' . ($holiday ? $T['off'] : $T['on']) . ' · ' . tj_h($T['nowruz']) . '</p>'
         . '<h2>' . $T['occ'] . '</h2>' . $occ($today['occasions'])
         . '<h2>' . $T['week'] . '</h2><ul class="today-week">' . $week . '</ul>'
+        . ($monthList !== '' ? '<h2>' . ($fa ? 'مناسبت‌های ' : 'Occasions in ') . tj_h($monthName) . '</h2><ul class="today-occasions today-month">' . $monthList . '</ul>' : '')
+        . '<h2>' . ($fa ? 'پرسش‌های رایج' : 'Common questions') . '</h2>' . $faqHtml
         . '<p class="today-cta"><a class="btn btn-primary" href="/demo/">' . $T['cta'] . '</a></p>'
         . '<p class="today-note">' . $T['note'] . '</p>'
         . '</section>';
@@ -115,6 +146,9 @@ $ld = json_encode([
         ['@type' => 'BreadcrumbList', 'itemListElement' => [
             ['@type' => 'ListItem', 'position' => 1, 'name' => $fa ? 'توجیبی' : 'Toojibee', 'item' => "https://toojibee.ir/$lang/"],
             ['@type' => 'ListItem', 'position' => 2, 'name' => $T['h1'], 'item' => $url]]],
+        ['@type' => 'FAQPage', 'mainEntity' => array_map(function ($q) {
+            return ['@type' => 'Question', 'name' => $q[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q[1]]];
+        }, $faq)],
     ],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -128,7 +162,8 @@ $html = $put($html, '#(<meta (?:property|name)="(?:og:title|twitter:title)" cont
 $html = $put($html, '#(<link rel="canonical" href=")[^"]*(")#', $url);
 $html = $put($html, '#(<meta property="og:url" content=")[^"]*(")#', $url);
 $html = preg_replace('#<link rel="alternate" hreflang="[^"]+" href="[^"]*">\s*#', '', $html);
-$html = str_replace('</head>', '<link rel="alternate" hreflang="fa" href="https://toojibee.ir/fa/today/"><link rel="alternate" hreflang="en" href="https://toojibee.ir/en/today/">'
+$html = preg_replace('#<script type="application/ld\+json">.*?</script>\s*#s', '', $html); // the About page's own
+$html = str_replace('</head>', '<link rel="alternate" hreflang="fa" href="https://toojibee.ir/fa/today/"><link rel="alternate" hreflang="en" href="https://toojibee.ir/en/today/"><link rel="alternate" hreflang="x-default" href="https://toojibee.ir/fa/today/">'
     . '<script type="application/ld+json">' . $ld . '</script></head>', $html);
 $html = $put($html, '#(<a class="lang-switch" href=")[^"]*(")#', '/' . ($fa ? 'en' : 'fa') . '/today/');
 $html = $put($html, '#(<main id="main">).*?(</main>)#s', $main, 1);

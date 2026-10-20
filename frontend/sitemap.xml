@@ -47,16 +47,6 @@
     <xhtml:link rel="alternate" hreflang="fa" href="https://toojibee.ir/fa/terms/"/>
   </url>
   <url>
-    <loc>https://toojibee.ir/en/download/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://toojibee.ir/en/download/"/>
-    <xhtml:link rel="alternate" hreflang="fa" href="https://toojibee.ir/fa/download/"/>
-  </url>
-  <url>
-    <loc>https://toojibee.ir/fa/download/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://toojibee.ir/en/download/"/>
-    <xhtml:link rel="alternate" hreflang="fa" href="https://toojibee.ir/fa/download/"/>
-  </url>
-  <url>
     <loc>https://toojibee.ir/en/guide/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://toojibee.ir/en/guide/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://toojibee.ir/fa/guide/"/>

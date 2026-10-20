@@ -96,6 +96,18 @@ $html = $put($html, '#(<meta (?:property|name)="(?:og:title|twitter:title)" cont
 $html = $put($html, '#(<link rel="canonical" href=")[^"]*(")#', $url);
 $html = $put($html, '#(<meta property="og:url" content=")[^"]*(")#', $url);
 $html = preg_replace('#<link rel="alternate" hreflang="[^"]+" href="[^"]*">\s*#', '', $html);
+$html = preg_replace('#<script type="application/ld\+json">.*?</script>\s*#s', '', $html); // the About page's own
+// An empty list is a thin page: keep it out of search until there's something to read.
+if ($slug === '' && $cards === '') $html = str_replace('</head>', '<meta name="robots" content="noindex, follow"></head>', $html);
+else $html = str_replace('</head>', '<script type="application/ld+json">' . json_encode($slug === ''
+    ? ['@context' => 'https://schema.org', '@type' => 'CollectionPage', 'name' => $title, 'url' => $url, 'inLanguage' => $lang]
+    : ['@context' => 'https://schema.org', '@type' => 'Article', 'headline' => $a['title'], 'description' => $desc, 'url' => $url, 'inLanguage' => $lang,
+       'datePublished' => $a['published_at'] ? gmdate('c', strtotime($a['published_at'] . ' UTC')) : null,
+       'dateModified' => gmdate('c', strtotime(($a['updated_at'] ?? $a['published_at']) . ' UTC')),
+       'image' => $a['cover'] ? 'https://toojibee.ir' . $a['cover'] : 'https://toojibee.ir/assets/icons/og-image.png',
+       'author' => ['@type' => 'Organization', 'name' => $T['site'], 'url' => 'https://toojibee.ir/'],
+       'publisher' => ['@type' => 'Organization', 'name' => $T['site'], 'logo' => ['@type' => 'ImageObject', 'url' => 'https://toojibee.ir/assets/icons/logo-mark.png']]],
+    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script></head>', $html);
 $html = $put($html, '#(<a class="lang-switch" href=")[^"]*(")#', $other);
 $html = $put($html, '#(<main id="main">).*?(</main>)#s', $main, 1);
 $html = tj_footer_with_articles($html, $lang);
