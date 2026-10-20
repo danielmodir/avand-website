@@ -21,6 +21,7 @@ function openLayers(){
     layers.push(...chain);
   }
   if(state.deskFull) layers.push('deskfull');
+  if(state.calFull) layers.push('calfull');
   if(state.daySheetOpen) layers.push('daysheet');
   if(state.navExpanded) layers.push('fab');
   if(document.getElementById('period-quiz-sheet')?.classList.contains('show')) layers.push('quiz');
@@ -42,6 +43,7 @@ function closeLayer(layer){
   if(layer === 'fab'){ state.navExpanded = false; render(); return; }
   if(layer === 'daysheet'){ state.daySheetOpen = false; render(); return; }
   if(layer === 'deskfull'){ state.deskFull = false; render(); return; }
+  if(layer === 'calfull'){ state.calFull = false; render(); return; }
   if(layer.startsWith('menu:')){
     const parent = MENU_PARENT[layer.slice(5)];
     if(parent) state.menuSubView = parent;

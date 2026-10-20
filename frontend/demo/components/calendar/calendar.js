@@ -138,6 +138,7 @@ function renderHomeCalWidget(fullScreen){
         <span class="cal-label" id="home-cal-month-label">${disp.monthLabel}</span>
         <span class="cal-label" id="home-cal-year-label">${disp.yearLabel}</span>
         <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="home-next-month" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
+        ${calFullBtnHtml()}
         ${monthDropdown}${yearDropdown}
       </div>
       <div class="weekday-header">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
@@ -243,6 +244,7 @@ function renderCalendar(){
         <span class="cal-label" id="cal-month-label" data-action="tap-month">${disp.monthLabel}</span>
         <span class="cal-label" id="cal-year-label" data-action="tap-year">${disp.yearLabel}</span>
         <div class="cal-corner-arrow ${lang()==='fa'?'left':'right'}" data-action="${nextAction}" aria-label="${t('next')}">${lang()==='fa'?ICONS.chevronLeft:ICONS.chevronRight}</div>
+        ${calFullBtnHtml()}
         ${monthDropdown}${yearDropdown}
       </div>
       <div class="cal-mode-tabs">
@@ -254,6 +256,128 @@ function renderCalendar(){
     </div>
   `;
 }
+
+/* ============ FULL-SCREEN MONTH (like Google Calendar's month view) ============
+   The expand button on either calendar (phone widget / desktop column)
+   opens the month over the whole app: big day cells, each listing that
+   day's occasions, events and tasks. A chip opens the item's editor;
+   tapping a day picks it and returns to the normal view on that day.
+   Back (js/core/back-nav.js), the button or Esc closes it. */
+const CAL_EXPAND_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 4h7v2H7.4l4.3 4.3-1.4 1.4L6 7.4V11H4V4zm16 16h-7v-2h3.6l-4.3-4.3 1.4-1.4 4.3 4.3V13h2v7z"/></svg>';
+const CAL_SHRINK_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 4h2v7H4V9h3.6L3.3 4.7l1.4-1.4L9 7.6V4zm6 16h-2v-7h7v2h-3.6l4.3 4.3-1.4 1.4-4.3-4.3V20z"/></svg>';
+
+function calFullBtnHtml(){
+  return `<button type="button" class="cal-full-btn" data-action="toggle-cal-full" aria-label="${t('calFull')}" title="${t('calFull')}">${CAL_EXPAND_SVG}</button>`;
+}
+
+function calFullChips(day){
+  const key = dateKey(day);
+  const chips = [];
+  if(pref('occasionsEnabled')){
+    (visibleOccasionsForDate(day) || []).forEach(o => chips.push(
+      `<span class="cf-chip cf-occ ${o.is_holiday?'holiday':''}">${escapeHtml(o.event_name)}</span>`));
+  }
+  const { tasks, events } = itemsForDate(day);
+  sortEvents(events).forEach(e => {
+    const time = e.notification?.type === 'time' ? e.notification.time : '';
+    chips.push(`<span class="cf-chip cf-event" data-action="edit-item" data-type="event" data-id="${e.id}">${time ? `<b dir="ltr">${time}</b> ` : ''}${escapeHtml(e.title)}</span>`);
+  });
+  tasks.forEach(tk => {
+    const done = taskStatusOn(tk, key) === 'done';
+    chips.push(`<span class="cf-chip cf-task ${done?'done':''}" data-action="edit-item" data-type="task" data-id="${tk.id}">${escapeHtml(tk.title)}</span>`);
+  });
+  return chips;
+}
+
+function renderCalFull(){
+  const c = state.calFullCursor || state.homeDate;
+  const cells = monthMatrix(c);
+  const rows = cells.length / 7;
+  const disp = displayMonthYear(c);
+  const limit = window.innerWidth < 960 ? 2 : 4; // chips per day before "+n"
+  const fa = lang() === 'fa';
+  const cellHtml = day => {
+    const chips = calFullChips(day);
+    const shown = chips.length > limit + 1 ? chips.slice(0, limit) : chips;
+    const more = chips.length - shown.length;
+    return `<div class="cf-cell ${cellInCurrentMonth(day, c)?'':'other-month'} ${sameDay(day, today)?'today':''} ${sameDay(day, state.homeDate)?'selected':''} ${isHolidayOn(day)?'holiday':''}" data-action="cal-full-pick" data-date="${dateKey(day)}" role="button" tabindex="0" aria-label="${dayLabel(day)}">
+      <div class="cf-head">${dayCellDateHtml(day)}</div>
+      <div class="cf-chips">${shown.join('')}${more ? `<span class="cf-more">+${dig(more)}</span>` : ''}</div>
+    </div>`;
+  };
+  return `
+    <div class="cal-full" dir="${fa?'rtl':'ltr'}">
+      <div class="cf-top">
+        <button type="button" class="cal-full-btn cf-exit" data-action="toggle-cal-full" aria-label="${t('deskExitFull')}" title="${t('deskExitFull')}">${CAL_SHRINK_SVG}</button>
+        <div class="cf-nav">
+          <button type="button" class="cf-arrow" data-action="cal-full-step" data-dir="-1" aria-label="${t('prev')}">${fa?ICONS.chevronRight:ICONS.chevronLeft}</button>
+          <h2 class="cf-title" id="cf-title">${disp.monthLabel} ${disp.yearLabel}</h2>
+          <button type="button" class="cf-arrow" data-action="cal-full-step" data-dir="1" aria-label="${t('next')}">${fa?ICONS.chevronLeft:ICONS.chevronRight}</button>
+        </div>
+        <button type="button" class="cf-today" data-action="cal-full-today">${t('today')}</button>
+      </div>
+      <div class="weekday-header cf-weekdays">${weekdayOrder().map(i=>`<span>${weekdayShort(i)}</span>`).join('')}</div>
+      <div class="cf-grid" id="cf-grid" style="grid-template-rows:repeat(${rows}, minmax(0, 1fr));">${cells.map(cellHtml).join('')}</div>
+    </div>`;
+}
+
+/* Keeps #cal-full-root (inside #device, so the app's click handler
+   covers it) in step with state.calFull. */
+function syncCalFull(){
+  let root = document.getElementById('cal-full-root');
+  if(!state.calFull){ if(root) root.remove(); document.getElementById('device').classList.remove('cal-full-open'); return; }
+  const opening = !root;
+  if(!root){
+    root = document.createElement('div');
+    root.id = 'cal-full-root';
+    document.getElementById('device').appendChild(root);
+  }
+  root.innerHTML = renderCalFull();
+  root.classList.toggle('cf-enter', opening);
+  document.getElementById('device').classList.add('cal-full-open');
+  attachCalFullGestures(root);
+}
+
+function stepCalFull(dir){
+  state.calFullCursor = stepMonth(state.calFullCursor || state.homeDate, dir);
+  render();
+  const grid = document.getElementById('cf-grid');
+  if(grid && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    // Slide in from the side the arrow points to (mirrored in Persian).
+    const from = (dir > 0) !== (lang() === 'fa') ? 24 : -24;
+    grid.animate([{ transform:`translateX(${from}px)`, opacity:.4 }, { transform:'none', opacity:1 }], { duration:240, easing:'cubic-bezier(.22,1,.36,1)' });
+  }
+}
+
+/* Horizontal swipe / trackpad over the grid changes the month, same
+   directions as the small calendars (calDragDir / calWheelDir). */
+function attachCalFullGestures(root){
+  const grid = root.querySelector('#cf-grid');
+  if(!grid) return;
+  let x0 = null, y0 = null, lastWheel = 0;
+  grid.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; });
+  grid.addEventListener('pointerup', e => {
+    if(x0 === null) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    x0 = null;
+    if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      grid.dataset.swiped = '1'; // the click that follows isn't a day pick
+      setTimeout(() => { delete grid.dataset.swiped; }, 0);
+      stepCalFull(calDragDir(dx));
+    }
+  });
+  grid.addEventListener('wheel', e => {
+    if(Math.abs(e.deltaX) <= Math.abs(e.deltaY) || Math.abs(e.deltaX) < 30 || Date.now() - lastWheel < 400) return;
+    lastWheel = Date.now();
+    stepCalFull(calWheelDir(e.deltaX));
+  }, { passive: true });
+}
+
+document.addEventListener('keydown', e => {
+  if(!state.calFull || state.popupOpen || e.target.closest?.('input, textarea')) return;
+  if(e.key === 'Escape'){ state.calFull = false; render(); }
+  else if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') stepCalFull((e.key === 'ArrowRight') !== (lang() === 'fa') ? 1 : -1);
+});
 
 function shiftWeek(dir){ state.calCursor = addDays(state.calCursor, 7*dir); render(); }
 

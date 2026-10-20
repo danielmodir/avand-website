@@ -1,6 +1,7 @@
 const state = {
   calMode: 'month',       // month | week
   calCursor: new Date(today),
+  calFull: false, calFullCursor: null, // full-screen month view (calendar.js renderCalFull)
   selectedDate: new Date(today),
   daySheetOpen: false,
   daySheetDate: new Date(today),

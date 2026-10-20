@@ -7,6 +7,7 @@ const GUEST_ACTIONS = new Set([
   'pick-month','pick-year','tap-month','tap-year','tap-sec-month','tap-sec-year','pick-sec-month','pick-sec-year',
   'pick-day','close-day-sheet','go-today','goto-desktop','desktop-step','toggle-desktop-title-menu',
   'toggle-section','go-landing','toggle-app-theme','retry-boot','toggle-desk-full',
+  'toggle-cal-full','cal-full-step','cal-full-today','cal-full-pick',
   'open-auth','close-auth','auth-tab','auth-submit','auth-google',
 ]);
 
@@ -54,6 +55,22 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
   if(action === 'close-popup'){ closePopup(); return; }
   if(action === 'toggle-desk-full'){ state.deskFull = !state.deskFull; haptic(10); render(); return; }
+  // Full-screen month (calendar.js renderCalFull): opens on the month
+  // the calendar it was opened from is showing.
+  if(action === 'toggle-cal-full'){
+    state.calFull = !state.calFull;
+    if(state.calFull) state.calFullCursor = new Date(el.closest('#page-calendar') ? state.calCursor : state.homeDate);
+    state.monthDropdownOpen = false; state.yearDropdownOpen = false;
+    haptic(10); render(); return;
+  }
+  if(action === 'cal-full-step'){ stepCalFull(Number(el.dataset.dir)); return; }
+  if(action === 'cal-full-today'){ state.calFullCursor = new Date(today); render(); return; }
+  if(action === 'cal-full-pick'){
+    if(el.closest('#cf-grid')?.dataset.swiped) return;
+    const day = parseDateKey(el.dataset.date);
+    state.homeDate = day; state.calCursor = new Date(day);
+    state.calFull = false; haptic(10); render(); return;
+  }
   if(action === 'open-menu'){
     /* Tapping the same nav button that's already open closes the panel
        instead of re-opening to the same view — the only way to close it

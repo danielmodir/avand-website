@@ -238,3 +238,70 @@
 .period-desk-active .day-cell.ph::after{ opacity:1; }
 @media (prefers-reduced-motion:reduce){ .day-cell.ph::after{ transition:none; } }
 .day-cell.rng-mark .day-cell-sub{ opacity:.75; }
+/* ===== full-screen month (calendar.js renderCalFull) =====
+   Over the whole app like Google Calendar's month view: rows share the
+   height, each day lists its occasions, events and tasks as chips. */
+.cal-full-btn{
+  position:absolute; top:6px; inset-inline-end:40px; width:28px; height:28px; border-radius:9px; border:none;
+  background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:color .2s ease, background-color .2s ease, transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.cal-full-btn svg{ width:16px; height:16px; }
+.cal-full-btn:hover{ color:var(--primary); background:var(--primary-soft); }
+.cal-full-btn:active{ transform:scale(.9); }
+#cal-full-root{ position:absolute; inset:0; z-index:34; }
+#cal-full-root.cf-enter .cal-full{ animation:cal-full-in .3s cubic-bezier(.22,1,.36,1); }
+@keyframes cal-full-in{ from{ opacity:0; transform:scale(.97); } to{ opacity:1; transform:none; } }
+.device.cal-full-open #back-today-btn{ display:none !important; }
+.cal-full{
+  position:absolute; inset:0; display:flex; flex-direction:column; gap:8px;
+  background:var(--bg); padding:12px 10px 92px; /* phone: room for the bottom bar */
+}
+.cf-top{ display:flex; align-items:center; gap:8px; }
+.cf-top .cal-full-btn.cf-exit{ position:static; flex:0 0 auto; width:34px; height:34px; color:var(--text); }
+.cf-nav{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; }
+.cf-title{ margin:0; font-size:19px; font-weight:800; white-space:nowrap; min-width:150px; text-align:center; }
+.cf-arrow{ width:34px; height:34px; border-radius:10px; border:none; background:transparent; color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.cf-arrow:hover{ color:var(--primary); background:var(--primary-soft); }
+.cf-arrow svg{ width:16px; height:16px; }
+.cf-today{ flex:0 0 auto; border:1px solid var(--border); background:var(--bg-soft); color:var(--text); font:inherit; font-size:12px; font-weight:700; border-radius:999px; padding:6px 14px; cursor:pointer; }
+.cf-today:hover{ color:var(--primary); border-color:var(--primary); }
+.cf-weekdays{ margin:0; }
+.cf-grid{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:4px; touch-action:pan-y; }
+.cf-cell{
+  min-width:0; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:3px;
+  background:var(--bg-soft); border:1px solid var(--border); border-radius:12px; padding:5px 4px; cursor:pointer;
+  transition:border-color .2s ease, background-color .2s ease;
+}
+.cf-cell:hover{ border-color:color-mix(in srgb, var(--primary) 45%, var(--border)); }
+.cf-cell.other-month{ opacity:.42; }
+.cf-cell.selected{ border-color:var(--primary); }
+.cf-head{ display:flex; align-items:baseline; justify-content:space-between; gap:4px; padding:0 2px; }
+.cf-head .day-cell-num{ font-size:14px; font-weight:800; line-height:1.6; }
+.cf-head .day-cell-sub{ font-size:9.5px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cf-cell.today .cf-head .day-cell-num{ background:var(--primary); color:var(--on-primary); border-radius:999px; padding:0 7px; }
+.cf-cell.holiday .cf-head .day-cell-num{ color:var(--danger); }
+.cf-cell.today.holiday .cf-head .day-cell-num{ color:var(--on-primary); }
+.cf-chips{ display:flex; flex-direction:column; gap:2px; min-height:0; overflow:hidden; }
+.cf-chip{
+  display:block; font-size:10.5px; line-height:1.5; padding:1px 5px; border-radius:6px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:0 0 auto;
+}
+.cf-chip b{ font-weight:800; }
+.cf-event{ background:var(--primary); color:var(--on-primary); cursor:pointer; }
+.cf-task{ background:var(--primary-soft); color:var(--text); cursor:pointer; }
+.cf-task.done{ text-decoration:line-through; opacity:.6; }
+.cf-occ{ color:var(--text-muted); padding-inline:4px; }
+.cf-occ.holiday{ background:var(--danger-soft); color:var(--danger); }
+.cf-more{ font-size:10px; font-weight:700; color:var(--text-muted); padding:0 5px; }
+@media (min-width:960px){
+  /* The toolbar is a rail on the right edge here. */
+  .cal-full{ padding:18px 78px 18px 22px; gap:10px; }
+  .cf-title{ font-size:22px; }
+  .cf-grid{ gap:6px; }
+  .cf-cell{ padding:7px 7px; border-radius:14px; gap:4px; }
+  .cf-head .day-cell-num{ font-size:16px; }
+  .cf-head .day-cell-sub{ font-size:11px; }
+  .cf-chip{ font-size:12px; padding:2px 7px; }
+}
+@media (prefers-reduced-motion:reduce){ #cal-full-root.cf-enter .cal-full{ animation:none; } }

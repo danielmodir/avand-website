@@ -33,6 +33,7 @@ function render(){
   // The desk's full-screen button (workspace.js); off when there's no desk.
   if(state.deskFull && !document.querySelector('.desktop-box:not(.desktop-box-empty)')) state.deskFull = false;
   document.getElementById('device').classList.toggle('desk-full', !!state.deskFull);
+  syncCalFull(); // the full-screen month (calendar.js)
 
   renderDaySheet();
   attachCalendarGestures();
