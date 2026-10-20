@@ -1,4 +1,5 @@
 /* Daily occasions (مناسبت‌ها) and Iran's official Hijri month starts.
+   (PHP backend: the month starts come from GET /calendar/hijri-months.)
 
    With a backend (js/config.js apiBase): GET /calendar/occasions?year=…
    returns every occasion of the Jalali year already on its real date,
@@ -42,9 +43,12 @@ async function loadOccasionsFromApi(){
 }
 
 async function loadOccasionsFromFiles(){
+  // Official Hijri month starts: from our own API on the live site (kept up
+  // to date from the admin panel after each moon sighting), else the file.
+  const hijriFile = () => fetch('../assets/data/hijri-months.json').then(r => r.json()).catch(() => ({ months: [] }));
   const [occasions, hijri] = await Promise.all([
     fetch('../assets/data/occasions.json').then(r => r.json()),
-    fetch('../assets/data/hijri-months.json').then(r => r.json()).catch(() => ({ months: [] })),
+    Cloud.hijriMonths ? Cloud.hijriMonths().then(d => (d && d.months && d.months.length) ? d : hijriFile()).catch(hijriFile) : hijriFile(),
   ]);
   setHijriMonthStarts(hijri.months);
   const CAL = { shamsi:'jalali', gregorian:'gregorian', hijri:'hijri' };

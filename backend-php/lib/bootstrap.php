@@ -165,6 +165,20 @@ function tj_migrate(PDO $db): void {
         try { $db->exec("ALTER TABLE tj_articles ADD COLUMN placements VARCHAR(200) NOT NULL DEFAULT '[\"list\"]'"); } catch (PDOException $e) { /* already there */ }
         $db->exec('INSERT INTO tj_schema (version) VALUES (7)');
     }
+    if ($v < 8) {
+        // Official Hijri month starts (lib/calendar.php), seeded from the
+        // bundled dataset on first use and corrected from the panel.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_hijri_months (
+            hijri_year INT NOT NULL,
+            hijri_month INT NOT NULL,
+            starts_on DATE NOT NULL,
+            forecast INT NOT NULL DEFAULT 0,
+            updated_at DATETIME NOT NULL,
+            updated_by $fk NULL,
+            PRIMARY KEY (hijri_year, hijri_month)
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (8)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

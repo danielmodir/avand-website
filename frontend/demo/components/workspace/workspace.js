@@ -87,6 +87,11 @@ function renderDesktops(d, data){
     ${window.innerWidth < 960 ? renderHomeCalWidget() : ''}
     <div class="desktop-box ${activeKey==='periodDesktop'?'period-mode':''}">
       <div class="desktop-box-topbar">
+        <button type="button" class="desk-full-btn" data-action="toggle-desk-full" aria-pressed="${!!state.deskFull}" aria-label="${t(state.deskFull ? 'deskExitFull' : 'deskFull')}" title="${t(state.deskFull ? 'deskExitFull' : 'deskFull')}">
+          ${state.deskFull
+            ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 4h2v7H4V9h3.6L3.3 4.7l1.4-1.4L9 7.6V4zm6 16h-2v-7h7v2h-3.6l4.3 4.3-1.4 1.4-4.3-4.3V20z"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 4h7v2H7.4l4.3 4.3-1.4 1.4L6 7.4V11H4V4zm16 16h-7v-2h3.6l-4.3-4.3 1.4-1.4 4.3 4.3V13h2v7z"/></svg>'}
+        </button>
         <div class="desktop-box-title-group">
           <button type="button" class="desktop-nav-arrow ${atStart?'disabled':''}" data-action="desktop-step" data-dir="-1" aria-label="${t('prev')}">${ICONS.chevronLeft}</button>
           <div class="desktop-box-title" id="desktop-box-title" data-action="toggle-desktop-title-menu">${t(activeKey)}</div>

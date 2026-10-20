@@ -18,6 +18,7 @@ body{ margin:0; min-height:100vh; background:var(--color-bg); color:var(--color-
 .brand img{ width:36px; height:36px; }
 .sub{ color:var(--color-text-muted); font-size:var(--font-size-xs); margin:0 0 16px; }
 label{ display:block; font-size:var(--font-size-xs); font-weight:700; margin:12px 0 6px; }
+input[type=date]{ padding:8px 10px; border-radius:var(--radius-sm); border:2px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text); font:inherit; }
 input[type=email], input[type=password], input[type=text]{ width:100%; padding:12px 14px; border-radius:var(--radius-md); border:2px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text); font:inherit; }
 input:focus{ outline:none; border-color:var(--color-primary); }
 input[dir="ltr"]{ text-align:left; }
@@ -202,6 +203,19 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <h2>عکس‌ها</h2>
         <p class="hint" id="ct-img-hint"></p>
         <div class="slots" id="ct-slots"></div>
+      </div>
+      <div class="card" id="hijri-card">
+        <h2>تقویم قمری (شروع رسمی ماه‌ها)</h2>
+        <p class="hint">طبق تقویم رسمی (مرکز تقویم مؤسسه ژئوفیزیک). اگه بعد از رؤیت هلال، شروع ماهی یه روز جابه‌جا شد، تاریخش رو اینجا درست کن؛ برای سال بعد هم «ماه بعدی» رو اضافه کن. ماه‌ها باید پشت سر هم و ۲۹ یا ۳۰ روزه باشن. بیرون از این فهرست، برنامه با محاسبه‌ی هم‌تراز با همین تاریخ‌ها جلو می‌ره.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>ماه</th><th>شروع (میلادی)</th><th>طول</th><th>پیش‌بینی</th><th></th></tr></thead>
+          <tbody id="hijri-rows"></tbody>
+        </table></div>
+        <div class="actions mt">
+          <button class="btn ghost" id="hijri-add" type="button">+ ماه بعدی</button>
+          <button class="btn" id="hijri-save" type="button">ذخیره‌ی تقویم قمری</button>
+        </div>
+        <div class="alert hidden" id="hijri-result"></div>
       </div>
       <p class="note" id="ct-last"></p>
     </section>
@@ -397,6 +411,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     article_created: ['مقاله‌ی جدید', ''], article_edited: ['ویرایش مقاله', ''], article_submitted: ['فرستادن مقاله برای بررسی', 'warn'],
     article_published: ['انتشار مقاله', 'good'], article_rejected: ['رد مقاله', 'bad'], article_unpublished: ['برداشتن مقاله از سایت', 'warn'],
     article_deleted: ['حذف مقاله', 'bad'], article_cover: ['کاور مقاله', ''],
+    hijri_months_saved: ['ذخیره‌ی تقویم قمری', 'warn'],
     content_saved: ['ذخیره‌ی متن سایت', 'warn'], image_uploaded: ['آپلود عکس', 'warn'], image_reset: ['برگشت عکس به پیش‌فرض', 'warn'],
   };
   var USTATUS = { active: ['فعال', 'good'], suspended: ['معلق', 'bad'] };
@@ -597,6 +612,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         ? 'عکس خودکار به اندازه‌ی جاش برش می‌خوره، کوچیک می‌شه و به WebP تبدیل می‌شه تا سایت سبک بمونه.'
         : 'این هاست ابزار تبدیل عکس نداره؛ عکس همون‌طور که هست ذخیره می‌شه، پس خودت سبکش کن.');
       renderSlots();
+      loadHijri().catch(onAuthError);
       $('ct-last').textContent = c.last_change ? 'آخرین تغییر: ' + when(c.last_change.updated_at) + (c.last_change.email ? ' · ' + c.last_change.email : '') : '';
     });
   }
@@ -641,6 +657,62 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw { status: r.status, code: d.error }; return d; });
     }).then(loadContent).catch(onAuthError).catch(function (e) { alert(errorText(e)); renderSlots(); });
   }
+
+  /* ---- Hijri month starts ---- */
+
+  var HIJRI_NAMES = ['محرم','صفر','ربیع‌الاول','ربیع‌الثانی','جمادی‌الاول','جمادی‌الثانی','رجب','شعبان','رمضان','شوال','ذیقعده','ذیحجه'];
+  var hijriRows = [];
+  var dayDiff = function (a, b) { return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 864e5); };
+
+  function loadHijri() {
+    return api('GET', '/calendar/hijri-months').then(function (r) { hijriRows = r.months; renderHijri(); });
+  }
+
+  function renderHijri() {
+    var body = $('hijri-rows');
+    body.textContent = '';
+    hijriRows.forEach(function (m, i) {
+      var tr = el('tr');
+      tr.appendChild(el('td', '', HIJRI_NAMES[m.hijri_month - 1] + ' ' + fa(m.hijri_year).replace(/٬/g, '')));
+      var td = el('td'), inp = el('input'); inp.type = 'date'; inp.value = m.starts_on; inp.dir = 'ltr';
+      inp.addEventListener('change', function () { m.starts_on = inp.value; renderHijri(); });
+      td.appendChild(inp); tr.appendChild(td);
+      var next = hijriRows[i + 1];
+      var len = next ? dayDiff(m.starts_on, next.starts_on) : null;
+      tr.appendChild(el('td', len === null ? 'hint' : (len === 29 || len === 30 ? '' : 'tag bad'), len === null ? '—' : fa(len) + ' روز'));
+      var tdF = el('td'), cb = el('input'); cb.type = 'checkbox'; cb.checked = !!m.forecast;
+      cb.addEventListener('change', function () { m.forecast = cb.checked; });
+      tdF.appendChild(cb); tr.appendChild(tdF);
+      var tdD = el('td');
+      if (i === hijriRows.length - 1 && hijriRows.length > 1) {
+        var del = el('button', 'btn ghost', 'حذف'); del.type = 'button';
+        del.addEventListener('click', function () { hijriRows.pop(); renderHijri(); });
+        tdD.appendChild(del);
+      }
+      tr.appendChild(tdD);
+      body.appendChild(tr);
+    });
+  }
+
+  $('hijri-add').addEventListener('click', function () {
+    var last = hijriRows[hijriRows.length - 1];
+    if (!last) return;
+    var d = new Date(last.starts_on + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + 30);
+    hijriRows.push({ hijri_year: last.hijri_month === 12 ? last.hijri_year + 1 : last.hijri_year, hijri_month: last.hijri_month === 12 ? 1 : last.hijri_month + 1,
+      starts_on: d.toISOString().slice(0, 10), forecast: true });
+    renderHijri();
+  });
+  $('hijri-save').addEventListener('click', function () {
+    var out = $('hijri-result'), b = $('hijri-save');
+    b.disabled = true;
+    api('PUT', '/calendar/hijri-months', { months: hijriRows }).then(function (r) {
+      hijriRows = r.months; renderHijri();
+      out.className = 'alert ok'; out.textContent = 'ذخیره شد؛ برنامه از این به بعد همین تاریخ‌ها رو نشون می‌ده.';
+    }).catch(onAuthError).catch(function (e) {
+      out.className = 'alert error';
+      out.textContent = e && e.code === 'not_consecutive' ? 'ماه‌ها باید پشت سر هم و هر کدوم ۲۹ یا ۳۰ روزه باشن (مشکل از ' + (e.body && e.body.row) + ').' : errorText(e);
+    }).then(function () { b.disabled = false; });
+  });
 
   /* ---- articles ---- */
 

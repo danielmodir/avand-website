@@ -6,7 +6,7 @@ const GUEST_ACTIONS = new Set([
   'home-prev-month','home-next-month','home-pick-month','home-pick-year','set-cal-mode',
   'pick-month','pick-year','tap-month','tap-year','tap-sec-month','tap-sec-year','pick-sec-month','pick-sec-year',
   'pick-day','close-day-sheet','go-today','goto-desktop','desktop-step','toggle-desktop-title-menu',
-  'toggle-section','go-landing','toggle-app-theme','retry-boot',
+  'toggle-section','go-landing','toggle-app-theme','retry-boot','toggle-desk-full',
   'open-auth','close-auth','auth-tab','auth-submit','auth-google',
 ]);
 
@@ -53,6 +53,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
   if(action === 'close-popup'){ closePopup(); return; }
+  if(action === 'toggle-desk-full'){ state.deskFull = !state.deskFull; haptic(10); render(); return; }
   if(action === 'open-menu'){
     /* Tapping the same nav button that's already open closes the panel
        instead of re-opening to the same view — the only way to close it

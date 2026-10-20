@@ -14,6 +14,7 @@ require __DIR__ . '/../lib/admin_visits.php';
 require __DIR__ . '/../lib/admin_system.php';
 require __DIR__ . '/../lib/content.php';
 require __DIR__ . '/../lib/articles.php';
+require __DIR__ . '/../lib/calendar.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -57,6 +58,9 @@ $routes = [
     'GET /admin/visits'         => 'tj_admin_visits',
     'GET /content'              => 'tj_public_content',
     'GET /articles/featured'    => 'tj_public_featured_articles',
+    'GET /calendar/hijri-months'=> 'tj_public_hijri_months',
+    'GET /admin/calendar/hijri-months' => 'tj_admin_hijri_months',
+    'PUT /admin/calendar/hijri-months' => 'tj_admin_hijri_months_save',
     'GET /admin/content'        => 'tj_admin_content',
     'PUT /admin/content'        => 'tj_admin_content_save',
     'POST /admin/content/image' => 'tj_admin_content_image',

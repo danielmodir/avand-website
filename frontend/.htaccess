@@ -37,7 +37,17 @@ ErrorDocument 404 /404.html
   <FilesMatch "\.(html|webmanifest)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
-  <FilesMatch "\.(css|js|json|svg|png|jpg|webp|woff2)$">
+  # Every CSS/JS link carries ?v=<version> (bumped on each change) and the
+  # font files never change name: keep them a year, no revalidation —
+  # repeat visits then load almost nothing on slow networks.
+  <FilesMatch "\.(css|js|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  # Images and data keep a fixed name when replaced: a week / a day.
+  <FilesMatch "\.(svg|png|jpg|jpeg|webp|ico)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+  <FilesMatch "\.json$">
     Header set Cache-Control "public, max-age=86400, must-revalidate"
   </FilesMatch>
   <FilesMatch "^(robots\.txt|sitemap\.xml)$">

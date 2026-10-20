@@ -246,6 +246,8 @@
     // Banner picture/title from the admin panel (public, no sign-in).
     siteContent: function () { return request('GET', '/content', undefined, { auth: false }); },
     // Articles the admin panel placed on the app's desks (public).
+    // Official Hijri month starts (public; edited in the admin panel).
+    hijriMonths: function () { return request('GET', '/calendar/hijri-months', undefined, { auth: false }); },
     featuredArticles: function () { return request('GET', '/articles/featured', undefined, { auth: false }); },
     loadAll: loadAll,
     onStateChanged: schedulePush,

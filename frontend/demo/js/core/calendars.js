@@ -91,6 +91,23 @@ function setHijriMonthStarts(rows){
     .sort((a, b) => a.start - b.start);
 }
 
+/* Day 1 of a Hijri month by the tabular formula, as a Julian day. */
+function tabularHijriMonthStartJdn(hy, hm){
+  return Math.ceil(29.5*(hm-1)) + (hy-1)*354 + Math.floor((3+11*hy)/30) + ISLAMIC_EPOCH_JDN;
+}
+
+/* Outside the official table the formula is shifted to agree with the
+   nearest official month (the table's first month for earlier dates, its
+   last for later ones). Without this the boundary didn't line up: after
+   the last official month the calendar kept showing its day 30 and month
+   navigation got stuck there. 0 when there's no table. */
+function hijriShift(after){
+  if(!HIJRI_MONTH_STARTS.length) return 0;
+  const row = after ? HIJRI_MONTH_STARTS[HIJRI_MONTH_STARTS.length - 1] : HIJRI_MONTH_STARTS[0];
+  const s = row.start;
+  return gregorianToJDN(s.getFullYear(), s.getMonth()+1, s.getDate()) - tabularHijriMonthStartJdn(row.hy, row.hm);
+}
+
 function officialHijri(gy,gm,gd){
   const d = new Date(gy, gm-1, gd);
   for(let i = HIJRI_MONTH_STARTS.length - 1; i >= 0; i--){
@@ -98,14 +115,23 @@ function officialHijri(gy,gm,gd){
     if(row.start > d) continue;
     const offset = Math.round((d - row.start) / 86400000);
     const next = HIJRI_MONTH_STARTS[i+1];
-    const limit = next ? Math.round((next.start - row.start) / 86400000) : 30;
+    // The last official month ends where the (shifted) formula says the
+    // next one starts.
+    const nextStart = next ? next.start : (() => { const g = hijriToGregorian(row.hm === 12 ? row.hy + 1 : row.hy, row.hm === 12 ? 1 : row.hm + 1, 1); return new Date(g.gy, g.gm-1, g.gd); })();
+    const limit = Math.round((nextStart - row.start) / 86400000);
     return offset < Math.min(limit, 30) ? { hy: row.hy, hm: row.hm, hd: offset + 1 } : null;
   }
   return null;
 }
 
 function toHijri(gy,gm,gd){
-  return officialHijri(gy,gm,gd) || toHijriTabular(gy,gm,gd);
+  const official = officialHijri(gy,gm,gd);
+  if(official) return official;
+  if(!HIJRI_MONTH_STARTS.length) return toHijriTabular(gy,gm,gd);
+  // Before or after the table: the formula, shifted to meet it.
+  const after = new Date(gy, gm-1, gd) >= HIJRI_MONTH_STARTS[0].start;
+  const g = jdnToGregorian(gregorianToJDN(gy,gm,gd) - hijriShift(after));
+  return toHijriTabular(g.gy, g.gm, g.gd);
 }
 
 function toHijriTabular(gy,gm,gd){
@@ -138,8 +164,10 @@ function hijriToGregorian(hy,hm,hd){
     const d = addDays(row.start, hd - 1);
     return { gy: d.getFullYear(), gm: d.getMonth()+1, gd: d.getDate() };
   }
-  const jdn = hd + Math.ceil(29.5*(hm-1)) + (hy-1)*354 + Math.floor((3+11*hy)/30) + ISLAMIC_EPOCH_JDN - 1;
-  return jdnToGregorian(jdn);
+  // Not in the table: the formula, shifted to meet the nearest official month.
+  const first = HIJRI_MONTH_STARTS[0];
+  const after = !first || hy > first.hy || (hy === first.hy && hm >= first.hm);
+  return jdnToGregorian(tabularHijriMonthStartJdn(hy, hm) + hd - 1 + hijriShift(after));
 }
 
 const JALALI_MONTHS_FA = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];

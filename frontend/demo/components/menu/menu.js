@@ -1,6 +1,8 @@
 const MENU_PARENT = {
   'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
-  'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings', 'settings-period': 'settings',
+  'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings',
+  // Monthly-cycle settings live with the desks in Management (its gear), not in Settings.
+  'settings-period': 'admin',
   'settings-planning': 'admin', 'settings-occasions': 'admin'
 };
 
@@ -39,11 +41,12 @@ function renderMenu(){
 
 function renderProfilePage(){
   const p = state.profile;
-  const completedTasks = state.tasks.reduce((n, x) => n + (isRecurringTask(x)
-    ? Object.values(x.statusByDate || {}).filter(s => s === 'done').length
-    : (x.done ? 1 : 0)), 0);
-  const activeHabits = state.habits.length;
-  const checkins = state.habits.reduce((sum,h)=>sum+h.completedDates.length, 0);
+  // Today only: tasks done, habits done out of today's, tasks still left.
+  const dk = dateKey(today);
+  const todays = itemsForDate(today);
+  const completedTasks = todays.tasks.filter(x => taskStatusOn(x, dk) === 'done').length;
+  const remainingTasks = todays.tasks.length - completedTasks;
+  const habitsDone = todays.habits.filter(h => h.completedDates.includes(dk)).length;
   const displayName = p.username || p.name || '';
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   return `
@@ -72,9 +75,9 @@ function renderProfilePage(){
     </div>
 
     <div class="profile-stats">
-      <div class="profile-stat"><div class="num">${dig(completedTasks)}</div><div class="lbl">${t('tasksDone')}</div></div>
-      <div class="profile-stat"><div class="num">${dig(activeHabits)}</div><div class="lbl">${t('habits')}</div></div>
-      <div class="profile-stat"><div class="num">${dig(checkins)}</div><div class="lbl">${t('checkins')}</div></div>
+      <div class="profile-stat"><div class="num">${dig(completedTasks)}</div><div class="lbl">${t('tasksDoneToday')}</div></div>
+      <div class="profile-stat"><div class="num">${dig(habitsDone)}/${dig(todays.habits.length)}</div><div class="lbl">${t('habitsToday')}</div></div>
+      <div class="profile-stat"><div class="num">${dig(remainingTasks)}</div><div class="lbl">${t('tasksLeftToday')}</div></div>
     </div>
 
     <div class="section-title" style="margin-top:22px;">${t('accountInfo')}</div>
@@ -358,7 +361,6 @@ function renderSettingsList(){
     <div class="menu-list">
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings-general"><div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('generalSettings')}</div>${ICONS.chevronRightSmall}</div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings-calendar"><div class="menu-item-icon">${ICONS.calendarIcon}</div><div class="menu-item-label">${t('calendarSettings')}</div>${ICONS.chevronRightSmall}</div>
-      ${state.profile.gender === 'female' ? `<div class="menu-item-row" data-action="menu-nav" data-sub="settings-period"><div class="menu-item-icon">${ICONS.dropIcon}</div><div class="menu-item-label">${t('periodTracker')}</div>${ICONS.chevronRightSmall}</div>` : ''}
     </div>
   `;
 }
@@ -611,7 +613,7 @@ function updateNav(){
       const boxRect = boxEl.getBoundingClientRect();
       backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
       backBtn.style.bottom = 'auto';
-      backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight / 2) + 'px';
+      backBtn.style.top = (boxRect.bottom - backBtn.offsetHeight - BACK_TODAY_GAP) + 'px'; // above the edge, not on it
     }
   } else {
     /* Below 960px, the merged home widget IS the calendar (no separate

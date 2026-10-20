@@ -16,6 +16,34 @@
 .desktop-box-topbar{ flex:0 0 auto; display:flex; justify-content:flex-start; padding:10px 10px 0 10px; }
 .device.lang-fa .desktop-box-topbar{ justify-content:flex-end; }
 .desktop-box-title-group{ position:relative; display:flex; align-items:center; gap:4px; }
+/* Full-screen button: icon only, at the left of the desk's title bar. */
+.desk-full-btn{
+  flex:0 0 auto; margin-right:auto; width:26px; height:26px; border-radius:8px; border:none; background:transparent;
+  color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:color .2s ease, background-color .2s ease, transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.desk-full-btn svg{ width:16px; height:16px; }
+.desk-full-btn:hover{ color:var(--primary); background:var(--primary-soft); }
+.desk-full-btn:active{ transform:scale(.9); }
+.desktop-box-topbar{ align-items:center; }
+/* English: the title sits at the left, so the button goes to the right. */
+.device:not(.lang-fa) .desk-full-btn{ order:2; margin-right:0; margin-left:auto; }
+@media (max-width:959px){
+  /* Persian phones: the page dots move over to make room for the button. */
+  .device.lang-fa #page-home > .desktop-box .desktop-dots{ inset-inline-start:44px; }
+}
+/* Full screen: the desk takes the whole page; the calendar, banner and
+   back-to-today pill step aside until the button (or Back) restores it. */
+.device.desk-full #page-home > .home-cal-widget,
+.device.desk-full .app-banner,
+.device.desk-full #back-today-btn{ display:none !important; }
+.device.desk-full #page-home > .desktop-box{ border-radius:0; border-left-width:0; border-right-width:0; animation:desk-full-in .28s cubic-bezier(.22,1,.36,1); }
+@keyframes desk-full-in{ from{ opacity:.6; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+@media (min-width:960px){
+  .device.desk-full .pager{ grid-template-columns:1fr; }
+  .device.desk-full #page-calendar{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){ .device.desk-full #page-home > .desktop-box{ animation:none; } }
 .desktop-box-title{ flex:0 1 auto; text-align:left; font-size:13px; font-weight:700; color:var(--text-muted); cursor:pointer; }
 .device.lang-fa .desktop-box-title{ text-align:right; }
 .desktop-nav-arrow{ flex:0 0 auto; width:24px; height:24px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:color .2s ease; }
@@ -46,6 +74,9 @@
 .occasion-row{ padding:12px 14px; border-radius:12px; background:var(--card); border:1px solid var(--border); margin-bottom:8px; font-size:13px; display:flex; align-items:center; gap:8px; }
 .occasion-row.holiday{ color:var(--danger); border-color:var(--danger-soft); }
 .occasion-holiday-dot{ width:6px; height:6px; border-radius:50%; background:var(--danger); flex:0 0 auto; }
+/* Persian: occasions read right to left (the app's frame is LTR by default). */
+.device.lang-fa .occasion-row{ direction:rtl; text-align:right; }
+.device.lang-fa .desk-articles, .device.lang-fa .desk-article{ direction:rtl; text-align:right; }
 /* ===== dashboard-style stat card (reference: colorful ring + mini stats) ===== */
 .stat-card{
   display:flex; align-items:center; gap:18px; background:var(--card);

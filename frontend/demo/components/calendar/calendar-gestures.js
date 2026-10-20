@@ -573,8 +573,10 @@ function syncBackTodayButton(){
   const r = box.getBoundingClientRect();
   btn.style.left = (r.left + r.width / 2) + 'px';
   btn.style.bottom = 'auto';
-  btn.style.top = (r.bottom - btn.offsetHeight / 2) + 'px';
+  // Just above the calendar's bottom edge, with a small gap (not on the line).
+  btn.style.top = (r.bottom - btn.offsetHeight - BACK_TODAY_GAP) + 'px';
 }
+const BACK_TODAY_GAP = 8;
 
 let backTodayFollowUntil = 0;
 function followBackTodayButton(){
