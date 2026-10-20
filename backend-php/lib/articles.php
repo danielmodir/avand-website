@@ -74,13 +74,20 @@ function tj_landing_articles(string $html, string $lang): string {
 const TJ_ARTICLE_COVER = [1600, 900];
 
 /* "## heading", "- list item", blank line = new paragraph,
- * **bold**, [text](https://link). Escaped first, so nothing else works. */
+ * **bold**, [text](https://link) or [text](/fa/page/). Escaped first, so
+ * nothing else works. Links to our own pages are ordinary links (search
+ * engines follow them between our pages); other sites open in a new tab,
+ * nofollow. */
 function tj_article_html(string $body): string {
     $e = function (string $s): string {
         $s = htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
         $s = preg_replace('/\*\*(.+?)\*\*/u', '<strong>$1</strong>', $s);
-        return preg_replace_callback('/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/u', function ($m) {
-            return '<a href="' . $m[2] . '" rel="nofollow noopener noreferrer" target="_blank">' . $m[1] . '</a>';
+        return preg_replace_callback('/\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]*)\)/u', function ($m) {
+            $href = $m[2];
+            if (preg_match('#^https://toojibee\.ir(/.*)?$#', $href, $own)) $href = $own[1] ?? '/';
+            if ($href[0] === '/' && substr($href, 0, 2) !== '//') return '<a href="' . $href . '">' . $m[1] . '</a>';
+            if (!preg_match('#^https?://#', $href)) return $m[1];
+            return '<a href="' . $href . '" rel="nofollow noopener noreferrer" target="_blank">' . $m[1] . '</a>';
         }, $s);
     };
     $out = [];
