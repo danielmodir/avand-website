@@ -550,7 +550,7 @@
   function unblockUser(id) { return request('DELETE', '/social/blocks/' + id); }
   function listConnections() {
     return request('GET', '/social/connections').then(function (rows) {
-      return rows.map(function (r) { return { id: r.id, name: r.name, phone: '', status: r.status }; });
+      return rows.map(function (r) { return { id: r.id, name: r.name, phone: '', status: r.status, userId: r.public_id ? 'TJ-' + r.public_id : '' }; });
     });
   }
 

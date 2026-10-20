@@ -179,6 +179,31 @@ function tj_migrate(PDO $db): void {
         )$tail");
         $db->exec('INSERT INTO tj_schema (version) VALUES (8)');
     }
+    if ($v < 9) {
+        // Friends (lib/social.php). One row per pair of people: who asked
+        // whom, and whether it was accepted. Blocks are separate, one way.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_connections (
+            id $id,
+            requester_id $fk NOT NULL,
+            addressee_id $fk NOT NULL,
+            status VARCHAR(10) NOT NULL DEFAULT 'pending',
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            UNIQUE (requester_id, addressee_id),
+            FOREIGN KEY (requester_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY (addressee_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        try { $db->exec('CREATE INDEX tj_connections_addressee ON tj_connections (addressee_id)'); } catch (PDOException $e) { /* already there */ }
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_blocks (
+            blocker_id $fk NOT NULL,
+            blocked_id $fk NOT NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY (blocker_id, blocked_id),
+            FOREIGN KEY (blocker_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY (blocked_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (9)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

@@ -15,6 +15,7 @@ require __DIR__ . '/../lib/admin_system.php';
 require __DIR__ . '/../lib/content.php';
 require __DIR__ . '/../lib/articles.php';
 require __DIR__ . '/../lib/calendar.php';
+require __DIR__ . '/../lib/social.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -40,6 +41,8 @@ $routes = [
     'POST /me/delete'           => 'tj_delete_me',
     'POST /me/heartbeat'        => 'tj_heartbeat',
     'POST /me/password'         => 'tj_change_password',
+    'GET /social/search'        => 'tj_social_search',
+    'GET /social/connections'   => 'tj_social_list',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header
@@ -95,6 +98,21 @@ if (preg_match('#^/admin/users/([a-f0-9]{32})(?:/(suspend|signout|delete))?$#', 
     if ($method === 'POST' && $act === 'suspend') tj_admin_user_suspend($m[1]);
     if ($method === 'POST' && $act === 'signout') tj_admin_user_signout($m[1]);
     if ($method === 'POST' && $act === 'delete') tj_admin_user_delete($m[1]);
+    tj_fail(405, 'method_not_allowed');
+}
+
+// Friends (lib/social.php): /social/connections/<public id>[/request|/respond]
+// and /social/blocks/<public id>.
+if (preg_match('#^/social/(connections|blocks)/([a-f0-9]{32})(?:/(request|respond))?$#', $path, $m)) {
+    $act = $m[3] ?? '';
+    if ($m[1] === 'connections') {
+        if ($method === 'POST' && $act === 'request') tj_social_request($m[2]);
+        if ($method === 'POST' && $act === 'respond') tj_social_respond($m[2]);
+        if ($method === 'DELETE' && $act === '') tj_social_remove($m[2]);
+    } elseif ($act === '') {
+        if ($method === 'PUT') tj_social_block($m[2]);
+        if ($method === 'DELETE') tj_social_unblock($m[2]);
+    }
     tj_fail(405, 'method_not_allowed');
 }
 

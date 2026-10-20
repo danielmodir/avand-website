@@ -12,8 +12,8 @@
    server version number is taken and this device's copy written on top
    (last write wins), same rule as the Django client per item.
 
-   Not available on this backend (yet): friends/connections, Google
-   sign-in, server-side occasions (the app falls back to its static
+   Not available on this backend (yet): Google sign-in, server-side
+   occasions (the app falls back to its static
    dataset). Only talks to the project's own API (CLAUDE.md exception).
    ========================================================================= */
 (function (global) {
@@ -36,7 +36,7 @@
 
   var api = {
     onSessionExpired: null, onPhotoLoaded: null, onAvatarLoaded: null,
-    supportsSocial: false, supportsCalendar: false,
+    supportsSocial: true, supportsCalendar: false,
   };
 
   function ApiError(status, body) {
@@ -231,6 +231,12 @@
   global.addEventListener('pagehide', function () { if (dirty) flush().catch(function () {}); });
   global.document.addEventListener('visibilitychange', function () { if (document.hidden && dirty) flush().catch(function () {}); });
 
+  function socialRows(rows) {
+    return (rows || []).map(function (r) {
+      return { id: r.id, name: r.name, username: r.username || '', userId: 'TJ-' + r.public_id, phone: '', status: r.status || 'none' };
+    });
+  }
+
   function unsupported() { var e = new Error('not_available'); e.status = 501; e.code = 'not_available'; return Promise.reject(e); }
 
   Object.assign(api, {
@@ -257,10 +263,15 @@
     deleteAccount: function (password) {
       return request('POST', '/me/delete', { password: password }).then(function () { clearTimeout(pushTimer); dirty = false; clearSession(); version = 0; loaded = false; });
     },
-    searchUser: function () { return Promise.resolve([]); },
-    listConnections: function () { return Promise.resolve([]); },
-    sendConnectionRequest: unsupported, respondConnectionRequest: unsupported,
-    removeConnection: unsupported, blockUser: unsupported, unblockUser: unsupported,
+    // Friends (backend-php/lib/social.php); people are addressed by their
+    // public id, and shown by @username and TJ- code only.
+    searchUser: function (q) { return request('GET', '/social/search?q=' + encodeURIComponent(q)).then(socialRows); },
+    listConnections: function () { return request('GET', '/social/connections').then(socialRows); },
+    sendConnectionRequest: function (id) { return request('POST', '/social/connections/' + id + '/request'); },
+    respondConnectionRequest: function (id, accept) { return request('POST', '/social/connections/' + id + '/respond', { accept: !!accept }); },
+    removeConnection: function (id) { return request('DELETE', '/social/connections/' + id); },
+    blockUser: function (id) { return request('PUT', '/social/blocks/' + id); },
+    unblockUser: function (id) { return request('DELETE', '/social/blocks/' + id); },
     calendarYear: unsupported,
   });
   global.Cloud = api;

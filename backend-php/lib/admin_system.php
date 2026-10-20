@@ -42,13 +42,14 @@ function tj_meminfo(): ?array {
 const TJ_DB_GROUPS = [
     'accounts' => ['tj_users', 'tj_sessions', 'tj_tokens', 'tj_attempts'],
     'userdata' => ['tj_user_data'],
+    'social'   => ['tj_connections', 'tj_blocks'],
     'admin'    => ['tj_admins', 'tj_admin_sessions', 'tj_admin_audit'],
-    'content'  => ['tj_content', 'tj_articles'],
+    'content'  => ['tj_content', 'tj_articles', 'tj_hijri_months'],
     'system'   => ['tj_schema'],
 ];
 /* Tables whose rows may be previewed (personal data and secrets are
  * never shown: only their structure). */
-const TJ_DB_PREVIEW = ['tj_admins', 'tj_admin_audit', 'tj_content', 'tj_articles', 'tj_schema'];
+const TJ_DB_PREVIEW = ['tj_admins', 'tj_admin_audit', 'tj_content', 'tj_articles', 'tj_hijri_months', 'tj_schema'];
 const TJ_DB_MASK = '/hash|token|password|secret|enc|^ip$|^data$|^body$|^value$/i';
 
 function tj_db_group(string $table): string {

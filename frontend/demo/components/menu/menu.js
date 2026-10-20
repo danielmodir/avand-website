@@ -164,7 +164,9 @@ function renderProfileEditPage(){
 function friendRowActions(c){
   const status = c.status || 'none';
   if(status==='none') return `<button class="btn btn-primary btn-small" data-action="connect-request" data-id="${c.id}">${t('connect')}</button>`;
-  if(status==='pending-outgoing') return `<button class="btn btn-outline btn-small" disabled>${t('pending')}</button>`;
+  if(status==='pending-outgoing') return `
+    <button class="btn btn-outline btn-small" disabled>${t('pending')}</button>
+    <button class="btn btn-outline btn-small" data-action="connect-remove" data-id="${c.id}">${t('cancelRequest')}</button>`;
   if(status==='pending-incoming') return `
     <button class="btn btn-primary btn-small" data-action="connect-accept" data-id="${c.id}">${t('accept')}</button>
     <button class="btn btn-outline btn-small" data-action="connect-decline" data-id="${c.id}">${t('decline')}</button>`;
@@ -187,7 +189,7 @@ function friendRow(c){
     <div class="settings-row">
       <div style="display:flex; align-items:center; gap:10px; min-width:0;">
         <div class="menu-avatar" style="width:36px; height:36px; font-size:13px;">${initials(merged.name)}</div>
-        <div style="min-width:0;"><div class="lbl">${escapeHtml(merged.name)}</div><div class="sub">${escapeHtml(merged.id)}</div></div>
+        <div style="min-width:0;"><div class="lbl" dir="ltr">${escapeHtml(merged.name)}</div><div class="sub" dir="ltr" style="white-space:nowrap;">${escapeHtml(merged.userId || c.userId || '')}</div></div>
       </div>
       <div style="display:flex; gap:6px; flex:0 0 auto;">${friendRowActions(merged)}</div>
     </div>`;
@@ -202,7 +204,10 @@ async function refreshConnections(){
 
 function runConnectionAction(btn, fn){
   btn.disabled = true;
-  fn().then(refreshConnections).catch(err => { showToast(err.message || String(err)); render(); });
+  fn().then(refreshConnections).catch(err => {
+    showToast(err && err.code === 'too_many_pending' ? t('errTooManyPending') : err && err.status === 404 ? t('errUserGone') : authErrorMessage(err));
+    refreshConnections();
+  });
 }
 
 let friendSearchTimer = null;
@@ -225,6 +230,7 @@ function renderFriendsPage(){
   const incoming = state.connections.filter(c=>c.status==='pending-incoming');
   const accepted = state.connections.filter(c=>c.status==='accepted');
   const outgoing = state.connections.filter(c=>c.status==='pending-outgoing');
+  const blocked = state.connections.filter(c=>c.status==='blocked');
   const nothingYet = !incoming.length && !accepted.length && !outgoing.length;
   return `
     ${subHeader(t('connections'))}
@@ -245,6 +251,7 @@ function renderFriendsPage(){
       ${accepted.length ? `<div class="section-title">${t('myConnections')} <span class="count">${dig(accepted.length)}</span></div>${accepted.map(friendRow).join('')}` : ''}
       ${outgoing.length ? `<div class="section-title">${t('sentRequests')} <span class="count">${dig(outgoing.length)}</span></div>${outgoing.map(friendRow).join('')}` : ''}
       ${nothingYet ? `<div class="empty-hint" style="margin-top:16px;">${t('noConnectionsYet')}</div>` : ''}
+      ${blocked.length ? `<div class="section-title">${t('blockedUsers')} <span class="count">${dig(blocked.length)}</span></div>${blocked.map(friendRow).join('')}` : ''}
     `}
   `;
 }
