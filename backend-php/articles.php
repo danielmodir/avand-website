@@ -11,6 +11,8 @@ declare(strict_types=1);
 require __DIR__ . '/lib/bootstrap.php';
 require __DIR__ . '/lib/content.php';
 require __DIR__ . '/lib/articles.php';
+require __DIR__ . '/lib/calendar.php';
+require __DIR__ . '/lib/dates.php'; // tj_jalali
 
 $lang = (($_GET['lang'] ?? '') === 'en') ? 'en' : 'fa';
 $slug = strtolower((string)($_GET['slug'] ?? ''));
@@ -21,29 +23,13 @@ $T = $fa
 
 function tj_h(string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 
-/* Gregorian -> Jalali (the standard arithmetic), for Persian dates. */
-function tj_jalali(int $gy, int $gm, int $gd): array {
-    $g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-    $gy2 = $gm > 2 ? $gy + 1 : $gy;
-    $days = 355666 + (365 * $gy) + intdiv($gy2 + 3, 4) - intdiv($gy2 + 99, 100) + intdiv($gy2 + 399, 400) + $gd + $g_d_m[$gm - 1];
-    $jy = -1595 + (33 * intdiv($days, 12053));
-    $days %= 12053;
-    $jy += 4 * intdiv($days, 1461);
-    $days %= 1461;
-    if ($days > 365) { $jy += intdiv($days - 1, 365); $days = ($days - 1) % 365; }
-    $jm = $days < 186 ? 1 + intdiv($days, 31) : 7 + intdiv($days - 186, 30);
-    $jd = 1 + ($days < 186 ? $days % 31 : ($days - 186) % 30);
-    return [$jy, $jm, $jd];
-}
-
 function tj_article_date(?string $utc, bool $fa): string {
     if (!$utc) return '';
     $d = new DateTime($utc, new DateTimeZone('UTC'));
     $d->setTimezone(new DateTimeZone('Asia/Tehran'));
     if (!$fa) return $d->format('F j, Y');
     [$y, $m, $day] = tj_jalali((int)$d->format('Y'), (int)$d->format('n'), (int)$d->format('j'));
-    $months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
-    return strtr("$day {$months[$m - 1]} $y", ['0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴', '5' => '۵', '6' => '۶', '7' => '۷', '8' => '۸', '9' => '۹']);
+    return tj_fa_digits("$day " . TJ_JALALI_MONTHS[$m - 1] . " $y");
 }
 
 function tj_not_found(): void {

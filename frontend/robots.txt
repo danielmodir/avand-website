@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+# The app's API (JSON for the app, nothing to index). The pages it makes
+# are reached at their own addresses (/fa/today/, /fa/articles/...).
+Disallow: /api/
 
 # /demo/ carries its own <meta name="robots" content="noindex"> instead
 # of being Disallow'd here. Disallowing it too would stop crawlers from

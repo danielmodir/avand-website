@@ -16,6 +16,10 @@
   # Articles published from the admin panel (api/articles.php).
   RewriteRule ^(fa|en)/articles/?$ api/articles.php?lang=$1 [L]
   RewriteRule ^(fa|en)/articles/([a-z0-9-]+)/?$ api/articles.php?lang=$1&slug=$2 [L]
+  # "Today's date" (api/today.php) and the sitemap with the pages the
+  # server makes (today, articles) added to the static sitemap.xml.
+  RewriteRule ^(fa|en)/today/?$ api/today.php?lang=$1 [L]
+  RewriteRule ^sitemap\.xml$ api/sitemap.php [L]
 </IfModule>
 
 # --- Our own illustrated 404 page (works at any path depth) ---

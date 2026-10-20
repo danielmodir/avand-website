@@ -11,6 +11,8 @@ Options -Indexes
   # The landing pages with admin-edited content (see page.php).
   RewriteRule ^page\.php$ - [L]
   RewriteRule ^articles\.php$ - [L]
+  RewriteRule ^today\.php$ - [L]
+  RewriteRule ^sitemap\.php$ - [L]
   RewriteRule ^v1(/.*)?$ v1/index.php [L,QSA]
   RewriteRule ^ - [F]
 </IfModule>

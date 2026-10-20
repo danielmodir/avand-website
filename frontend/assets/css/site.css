@@ -513,3 +513,29 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
   border: 1.5px dashed var(--color-border); border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4); color: var(--color-text-muted); font-size: var(--font-size-xs);
 }
+
+/* "Today's date" page (api/today.php on the live host). */
+.today-page { max-width: 760px; }
+.today-page h2 { font-size: var(--font-size-md); margin: var(--space-6) 0 var(--space-3) 0; }
+.today-weekday { color: var(--color-text-muted); margin: calc(-1 * var(--space-4)) 0 var(--space-4) 0; }
+.today-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
+@media (min-width: 720px) { .today-grid { grid-template-columns: 1.3fr 1fr 1fr; } }
+.today-card { display: flex; flex-direction: column; gap: var(--space-1); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); }
+.today-card span { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.today-card b { font-size: var(--font-size-md); }
+.today-card.main { border-color: var(--color-primary); }
+.today-card.main b { font-size: var(--font-size-lg); }
+.today-page .today-status { margin-top: var(--space-4); font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.today-page .today-status.off { color: var(--color-error); }
+.today-page ul.today-occasions, .today-page ul.today-week { list-style: none; padding: 0; margin: 0; max-width: none; }
+.today-occasions li { padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); background: var(--color-bg-soft); }
+.today-occasions li.holiday { color: var(--color-error); background: var(--color-error-bg); }
+.today-tag { font-size: var(--font-size-xs); font-weight: 700; }
+.today-day { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); }
+.today-day.off .today-day-head b { color: var(--color-error); }
+.today-day-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-1) var(--space-3); }
+.today-day-head span { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.today-day .today-occasions { margin-top: var(--space-2); }
+.today-day .today-occasions li { font-size: var(--font-size-sm); }
+.today-page .today-cta { margin-top: var(--space-6); }
+.today-page .today-note { color: var(--color-text-muted); font-size: var(--font-size-xs); }

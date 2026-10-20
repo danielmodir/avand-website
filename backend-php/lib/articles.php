@@ -269,8 +269,13 @@ function tj_published_articles(string $lang): array {
 /* Adds "Articles" to a page's footer links once something is published
  * in that language (landing via page.php, and the article pages). */
 function tj_footer_with_articles(string $html, string $lang): string {
-    if (strpos($html, '<li><a href="/' . $lang . '/articles/">') !== false || !tj_articles_in($lang, 'list', 1)) return $html;
-    $li = '<li><a href="/' . $lang . '/articles/">' . ($lang === 'fa' ? 'مقاله‌ها' : 'Articles') . '</a></li>';
+    $li = '';
+    // "Today's date" (today.php) is always there on the live host.
+    if (strpos($html, '<li><a href="/' . $lang . '/today/">') === false)
+        $li .= '<li><a href="/' . $lang . '/today/">' . ($lang === 'fa' ? 'تاریخ امروز' : "Today's date") . '</a></li>';
+    if (strpos($html, '<li><a href="/' . $lang . '/articles/">') === false && tj_articles_in($lang, 'list', 1))
+        $li .= '<li><a href="/' . $lang . '/articles/">' . ($lang === 'fa' ? 'مقاله‌ها' : 'Articles') . '</a></li>';
+    if ($li === '') return $html;
     return preg_replace_callback('#(<ul class="footer-links">)#', function ($m) use ($li) { return $m[1] . "\n        " . $li; }, $html, 1);
 }
 

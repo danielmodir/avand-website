@@ -1,0 +1,21 @@
+# Toojibee (توجیبی)
+
+> Toojibee is a bilingual (Persian/English) personal planning app built around time: a Persian (Solar Hijri) calendar shown alongside the Hijri and Gregorian dates, with daily occasions and official holidays in Iran, plus tasks, habits, events and reminders. Website: https://toojibee.ir
+
+Toojibee's Hijri dates follow Iran's official calendar (month starts from the Calendar Center of the University of Tehran Institute of Geophysics) rather than a purely arithmetic calendar. The "today's date" page is generated on the server each day for Tehran time.
+
+## Pages
+
+- [Today's date in Iran (Persian)](https://toojibee.ir/fa/today/): تاریخ امروز به شمسی، قمری و میلادی، مناسبت‌ها و تعطیلی امروز و هفت روز آینده
+- [Today's date in Iran (English)](https://toojibee.ir/en/today/): today in Solar Hijri, Hijri and Gregorian, with today's occasions and the week ahead
+- [Home (Persian)](https://toojibee.ir/fa/): توجیبی، تقویم و برنامه‌ریزی روزانه، کارها و عادت‌ها
+- [Home (English)](https://toojibee.ir/en/): overview of the app
+- [Guide](https://toojibee.ir/en/guide/): how to use tasks, habits, events and the calendar
+- [About](https://toojibee.ir/en/about/)
+- [Articles](https://toojibee.ir/fa/articles/): writing on planning, habits and time management
+
+## Optional
+
+- [Privacy](https://toojibee.ir/en/privacy/)
+- [Terms](https://toojibee.ir/en/terms/)
+- [Contact](https://toojibee.ir/en/contact/)
