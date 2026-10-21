@@ -279,11 +279,11 @@ function calFullChips(day){
   const { tasks, events } = itemsForDate(day);
   sortEvents(events).forEach(e => {
     const time = eventTime(e);
-    chips.push(`<span class="cf-chip cf-event" data-action="edit-item" data-type="event" data-id="${e.id}">${time ? `<b dir="ltr">${dig(time)}</b> ` : ''}${escapeHtml(e.title)}</span>`);
+    chips.push(`<span class="cf-chip cf-event" data-action="view-item" data-type="event" data-id="${e.id}">${time ? `<b dir="ltr">${dig(time)}</b> ` : ''}${escapeHtml(e.title)}</span>`);
   });
   tasks.forEach(tk => {
     const st = taskStatusOn(tk, key);
-    chips.push(`<span class="cf-chip cf-task ${st === 'done' ? 'done' : st === 'not_done' ? 'missed' : ''}" data-action="edit-item" data-type="task" data-id="${tk.id}">${tk.startTime ? `<b dir="ltr">${dig(tk.startTime)}</b> ` : ''}${escapeHtml(tk.title)}</span>`);
+    chips.push(`<span class="cf-chip cf-task ${st === 'done' ? 'done' : st === 'not_done' ? 'missed' : ''}" data-action="view-item" data-type="task" data-id="${tk.id}">${tk.startTime ? `<b dir="ltr">${dig(tk.startTime)}</b> ` : ''}${escapeHtml(tk.title)}</span>`);
   });
   return chips;
 }

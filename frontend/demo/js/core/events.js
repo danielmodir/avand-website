@@ -55,6 +55,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'delete-event'){ state.events = state.events.filter(x=>x.id!==el.dataset.id); cloudSync(() => Cloud.deleteEvent(el.dataset.id)); render(); return; }
 
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
+  if(action === 'view-item'){ openItemDetails(el.dataset.type, el.dataset.id, el); return; } // tap: details first (popup.js)
   if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
   if(action === 'close-popup'){ closePopup(); return; }
   if(action === 'toggle-desk-full'){ state.deskFull = !state.deskFull; haptic(10); render(); return; }
@@ -109,8 +110,11 @@ document.getElementById('device').addEventListener('click', (e) => {
     });
     return;
   }
-  if(action === 'open-subview'){ state.popupSubView = el.dataset.sub; renderPopupBody(); return; }
-  if(action === 'close-subview'){ state.popupSubView = null; renderPopupBody(); return; }
+  if(action === 'open-subview'){
+    if(el.dataset.sub === 'repeat') startRepeatDraft(); // edited as a draft until "Confirm" (popup.js)
+    state.popupSubView = el.dataset.sub; renderPopupBody(); return;
+  }
+  if(action === 'close-subview'){ repeatDraft = null; state.popupSubView = null; renderPopupBody(); return; }
 
   if(action === 'pick-month'){ state.calCursor = setMonthOf(state.calCursor, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
   if(action === 'pick-year'){ state.calCursor = setYearOf(state.calCursor, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }

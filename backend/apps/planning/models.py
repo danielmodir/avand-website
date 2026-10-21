@@ -18,8 +18,17 @@ from apps.common.models import UserOwnedSyncModel
 
 class RecurrenceMode(models.TextChoices):
     NONE = "none"
-    INTERVAL = "interval"
-    WEEKDAYS = "weekdays"
+    INTERVAL = "interval"  # every N days
+    WEEKDAYS = "weekdays"  # chosen days of the week
+    MONTHLY = "monthly"    # rec_anchor's day of the month, every N months
+    YEARLY = "yearly"      # rec_anchor's day and month, every N years
+
+
+class RecurrenceCalendar(models.TextChoices):
+    """The calendar a monthly/yearly repeat counts months in."""
+    JALALI = "jalali"
+    GREGORIAN = "gregorian"
+    HIJRI = "hijri"
 
 
 class ReminderType(models.TextChoices):
@@ -34,6 +43,10 @@ class Recurrence(models.Model):
     rec_interval = models.PositiveSmallIntegerField(default=1)
     rec_weekdays = models.PositiveSmallIntegerField(default=0)
     rec_until = models.DateField(null=True, blank=True)
+    # Monthly/yearly: the day picked (its day of month, and month for
+    # yearly, in rec_calendar) — counting starts from its month/year.
+    rec_anchor = models.DateField(null=True, blank=True)
+    rec_calendar = models.CharField(max_length=10, choices=RecurrenceCalendar.choices, default=RecurrenceCalendar.JALALI)
 
     class Meta:
         abstract = True
@@ -231,6 +244,7 @@ class Event(UserOwnedSyncModel, Recurrence, Reminder):
 
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     title = models.CharField(max_length=300)
+    description = models.TextField(blank=True)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     all_day = models.BooleanField(default=True)

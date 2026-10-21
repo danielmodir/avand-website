@@ -147,3 +147,12 @@
 .device{ --task-on:var(--on-primary); }
 .device .checkbox[data-action="toggle-task"].checked svg, .device .checkbox[data-action="toggle-subtask"].checked svg{ fill:var(--task-on); }
 .device .checkbox[data-action="toggle-habit"].checked svg{ fill:var(--habit-on, #fff); }
+/* Swipe layer: only while swiping sideways (swipe.js .swiping), so a tap or
+   long press never shows a red box behind the card. The icon sits on the
+   uncovered side (done: right, delete: left) and grows with the swipe. */
+.swipe-delete-bg{ opacity:0; transition:opacity .15s ease; padding:0 22px; justify-content:flex-start; }
+.swipe-wrap.swiping .swipe-delete-bg{ opacity:1; }
+.swipe-delete-bg.swipe-bg-done{ justify-content:flex-end; }
+.swipe-bg-icon{ display:flex; width:30px; height:30px; border-radius:50%; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.18); transform:scale(calc(.6 + .4 * var(--swipe-p, 0))); transition:transform .08s linear; }
+.swipe-bg-icon svg{ width:17px; height:17px; fill:#fff; }

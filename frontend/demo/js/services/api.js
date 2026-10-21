@@ -201,10 +201,13 @@
   function recurrenceToApi(rec, allowNone) {
     var mode = rec && rec.mode;
     if (!mode) return allowNone ? { rec_mode: 'none', rec_interval: 1, rec_weekdays: 0 } : { rec_mode: 'interval', rec_interval: 1, rec_weekdays: 0 };
-    return { rec_mode: mode, rec_interval: Math.max(1, Number(rec.interval) || 1), rec_weekdays: weekdaysToMask(rec.weekdays) };
+    var monthly = mode === 'monthly' || mode === 'yearly';
+    return { rec_mode: mode, rec_interval: Math.max(1, Number(rec.interval) || 1), rec_weekdays: weekdaysToMask(rec.weekdays),
+      rec_anchor: monthly ? (rec.anchor || null) : null, rec_calendar: rec.cal || 'jalali' };
   }
   function recurrenceFromApi(row) {
-    return { mode: row.rec_mode === 'none' ? null : row.rec_mode, interval: row.rec_interval, weekdays: maskToWeekdays(row.rec_weekdays) };
+    return { mode: row.rec_mode === 'none' ? null : row.rec_mode, interval: row.rec_interval, weekdays: maskToWeekdays(row.rec_weekdays),
+      anchor: row.rec_anchor || null, cal: row.rec_calendar || 'jalali' };
   }
   function reminderToApi(n) {
     var type = NOTIF_TO_API[n && n.type] || 'none';
@@ -304,7 +307,7 @@
     var events = sync.events.map(function (row) {
       versions['events:' + row.id] = row.version;
       return {
-        id: row.id, title: row.title, timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
+        id: row.id, title: row.title, description: row.description || '', timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
         startTime: row.start_time ? row.start_time.slice(0, 5) : null, endTime: row.end_time ? row.end_time.slice(0, 5) : null,
         recurrence: recurrenceFromApi(row), notification: reminderFromApi(row),
       };
@@ -475,7 +478,7 @@
     return enqueue('event:' + evt.id, function () {
       // A start time makes it a timed event (the API needs start_time then).
       var timed = !!evt.startTime;
-      return putVersioned('events', evt.id, Object.assign({ title: evt.title, all_day: !timed,
+      return putVersioned('events', evt.id, Object.assign({ title: evt.title, description: evt.description || '', all_day: !timed,
         start_time: timed ? evt.startTime : null, end_time: timed && evt.endTime ? evt.endTime : null },
         datesToApi(evt), recurrenceToApi(evt.recurrence, true), reminderToApi(evt.notification)));
     });

@@ -22,6 +22,9 @@ function attachSwipeToDelete(container){
       if(!decided && (Math.abs(ddx) > 6 || Math.abs(ddy) > 6)){
         decided = true;
         isHorizontal = Math.abs(ddx) > Math.abs(ddy);
+        // The colored layer exists only during a real sideways swipe — a tap
+        // or long press (which shrinks the card a little) never shows it.
+        if(isHorizontal) wrap.classList.add('swiping');
       }
       if(!isHorizontal) return;
       e.stopPropagation();
@@ -32,8 +35,11 @@ function attachSwipeToDelete(container){
          once the drag has a real direction, so a tiny jitter at
          pointerdown doesn't flash the wrong one. */
       if(bg && Math.abs(dx) > 4){
+        // The icon sits on the side the card uncovers, and grows to full
+        // size as the swipe reaches the point where it will act.
         bg.classList.toggle('swipe-bg-done', dx < 0);
-        bg.innerHTML = dx < 0 ? ICONS.check : ICONS.trash;
+        bg.innerHTML = `<span class="swipe-bg-icon">${dx < 0 ? ICONS.check : ICONS.trash}</span>`;
+        bg.style.setProperty('--swipe-p', Math.min(1, Math.abs(dx) / 60).toFixed(2));
       }
     });
     const end = () => {
@@ -61,7 +67,11 @@ function attachSwipeToDelete(container){
       } else {
         fg.style.transform = 'translateX(0)';
       }
-      if(bg){ bg.classList.remove('swipe-bg-done'); bg.innerHTML = ICONS.trash; }
+      // The layer hides again once the card is back in place.
+      setTimeout(() => {
+        wrap.classList.remove('swiping');
+        if(bg){ bg.classList.remove('swipe-bg-done'); bg.innerHTML = ''; bg.style.removeProperty('--swipe-p'); }
+      }, 230);
     };
     fg.addEventListener('pointerup', end);
     fg.addEventListener('pointercancel', end);

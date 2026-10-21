@@ -170,7 +170,33 @@ function occursOnDate(item, date){
     if(!(rec.weekdays||[]).length) return dKey === item.date;
     return dKey >= item.date && rec.weekdays.includes(date.getDay());
   }
+  if(rec.mode === 'monthly' || rec.mode === 'yearly') return dKey >= item.date && monthlyRepeatMatches(rec, item.date, date);
   return dKey === item.date;
+}
+
+/* A date's year/month/day in a calendar system. */
+function calendarParts(date, cal){
+  const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
+  if(cal === 'jalali'){ const j = toJalali(y, m, d); return { y: j.jy, m: j.jm, d: j.jd }; }
+  if(cal === 'hijri'){ const h = toHijri(y, m, d); return { y: h.hy, m: h.hm, d: h.hd }; }
+  return { y, m, d };
+}
+
+/* Monthly / yearly repeats: the picked day's day of the month (and its
+   month, yearly) in the calendar the repeat was made in, every `interval`
+   months or years counted from it. A day the month doesn't have (31 in a
+   30-day month) falls on that month's last day. */
+function monthlyRepeatMatches(rec, startKey, date){
+  const cal = rec.cal || 'jalali';
+  const a = calendarParts(parseDateKey(rec.anchor || startKey), cal);
+  const p = calendarParts(date, cal);
+  const lastOfMonth = () => calendarParts(addDays(date, 1), cal).m !== p.m;
+  if(!(p.d === a.d || (a.d > p.d && lastOfMonth()))) return false;
+  const n = Math.max(1, rec.interval || 1);
+  if(rec.mode === 'monthly'){ const diff = (p.y - a.y) * 12 + (p.m - a.m); return diff >= 0 && diff % n === 0; }
+  if(p.m !== a.m) return false;
+  const diff = p.y - a.y;
+  return diff >= 0 && diff % n === 0;
 }
 
 function habitOccursOnDate(habit, date){
@@ -178,6 +204,7 @@ function habitOccursOnDate(habit, date){
   if(dKey < habit.startDate) return false;
   const rec = habit.recurrence;
   if(rec.mode === 'weekdays') return (rec.weekdays||[]).length ? rec.weekdays.includes(date.getDay()) : dKey === habit.startDate;
+  if(rec.mode === 'monthly' || rec.mode === 'yearly') return monthlyRepeatMatches(rec, habit.startDate, date);
   const diff = daysBetween(new Date(habit.startDate), date);
   return diff % Math.max(1, rec.interval||1) === 0;
 }

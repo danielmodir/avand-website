@@ -86,3 +86,42 @@
 }
 .add-popup.show{ transform:translate(-50%,-50%) scale(1); }
 }
+
+/* Save button: always at the bottom of the box, centred, never moving
+   (it used to be absolutely placed, and the shared hover rule moved it
+   sideways); without a title it looks muted and asks for one. */
+.pop-submit-bar{ flex:0 0 auto; display:flex; justify-content:center; padding:10px 22px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--border); background:var(--card); }
+.pop-submit-bar .pop-submit{
+  position:static; transform:none; opacity:1; pointer-events:auto; width:100%; max-width:360px;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 20px; font-size:14px;
+}
+.pop-submit-bar .pop-submit:hover{ transform:translateY(-1px); }
+.pop-submit-bar .pop-submit:active{ transform:scale(.98); }
+.pop-submit-bar .pop-submit svg{ width:15px; height:15px; fill:currentColor; }
+.pop-submit-bar .pop-submit.needs-title{ opacity:.55; box-shadow:none; }
+.add-popup.in-subview .pop-submit-bar{ display:none; }
+.popup-body{ padding-bottom:24px; }
+
+/* Repeat page. */
+.rec-block{ margin-top:14px; }
+.rec-day-btn{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%; }
+.rec-day-btn svg{ width:16px; height:16px; color:var(--primary); }
+.rec-every{ display:flex; align-items:center; justify-content:center; gap:12px; font-size:14px; font-weight:600; }
+.rec-stepper{ display:flex; align-items:center; gap:6px; background:var(--bg-soft); border:1px solid var(--border); border-radius:999px; padding:4px; }
+.rec-stepper button{ width:32px; height:32px; border-radius:50%; border:none; background:var(--card); color:var(--text); font-size:18px; font-weight:700; cursor:pointer; font-family:inherit; }
+.rec-stepper button:disabled{ opacity:.35; cursor:default; }
+.rec-stepper b{ min-width:28px; text-align:center; font-size:16px; }
+.rec-confirm{ width:100%; margin-top:20px; }
+.rec-remove{ width:100%; margin-top:10px; }
+
+/* Details of an item. */
+.item-details .details-title{ margin:4px 0 14px; font-size:20px; font-weight:800; line-height:1.5; }
+.details-rows{ display:flex; flex-direction:column; gap:8px; margin-bottom:6px; }
+.details-row{ display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text); background:var(--bg-soft); border-radius:12px; padding:10px 12px; }
+.details-row svg{ width:16px; height:16px; flex:0 0 auto; color:var(--primary); fill:currentColor; }
+.details-desc{ white-space:pre-wrap; font-size:14px; line-height:1.9; margin:0 0 12px; }
+.details-desc.empty{ color:var(--text-muted); font-size:13px; }
+.details-subtasks{ margin:0; padding-inline-start:20px; font-size:13.5px; line-height:1.9; }
+.details-subtasks li.done{ text-decoration:line-through; color:var(--text-muted); }
+.device.lang-fa .item-details .section-title{ direction:rtl; text-align:right; justify-content:flex-start; }
+.device.lang-fa .rec-every{ flex-direction:row-reverse; } /* reads «هر ۲ ماه» from the right */

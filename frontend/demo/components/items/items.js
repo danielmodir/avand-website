@@ -126,7 +126,7 @@ function taskRow(task, key){
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card task-row ${subs.length?'has-subtasks':''} ${done?'done':''} ${skipped?'skipped':''} ${sel?'is-selected':''}" data-select-type="task" data-select-id="${task.id}">
       <div class="checkbox ${done?'checked':''} ${skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" data-date="${key}" role="checkbox" aria-checked="${done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${done?ICONS.check:skipped?ICONS.close:''}</div>
-      <div class="task-title-wrap" data-action="edit-item" data-type="task" data-id="${task.id}">
+      <div class="task-title-wrap" data-action="view-item" data-type="task" data-id="${task.id}">
         <p class="item-title">${escapeHtml(task.title)}</p>
         ${task.startTime ? `<span class="item-time" dir="ltr">${itemTimeLabel(task)}</span>` : ''}
       </div>
@@ -146,7 +146,7 @@ function subtaskRow(task, s){
   const sel = isSelected('subtask', s.id);
   return `<div class="subtask-row ${s.done?'done':''} ${s.skipped?'skipped':''} ${sel?'is-selected':''}" data-task-id="${task.id}" data-sub-id="${s.id}" data-select-type="subtask" data-select-id="${s.id}">
     <div class="checkbox ${s.done?'checked':''} ${s.skipped?'skipped':''}" data-action="toggle-subtask" data-task-id="${task.id}" data-sub-id="${s.id}" role="checkbox" aria-checked="${!!s.done}" aria-label="${escapeAttr(title)}" tabindex="0">${s.done?ICONS.check:s.skipped?ICONS.close:''}</div>
-    <p class="item-title" data-action="edit-item" data-type="task" data-id="${s.id}">${escapeHtml(title)}</p>
+    <p class="item-title" data-action="view-item" data-type="task" data-id="${s.id}">${escapeHtml(title)}</p>
   </div>`;
 }
 
@@ -158,7 +158,7 @@ function habitRow(h, date){
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card ${checked?'done':''} ${skipped?'skipped':''} ${isSelected('habit', h.id)?'is-selected':''}" data-select-type="habit" data-select-id="${h.id}">
       <div class="checkbox square ${checked?'checked':''} ${skipped?'skipped':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}" role="checkbox" aria-checked="${checked}" aria-label="${escapeAttr(h.title)}" tabindex="0">${checked?ICONS.check:skipped?ICONS.close:''}</div>
-      <p class="item-title" data-action="edit-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}</p>
+      <p class="item-title" data-action="view-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}</p>
     </div>
   </div>`;
 }
@@ -179,7 +179,7 @@ function sortEvents(events){
 
 function eventCard(e){
   const time = e.startTime ? itemTimeLabel(e) : (eventTime(e) || '');
-  return `<div class="event-card" data-action="edit-item" data-type="event" data-id="${e.id}">
+  return `<div class="event-card" data-action="view-item" data-type="event" data-id="${e.id}">
     <button class="mini-btn event-del" data-action="delete-event" data-id="${e.id}" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>
     ${time?`<span class="event-time">${time}</span>`:''}
     <p class="event-title">${escapeHtml(e.title)}</p>
