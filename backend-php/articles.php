@@ -68,7 +68,13 @@ try {
         $path = "/$lang/articles/{$a['slug']}/";
         $title = $a['title'] . ' — ' . $T['site'];
         $plain = trim((string)preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags(tj_article_html($a['body'])), ENT_QUOTES, 'UTF-8')));
-        $desc = $a['summary'] !== '' ? $a['summary'] : (function_exists('mb_substr') ? mb_substr($plain, 0, 160) : substr($plain, 0, 160));
+        $desc = $a['summary'] !== '' ? $a['summary'] : $plain;
+        // Search results show about 160 characters: cut at a word, not mid-word.
+        if (function_exists('mb_strlen') && mb_strlen($desc) > 160) {
+            $cut = mb_substr($desc, 0, 157);
+            $sp = mb_strrpos($cut, ' ');
+            $desc = rtrim($sp > 100 ? mb_substr($cut, 0, $sp) : $cut, " ،,.؛") . '…';
+        }
         $main = '<article class="content-page article">'
             . '<a class="article-back" href="/' . $lang . '/articles/">' . tj_h($T['back']) . '</a>'
             . '<h1>' . tj_h($a['title']) . '</h1>'
