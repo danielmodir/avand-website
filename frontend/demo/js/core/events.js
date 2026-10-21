@@ -7,7 +7,7 @@ const GUEST_ACTIONS = new Set([
   'pick-month','pick-year','tap-month','tap-year','tap-sec-month','tap-sec-year','pick-sec-month','pick-sec-year',
   'pick-day','close-day-sheet','go-today','goto-desktop','desktop-step','toggle-desktop-title-menu',
   'toggle-section','go-landing','toggle-app-theme','retry-boot','toggle-desk-full',
-  'toggle-cal-full','cal-full-step','cal-full-today','cal-full-pick',
+  'toggle-cal-full','cal-full-step','cal-full-today','cal-full-pick','open-search','close-search',
   'open-auth','close-auth','auth-tab','auth-submit','auth-google',
 ]);
 
@@ -26,6 +26,9 @@ document.getElementById('device').addEventListener('click', (e) => {
 
   // Guests may browse; anything that needs an account opens the sign-in popup.
   if(state.guest && !GUEST_ACTIONS.has(action)){ e.preventDefault(); requireAccount(); return; }
+
+  // Leaving the profile edit page with unsaved changes asks first (menu.js).
+  if(['open-menu', 'close-menu-overlay', 'menu-back', 'menu-nav'].includes(action) && !leaveProfileEditOk()) return;
 
   if(action === 'toggle-subtasks'){
     state.expandedTasks[el.dataset.id] = !state.expandedTasks[el.dataset.id];
@@ -169,7 +172,11 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'auth-submit'){ submitAuth(); return; }
-  if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){ state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); render(); return; }
+  if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){
+    if(profileDraft) profileDraft.photo = null; // edit page: waits for "Save changes"
+    else { state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); }
+    render(); return;
+  }
   if(action === 'copy-user-id'){
     copyText(state.profile.userId);
     showToast(t('idCopied'));
@@ -193,6 +200,8 @@ document.getElementById('device').addEventListener('click', (e) => {
     render();
     return;
   }
+  if(action === 'open-search'){ if(state.searchOpen) closeSearch(); else openSearch(); haptic(10); return; }
+  if(action === 'close-search'){ closeSearch(); return; }
   if(action === 'period-view-step'){
     const n = periodViews().length;
     if(n > 1){ state.periodViewIndex = (periodViewIndex() + Number(el.dataset.dir) + n) % n; haptic(10); render(); }

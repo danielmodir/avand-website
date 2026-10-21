@@ -214,6 +214,18 @@ function tj_verify_email(): void {
 const TJ_HEARTBEAT = 60;  // the app pings this often while open
 const TJ_ONLINE_WINDOW = 150; // seen this recently = online now
 
+/* GET /me/profile/username-available?username=… — same path and answer as
+ * the Django API: is it free (my own counts as free)? Checked again on save. */
+function tj_username_available(): void {
+    $u = tj_require_user();
+    tj_throttle('username_check', (string)$u['id'], 60, 60);
+    $name = strtolower(trim((string)($_GET['username'] ?? '')));
+    if (!tj_valid_username($name)) tj_json(['username' => $name, 'available' => false, 'valid' => false]);
+    $q = tj_db()->prepare('SELECT 1 FROM tj_users WHERE username = ? AND id <> ?');
+    $q->execute([$name, $u['id']]);
+    tj_json(['username' => $name, 'available' => !$q->fetch(), 'valid' => true]);
+}
+
 /* The app is open: remember when, and add the time since the last ping
  * (only if it was recent, so a closed app doesn't count). */
 function tj_heartbeat(): void {

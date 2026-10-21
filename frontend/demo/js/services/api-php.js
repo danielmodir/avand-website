@@ -259,6 +259,7 @@
     onStateChanged: schedulePush,
     saveTask: queued, deleteTask: queuedDelete, saveHabit: queued, deleteHabit: queuedDelete,
     saveEvent: queued, deleteEvent: queuedDelete, saveProfile: saveProfile, saveSettings: queued,
+    usernameAvailable: function (name) { return request('GET', '/me/profile/username-available?username=' + encodeURIComponent(name)).then(function (r) { return !!r.available; }); },
     changePassword: function (current, next) { return request('POST', '/me/password', { current_password: current, new_password: next }); },
     deleteAccount: function (password) {
       return request('POST', '/me/delete', { password: password }).then(function () { clearTimeout(pushTimer); dirty = false; clearSession(); version = 0; loaded = false; });

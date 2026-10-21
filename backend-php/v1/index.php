@@ -41,6 +41,7 @@ $routes = [
     'POST /me/delete'           => 'tj_delete_me',
     'POST /me/heartbeat'        => 'tj_heartbeat',
     'POST /me/password'         => 'tj_change_password',
+    'GET /me/profile/username-available' => 'tj_username_available',
     'GET /social/search'        => 'tj_social_search',
     'GET /social/connections'   => 'tj_social_list',
     'GET /social/invite'        => 'tj_social_invite',

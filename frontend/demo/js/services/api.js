@@ -591,8 +591,12 @@
     resetCaches();
   }
 
+  function usernameAvailable(name) {
+    return request('GET', '/me/profile/username-available?username=' + encodeURIComponent(name)).then(function (r) { return !!r.available; });
+  }
+
   Object.assign(api, {
-    changePassword: changePassword, deleteAccount: deleteAccount,
+    changePassword: changePassword, deleteAccount: deleteAccount, usernameAvailable: usernameAvailable,
     uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,
     signUp: signUp, signIn: signIn, signInWithGoogle: signInWithGoogle, consumeOAuthRedirect: consumeOAuthRedirect, signOut: signOut,
     authProviders: authProviders, forgotPassword: forgotPassword, resetPassword: resetPassword, verifyEmail: verifyEmail, takeEmailLink: takeEmailLink,

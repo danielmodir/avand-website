@@ -19,6 +19,7 @@ function subHeader(title){
 
 function renderMenu(){
   const sub = state.menuSubView;
+  if(sub !== 'profile-edit' || !state.menuPanelOpen) profileDraft = null; // left the edit page: unsaved edits are gone
   if(sub === 'profile') return renderProfilePage();
   if(sub === 'profile-edit') return renderProfileEditPage();
   if(sub === 'friends') return renderFriendsPage();
@@ -111,13 +112,54 @@ function renderProfilePage(){
   `;
 }
 
+/* Birth date as numbers only, in the main calendar: ۱۳۷۴/۰۷/۲۵. */
 function dobLabel(p){
-  if(!p.dob || isNaN(new Date(p.dob + 'T00:00:00'))) return t('dateOfBirth');
-  return formatDateLabel(p.dob);
+  const d = p.dob ? new Date(p.dob + 'T00:00:00') : null;
+  if(!d || isNaN(d)) return t('dateOfBirth');
+  const sys = primarySystem();
+  const c = sys === 'jalali' ? toJalali(d.getFullYear(), d.getMonth() + 1, d.getDate())
+    : sys === 'hijri' ? toHijri(d.getFullYear(), d.getMonth() + 1, d.getDate()) : null;
+  const [y, m, day] = c ? [c.jy || c.hy, c.jm || c.hm, c.jd || c.hd] : [d.getFullYear(), d.getMonth() + 1, d.getDate()];
+  const pad = n => String(n).padStart(2, '0');
+  return `<span dir="ltr">${dig(`${y}/${pad(m)}/${pad(day)}`)}</span>`;
+}
+
+/* ---- editing the profile: nothing changes until "Save changes" ----
+   The page edits a draft copy; Save checks it (username free, set-once
+   fields confirmed) and only then writes it to the account. Leaving with
+   unsaved changes asks first (leaveProfileEditOk, used by every way out). */
+const PROFILE_DRAFT_FIELDS = ['firstName', 'lastName', 'username', 'phone', 'photo', 'dob', 'gender'];
+let profileDraft = null;
+let usernameCheck = { name: '', state: '' }; // state: '', 'checking', 'free', 'taken', 'invalid'
+
+function ensureProfileDraft(){
+  if(!profileDraft){
+    profileDraft = {};
+    PROFILE_DRAFT_FIELDS.forEach(k => { profileDraft[k] = state.profile[k] ?? ''; });
+    usernameCheck = { name: profileDraft.username, state: '' };
+  }
+  return profileDraft;
+}
+function profileDirty(){
+  return !!profileDraft && PROFILE_DRAFT_FIELDS.some(k => (profileDraft[k] ?? '') !== (state.profile[k] ?? ''));
+}
+/* True when it's fine to leave the edit page (nothing unsaved, or the
+   person confirmed); the draft is dropped then. */
+function leaveProfileEditOk(){
+  if(state.menuSubView !== 'profile-edit' || !profileDirty()){ profileDraft = null; return true; }
+  if(!confirm(t('leaveUnsavedConfirm'))) return false;
+  profileDraft = null;
+  return true;
 }
 
 function renderProfileEditPage(){
-  const p = state.profile;
+  const p = Object.assign({}, state.profile, ensureProfileDraft());
+  const dirty = profileDirty();
+  const u = usernameCheck;
+  const uStatus = u.state === 'checking' ? `<div class="username-status">…</div>`
+    : u.state === 'free' ? `<div class="username-status ok">${t('usernameFree')}</div>`
+    : u.state === 'taken' ? `<div class="username-status bad">${t('errUsernameTaken')}</div>`
+    : u.state === 'invalid' ? `<div class="username-status bad">${t('usernameInvalid')}</div>` : '';
   return `
     ${subHeader(t('editProfile'))}
     <div class="profile-edit-form">
@@ -132,25 +174,29 @@ function renderProfileEditPage(){
       <div class="field"><input type="text" id="profile-last-name" value="${escapeAttr(p.lastName)}" placeholder="${t('lastName')}"></div>
     </div>
     <div class="field"><input type="text" id="profile-username" dir="ltr" autocapitalize="off" spellcheck="false" value="${escapeAttr(p.username)}" placeholder="${t('username')}">
+      <div id="username-status-slot">${uStatus}</div>
       <div class="profile-hint">${t('usernameHint')}</div></div>
-    ${/* Gender and birth date are fixed once set (sign-up asks for both);
+    ${/* Gender and birth date are fixed once saved (sign-up asks for both);
          an empty one (older account, or no backend) can be filled in once. */''}
     <div class="field">
-      ${p.dob ? `<div class="locked-field"><span>${t('dateOfBirth')}</span><b>${dobLabel(p)}</b></div>`
+      ${state.profile.dob ? `<div class="locked-field"><span>${t('dateOfBirth')}</span><b>${dobLabel(p)}</b></div>`
         : `<button type="button" class="dob-field-btn" id="profile-dob-btn">${dobLabel(p)}</button><div class="profile-hint">${t('setOnceHint')}</div>`}
     </div>
     <div class="field">
-      ${p.gender === 'female' || p.gender === 'male' ? `<div class="locked-field"><span>${t('gender')}</span><b>${t(p.gender)}</b></div>` : `
+      ${state.profile.gender === 'female' || state.profile.gender === 'male' ? `<div class="locked-field"><span>${t('gender')}</span><b>${t(state.profile.gender)}</b></div>` : `
       <select class="settings-select" id="profile-gender-select" style="width:100%;">
-        <option value="" selected disabled>${t('gender')}</option>
-        <option value="female">${t('female')}</option>
-        <option value="male">${t('male')}</option>
+        <option value="" ${p.gender ? '' : 'selected'} disabled>${t('gender')}</option>
+        <option value="female" ${p.gender === 'female' ? 'selected' : ''}>${t('female')}</option>
+        <option value="male" ${p.gender === 'male' ? 'selected' : ''}>${t('male')}</option>
       </select><div class="profile-hint">${t('setOnceHint')}</div>`}
     </div>
 
     <div class="section-title">${t('contactInfo')}</div>
     ${p.email ? `<div class="field"><div class="locked-field"><span>${t('email')}</span><b dir="ltr">${escapeHtml(p.email)}</b></div></div>` : ''}
     <div class="field"><input type="tel" id="profile-phone" value="${escapeAttr(p.phone)}" placeholder="${t('phoneNumber')}"></div>
+    <div class="profile-save-bar">
+      <button type="button" class="btn btn-primary" id="profile-save" style="width:100%;" ${dirty && u.state !== 'taken' && u.state !== 'invalid' && u.state !== 'checking' ? '' : 'disabled'}>${t('saveChanges')}</button>
+    </div>
     ${Cloud.isConfigured() && !state.guest && Cloud.changePassword ? `
       <div class="section-title">${t('accountSecurity')}</div>
       <div class="field"><input type="password" id="pw-current" autocomplete="current-password" placeholder="${t('currentPassword')}"></div>
@@ -505,42 +551,95 @@ function syncProfileName(){
     || state.profile.username || 'Toojibee User';
 }
 
-let profileSaveTimer = null;
+// Closing or reloading the tab with unsaved profile edits: the browser asks too.
+window.addEventListener('beforeunload', e => {
+  if(state.menuSubView === 'profile-edit' && profileDirty()){ e.preventDefault(); e.returnValue = ''; }
+});
 
-function scheduleProfileSave(){
-  clearTimeout(profileSaveTimer);
-  profileSaveTimer = setTimeout(() => cloudSync(() => Cloud.saveProfile(state.profile)), 600);
+/* The Save button and username line, in place (typing doesn't re-render). */
+function refreshProfileSave(){
+  const btn = document.getElementById('profile-save');
+  const s = usernameCheck.state;
+  if(btn) btn.disabled = !profileDirty() || s === 'taken' || s === 'invalid' || s === 'checking';
+  const slot = document.getElementById('username-status-slot');
+  if(slot){
+    slot.innerHTML = s === 'checking' ? `<div class="username-status">…</div>`
+      : s === 'free' ? `<div class="username-status ok">${t('usernameFree')}</div>`
+      : s === 'taken' ? `<div class="username-status bad">${t('errUsernameTaken')}</div>`
+      : s === 'invalid' ? `<div class="username-status bad">${t('usernameInvalid')}</div>` : '';
+  }
+}
+
+/* Username: the sign-up rules at once, then (after a short pause in typing)
+   whether someone else already has it — the server checks again on save. */
+let usernameTimer = null;
+function checkUsernameSoon(name){
+  clearTimeout(usernameTimer);
+  if(name === (state.profile.username || '')) usernameCheck = { name, state: '' };
+  else if(!USERNAME_RE.test(name)) usernameCheck = { name, state: 'invalid' };
+  else if(!Cloud.usernameAvailable || !Cloud.isConfigured() || !Cloud.hasSession()) usernameCheck = { name, state: '' };
+  else {
+    usernameCheck = { name, state: 'checking' };
+    usernameTimer = setTimeout(() => {
+      Cloud.usernameAvailable(name)
+        .then(free => { if(usernameCheck.name === name) usernameCheck = { name, state: free ? 'free' : 'taken' }; })
+        .catch(() => { if(usernameCheck.name === name) usernameCheck = { name, state: '' }; })
+        .finally(refreshProfileSave);
+    }, 400);
+  }
+  refreshProfileSave();
+}
+
+/* "Save changes": only now does anything reach the account. */
+function saveProfileDraft(){
+  if(!profileDraft || !profileDirty()) return;
+  const d = profileDraft;
+  if(d.username !== (state.profile.username || '') && !USERNAME_RE.test(d.username)){ showToast(t('usernameInvalid')); return; }
+  // Gender and birth date can't be changed once saved: say so first.
+  const settingOnce = (d.dob && !state.profile.dob) || (d.gender && !state.profile.gender);
+  if(settingOnce && !confirm(t('setOnceConfirm'))) return;
+  const before = {};
+  PROFILE_DRAFT_FIELDS.forEach(k => { before[k] = state.profile[k]; });
+  Object.assign(state.profile, d);
+  syncProfileName();
+  const btn = document.getElementById('profile-save');
+  if(btn) btn.disabled = true;
+  // No backend: kept on this device (local-store.js), same as cloudSync().
+  const save = REAL_LOGIN_DISABLED ? (scheduleLocalSave(), Promise.resolve())
+    : !Cloud.hasSession() ? Promise.reject(new Error('no_session'))
+    : Promise.resolve(Cloud.saveProfile(state.profile));
+  save.then(() => {
+    profileDraft = null;
+    showToast(t('profileSaved'));
+    render();
+  }).catch(err => {
+    // Put the account back as it was; the draft stays so it can be fixed.
+    Object.assign(state.profile, before);
+    syncProfileName();
+    if(err && err.code === 'username_taken') usernameCheck = { name: d.username, state: 'taken' };
+    showToast(err && err.code === 'username_taken' ? t('errUsernameTaken') : t('saveFailed'));
+    render();
+  });
 }
 
 function wireMenuInteractivity(){
-  document.getElementById('profile-first-name')?.addEventListener('input', e => { state.profile.firstName = e.target.value; syncProfileName(); scheduleProfileSave(); });
-  document.getElementById('profile-last-name')?.addEventListener('input', e => { state.profile.lastName = e.target.value; syncProfileName(); scheduleProfileSave(); });
-  // Username: same rules as sign-up, checked when the field is left; the
-  // server also checks it's not taken (then the old one comes back).
-  document.getElementById('profile-username')?.addEventListener('change', e => {
-    const before = state.profile.username;
-    const v = e.target.value.trim().toLowerCase();
-    if(v === before) return;
-    if(!USERNAME_RE.test(v)){ showToast(t('usernameInvalid')); e.target.value = before || ''; return; }
-    state.profile.username = v; e.target.value = v; syncProfileName();
-    Promise.resolve(Cloud.saveProfile(state.profile)).catch(err => {
-      state.profile.username = before; syncProfileName(); render();
-      showToast(err && err.code === 'username_taken' ? t('errUsernameTaken') : t('saveFailed'));
+  // Profile edit: every field writes to the draft only (see ensureProfileDraft).
+  if(state.menuSubView === 'profile-edit' && profileDraft){
+    const field = (id, key, ev = 'input') => document.getElementById(id)?.addEventListener(ev, e => { profileDraft[key] = e.target.value; refreshProfileSave(); });
+    field('profile-first-name', 'firstName');
+    field('profile-last-name', 'lastName');
+    field('profile-phone', 'phone');
+    document.getElementById('profile-username')?.addEventListener('input', e => {
+      profileDraft.username = e.target.value.trim().toLowerCase();
+      checkUsernameSoon(profileDraft.username);
     });
-  });
-  // Gender and birth date: only when still empty, once, after a confirm.
-  const setOnce = (field, value) => {
-    if(!confirm(t('setOnceConfirm'))) { render(); return; }
-    state.profile[field] = value;
-    Promise.resolve(Cloud.saveProfile(state.profile)).catch(() => showToast(t('saveFailed')));
-    render();
-  };
-  document.getElementById('profile-dob-btn')?.addEventListener('click', () => openDatePicker({
-    title: t('dateOfBirth'), value: state.profile.dob, max: dateYearsAgo(MIN_SIGNUP_AGE), min: dateYearsAgo(110),
-    onPick: v => setOnce('dob', v),
-  }));
-  document.getElementById('profile-gender-select')?.addEventListener('change', e => setOnce('gender', e.target.value));
-  document.getElementById('profile-phone')?.addEventListener('input', e => { state.profile.phone = e.target.value; scheduleProfileSave(); });
+    document.getElementById('profile-dob-btn')?.addEventListener('click', () => openDatePicker({
+      title: t('dateOfBirth'), value: profileDraft.dob, max: dateYearsAgo(MIN_SIGNUP_AGE), min: dateYearsAgo(110),
+      onPick: v => { profileDraft.dob = v; render(); },
+    }));
+    document.getElementById('profile-gender-select')?.addEventListener('change', e => { profileDraft.gender = e.target.value; refreshProfileSave(); });
+    document.getElementById('profile-save')?.addEventListener('click', saveProfileDraft);
+  }
   document.getElementById('pw-change')?.addEventListener('click', () => {
     const cur = document.getElementById('pw-current').value, next = document.getElementById('pw-new').value;
     const problem = passwordProblem(next);
@@ -570,7 +669,12 @@ function wireMenuInteractivity(){
     if(!file) return;
     if(file.size > MAX_UPLOAD_BYTES){ showToast(t('fileTooLarge')); e.target.value = ''; return; }
     const reader = new FileReader();
-    reader.onload = () => { state.profile.photo = reader.result; cloudSync(() => Cloud.saveProfile(state.profile)); render(); };
+    // On the edit page the new photo waits for "Save changes" like the rest.
+    reader.onload = () => {
+      if(profileDraft) profileDraft.photo = reader.result;
+      else { state.profile.photo = reader.result; cloudSync(() => Cloud.saveProfile(state.profile)); }
+      render();
+    };
     reader.readAsDataURL(file);
   });
   document.getElementById('friend-search')?.addEventListener('input', e => {
@@ -634,6 +738,9 @@ function updateNav(){
   fab.setAttribute('aria-label', inStoreOrAdmin ? t('calendar') : t('add'));
   fab.innerHTML = inStoreOrAdmin ? ICONS.calendarIcon
     : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>';
+
+  const searchBtn = document.getElementById('toolbar-search-btn');
+  if(searchBtn){ searchBtn.setAttribute('aria-label', t('searchLabel')); searchBtn.title = t('searchLabel'); }
 
   const backBtn = document.getElementById('back-today-btn');
   backBtn.textContent = t('backToToday');
@@ -738,7 +845,7 @@ function attachMenuSwipeClose(){
     x0 = null;
     if(axis !== 'x') return;
     panel.style.transition = '';
-    const close = Math.abs(dx) > Math.min(110, panel.clientWidth * 0.28);
+    const close = Math.abs(dx) > Math.min(110, panel.clientWidth * 0.28) && leaveProfileEditOk();
     if(close){
       // Finish the slide out in the swipe's direction, then close for real.
       panel.style.transform = `translateX(${dx > 0 ? '100%' : '-100%'})`;

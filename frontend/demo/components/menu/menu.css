@@ -298,3 +298,10 @@
 .invite-actions .btn svg{ width:14px; height:14px; }
 .device.lang-fa .color-row, .device.lang-fa .invite-card{ direction:rtl; text-align:right; }
 .device.lang-fa .invite-link-box{ text-align:left; }
+/* Profile edit: the Save button stays in reach at the bottom while scrolling. */
+.profile-save-bar{ position:sticky; bottom:0; z-index:3; padding:10px 0 12px; margin:6px 0 4px;
+  background:linear-gradient(to top, var(--bg) 70%, transparent); }
+.profile-save-bar .btn:disabled{ opacity:.45; cursor:default; }
+.username-status{ font-size:12px; font-weight:700; margin:6px 4px 0; color:var(--text-muted); }
+.username-status.ok{ color:var(--success, #30A46C); }
+.username-status.bad{ color:var(--danger); }
