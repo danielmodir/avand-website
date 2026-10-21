@@ -7,6 +7,7 @@ const DEFAULT_PREFS = {
   planningDaySummary: true, planningCalendarDots: true, planningShowEvents: true, planningShowHabits: true,
   occasionsEnabled: true, occasionsJalali: true, occasionsHijri: true, occasionsGregorian: true,
   occasionsHolidaysOnly: false, occasionsMarkHolidays: true, occasionsShowEvents: true,
+  notifyOverdue: true, // one reminder when a task turns "not done" (js/core/notify.js)
 };
 function pref(key){
   const p = state.settings.prefs || {};

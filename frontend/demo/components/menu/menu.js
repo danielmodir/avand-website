@@ -460,7 +460,15 @@ function renderGeneralSettings(){
       <div><div class="lbl">${t('darkMode')}</div><div class="sub">${t('darkModeSub')}</div></div>
       <div class="switch ${document.documentElement.getAttribute('data-theme')!=='light'?'on':''}" data-action="toggle-app-theme" role="switch" aria-checked="${document.documentElement.getAttribute('data-theme')!=='light'}"><div class="knob"></div></div>
     </div>
-    <div class="settings-row" style="opacity:.5;"><div><div class="lbl">${t('notifications')}</div><div class="sub">${t('notificationsSub')}</div></div><div class="switch" style="pointer-events:none;"><div class="knob"></div></div></div>
+    ${(() => {
+      // Reminders (js/core/notify.js): the switch, what the browser allows, and overdue tasks.
+      const on = !!state.settings.notifications;
+      const perm = !notifySupported() ? 'unsupported' : Notification.permission;
+      const sub = !on ? t('notificationsSub') : perm === 'granted' ? t('notifOnSub') : perm === 'denied' ? t('notifBlockedHint') : perm === 'unsupported' ? t('notifUnsupportedHint') : t('notifAskHint');
+      return `<div class="settings-row"><div><div class="lbl">${t('notifications')}</div><div class="sub">${sub}</div></div>
+        <div class="switch ${on ? 'on' : ''}" data-action="toggle-notifications" role="switch" aria-checked="${on}"><div class="knob"></div></div></div>
+        ${on ? prefRow('notifyOverdue', 'prefNotifyOverdue', 'prefNotifyOverdueSub') : ''}`;
+    })()}
   `;
 }
 

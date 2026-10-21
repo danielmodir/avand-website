@@ -38,7 +38,7 @@ function openLayers(){
 function closeLayer(layer){
   if(layer === 'date-picker') return closeDatePicker();
   if(layer === 'auth') return closeAuth();
-  if(layer === 'popup-sub'){ repeatDraft = null; state.popupSubView = null; renderPopupBody(); return; }
+  if(layer === 'popup-sub'){ repeatDraft = null; reminderDraft = null; state.popupSubView = null; renderPopupBody(); return; }
   if(layer === 'popup') return closePopup();
   if(layer === 'quiz') return closePeriodQuiz();
   if(layer === 'fab'){ state.navExpanded = false; render(); return; }

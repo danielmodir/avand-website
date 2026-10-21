@@ -230,6 +230,7 @@ async function enterSignedIn(){
   render();
   acceptPendingInvite(); // opened a friend's invite link before signing in (app.js)
   loadSharedPeriods();
+  startReminders();
 }
 
 /* Shown while boot() is checking a saved session against the backend

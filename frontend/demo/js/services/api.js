@@ -191,8 +191,8 @@
   }
 
   // ── shape conversion ─────────────────────────────────────────────────
-  var NOTIF_TO_API = { time: 'at_time', repeat: 'repeating' };
-  var NOTIF_FROM_API = { at_time: 'time', repeating: 'repeat' };
+  var NOTIF_TO_API = { time: 'at_time', repeat: 'repeating', before: 'before_start' };
+  var NOTIF_FROM_API = { at_time: 'time', repeating: 'repeat', before_start: 'before' };
   var STATUS_TO_API = { done: 'done', not_done: 'not_done' };
 
   function weekdaysToMask(days) { return (days || []).reduce(function (m, d) { return m | (1 << d); }, 0); }
@@ -213,7 +213,8 @@
     var type = NOTIF_TO_API[n && n.type] || 'none';
     return {
       reminder_type: type,
-      reminder_time: type === 'none' ? null : (n.time || '09:00'),
+      // "N minutes before" an event counts from its start time, not a clock time.
+      reminder_time: type === 'none' || type === 'before_start' ? null : (n.time || '09:00'),
       reminder_every_hours: type === 'repeating' ? Math.min(24, Math.max(1, Number(n.repeatHours) || 1)) : null,
       reminder_text: (n && n.text) || '',
     };
@@ -223,6 +224,7 @@
       type: NOTIF_FROM_API[row.reminder_type] || null,
       time: row.reminder_time ? row.reminder_time.slice(0, 5) : '09:00',
       repeatHours: row.reminder_every_hours || 1,
+      minutesBefore: row.reminder_minutes_before || 15,
       text: row.reminder_text || '',
     };
   }
@@ -478,9 +480,13 @@
     return enqueue('event:' + evt.id, function () {
       // A start time makes it a timed event (the API needs start_time then).
       var timed = !!evt.startTime;
+      var before = timed && evt.notification && evt.notification.type === 'before';
       return putVersioned('events', evt.id, Object.assign({ title: evt.title, description: evt.description || '', all_day: !timed,
         start_time: timed ? evt.startTime : null, end_time: timed && evt.endTime ? evt.endTime : null },
-        datesToApi(evt), recurrenceToApi(evt.recurrence, true), reminderToApi(evt.notification)));
+        datesToApi(evt), recurrenceToApi(evt.recurrence, true),
+        // "Minutes before" needs a start time; without one it isn't sent.
+        before ? Object.assign(reminderToApi(evt.notification), { reminder_minutes_before: Math.min(10080, Math.max(1, Number(evt.notification.minutesBefore) || 15)) })
+          : reminderToApi(evt.notification && evt.notification.type === 'before' ? null : evt.notification)));
     });
   }
 

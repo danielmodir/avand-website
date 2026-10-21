@@ -56,6 +56,10 @@ ErrorDocument 404 /404.html
   <FilesMatch "\.(css|js|woff2)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
+  # The reminders service worker keeps one address, so it's always checked.
+  <Files "sw.js">
+    Header set Cache-Control "no-cache"
+  </Files>
   # Images and data keep a fixed name when replaced: a week / a day.
   <FilesMatch "\.(svg|png|jpg|jpeg|webp|ico)$">
     Header set Cache-Control "public, max-age=604800"

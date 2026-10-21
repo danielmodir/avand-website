@@ -328,6 +328,7 @@ class UserSettings(models.Model):
         "occasions_holidays_only": False,
         "occasions_mark_holidays": True,    # holidays in red on the calendar
         "occasions_show_events": True,      # my events under the occasions
+        "notify_overdue": True,             # a reminder when a task turns "not done"
     }
 
     user = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE, related_name="settings")

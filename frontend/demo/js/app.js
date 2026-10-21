@@ -116,6 +116,7 @@ async function boot(){
     state.authScreen = false;
     loadLocalData();
     render();
+    startReminders(); takeReminderFromLink(); // js/core/notify.js
     return;
   }
   try{ await Cloud.consumeOAuthRedirect(); }  // back from Google: #login_code -> tokens
@@ -144,7 +145,7 @@ async function boot(){
   }
   handleEmailLink();
   openAuthFromLink();
-  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); }
+  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); startReminders(); takeReminderFromLink(); }
   else if(state.guest && pendingInvite() && !state.authOpen) openAuth('signup', 'inviteSignInFirst');
 }
 

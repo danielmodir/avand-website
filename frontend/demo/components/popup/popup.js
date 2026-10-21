@@ -36,6 +36,7 @@ function resetFormDraft(type, existing){
       type: existing ? (existing.notification?.type || null) : null,
       time: existing ? (existing.notification?.time || '09:00') : '09:00',
       repeatHours: existing ? (existing.notification?.repeatHours || 1) : 1,
+      minutesBefore: existing ? (existing.notification?.minutesBefore || 15) : 15,
       text: existing ? (existing.notification?.text || '') : ''
     }
   };
@@ -111,6 +112,10 @@ function itemDetailsHtml(type, item){
   if(item.startTime) rows.push([ICONS.clockIcon, `<span dir="ltr">${itemTimeLabel(item)}</span>`]);
   const rep = repeatSummary(item.recurrence);
   if(rep) rows.push([ICONS.repeatIcon, rep]);
+  const n = item.notification || {};
+  if(n.type === 'time') rows.push([ICONS.bellIcon, t('reminderAt') + ' ' + `<span dir="ltr">${dig(n.time)}</span>`]);
+  if(n.type === 'repeat') rows.push([ICONS.bellIcon, t('reminderEveryNHours').replace('{n}', dig(n.repeatHours || 1))]);
+  if(n.type === 'before') rows.push([ICONS.bellIcon, t('reminderMinutesBefore').replace('{n}', dig(n.minutesBefore || 15))]);
   const subs = (item.subtasks || []).map(s => `<li class="${s.done ? 'done' : ''}">${escapeHtml(subTitle(s))}</li>`).join('');
   return `
     <h2 class="details-title">${escapeHtml(item.title || '')}</h2>
@@ -156,7 +161,7 @@ function popupIconRow(type){
   const icons = [];
   if(type !== 'habit') icons.push({ key:'calendar', icon:ICONS.calendarIcon, set: formDraft.timeMode==='range' || formDraft.date !== dateKey(today) || !!formDraft.startTime || !!formDraft.endTime });
   if(!state.editingParentId) icons.push({ key:'repeat', icon:ICONS.repeatIcon, set: !!formDraft.recurrence.mode });
-  icons.push({ key:'notification', icon:ICONS.bellIcon, set: !!formDraft.notification.type, disabled:true });
+  icons.push({ key:'notification', icon:ICONS.bellIcon, set: !!formDraft.notification.type });
   return `<div class="popup-icon-row">${icons.map(i => `<div class="popup-icon-btn ${i.set?'set':''} ${i.disabled?'disabled':''}" data-action="${i.disabled?'notification-coming-soon':'open-subview'}" data-sub="${i.key}">${i.icon}</div>`).join('')}</div>`;
 }
 
@@ -267,23 +272,51 @@ function repeatSubviewHtml(type){
   `;
 }
 
-function notificationSubviewHtml(){
+/* ---- reminder: at a time, every N hours from the start (until it's
+   done), or N minutes before an event starts. A draft until "Confirm",
+   like the repeat page. Delivered by js/core/notify.js. ---- */
+const REMINDER_BEFORE_CHOICES = [5, 10, 15, 30, 60, 120, 1440];
+let reminderDraft = null;
+
+function startReminderDraft(){
   const n = formDraft.notification;
+  reminderDraft = {
+    type: n.type || 'time', time: n.time || formDraft.startTime || '09:00',
+    repeatHours: Math.min(12, Math.max(1, Number(n.repeatHours) || 1)),
+    minutesBefore: n.minutesBefore || 15, text: n.text || '',
+  };
+}
+
+function notificationSubviewHtml(){
+  const n = reminderDraft || (startReminderDraft(), reminderDraft);
+  const isEvent = state.popupType === 'event';
+  const types = ['time', 'repeat'].concat(isEvent ? ['before'] : []);
+  const label = { time: t('atATime'), repeat: t('repeating'), before: t('reminderBefore') };
+  const beforeLabel = m => m % 1440 === 0 ? t('reminderDaysBefore').replace('{n}', dig(m / 1440))
+    : m % 60 === 0 ? t('reminderHoursBefore').replace('{n}', dig(m / 60)) : t('reminderMinutesBefore').replace('{n}', dig(m));
+  const permission = !('Notification' in window) ? 'unsupported' : Notification.permission;
   return `
-    <div class="toggle-pair" id="notif-mode-toggle">
-      <button type="button" data-notif="none" class="${!n.type?'active':''}">${t('noReminder')}</button>
-      <button type="button" data-notif="time" class="${n.type==='time'?'active':''}">${t('atATime')}</button>
-      <button type="button" data-notif="repeat" class="${n.type==='repeat'?'active':''}">${t('repeating')}</button>
-    </div>
-    <div id="notif-time-panel" class="${n.type==='time'?'':'hidden'}" style="margin-top:10px;">
-      <input type="time" id="f-notif-time" value="${n.time}">
-    </div>
-    <div id="notif-repeat-panel" class="${n.type==='repeat'?'':'hidden'}" style="margin-top:10px;">
-      <input type="number" id="f-notif-hours" min="1" max="12" value="${n.repeatHours}" placeholder="${t('everyNHours')}">
-    </div>
-    <div style="margin-top:10px;">
-      <input type="text" id="f-notif-text" placeholder="${t('customReminderText')}" value="${escapeAttr(n.text)}">
-    </div>
+    <select class="settings-select" id="notif-type-select" style="width:100%;">
+      ${types.map(o => `<option value="${o}" ${n.type === o ? 'selected' : ''}>${label[o]}</option>`).join('')}
+    </select>
+    ${n.type === 'time' ? `<div class="rec-block rec-every"><span>${t('reminderAt')}</span><input type="time" id="f-notif-time" value="${n.time}"></div>` : ''}
+    ${n.type === 'repeat' ? `
+      <div class="rec-block rec-every">
+        <span>${t('repeatEvery')}</span>
+        <div class="rec-stepper" dir="ltr">
+          <button type="button" data-hstep="-1" ${n.repeatHours <= 1 ? 'disabled' : ''}>−</button><b>${dig(n.repeatHours)}</b><button type="button" data-hstep="1" ${n.repeatHours >= 12 ? 'disabled' : ''}>+</button>
+        </div>
+        <span>${t('reminderHoursUnit')}</span>
+      </div>
+      <div class="profile-hint">${t('reminderRepeatHint').replace('{t}', `<span dir="ltr">${dig(formDraft.startTime || n.time)}</span>`)}</div>` : ''}
+    ${n.type === 'before' ? (formDraft.startTime ? `
+      <div class="rec-block"><select class="settings-select" id="notif-before-select" style="width:100%;">
+        ${REMINDER_BEFORE_CHOICES.map(m => `<option value="${m}" ${n.minutesBefore === m ? 'selected' : ''}>${beforeLabel(m)}</option>`).join('')}
+      </select></div>` : `<div class="profile-hint rec-block">${t('reminderNeedsStart')}</div>`) : ''}
+    <div class="field rec-block"><input type="text" id="f-notif-text" placeholder="${t('customReminderText')}" value="${escapeAttr(n.text)}" maxlength="200"></div>
+    ${permission !== 'granted' ? `<div class="profile-hint">${t(permission === 'denied' ? 'notifBlockedHint' : permission === 'unsupported' ? 'notifUnsupportedHint' : 'notifAskHint')}</div>` : ''}
+    <button type="button" class="btn btn-primary rec-confirm" id="notif-confirm">${t('dpDone')}</button>
+    ${formDraft.notification.type ? `<button type="button" class="btn btn-outline rec-remove" id="notif-remove">${t('noReminder')}</button>` : ''}
   `;
 }
 
@@ -376,13 +409,27 @@ function wireSubviewInteractivity(){
       renderPopupBody();
     });
   } else if(sub === 'notification'){
-    document.querySelectorAll('#notif-mode-toggle button').forEach(b => b.addEventListener('click', () => {
-      formDraft.notification.type = b.dataset.notif === 'none' ? null : b.dataset.notif;
-      renderPopupBody();
+    const n = reminderDraft;
+    document.getElementById('notif-type-select')?.addEventListener('change', e => { n.type = e.target.value; renderPopupBody(); });
+    document.getElementById('f-notif-time')?.addEventListener('input', e => { n.time = e.target.value; });
+    document.querySelectorAll('[data-hstep]').forEach(b => b.addEventListener('click', () => {
+      n.repeatHours = Math.min(12, Math.max(1, n.repeatHours + Number(b.dataset.hstep))); renderPopupBody();
     }));
-    document.getElementById('f-notif-time')?.addEventListener('input', e => { formDraft.notification.time = e.target.value; });
-    document.getElementById('f-notif-hours')?.addEventListener('input', e => { formDraft.notification.repeatHours = Number(e.target.value||1); });
-    document.getElementById('f-notif-text')?.addEventListener('input', e => { formDraft.notification.text = e.target.value; });
+    document.getElementById('notif-before-select')?.addEventListener('change', e => { n.minutesBefore = Number(e.target.value); });
+    document.getElementById('f-notif-text')?.addEventListener('input', e => { n.text = e.target.value; });
+    document.getElementById('notif-confirm')?.addEventListener('click', () => {
+      if(n.type === 'time' && !n.time){ showToast(t('reminderTimeRequired')); return; }
+      if(n.type === 'before' && !formDraft.startTime){ showToast(t('reminderNeedsStart')); return; }
+      formDraft.notification = { type: n.type, time: n.time || '09:00', repeatHours: n.repeatHours, minutesBefore: n.minutesBefore, text: n.text.trim() };
+      reminderDraft = null; state.popupSubView = null;
+      askNotificationPermission(); // the first reminder asks the browser once (js/core/notify.js)
+      renderPopupBody();
+    });
+    document.getElementById('notif-remove')?.addEventListener('click', () => {
+      formDraft.notification = Object.assign({}, formDraft.notification, { type: null });
+      reminderDraft = null; state.popupSubView = null;
+      renderPopupBody();
+    });
   }
 }
 

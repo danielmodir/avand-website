@@ -112,9 +112,10 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'open-subview'){
     if(el.dataset.sub === 'repeat') startRepeatDraft(); // edited as a draft until "Confirm" (popup.js)
+    if(el.dataset.sub === 'notification') startReminderDraft();
     state.popupSubView = el.dataset.sub; renderPopupBody(); return;
   }
-  if(action === 'close-subview'){ repeatDraft = null; state.popupSubView = null; renderPopupBody(); return; }
+  if(action === 'close-subview'){ repeatDraft = null; reminderDraft = null; state.popupSubView = null; renderPopupBody(); return; }
 
   if(action === 'pick-month'){ state.calCursor = setMonthOf(state.calCursor, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
   if(action === 'pick-year'){ state.calCursor = setYearOf(state.calCursor, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }
@@ -202,6 +203,18 @@ document.getElementById('device').addEventListener('click', (e) => {
     applyAppearance();
     cloudSync(() => Cloud.saveSettings(state.settings));
     render();
+    return;
+  }
+  if(action === 'toggle-notifications'){
+    const turnOn = !state.settings.notifications;
+    state.settings.notifications = turnOn;
+    cloudSync(() => Cloud.saveSettings(state.settings));
+    render();
+    if(turnOn) askNotificationPermission().then(p => {
+      if(p === 'denied') showToast(t('notifBlockedHint'));
+      if(p === 'granted'){ registerReminderWorker(); showToast(t('notifOnSub')); }
+      render();
+    });
     return;
   }
   if(action === 'open-search'){ if(state.searchOpen) closeSearch(); else openSearch(); haptic(10); return; }
