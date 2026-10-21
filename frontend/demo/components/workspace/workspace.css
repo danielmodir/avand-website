@@ -31,6 +31,9 @@
 @media (max-width:959px){
   /* Persian phones: the page dots move over to make room for the button. */
   .device.lang-fa #page-home > .desktop-box .desktop-dots{ inset-inline-start:44px; }
+  /* English mirrors it: the title sits at the left, so the dots go to the
+     right, beside the full-screen button (they used to land on the title). */
+  .device:not(.lang-fa) #page-home > .desktop-box .desktop-dots{ inset-inline-start:auto; inset-inline-end:44px; }
 }
 /* Full screen: the desk takes the whole page; the calendar, banner and
    back-to-today pill step aside until the button (or Back) restores it. */
