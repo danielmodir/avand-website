@@ -872,6 +872,7 @@ function attachMenuSwipeClose(){
 
 function doLogout(){
   if(REAL_LOGIN_DISABLED) return; // no account to sign out of
+  disablePush(); // this browser stops getting the account's reminders
   Cloud.signOut();
   enterGuestMode();
   state.menuPanelOpen = false;

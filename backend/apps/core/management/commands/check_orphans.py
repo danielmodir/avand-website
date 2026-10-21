@@ -11,7 +11,7 @@ from apps.core.models import User
 USER_OWNED = [
     ("planning.Category", "user_id"), ("planning.Task", "user_id"), ("planning.Habit", "user_id"),
     ("planning.Event", "user_id"), ("period.PeriodUserKey", "user_id"), ("social.Invite", "inviter_user_id"),
-    ("notifications.PushSubscription", "user_id"),
+    ("notifications.PushSubscription", "user_id"), ("notifications.ScheduledPush", "user_id"),
 ]
 
 

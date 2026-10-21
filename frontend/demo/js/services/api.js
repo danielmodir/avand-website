@@ -604,7 +604,19 @@
     return request('GET', '/me/profile/username-available?username=' + encodeURIComponent(name)).then(function (r) { return !!r.available; });
   }
 
+  // ── Web Push (apps/notifications) ────────────────────────────────────
+  function pushKey() { return request('GET', '/notifications/push-key', undefined, { auth: false }).then(function (r) { return r.public_key; }); }
+  function pushSubscribe(sub) {
+    return request('POST', '/notifications/subscriptions', {
+      platform: 'web', provider: 'webpush', token: sub.endpoint,
+      web_p256dh: sub.keys && sub.keys.p256dh, web_auth: sub.keys && sub.keys.auth,
+    }).then(function (r) { return r.id; });
+  }
+  function pushUnsubscribe(id) { return request('DELETE', '/notifications/subscriptions/' + id); }
+  function pushSchedule(items) { return request('PUT', '/notifications/schedule', { items: items }); }
+
   Object.assign(api, {
+    pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,
     changePassword: changePassword, deleteAccount: deleteAccount, usernameAvailable: usernameAvailable,
     uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,
     signUp: signUp, signIn: signIn, signInWithGoogle: signInWithGoogle, consumeOAuthRedirect: consumeOAuthRedirect, signOut: signOut,

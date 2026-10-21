@@ -57,7 +57,7 @@ class AuthFlowTests(ApiTestCase):
         self.assertRegex(me["profile"]["public_id"], r"^[0-9A-HJKMNP-TV-Z]{8}$")
         self.assertEqual(User.objects.get(email="user@example.com").id.version, 4)  # random, not time-ordered
         self.assertEqual(me["settings"]["calendar_primary"], "jalali")
-        self.assertEqual([m["key"] for m in me["modules"]], ["occasions", "planning", "social"])
+        self.assertEqual([m["key"] for m in me["modules"]], ["occasions", "planning", "social", "notifications"])
         self.assertTrue(EmailOutbox.objects.filter(template="verify_email").exists())
 
     def test_duplicate_email_and_weak_password_are_rejected(self):

@@ -212,9 +212,10 @@ document.getElementById('device').addEventListener('click', (e) => {
     render();
     if(turnOn) askNotificationPermission().then(p => {
       if(p === 'denied') showToast(t('notifBlockedHint'));
-      if(p === 'granted'){ registerReminderWorker(); showToast(t('notifOnSub')); }
+      if(p === 'granted'){ registerReminderWorker().then(() => enablePush()); showToast(t('notifOnSub')); }
       render();
     });
+    else disablePush();
     return;
   }
   if(action === 'open-search'){ if(state.searchOpen) closeSearch(); else openSearch(); haptic(10); return; }

@@ -10,7 +10,7 @@
    an in-app toast while the app is on screen. Nothing leaves the device.
    Reminders that came due while the app was closed show up when it's
    next opened (within 12 hours, today only), grouped if there are many.
-   Step 2 (Web Push from the server, for a closed app) comes later. */
+   Step 2 (Web Push, for a closed app) is at the end of this file. */
 const NOTIFIED_KEY = 'toojibee-notified-v1';
 const NOTIFY_CATCHUP_MS = 12 * 3600 * 1000;
 let notifyReg = null, notifyTimer = null;
@@ -29,7 +29,10 @@ async function registerReminderWorker(){
    on in Settings, or confirming a reminder on an item. */
 function askNotificationPermission(){
   if(!notifySupported() || Notification.permission !== 'default') return Promise.resolve(notifySupported() ? Notification.permission : 'unsupported');
-  return Notification.requestPermission().then(p => { if(p === 'granted') registerReminderWorker(); return p; });
+  return Notification.requestPermission().then(p => {
+    if(p === 'granted') registerReminderWorker().then(() => { if(state.settings.notifications) enablePush(); });
+    return p;
+  });
 }
 
 function loadNotified(){ try{ return JSON.parse(localStorage.getItem(NOTIFIED_KEY)) || {}; }catch(e){ return {}; } }
@@ -95,9 +98,14 @@ function overdueSlots(day){
   return out;
 }
 
-function showReminder(r, missed){
+function reminderBody(r){
+  if(!r.kind) return r.body;
   const kindLabel = t(r.kind === 'event' ? 'searchEvent' : r.kind === 'habit' ? 'habit' : 'task');
-  const body = (missed ? t('notifMissedPrefix') + ' · ' : '') + `${kindLabel} · ${r.body}`;
+  return `${kindLabel} · ${r.body}`;
+}
+
+function showReminder(r, missed){
+  const body = (missed ? t('notifMissedPrefix') + ' · ' : '') + reminderBody(r);
   const opts = { body, tag: r.slot, lang: lang(), dir: lang() === 'fa' ? 'rtl' : 'ltr', icon: '../assets/icons/icon-192.png',
     badge: '../assets/icons/favicon-48.png', data: { kind: r.kind, id: r.id, date: r.date } };
   if(notifyAllowed()){
@@ -107,14 +115,17 @@ function showReminder(r, missed){
   if(!document.hidden) showToast(`🔔 ${r.title}`);
 }
 
-function reminderTick(){
+async function reminderTick(){
   if(!state.settings.notifications || state.guest || state.booting) return;
   const now = Date.now();
   const day = new Date(now); day.setHours(0, 0, 0, 0);
   const fired = loadNotified();
+  // Already shown by sw.js from a push while the app was closed.
+  (await shownByWorker()).forEach(slot => { if(!fired[slot]) fired[slot] = now; });
   const due = reminderSlots(day).concat(overdueSlots(day))
     .filter(r => r.at <= now && now - r.at < NOTIFY_CATCHUP_MS && !fired[r.slot]);
-  if(!due.length) return;
+  syncPushSchedule(false);
+  if(!due.length){ saveNotified(fired); return; }
   due.forEach(r => { fired[r.slot] = now; });
   saveNotified(fired);
   // "Every N hours": a long absence shouldn't fire every missed hour — the latest only.
@@ -142,16 +153,23 @@ function openReminderTarget(d){
 }
 
 function startReminders(){
-  if(notifyAllowed()) registerReminderWorker();
+  if(notifyAllowed()) registerReminderWorker().then(() => { if(state.settings.notifications) enablePush(); });
   clearInterval(notifyTimer);
   notifyTimer = setInterval(reminderTick, 30000);
   setTimeout(reminderTick, 1500); // right after opening: anything that came due meanwhile
 }
 
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.addEventListener('message', e => { if(e.data && e.data.type === 'open-reminder') openReminderTarget(e.data); });
+  navigator.serviceWorker.addEventListener('message', e => {
+    if(!e.data) return;
+    if(e.data.type === 'open-reminder') openReminderTarget(e.data);
+    if(e.data.type === 'push-reminder') reminderTick(); // the app is on screen: it shows it itself
+  });
 }
-document.addEventListener('visibilitychange', () => { if(!document.hidden) reminderTick(); });
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden) reminderTick();
+  else syncPushSchedule(false); // leaving the app: the server gets the latest list
+});
 
 /* The app was opened from a notification while it was closed. */
 function takeReminderFromLink(){
@@ -160,4 +178,137 @@ function takeReminderFromLink(){
   history.replaceState(null, '', location.pathname + location.search);
   const [kind, id, date] = decodeURIComponent(m[1]).split('|');
   setTimeout(() => openReminderTarget({ kind, id, date }), 300);
+}
+
+/* ============ REMINDERS — step 2: Web Push ============
+   For a closed app. With an account, reminders on, and the browser's
+   permission, this browser subscribes to push (its address goes to our
+   server: POST /notifications/subscriptions) and the app sends the server
+   its reminders for the next PUSH_DAYS days, worked out by the same code
+   as above (PUT /notifications/schedule). The server's cron sends each one
+   when it's due; sw.js shows it. The list is re-sent whenever it changes
+   (checked with every tick and when the app is left), and at least every
+   few hours so it keeps reaching ahead. Reminders sw.js already showed
+   aren't shown again when the app opens (shownByWorker). */
+const PUSH_KEY = 'toojibee-push-v1';
+const PUSH_DAYS = 7;
+const PUSH_REFRESH_MS = 6 * 3600 * 1000;
+const SHOWN_CACHE = 'tj-shown-v1';
+let pushBusy = false;
+
+function pushPossible(){
+  return typeof REAL_LOGIN_DISABLED !== 'undefined' && !REAL_LOGIN_DISABLED && Cloud.hasSession() && !!Cloud.pushKey
+    && 'PushManager' in window && 'serviceWorker' in navigator && notifyAllowed();
+}
+function loadPush(){ try{ return JSON.parse(localStorage.getItem(PUSH_KEY)) || {}; }catch(e){ return {}; } }
+function savePush(p){ try{ localStorage.setItem(PUSH_KEY, JSON.stringify(p)); }catch(e){} }
+
+function b64uBytes(s){
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4));
+  return Uint8Array.from(bin, c => c.charCodeAt(0));
+}
+
+/* Subscribe this browser (or re-send an existing subscription: its
+   address can change, and the account on this device may be new). */
+async function enablePush(){
+  if(pushBusy || !pushPossible()) return false;
+  pushBusy = true;
+  try{
+    const reg = await registerReminderWorker();
+    if(!reg) return false;
+    await navigator.serviceWorker.ready;
+    const key = await Cloud.pushKey();
+    let sub = await reg.pushManager.getSubscription();
+    // Made with another server key (keys never change, but just in case): start over.
+    const k = sub && sub.options && sub.options.applicationServerKey;
+    if(sub && k && btoa(String.fromCharCode(...new Uint8Array(k))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') !== key){
+      await sub.unsubscribe(); sub = null;
+    }
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(key) });
+    const json = sub.toJSON();
+    const p = loadPush();
+    const owner = state.profile?.userId || '';
+    if(p.endpoint !== json.endpoint || p.owner !== owner || !p.id){
+      const id = await Cloud.pushSubscribe(json);
+      savePush({ id, endpoint: json.endpoint, owner, sent: '' , sentAt: 0 });
+    }
+    pushBusy = false;
+    await syncPushSchedule(true);
+    return true;
+  }catch(e){
+    return false; // no push service reachable, blocked, … : step 1 still works while the app is open
+  }finally{ pushBusy = false; }
+}
+
+/* Reminders off, or signing out: nothing more reaches this browser. The
+   server is told first (the request leaves before the session is gone). */
+function disablePush(){
+  const p = loadPush();
+  savePush({});
+  try{
+    if(p.id && Cloud.pushUnsubscribe) Cloud.pushUnsubscribe(p.id).catch(() => {});
+    if(Cloud.pushSchedule && Cloud.hasSession()) Cloud.pushSchedule([]).catch(() => {});
+  }catch(e){}
+  if(notifyReg) notifyReg.pushManager.getSubscription().then(s => s && s.unsubscribe()).catch(() => {});
+}
+
+/* What would be overdue on `day` (ahead of time: taskOverdue() only knows
+   the past). Same slots as overdueSlots(), so either side shows it once. */
+function overdueAheadSlots(day){
+  if(!pref('notifyOverdue')) return [];
+  const key = dateKey(day), out = [];
+  const explicit = task => isRecurringTask(task) ? task.statusByDate?.[key] : (task.done || task.skipped);
+  state.tasks.forEach(task => {
+    if(!occursOnDate(task, day) || explicit(task)) return;
+    const deadline = isRecurringTask(task) ? key : (task.timeMode === 'range' && task.endDate ? task.endDate : task.date);
+    if(deadline !== key) return;
+    const hm = task.endTime || task.startTime;
+    const at = hm ? atTimeOn(day, hm) : atTimeOn(addDays(day, 1), '09:00');
+    out.push({ slot: `overdue|task|${task.id}|${key}`, kind: 'task', id: task.id, date: key,
+      title: t('notifOverdueTitle').replace('{title}', task.title), body: t('notifOverdueBody'), at });
+  });
+  return out;
+}
+
+function pushScheduleItems(){
+  const now = Date.now();
+  const today = new Date(now); today.setHours(0, 0, 0, 0);
+  const items = [];
+  for(let i = -1; i < PUSH_DAYS; i++){ // -1: yesterday's day-only deadlines come due this morning
+    const day = addDays(today, i);
+    const list = (i < 0 ? [] : reminderSlots(day)).concat(overdueAheadSlots(day));
+    list.forEach(r => { if(r.at > now - 60000) items.push({ slot: r.slot, at: r.at, title: r.title, body: reminderBody(r), kind: r.kind, id: r.id, date: r.date }); });
+  }
+  return items.sort((a, b) => a.at - b.at).slice(0, 400);
+}
+
+/* Send the list when it changed, or when the last one is getting old. */
+async function syncPushSchedule(force){
+  if(!state.settings.notifications || state.guest || state.booting || !pushPossible()) return;
+  const p = loadPush();
+  if(!p.id) return;
+  const items = pushScheduleItems();
+  const sig = JSON.stringify(items.map(i => [i.slot, i.title, i.body]));
+  if(!force && sig === p.sent && Date.now() - (p.sentAt || 0) < PUSH_REFRESH_MS) return;
+  try{
+    await Cloud.pushSchedule(items);
+    savePush(Object.assign(loadPush(), { sent: sig, sentAt: Date.now() }));
+  }catch(e){ /* offline: next tick tries again */ }
+}
+
+/* Slots sw.js showed from a push (kept in Cache Storage, which both sides
+   can read); entries older than three days are dropped here. */
+async function shownByWorker(){
+  if(!('caches' in window)) return [];
+  try{
+    const cache = await caches.open(SHOWN_CACHE);
+    const out = [];
+    for(const req of await cache.keys()){
+      const res = await cache.match(req);
+      const at = Number(res ? await res.text() : 0);
+      if(Date.now() - at > 3 * 86400000){ cache.delete(req); continue; }
+      out.push(decodeURIComponent(new URL(req.url).pathname.split('/').pop()));
+    }
+    return out;
+  }catch(e){ return []; }
 }

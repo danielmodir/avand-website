@@ -286,7 +286,19 @@
         return (rows || []).map(function (r) { return { id: r.id, name: r.name, userId: 'TJ-' + r.public_id, period: r.period }; });
       });
     },
+    // Web Push (backend-php/lib/push.php): this browser's push address,
+    // and the reminders the server sends while the app is closed.
+    pushKey: function () { return request('GET', '/notifications/push-key', undefined, { auth: false }).then(function (r) { return r.public_key; }); },
+    pushSubscribe: pushSubscribe,
+    pushUnsubscribe: function (id) { return request('DELETE', '/notifications/subscriptions/' + id); },
+    pushSchedule: function (items) { return request('PUT', '/notifications/schedule', { items: items }); },
     calendarYear: unsupported,
   });
+  function pushSubscribe(sub) {
+    return request('POST', '/notifications/subscriptions', {
+      platform: 'web', provider: 'webpush', token: sub.endpoint,
+      web_p256dh: sub.keys && sub.keys.p256dh, web_auth: sub.keys && sub.keys.auth,
+    }).then(function (r) { return r.id; });
+  }
   global.Cloud = api;
 })(window);

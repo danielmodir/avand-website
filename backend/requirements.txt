@@ -8,3 +8,4 @@ requests>=2.32
 Pillow>=10.4
 python-dotenv>=1.0
 mysqlclient>=2.2
+pywebpush>=2.0

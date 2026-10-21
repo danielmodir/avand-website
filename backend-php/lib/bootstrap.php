@@ -248,6 +248,39 @@ function tj_migrate(PDO $db): void {
         try { $db->exec('CREATE INDEX tj_period_shares_viewer ON tj_period_shares (viewer_id)'); } catch (PDOException $e) { /* already there */ }
         $db->exec('INSERT INTO tj_schema (version) VALUES (11)');
     }
+    if ($v < 12) {
+        // Web Push (lib/push.php): each browser's push address, and the
+        // reminders the app scheduled, sent by push-cron.php when due.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_push_subs (
+            id $id,
+            public_id CHAR(32) NOT NULL UNIQUE,
+            user_id $fk NOT NULL,
+            endpoint VARCHAR(2000) NOT NULL,
+            endpoint_hash CHAR(64) NOT NULL UNIQUE,
+            p256dh VARCHAR(255) NOT NULL,
+            auth VARCHAR(255) NOT NULL,
+            fails INT NOT NULL DEFAULT 0,
+            last_ok_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        try { $db->exec('CREATE INDEX tj_push_subs_user ON tj_push_subs (user_id)'); } catch (PDOException $e) { /* already there */ }
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_push_queue (
+            id $id,
+            user_id $fk NOT NULL,
+            slot VARCHAR(200) NOT NULL,
+            due_at DATETIME NOT NULL,
+            title VARCHAR(160) NOT NULL,
+            body VARCHAR(300) NOT NULL,
+            data VARCHAR(200) NOT NULL,
+            sent_at DATETIME NULL,
+            UNIQUE (user_id, slot),
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        try { $db->exec('CREATE INDEX tj_push_queue_due ON tj_push_queue (sent_at, due_at)'); } catch (PDOException $e) { /* already there */ }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (12)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

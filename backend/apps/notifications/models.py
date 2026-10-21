@@ -58,6 +58,25 @@ class NotificationMute(models.Model):
         constraints = [models.UniqueConstraint(fields=["user_id", "module_key"], name="notif_mute_uq")]
 
 
+class ScheduledPush(models.Model):
+    """A reminder the app worked out (js/core/notify.js) and handed over, to
+    be pushed when due by the send_push command (every minute). PUT
+    /notifications/schedule replaces the user's unsent rows; a slot already
+    sent is never sent again."""
+
+    user_id = models.UUIDField()
+    slot = models.CharField(max_length=200)
+    due_at = models.DateTimeField()
+    title = models.CharField(max_length=160)
+    body = models.CharField(max_length=300, blank=True)
+    data = models.JSONField(default=dict)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user_id", "slot"], name="notif_push_slot_uq")]
+        indexes = [models.Index(fields=["sent_at", "due_at"], name="notif_push_due_idx")]
+
+
 class NotificationLog(models.Model):
     """Every reminder queued. The unique key makes sending idempotent: a
     scheduler that runs twice cannot notify twice. Purged after 30 days."""
