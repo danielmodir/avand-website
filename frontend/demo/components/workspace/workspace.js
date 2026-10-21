@@ -53,7 +53,7 @@ function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = [];
   if(pref('occasionsEnabled')){
-    panes.push({ key:'occasionsDesktop', html: renderOccasionsPane(d, events) + renderArticleStrip('app_main') });
+    panes.push({ key:'occasionsDesktop', html: renderOccasionsPane(d, events) });
   }
   // Guests only browse the calendar and occasions; planning needs an account.
   if(state.settings.planningEnabled && !state.guest){
@@ -61,7 +61,6 @@ function renderDesktops(d, data){
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
       ${pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
       ${renderItemSections(tasks,pref('planningShowHabits') ? habits : [], pref('planningShowEvents') ? events : [], d)}
-      ${renderArticleStrip('app_planning')}
     ` });
   }
   if(periodViews().length){ // her own cycle and/or ones friends share with this person

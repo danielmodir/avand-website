@@ -15,11 +15,10 @@ const TJ_ARTICLE_STATUSES = ['draft', 'pending', 'published', 'rejected'];
 /* Where a published article shows up ("show in" in the panel):
  * list         the site's /fa|en/articles/ page
  * landing      a section on the landing page (page.php)
- * app_main     the app's main desk (occasions pane)
- * app_planning the app's planning desk
- * app_period   the app's period desk
+ * app_period   the app's period desk (the occasions and planning desks had
+ *              articles too until 2026-10-21; removed at the owner's request)
  * Its own page (/articles/<slug>/) works whatever is ticked. */
-const TJ_ARTICLE_PLACES = ['list', 'landing', 'app_main', 'app_planning', 'app_period'];
+const TJ_ARTICLE_PLACES = ['list', 'landing', 'app_period'];
 const TJ_ARTICLE_PLACE_LIMIT = 6;
 
 function tj_article_places(array $a): array {
@@ -42,7 +41,7 @@ function tj_articles_in(string $lang, string $place, int $limit = 0): array {
 function tj_public_featured_articles(): void {
     $out = [];
     foreach (['fa', 'en'] as $l) {
-        foreach (['app_main', 'app_planning', 'app_period'] as $p) {
+        foreach (['app_period'] as $p) {
             $out[$l][$p] = array_map(function ($a) use ($l) {
                 return ['title' => $a['title'], 'summary' => $a['summary'], 'cover' => $a['cover'], 'url' => '/' . $l . '/articles/' . $a['slug'] . '/'];
             }, tj_articles_in($l, $p, TJ_ARTICLE_PLACE_LIMIT));
