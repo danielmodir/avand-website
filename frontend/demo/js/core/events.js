@@ -8,7 +8,7 @@ const GUEST_ACTIONS = new Set([
   'pick-day','close-day-sheet','go-today','goto-desktop','desktop-step','toggle-desktop-title-menu',
   'toggle-section','go-landing','toggle-app-theme','retry-boot','toggle-desk-full',
   'toggle-cal-full','cal-full-step','cal-full-today','cal-full-pick','open-search','close-search',
-  'open-auth','close-auth','auth-tab','auth-submit','auth-google','auth-resend',
+  'open-auth','close-auth','auth-tab','auth-submit','auth-google','auth-resend','start-tour',
 ]);
 
 function requireAccount(){
@@ -180,6 +180,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'auth-resend'){ resendAuthCode(); return; }
   if(action === 'contact-send'){ sendContactMessage(); return; }
   if(action === 'articles-cat'){ articlesView.cat = el.dataset.val; render(); return; }
+  if(action === 'start-tour'){ startTour(el.dataset.tourId); return; }
   if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){
     if(profileDraft) profileDraft.photo = null; // edit page: waits for "Save changes"
     else { state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); }

@@ -117,6 +117,7 @@ async function boot(){
     loadLocalData();
     render();
     startReminders(); takeReminderFromLink(); // js/core/notify.js
+    maybeShowBirthday(); maybeStartFirstTour();
     return;
   }
   try{ await Cloud.consumeOAuthRedirect(); }  // back from Google: #login_code -> tokens
@@ -147,6 +148,7 @@ async function boot(){
   openAuthFromLink();
   if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); maybeShowBirthday(); }
   else if(state.guest && pendingInvite() && !state.authOpen) openAuth('signup', 'inviteSignInFirst');
+  if(!state.bootError) maybeStartFirstTour(); // the first visit: the general tour, once
 }
 
 /* A friend's invite link (/demo/#invite=CODE): remembered until the person

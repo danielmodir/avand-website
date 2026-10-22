@@ -1,0 +1,20 @@
+/* Guided tour (components/tour/tour.js). Theme variables only. The page
+   dims through the lit spot's huge shadow; the spot itself stays clear. */
+.tour-root{ position:fixed; inset:0; z-index:600; }
+.tour-hole{ position:fixed; border-radius:18px; pointer-events:none;
+  box-shadow:0 0 0 200vmax var(--overlay), 0 0 0 3px var(--primary);
+  transition:left .35s cubic-bezier(.4,0,.2,1), top .35s cubic-bezier(.4,0,.2,1), width .35s cubic-bezier(.4,0,.2,1), height .35s cubic-bezier(.4,0,.2,1); }
+.tour-root::before{ content:''; position:fixed; inset:0; } /* catches taps outside: the app underneath stays still */
+.tour-card{ position:fixed; z-index:1; padding:16px 16px 12px; border-radius:20px; background:var(--card); color:var(--text);
+  border:1px solid var(--border); box-shadow:var(--shadow); transition:left .3s ease, top .3s ease; animation:tour-in .3s ease both; }
+.tour-progress{ display:flex; gap:5px; margin-bottom:10px; }
+.tour-progress i{ width:6px; height:6px; border-radius:999px; background:var(--border); transition:width .2s, background .2s; }
+.tour-progress i.on{ width:18px; background:var(--primary); }
+.tour-title{ font-size:15.5px; font-weight:800; }
+.tour-text{ margin-top:5px; font-size:13.5px; line-height:1.85; color:var(--text-muted); }
+.tour-actions{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:12px; }
+.tour-nav{ display:flex; gap:6px; }
+.tour-skip{ border:none; background:none; color:var(--text-muted); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; padding:6px 2px; }
+.tour-skip:hover{ color:var(--primary); }
+@keyframes tour-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce){ .tour-hole, .tour-card{ transition:none; animation:none; } }
