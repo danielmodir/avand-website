@@ -395,6 +395,44 @@ html[lang="fa"] .showcase-step:nth-child(3)::before { content: "۳"; }
 .showcase-step p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
 
 /* ===== Product experience: heading + one desktop screenshot ===== */
+/* ===== Desks: one row per part of the app, screenshot beside the copy,
+   alternating sides on wide screens. Screenshots swap with the theme
+   like the hero's (.device-frame rules above). ===== */
+.desk-rows { display: grid; gap: var(--space-8); }
+.desk-row { display: grid; gap: var(--space-6); align-items: center; }
+.desk-row .device-frame { width: min(280px, 72vw); margin: 0 auto; animation: none; }
+.desk-shot { position: relative; isolation: isolate; }
+.desk-shot .device-frame-glow { top: 15%; inset-inline-start: 20%; width: 60%; opacity: .25; }
+.desk-tag {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  color: var(--color-link); font-size: var(--font-size-xs); font-weight: 800;
+  margin-bottom: var(--space-2);
+}
+.desk-tag svg { width: 18px; height: 18px; }
+.desk-copy h3 { font-size: var(--font-size-lg); margin: 0 0 var(--space-3) 0; line-height: var(--line-height-tight); }
+.desk-copy p { color: var(--color-text-muted); margin: 0 0 var(--space-3) 0; }
+.desk-points { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2); font-size: var(--font-size-sm); }
+.desk-points li { display: flex; gap: var(--space-2); align-items: flex-start; }
+.desk-points li::before {
+  content: ""; flex: 0 0 auto; width: 8px; height: 8px; margin-top: .55em;
+  border-radius: 50%; background: var(--color-accent);
+}
+@media (min-width: 860px) {
+  .desk-row { grid-template-columns: 1fr 1fr; gap: var(--space-8); }
+  .desk-row:nth-child(even) .desk-shot { order: 2; }
+}
+
+/* Signed in (assets/js/buttons.js): the header's "Log in" turns into the
+   person's avatar, which opens the web app. */
+.header-profile {
+  width: 42px; height: 42px; border-radius: 50%; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-accent) center / cover no-repeat; color: var(--color-on-accent);
+  font-weight: 800; font-size: var(--font-size-sm); text-decoration: none;
+  box-shadow: var(--shadow-soft-sm); transition: transform var(--duration-fast) var(--ease-standard);
+}
+.header-profile:hover { transform: translateY(-1px); }
+
 .experience { text-align: center; }
 .experience .section-sub { margin-inline: auto; }
 .experience .device-frame { width: min(860px, 100%); margin: 0 auto; animation: none; }
@@ -488,6 +526,7 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .article-card p { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0 0 var(--space-3) 0; }
 .article-date { color: var(--color-text-muted); font-size: var(--font-size-xs); }
 .article-card h3 { font-size: var(--font-size-md); margin: 0 0 var(--space-2) 0; line-height: var(--line-height-tight); }
+@media (min-width: 960px) { .landing-articles .article-list { grid-template-columns: repeat(3, 1fr); } }
 .landing-articles-more { margin-top: var(--space-5); text-align: center; }
 .landing-articles-more a { color: var(--color-link); font-weight: 700; }
 .article { max-width: 720px; }

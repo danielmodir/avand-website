@@ -63,9 +63,10 @@ function tj_public_featured_articles(): void {
 }
 
 /* The landing page's "articles" section, before the closing call to
- * action; nothing when no article is placed there. */
+ * action: the ones ticked "landing page", or else the newest; nothing
+ * when the language has no published article. */
 function tj_landing_articles(string $html, string $lang): string {
-    $list = tj_articles_in($lang, 'landing', 3);
+    $list = tj_articles_in($lang, 'landing', 3) ?: array_slice(tj_published_articles($lang), 0, 3);
     if (!$list) return $html;
     $h = function (string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); };
     $cards = '';
@@ -75,7 +76,7 @@ function tj_landing_articles(string $html, string $lang): string {
             . '<span class="article-card-body"><h3>' . $h($a['title']) . '</h3>'
             . ($a['summary'] !== '' ? '<p>' . $h($a['summary']) . '</p>' : '') . '</span></a>';
     }
-    $title = $lang === 'fa' ? 'مقاله‌ها' : 'Articles';
+    $title = $lang === 'fa' ? 'گلچین مقاله‌ها' : 'From our articles';
     $all = $lang === 'fa' ? 'همه‌ی مقاله‌ها' : 'All articles';
     $section = '<section class="section landing-articles" aria-labelledby="articles-title">'
         . '<h2 id="articles-title">' . $title . '</h2><div class="article-list">' . $cards . '</div>'

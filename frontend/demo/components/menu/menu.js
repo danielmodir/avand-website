@@ -746,6 +746,19 @@ function runFriendSearchNow(){
     .finally(() => { state.friendSearchBusy = false; if(state.menuSubView === 'friends') refreshFriendList(); });
 }
 
+/* A small note for the landing page (assets/js/buttons.js): signed in,
+   its header shows this avatar instead of "Log in". Only with a real
+   account (a backend and not a guest); removed when signed out. */
+let landingNote = null;
+function noteSignedInForLanding(){
+  const signedIn = Cloud.isConfigured() && !state.guest && !state.authScreen && Cloud.hasSession();
+  const photo = state.profile.photo && String(state.profile.photo).length < 150000 ? state.profile.photo : null;
+  const note = signedIn ? JSON.stringify({ i: initials(state.profile.name), n: state.profile.name || '', p: photo }) : '';
+  if(note === landingNote) return;
+  landingNote = note;
+  try{ if(note) localStorage.setItem('toojibee-me', note); else localStorage.removeItem('toojibee-me'); }catch(e){}
+}
+
 function updateNav(){
   // A resize while the page is still loading (a phone's address bar
   // sliding away) can land before the partials are injected.
@@ -774,6 +787,7 @@ function updateNav(){
     avatarBtn.style.backgroundImage = 'none';
     avatarBtn.textContent = initials(state.profile.name);
   }
+  noteSignedInForLanding();
 
   /* Mobile-only: '+' doesn't make sense while browsing Store/Management
      (reached via the capsule next to this same button), so it swaps to a

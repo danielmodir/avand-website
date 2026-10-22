@@ -77,6 +77,10 @@ Read the relevant doc before any big change.
   advertises MVP features: Task, Habit, Event, Calendar, reminders (see
   docs/avand_phase2_v1.md and docs/avand_mvp-scope-amendments_v1.md). Do NOT
   advertise Reports/Charts, AI, Challenge, Journal, Tool Store or Social there.
+  Exception (repo owner, 2026-10-22): the landing's "desks" section also
+  describes the live app's Occasions desk, Period desk and Friends page
+  (invite link, find by username/TJ- code, sharing the period cycle) —
+  only what the app really does, nothing beyond.
 - /demo/ itself is an exception by explicit, conscious decision (SPEC.md §11.9):
   it now also includes Social (Friends/Connections) and a Tool Store-style
   Feature Center, deliberately going beyond the docs' original MVP scope for

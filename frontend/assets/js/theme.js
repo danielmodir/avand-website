@@ -42,8 +42,12 @@
         current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
       var next = current === 'dark' ? 'light' : 'dark';
-      var r = btn.getBoundingClientRect();
-      animate(e.clientX || r.left + r.width / 2, e.clientY || r.top + r.height / 2, function () {
+      // The circle opens from the sun/moon icon itself, which turns as it swaps.
+      var icon = btn.querySelector(current === 'dark' ? '.icon-moon' : '.icon-sun') || btn;
+      var r = icon.getBoundingClientRect();
+      if (!r.width) r = btn.getBoundingClientRect();
+      if (btn.animate) btn.animate({ transform: ['rotate(0) scale(1)', 'rotate(-120deg) scale(.7)', 'rotate(0) scale(1)'] }, { duration: 650, easing: 'cubic-bezier(.4,0,.2,1)' });
+      animate(r.left + r.width / 2, r.top + r.height / 2, function () {
         root.setAttribute('data-theme', next);
       });
       try { localStorage.setItem('toojibee-theme', next); } catch (err) { /* private mode, ignore */ }

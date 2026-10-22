@@ -196,8 +196,10 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'toggle-app-theme'){
-    const r = el.getBoundingClientRect();
-    switchThemeAnimated(e.clientX || r.left + r.width / 2, e.clientY || r.top + r.height / 2, () => {
+    // The circle opens from the sun/moon icon (or the switch's knob) itself.
+    const icon = [...el.querySelectorAll('svg, .knob')].find(n => n.getBoundingClientRect().width > 0) || el;
+    const r = icon.getBoundingClientRect();
+    switchThemeAnimated(r.left + r.width / 2, r.top + r.height / 2, () => {
       state.settings.theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       applyAppearance();
       render();
