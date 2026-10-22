@@ -273,26 +273,37 @@ function runConnectionAction(btn, fn){
 
 let friendSearchTimer = null;
 
+/* What people type for a friend: "@name", "TJ-ABCD1234", Persian digits,
+   spaces or a pasted "toojibee.ir · TJ-…". Codes use 0-9 and A-Z without
+   I, L, O, U (look-alikes): O is read as 0, I and L as 1. */
+function normalizeFriendQuery(raw){
+  let q = String(raw || '').trim()
+    .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/[‌‏‎]/g, '');
+  const code = /(?:^|[^a-z0-9])tj[\s\-–_]*([0-9a-z]{8})(?![0-9a-z])/i.exec(q) || /^([0-9a-z]{8})$/i.exec(q.replace(/[\s\-]/g, ''));
+  if(code) return 'TJ-' + code[1].toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1');
+  return q.replace(/\s+/g, '');
+}
+
+function refreshFriendList(){
+  const area = document.getElementById('friend-list-area');
+  if(area) area.innerHTML = friendListHtml(); else render();
+}
+
 function scheduleFriendSearch(){
   clearTimeout(friendSearchTimer);
-  const q = state.friendSearch.trim();
-  if(!q){ state.friendSearchResults = []; state.friendSearchBusy = false; render(); return; }
+  const q = normalizeFriendQuery(state.friendSearch);
+  if(!q){ state.friendSearchResults = []; state.friendSearchBusy = false; refreshFriendList(); return; }
   state.friendSearchBusy = true;
   friendSearchTimer = setTimeout(async () => {
     try{ state.friendSearchResults = await Cloud.searchUser(q); }
     catch(e){ state.friendSearchResults = []; }
     state.friendSearchBusy = false;
-    render();
+    if(state.menuSubView === 'friends') refreshFriendList();
   }, 350);
 }
 
 function renderFriendsPage(){
-  const q = state.friendSearch.trim();
-  const incoming = state.connections.filter(c=>c.status==='pending-incoming');
-  const accepted = state.connections.filter(c=>c.status==='accepted');
-  const outgoing = state.connections.filter(c=>c.status==='pending-outgoing');
-  const blocked = state.connections.filter(c=>c.status==='blocked');
-  const nothingYet = !incoming.length && !accepted.length && !outgoing.length;
   // Personal invite link (backend: GET /social/invite): whoever opens it
   // becomes a friend right away. Without that API: the site + my code.
   const inviteHtml = Cloud.inviteToken ? `
@@ -314,9 +325,25 @@ function renderFriendsPage(){
     ${subHeader(t('connections'))}
     ${inviteHtml}
     <div class="search-capsule" style="margin-top:16px;">
-      <input type="text" id="friend-search" value="${escapeAttr(state.friendSearch)}" placeholder="${t('friendsSearchPlaceholder')}">
+      <input type="text" id="friend-search" value="${escapeAttr(state.friendSearch)}" placeholder="${t('friendsSearchPlaceholder')}"
+        dir="auto" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
       <button type="button" class="search-capsule-btn" id="friend-search-btn" aria-label="${t('searchResults')}">${ICONS.searchIcon}</button>
     </div>
+    <div id="friend-list-area">${friendListHtml()}</div>
+  `;
+}
+
+/* Everything under the search field. Typing only refreshes this part:
+   rebuilding the field itself on every key broke phone keyboards mid-word
+   (Persian/Gboard composition), dropping or jumping characters. */
+function friendListHtml(){
+  const q = state.friendSearch.trim();
+  const incoming = state.connections.filter(c=>c.status==='pending-incoming');
+  const accepted = state.connections.filter(c=>c.status==='accepted');
+  const outgoing = state.connections.filter(c=>c.status==='pending-outgoing');
+  const blocked = state.connections.filter(c=>c.status==='blocked');
+  const nothingYet = !incoming.length && !accepted.length && !outgoing.length;
+  return `
     ${q ? `
       <div class="section-title">${t('searchResults')}</div>
       ${state.friendSearchBusy ? `<div class="empty-hint">…</div>`
@@ -696,11 +723,8 @@ function wireMenuInteractivity(){
   });
   document.getElementById('friend-search')?.addEventListener('input', e => {
     state.friendSearch = e.target.value;
-    const cursor = e.target.selectionStart;
-    scheduleFriendSearch();
-    render();
-    const el2 = document.getElementById('friend-search');
-    if(el2){ el2.focus(); el2.setSelectionRange(cursor, cursor); }
+    scheduleFriendSearch(); // the field itself is left alone while typing
+    refreshFriendList();
   });
   document.getElementById('friend-search-btn')?.addEventListener('click', runFriendSearchNow);
   document.getElementById('friend-search')?.addEventListener('keydown', e => {
@@ -710,11 +734,12 @@ function wireMenuInteractivity(){
 
 function runFriendSearchNow(){
   clearTimeout(friendSearchTimer);
-  const q = state.friendSearch.trim();
-  if(!q){ state.friendSearchResults = []; state.friendSearchBusy = false; render(); return; }
+  const q = normalizeFriendQuery(state.friendSearch);
+  if(!q){ state.friendSearchResults = []; state.friendSearchBusy = false; refreshFriendList(); return; }
   state.friendSearchBusy = true;
-  render();
-  Cloud.searchUser(q).then(r => { state.friendSearchResults = r; }).catch(() => { state.friendSearchResults = []; }).finally(() => { state.friendSearchBusy = false; render(); });
+  refreshFriendList();
+  Cloud.searchUser(q).then(r => { state.friendSearchResults = r; }).catch(() => { state.friendSearchResults = []; })
+    .finally(() => { state.friendSearchBusy = false; if(state.menuSubView === 'friends') refreshFriendList(); });
 }
 
 function updateNav(){

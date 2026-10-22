@@ -26,6 +26,13 @@ class SocialTests(ApiTestCase):
         self.assertEqual(self.sara.get("/api/v1/social/search", {"q": "ali"}).json(), [])  # no partial matches
         self.assertEqual(self.sara.get("/api/v1/social/search", {"q": "+989121234567"}).json(), [])  # phone search is opt-in
 
+    def test_search_by_code_as_typed_on_a_phone(self):
+        code = Profile.objects.get(user_id=self.ali_id).public_id
+        fa = code.translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+        for typed in (f"TJ-{code}", f"tj {code.lower()}", f" TJ-{fa} ", code.replace("0", "O").replace("1", "l")):
+            found = self.sara.get("/api/v1/social/search", {"q": typed}).json()
+            self.assertEqual([p["id"] for p in found], [self.ali_id], typed)
+
     def test_block_hides_the_blocker(self):
         self.sara.post(f"/api/v1/social/connections/{self.ali_id}/request")
         self.ali.put(f"/api/v1/social/blocks/{self.sara_id}")

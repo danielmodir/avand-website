@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import re
 import secrets
-from datetime import datetime, timedelta, timezone as dt_timezone
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import password_validation
@@ -182,7 +182,7 @@ def register(request, email, password, first_name="", last_name="", consents=Non
         raise ApiError("email_taken", 409)
     provision_user(user, first_name, last_name, username, gender, birth_date)
     record_consents(user, consents, request)
-    send_email_verification(user)
+    # No email at sign-up (the owner dropped the confirmation step, 2026-10-22).
     log_event(request, AuthEvent.Event.REGISTER, True, user)
     return user
 
@@ -247,9 +247,6 @@ def _lang(user):
 # ── one-time email codes (same rules as backend-php/lib/auth.php) ────────
 CODE_LIFETIME = timedelta(minutes=10)
 CODE_TRIES = 5
-# Accounts made from this moment on confirm their email before using the
-# app (the app asks right after sign-up); older ones aren't locked out.
-VERIFY_REQUIRED_SINCE = datetime(2026, 10, 22, tzinfo=dt_timezone.utc)
 _DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
 
 
@@ -280,35 +277,6 @@ def _check_code(user, purpose, code):
         raise ApiError("code_expired" if token.attempts >= CODE_TRIES else "invalid_code", 400)
     token.used_at = timezone.now()
     token.save(update_fields=["used_at"])
-
-
-def verify_required(user):
-    return user.email_verified_at is None and user.created_at >= VERIFY_REQUIRED_SINCE
-
-
-def send_email_verification(user):
-    if user.email_verified_at:
-        return
-    code = _issue_code(user, AuthToken.Purpose.VERIFY_CODE)
-    queue_email(user, EmailOutbox.Template.VERIFY_EMAIL, _lang(user), {"code": code})
-
-
-def verify_email_code(request, user, code):
-    """The code from the sign-up email, typed into the app (signed in).
-    Commits the wrong-try count even when the code is wrong."""
-    if user.email_verified_at:
-        return
-    with transaction.atomic():
-        try:
-            _check_code(user, AuthToken.Purpose.VERIFY_CODE, clean_code(code))
-        except ApiError as e:
-            error = e
-        else:
-            error = None
-            User.objects.filter(pk=user.pk).update(email_verified_at=timezone.now())
-    log_event(request, AuthEvent.Event.EMAIL_VERIFY, error is None, user)
-    if error:
-        raise error
 
 
 def exchange_reset_code(request, email, code):

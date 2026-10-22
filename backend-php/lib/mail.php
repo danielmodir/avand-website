@@ -1,7 +1,6 @@
 <?php
 /* Account emails, sent with the host's own mail() from support@toojibee.ir
- * (the mailbox made in cPanel): a one-time code to confirm the email after
- * sign-up, and one to choose a new password. Both languages in one email,
+ * (the mailbox made in cPanel): the one-time code to choose a new password. Both languages in one email,
  * plain text plus a simple HTML version (inline styles only — email apps
  * ignore stylesheets; the colors are the site's palette, tokens.css). In
  * tests send_mail=false writes them to a file instead. */
@@ -38,10 +37,6 @@ function tj_mail(string $to, string $subject, string $text, string $html = ''): 
     }
 }
 
-function tj_fa_digits(string $s): string {
-    return strtr($s, ['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']);
-}
-
 /* One code email: a short Persian part, then English, the code big. */
 function tj_code_email(string $to, string $subject, string $faLead, string $enLead, string $code): void {
     $faNote = 'این کد فقط یک بار و تا ۱۰ دقیقه کار می‌کنه. اگه درخواستش نکرده بودی، این ایمیل رو نادیده بگیر.';
@@ -58,12 +53,6 @@ function tj_code_email(string $to, string $subject, string $faLead, string $enLe
         . '<p style="margin:22px 0 0;text-align:center;font-size:12px;color:#6b6440">توجیبی · Toojibee · <a href="https://toojibee.ir/" style="color:#EB7D00">toojibee.ir</a></p>'
         . '</div></body></html>';
     tj_mail($to, $subject, $text, $html);
-}
-
-function tj_send_verify_code(string $to, string $code): void {
-    tj_code_email($to, 'کد تأیید ایمیل توجیبی · Toojibee email code',
-        'سلام! برای تأیید ایمیلت این کد رو تو توجیبی وارد کن:',
-        'Hi! Enter this code in Toojibee to confirm your email (the code is above too).', $code);
 }
 
 function tj_send_reset_code(string $to, string $code): void {

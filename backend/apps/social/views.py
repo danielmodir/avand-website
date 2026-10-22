@@ -45,13 +45,17 @@ class SearchView(APIView):
     throttle_scope = "search"
 
     def get(self, request):
-        q = (request.query_params.get("q") or "").strip().lstrip("@")
+        # Persian/Arabic digits, invisible marks and spaces from phone keyboards.
+        raw = (request.query_params.get("q") or "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789", "‌‎‏"))
+        q = re.sub(r"\s+", "", raw).lstrip("@")
         if len(q) < 3:
             return Response([])
+        # Shown in the app as TJ-XXXXXXXX; codes never use I, L, O or U.
+        code = re.sub(r"^TJ[-–_]?", "", q.upper()).translate(str.maketrans("OIL", "011"))
         profiles = Profile.objects.filter(user__status=User.Status.ACTIVE).exclude(user_id=request.user.id).filter(
             Q(username=q.lower(), user__settings__discoverable_by_username=True)
             | Q(phone=q, user__settings__discoverable_by_phone=True)
-            | Q(public_id=re.sub(r"^TJ-?", "", q.upper()))  # shown in the app as TJ-XXXXXXXX
+            | Q(public_id=code)
         )[:5]
         found = [p for p in profiles if not services.is_blocked_between(request.user.id, p.user_id)]
         return Response(list(_people([p.user_id for p in found]).values()))

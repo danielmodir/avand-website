@@ -58,7 +58,7 @@ class AuthFlowTests(ApiTestCase):
         self.assertEqual(User.objects.get(email="user@example.com").id.version, 4)  # random, not time-ordered
         self.assertEqual(me["settings"]["calendar_primary"], "jalali")
         self.assertEqual([m["key"] for m in me["modules"]], ["occasions", "planning", "social", "notifications"])
-        self.assertTrue(EmailOutbox.objects.filter(template="verify_email").exists())
+        self.assertFalse(EmailOutbox.objects.exists())  # no email at sign-up any more
 
     def test_duplicate_email_and_weak_password_are_rejected(self):
         self.register()
@@ -164,14 +164,9 @@ class AuthFlowTests(ApiTestCase):
         right = APIClient().post("/api/v1/auth/password/code", {"email": "user@example.com", "code": code}, format="json")
         self.assertEqual(right.json()["error"], "code_expired")
 
-    def test_signup_email_code(self):
-        client = self.register()
-        me = client.get("/api/v1/me").json()["profile"]
-        self.assertEqual((me["email_verified"], me["verify_required"]), (False, True))
-        code = EmailOutbox.objects.filter(template="verify_email").latest("created_at").payload["code"]
-        self.assertEqual(client.post("/api/v1/auth/email/verify-code", {"code": code}, format="json").status_code, 204)
-        me = client.get("/api/v1/me").json()["profile"]
-        self.assertEqual((me["email_verified"], me["verify_required"]), (True, False))
+    def test_signup_sends_no_email(self):
+        self.register()
+        self.assertFalse(EmailOutbox.objects.filter(template="verify_email").exists())
 
     def test_unknown_email_reset_request_looks_identical(self):
         response = APIClient().post("/api/v1/auth/password/forgot", {"email": "ghost@example.com"}, format="json")

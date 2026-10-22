@@ -60,12 +60,17 @@ function tj_social_search(): void {
     $me = tj_require_user();
     tj_throttle('social_search', (string)$me['id'], 60, 60);
     $q = trim((string)($_GET['q'] ?? ''));
-    $q = ltrim($q, '@');
+    // Persian/Arabic digits, invisible marks and spaces from phone keyboards.
+    $q = strtr($q, ['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9',
+                    '٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9',
+                    "\u{200C}"=>'', "\u{200E}"=>'', "\u{200F}"=>'']);
+    $q = (string)preg_replace('/\s+/u', '', ltrim($q, '@'));
     $db = tj_db();
     $rows = [];
     // A TJ- code (8 characters; an 8-letter username can look like one,
-    // so both are tried).
-    $code = strtoupper((string)preg_replace('/^TJ-?/i', '', $q));
+    // so both are tried). Codes never use I, L, O or U: read O as 0, I/L as 1.
+    $code = strtoupper((string)preg_replace('/^TJ[-–_]?/i', '', $q));
+    $code = strtr($code, ['O' => '0', 'I' => '1', 'L' => '1']);
     if (preg_match('/^[0-9A-HJKMNP-TV-Z]{8}$/', $code)) {
         $s = $db->prepare("SELECT * FROM tj_users WHERE display_id = ? AND status = 'active' AND id <> ?");
         $s->execute([$code, $me['id']]);

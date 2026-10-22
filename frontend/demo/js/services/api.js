@@ -136,10 +136,8 @@
   function forgotPassword(email) { return request('POST', '/auth/password/forgot', { email: email }, { auth: false }); }
   function resetPassword(token, password) { return request('POST', '/auth/password/reset', { token: token, password: password }, { auth: false }); }
   function verifyEmail(token) { return request('POST', '/auth/email/verify', { token: token }, { auth: false }); }
-  // One-time emailed codes: reset password, confirm the email after sign-up.
+  // One-time emailed code to reset the password.
   function checkResetCode(email, code) { return request('POST', '/auth/password/code', { email: email, code: code }, { auth: false }).then(function (r) { return r.token; }); }
-  function verifyEmailCode(code) { return request('POST', '/auth/email/verify-code', { code: code }); }
-  function resendVerifyCode() { return request('POST', '/auth/email/resend'); }
 
   /* Links from emails land on the app as #verify-email=… or
      #reset-password=…; returns { kind, token } and clears the hash. */
@@ -327,7 +325,7 @@
       profile: {
         firstName: p.first_name, lastName: p.last_name, username: p.username || '', email: p.email,
         phone: p.phone || '', gender: p.gender || '', dob: p.birth_date || '', photo: null, userId: 'TJ-' + p.public_id,
-        emailVerified: !!p.email_verified, verifyRequired: !!p.verify_required,
+        emailVerified: !!p.email_verified,
         name: (p.first_name + ' ' + p.last_name).trim(),
       },
       settings: {
@@ -632,7 +630,7 @@
     uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,
     signUp: signUp, signIn: signIn, signInWithGoogle: signInWithGoogle, consumeOAuthRedirect: consumeOAuthRedirect, signOut: signOut,
     authProviders: authProviders, forgotPassword: forgotPassword, resetPassword: resetPassword, verifyEmail: verifyEmail, takeEmailLink: takeEmailLink,
-    checkResetCode: checkResetCode, verifyEmailCode: verifyEmailCode, resendVerifyCode: resendVerifyCode,
+    checkResetCode: checkResetCode,
     loadAll: loadAll,
     saveTask: saveTask, deleteTask: deleteTask, saveHabit: saveHabit, deleteHabit: deleteHabit,
     saveEvent: saveEvent, deleteEvent: deleteEvent, saveProfile: saveProfile, saveSettings: saveSettings,

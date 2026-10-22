@@ -72,7 +72,6 @@ function tj_public_user(array $u): array {
         'first_name' => $u['first_name'], 'last_name' => $u['last_name'],
         'username' => $u['username'] ?? null, 'gender' => $u['gender'] ?? null, 'birth_date' => $u['birth_date'] ?? null,
         'email_verified' => $u['email_verified_at'] !== null,
-        'verify_required' => $u['email_verified_at'] === null && (string)($u['created_at'] ?? '') >= TJ_VERIFY_REQUIRED_SINCE,
     ];
 }
 
@@ -97,15 +96,12 @@ function tj_consume_email_token(string $token, string $purpose): int {
     return (int)$row['user_id'];
 }
 
-/* ---- one-time email codes (reset password, confirm email) ----
+/* ---- one-time email code (reset password) ----
  * 6 digits, 10 minutes, one live code per purpose, 5 wrong tries and it's
  * gone. Stored as an HMAC with the server's secret key (a 6-digit code
  * hashed plainly could be brute-forced from a leaked database). */
 const TJ_CODE_TTL = 600;
 const TJ_CODE_TRIES = 5;
-// Accounts made from this moment on must confirm their email before using
-// the app; older ones aren't locked out by the change.
-const TJ_VERIFY_REQUIRED_SINCE = '2026-10-22 00:00:00';
 
 function tj_code_hash(int $userId, string $purpose, string $code): string {
     return hash_hmac('sha256', "$userId|$purpose|$code", base64_decode(tj_secrets()['enc_key']));
@@ -173,8 +169,7 @@ function tj_register(): void {
                    tj_new_public_id(), tj_new_display_id($db), tj_now(), tj_now()]);
     $userId = (int)$db->lastInsertId();
 
-    // The app asks for this code straight after signing up (POST /auth/email/verify-code).
-    tj_send_verify_code($email, tj_issue_code($userId, 'verify_code'));
+    // No email at sign-up (the owner dropped the confirmation step, 2026-10-22).
     tj_json(tj_new_session($userId), 201);
 }
 
@@ -251,24 +246,6 @@ function tj_reset_code(): void {
     tj_json(['token' => tj_issue_email_token((int)$user['id'], 'reset', 900)]);
 }
 
-/* POST /auth/email/verify-code {code} — signed in, straight after sign-up. */
-function tj_verify_code(): void {
-    $u = tj_require_user();
-    if ($u['email_verified_at'] !== null) tj_json(['ok' => true]);
-    tj_throttle('verify_code', (string)$u['id'], 15, 900);
-    tj_check_code((int)$u['id'], 'verify_code', tj_clean_code(tj_str(tj_body(), 'code', 40)));
-    tj_db()->prepare('UPDATE tj_users SET email_verified_at = ?, updated_at = ? WHERE id = ?')->execute([tj_now(), tj_now(), $u['id']]);
-    tj_json(['ok' => true]);
-}
-
-/* POST /auth/email/resend — a new confirmation code. */
-function tj_resend_verify(): void {
-    $u = tj_require_user();
-    if ($u['email_verified_at'] !== null) tj_json(['ok' => true]);
-    tj_throttle('verify_resend', (string)$u['id'], 4, 900);
-    tj_send_verify_code($u['email'], tj_issue_code((int)$u['id'], 'verify_code'));
-    tj_json(['ok' => true]);
-}
 
 function tj_reset_password(): void {
     $b = tj_body();
