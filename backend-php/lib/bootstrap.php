@@ -311,6 +311,16 @@ function tj_migrate(PDO $db): void {
         try { $db->exec('CREATE INDEX tj_messages_user ON tj_messages (user_id)'); } catch (PDOException $e) { /* already there */ }
         $db->exec('INSERT INTO tj_schema (version) VALUES (14)');
     }
+    if ($v < 15) {
+        // Article topics (lib/articles.php TJ_ARTICLE_CATEGORIES), for the
+        // app's Articles page; the first ones get theirs from their slug.
+        try { $db->exec("ALTER TABLE tj_articles ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'other'"); } catch (PDOException $e) { /* already there */ }
+        foreach (['daily-planning' => 'planning', 'build-a-new-habit' => 'habits', 'solar-lunar-gregorian-calendars' => 'calendar',
+                  'hijri-month-start-iran' => 'calendar', 'menstrual-cycle-phases' => 'health'] as $slug => $cat) {
+            $db->prepare("UPDATE tj_articles SET category = ? WHERE slug = ? AND category = 'other'")->execute([$cat, $slug]);
+        }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (15)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

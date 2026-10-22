@@ -179,6 +179,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'auth-submit'){ submitAuth(); return; }
   if(action === 'auth-resend'){ resendAuthCode(); return; }
   if(action === 'contact-send'){ sendContactMessage(); return; }
+  if(action === 'articles-cat'){ articlesView.cat = el.dataset.val; render(); return; }
   if(action === 'auth-verify-logout'){ leaveVerify(); return; }
   if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){
     if(profileDraft) profileDraft.photo = null; // edit page: waits for "Save changes"

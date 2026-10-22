@@ -260,6 +260,8 @@
     // Articles the admin panel placed on the app's desks (public).
     // Official Hijri month starts (public; edited in the admin panel).
     hijriMonths: function () { return request('GET', '/calendar/hijri-months', undefined, { auth: false }); },
+    // Every published article of a language (Profile → Articles).
+    articles: function (lang) { return request('GET', '/articles?lang=' + (lang === 'en' ? 'en' : 'fa'), undefined, { auth: false }); },
     featuredArticles: function () { return request('GET', '/articles/featured', undefined, { auth: false }); },
     loadAll: loadAll,
     onStateChanged: schedulePush,

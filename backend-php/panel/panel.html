@@ -251,6 +251,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <div class="alert error hidden" id="ar-note"></div>
         <div class="two">
           <div><label for="ar-lang">زبان</label><select id="ar-lang"><option value="fa">فارسی</option><option value="en">English</option></select></div>
+          <div><label for="ar-cat">موضوع</label><select id="ar-cat"><option value="planning">برنامه‌ریزی</option><option value="habits">عادت‌ها</option><option value="calendar">تقویم و مناسبت</option><option value="health">سلامت</option><option value="other">سایر</option></select></div>
           <div><label for="ar-slug">آدرس (اختیاری)</label><input id="ar-slug" type="text" dir="ltr" placeholder="my-first-article" autocomplete="off"></div>
         </div>
         <div class="hint">آدرس فقط حروف کوچیک انگلیسی، عدد و خط تیره. خالی بذاری خودش یکی می‌سازه.</div>
@@ -934,6 +935,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     $('ar-heading').textContent = a ? a.title : 'مقاله‌ی جدید';
     $('ar-lang').value = a ? a.lang : 'fa';
     $('ar-slug').value = a ? a.slug : '';
+    $('ar-cat').value = a && a.category ? a.category : 'other';
     $('ar-title').value = a ? a.title : '';
     $('ar-summary').value = a ? a.summary : '';
     $('ar-body').value = a ? a.body : '';
@@ -961,7 +963,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     var mine = a && a.author === me.email;
     var editable = !a || ar.canReview || (mine && (a.status === 'draft' || a.status === 'rejected'));
     var add = function (label, cls, fn) { var b = el('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', fn); box.appendChild(b); };
-    ['ar-lang', 'ar-slug', 'ar-title', 'ar-summary', 'ar-body', 'ar-cover'].forEach(function (id) { $(id).disabled = !editable; });
+    ['ar-lang', 'ar-cat', 'ar-slug', 'ar-title', 'ar-summary', 'ar-body', 'ar-cover'].forEach(function (id) { $(id).disabled = !editable; });
     Array.prototype.forEach.call($('ar-places').querySelectorAll('input'), function (c) { c.disabled = !editable; });
     if (editable) add('ذخیره', '', function () { arSave().catch(arFail); });
     if (a) add('پیش‌نمایش', 'ghost', function () { $('ar-preview').classList.toggle('hidden'); });
@@ -991,7 +993,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   }
 
   function arSave() {
-    var body = { lang: $('ar-lang').value, slug: $('ar-slug').value.trim(), title: $('ar-title').value.trim(), summary: $('ar-summary').value.trim(), body: $('ar-body').value,
+    var body = { lang: $('ar-lang').value, category: $('ar-cat').value, slug: $('ar-slug').value.trim(), title: $('ar-title').value.trim(), summary: $('ar-summary').value.trim(), body: $('ar-body').value,
       placements: checkedPerms($('ar-places')) };
     var req = ar.current ? api('PATCH', '/articles/' + ar.current.id, body) : api('POST', '/articles', body);
     return req.then(function (a) { return openArticle(a.id); }).then(loadArticles);

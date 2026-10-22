@@ -20,6 +20,8 @@ const TJ_ARTICLE_STATUSES = ['draft', 'pending', 'published', 'rejected'];
  * Its own page (/articles/<slug>/) works whatever is ticked. */
 const TJ_ARTICLE_PLACES = ['list', 'landing', 'app_period'];
 const TJ_ARTICLE_PLACE_LIMIT = 6;
+/* Topic, for the app's Articles page (Profile) filter. */
+const TJ_ARTICLE_CATEGORIES = ['planning', 'habits', 'calendar', 'health', 'other'];
 
 function tj_article_places(array $a): array {
     $p = json_decode((string)($a['placements'] ?? '["list"]'), true);
@@ -35,6 +37,16 @@ function tj_articles_in(string $lang, string $place, int $limit = 0): array {
         if ($limit && count($out) >= $limit) break;
     }
     return $out;
+}
+
+/* GET /articles?lang=fa — every published article of a language, for the
+ * app's Articles page (Profile): topic, date, and its address on the site. */
+function tj_public_articles(): void {
+    $lang = ($_GET['lang'] ?? '') === 'en' ? 'en' : 'fa';
+    tj_json(array_map(function ($a) use ($lang) {
+        return ['title' => $a['title'], 'summary' => $a['summary'], 'cover' => $a['cover'], 'category' => $a['category'] ?? 'other',
+                'published_at' => $a['published_at'], 'url' => '/' . $lang . '/articles/' . $a['slug'] . '/'];
+    }, tj_published_articles($lang)));
 }
 
 /* GET /articles/featured: what the app's desks show, both languages. */
@@ -109,7 +121,7 @@ function tj_article_public(array $a, bool $withBody = false): array {
         'cover' => $a['cover'], 'status' => $a['status'], 'review_note' => $a['review_note'], 'placements' => tj_article_places($a),
         'author' => $a['author_email'] ?? null, 'reviewer' => $a['reviewer_email'] ?? null,
         'created_at' => $a['created_at'], 'updated_at' => $a['updated_at'], 'submitted_at' => $a['submitted_at'], 'published_at' => $a['published_at'],
-        'url' => '/' . $a['lang'] . '/articles/' . $a['slug'] . '/',
+        'url' => '/' . $a['lang'] . '/articles/' . $a['slug'] . '/', 'category' => $a['category'] ?? 'other',
     ];
     if ($withBody) $o['body'] = $a['body'];
     return $o;
@@ -165,6 +177,8 @@ function tj_article_fields(array $b, ?array $current): array {
         ? array_values(array_intersect(TJ_ARTICLE_PLACES, $b['placements']))
         : ($current ? tj_article_places($current) : ['list']);
     $f['placements'] = json_encode($places);
+    $cat = (string)($b['category'] ?? ($current['category'] ?? 'other'));
+    $f['category'] = in_array($cat, TJ_ARTICLE_CATEGORIES, true) ? $cat : 'other';
     return $f;
 }
 
@@ -199,8 +213,8 @@ function tj_admin_article_create(): void {
     if (!in_array('articles.write', tj_admin_perms($me), true)) tj_fail(403, 'forbidden');
     $f = tj_article_fields(tj_body(), null);
     $pid = tj_new_public_id();
-    tj_db()->prepare('INSERT INTO tj_articles (public_id, lang, slug, title, summary, body, placements, status, author_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        ->execute([$pid, $f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], $f['placements'], 'draft', $me['id'], tj_now(), tj_now()]);
+    tj_db()->prepare('INSERT INTO tj_articles (public_id, lang, slug, title, summary, body, placements, category, status, author_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        ->execute([$pid, $f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], $f['placements'], $f['category'], 'draft', $me['id'], tj_now(), tj_now()]);
     tj_admin_audit((int)$me['id'], 'article_created', $f['lang'] . '/' . $f['slug']);
     tj_json(tj_article_public(tj_article_find($pid), true), 201);
 }
@@ -211,8 +225,8 @@ function tj_admin_article_update(string $id): void {
     // Writers edit while it's theirs to edit; reviewers any time.
     if (!tj_article_can_review($me) && !in_array($a['status'], ['draft', 'rejected'], true)) tj_fail(409, 'locked_in_review');
     $f = tj_article_fields(tj_body(), $a);
-    tj_db()->prepare('UPDATE tj_articles SET lang = ?, slug = ?, title = ?, summary = ?, body = ?, placements = ?, updated_at = ? WHERE id = ?')
-        ->execute([$f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], $f['placements'], tj_now(), $a['id']]);
+    tj_db()->prepare('UPDATE tj_articles SET lang = ?, slug = ?, title = ?, summary = ?, body = ?, placements = ?, category = ?, updated_at = ? WHERE id = ?')
+        ->execute([$f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], $f['placements'], $f['category'], tj_now(), $a['id']]);
     tj_admin_audit((int)$me['id'], 'article_edited', $f['lang'] . '/' . $f['slug']);
     tj_json(tj_article_public(tj_article_find($id), true));
 }

@@ -82,6 +82,7 @@ $routes = [
     'GET /admin/visits'         => 'tj_admin_visits',
     'GET /content'              => 'tj_public_content',
     'GET /articles/featured'    => 'tj_public_featured_articles',
+    'GET /articles'             => 'tj_public_articles',
     'GET /calendar/hijri-months'=> 'tj_public_hijri_months',
     'GET /admin/calendar/hijri-months' => 'tj_admin_hijri_months',
     'PUT /admin/calendar/hijri-months' => 'tj_admin_hijri_months_save',

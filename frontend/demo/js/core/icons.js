@@ -4,6 +4,7 @@
 const GOOGLE_G_ICON = '<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.4 0 6.4 1.17 8.8 3.46l6.55-6.55C35.1 2.68 29.9.5 24 .5 14.86.5 7 5.73 3.2 13.4l7.65 5.94C12.7 13.5 17.9 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.15-3.15-.42-4.64H24v9.03h12.6c-.55 2.9-2.2 5.35-4.68 7l7.4 5.75C43.85 37.4 46.5 31.5 46.5 24.5z"/><path fill="#FBBC05" d="M10.85 19.34a14.5 14.5 0 0 0 0 9.32l-7.65 5.94a24 24 0 0 1 0-21.2z"/><path fill="#34A853" d="M24 47.5c6.48 0 11.9-2.13 15.87-5.8l-7.4-5.75c-2.06 1.4-4.7 2.2-8.47 2.2-6.1 0-11.3-4-13.15-9.4l-7.65 5.94C7 42.27 14.86 47.5 24 47.5z"/><path fill="none" d="M.5.5h47v47H.5z"/></svg>';
 
 const ICONS = {
+  book: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 2h11a3 3 0 0 1 3 3v15a1 1 0 0 1-1 1H6a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zm0 15a1 1 0 0 0 0 2h12v-2H6zm2-11v2h8V6H8zm0 4v2h6v-2H8z"/></svg>',
   mail: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v.4l-10 6.3L2 6.4V6a2 2 0 0 1 2-2zm-2 4.8 10 6.3 10-6.3V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>',
   clockIcon: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 10.6 3.4 2-1 1.7-4.4-2.6V6.5h2z"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"/></svg>',

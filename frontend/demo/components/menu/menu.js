@@ -1,5 +1,5 @@
 const MENU_PARENT = {
-  'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'contact': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
+  'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'contact': 'profile', 'articles': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings',
   // Monthly-cycle settings live with the desks in Management (its gear), not in Settings.
   'settings-period': 'admin',
@@ -29,6 +29,7 @@ function renderMenu(){
   if(sub === 'share') return renderSharePage();
   if(sub === 'about') return renderAboutPage();
   if(sub === 'contact') return renderContactPage();
+  if(sub === 'articles') return renderArticlesPage();
   if(sub === 'settings') return renderSettingsList();
   if(sub === 'settings-general') return renderGeneralSettings();
   if(sub === 'settings-calendar') return renderCalendarSettings();
@@ -95,6 +96,9 @@ function renderProfilePage(){
       </div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="about">
         <div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t('aboutUs')}</div>${ICONS.chevronRightSmall}
+      </div>
+      <div class="menu-item-row" data-action="menu-nav" data-sub="articles">
+        <div class="menu-item-icon">${ICONS.book}</div><div class="menu-item-label">${t('articles')}</div>${ICONS.chevronRightSmall}
       </div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="contact">
         <div class="menu-item-icon">${ICONS.mail}</div><div class="menu-item-label">${t('contactUs')} ${contactRowBadge()}</div>${ICONS.chevronRightSmall}
