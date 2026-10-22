@@ -12,15 +12,23 @@ const path = require('path');
 const out = path.join(__dirname, '..', 'frontend', 'assets', 'icons');
 
 // The mark in its own 800×800 box (from the concept artwork).
-const MARK_VIEWBOX = '18 131 800 800';
+// v2 (2026-10-22): the owner's refined concept — the second bar flows into
+// the stem with a curve, a thicker road, a V-shaped inside to the U.
+// Optically centered, not by its box: the wide bars make the shape top-heavy
+// (its center of mass sits ~4% above and ~2% right of the box center), so the
+// box is shifted halfway toward that — measured on the rendered badge.
+const MARK_VIEWBOX = '232 214 830 830';
 function mark(ink, dash) {
-  const road = 'M256 340 V650 L420 770 Q463 795 506 770 L671 650 V370';
+  const road = 'M432 470 V760 Q432 830 520 895 L640 975 Q690 1005 740 975 L860 895 Q926 830 926 760 V450';
   return [
-    `<rect x="35" y="207" width="765" height="75" rx="37.5" fill="${ink}"/>`,
-    `<rect x="35" y="307" width="540" height="76" rx="38" fill="${ink}"/>`,
-    `<path d="${road}" fill="none" stroke="${ink}" stroke-width="127" stroke-linejoin="round"/>`,
-    `<circle cx="671" cy="370" r="63.5" fill="${ink}"/>`,
-    `<path d="M256 430 V650 L420 770 Q463 795 506 770 L671 650 V385" fill="none" stroke="${dash}" stroke-width="12" stroke-linecap="round" stroke-dasharray="58 46"/>`,
+    `<rect x="275" y="258" width="710" height="92" rx="46" fill="${ink}"/>`,
+    `<rect x="275" y="382" width="553" height="93" rx="46.5" fill="${ink}"/>`,
+    `<path d="${road}" fill="none" stroke="${ink}" stroke-width="152" stroke-linejoin="round"/>`,
+    `<circle cx="926" cy="450" r="76" fill="${ink}"/>`,
+    // the curves where the bar meets the stem (outside) and the inside corner
+    `<path d="M318 474 L357 474 L357 520 Q357 474 318 474 Z" fill="${ink}"/>`,
+    `<path d="M507 474 L552 474 Q507 474 507 518 Z" fill="${ink}"/>`,
+    `<path d="M432 528 V760 Q432 830 520 895 L640 975 Q690 1005 740 975 L860 895 Q926 830 926 760 V468" fill="none" stroke="${dash}" stroke-width="15" stroke-linecap="round" stroke-dasharray="74 52"/>`,
   ].join('');
 }
 // A mark on a circle, in a 64×64 box; `scale` = the mark's share of the circle.
