@@ -66,7 +66,7 @@ function tj_vapid(): array {
 /* ES256 JWT for the push service at $audience (scheme://host). */
 function tj_vapid_jwt(string $audience): string {
     $head = tj_b64u(json_encode(['typ' => 'JWT', 'alg' => 'ES256']));
-    $claims = tj_b64u(json_encode(['aud' => $audience, 'exp' => time() + 12 * 3600, 'sub' => 'mailto:support@toojibee.ir']));
+    $claims = tj_b64u(json_encode(['aud' => $audience, 'exp' => time() + 12 * 3600, 'sub' => 'mailto:support@toojibee.ir'], JSON_UNESCAPED_SLASHES));
     $data = "$head.$claims";
     if (!openssl_sign($data, $der, tj_vapid()['private'], OPENSSL_ALGO_SHA256)) throw new RuntimeException('vapid_sign_failed');
     // DER SEQUENCE{INTEGER r, INTEGER s} -> r|s, 32 bytes each.

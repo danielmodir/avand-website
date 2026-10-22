@@ -140,7 +140,10 @@ function tj_admin_current(bool $required = true): ?array {
         $q->execute([tj_hash($token)]);
         $row = $q->fetch() ?: null;
         if ($row && ($row['last_seen_at'] < tj_now(-TJ_ADMIN_IDLE) || $row['session_created'] < tj_now(-TJ_ADMIN_MAX_AGE))) {
-            tj_db()->prepare('UPDATE tj_admin_sessions SET revoked_at = ? WHERE id = ?')->execute([tj_now(), $row['session_id']]);
+            // Best effort (a busy database must not turn this into a 500):
+            // the expired session is refused here either way.
+            try { tj_db()->prepare('UPDATE tj_admin_sessions SET revoked_at = ? WHERE id = ?')->execute([tj_now(), $row['session_id']]); }
+            catch (PDOException $e) { /* refused anyway; marked next time */ }
             $row = null;
         }
     }
