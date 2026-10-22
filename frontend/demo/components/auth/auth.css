@@ -73,3 +73,13 @@
 .auth-divider{ display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--text-muted); font-size:12px; }
 .auth-divider::before, .auth-divider::after{ content:''; flex:1; height:1px; background:var(--border); }
 .auth-footer{ margin-top:16px; text-align:center; font-size:12px; color:var(--text-muted); }
+
+/* One-time code views (forgot-code, verify): an envelope badge, one big
+   LTR code field, "send again" with its countdown. */
+.auth-icon-badge{ width:58px; height:58px; margin:0 auto 12px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--primary-soft, var(--bg-soft)); color:var(--primary); }
+.auth-icon-badge svg{ width:28px; height:28px; }
+.auth-sub b{ color:var(--text); font-weight:700; unicode-bidi:isolate; }
+.auth-code-input{ text-align:center; font-size:26px !important; font-weight:800; letter-spacing:10px; padding-inline-start:20px; font-variant-numeric:tabular-nums; }
+.auth-code-input::placeholder{ font-size:14px; letter-spacing:normal; font-weight:500; }
+.auth-resend-wait{ align-self:center; margin-top:14px; font-size:12.5px; color:var(--text-muted); text-align:center; }
+.auth-center{ text-align:center; margin:10px 0 0; }

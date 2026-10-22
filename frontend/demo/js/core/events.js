@@ -8,7 +8,7 @@ const GUEST_ACTIONS = new Set([
   'pick-day','close-day-sheet','go-today','goto-desktop','desktop-step','toggle-desktop-title-menu',
   'toggle-section','go-landing','toggle-app-theme','retry-boot','toggle-desk-full',
   'toggle-cal-full','cal-full-step','cal-full-today','cal-full-pick','open-search','close-search',
-  'open-auth','close-auth','auth-tab','auth-submit','auth-google',
+  'open-auth','close-auth','auth-tab','auth-submit','auth-google','auth-resend','auth-verify-logout',
 ]);
 
 function requireAccount(){
@@ -177,6 +177,8 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'auth-submit'){ submitAuth(); return; }
+  if(action === 'auth-resend'){ resendAuthCode(); return; }
+  if(action === 'auth-verify-logout'){ leaveVerify(); return; }
   if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){
     if(profileDraft) profileDraft.photo = null; // edit page: waits for "Save changes"
     else { state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); }

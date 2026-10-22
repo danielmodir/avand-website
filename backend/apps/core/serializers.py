@@ -95,6 +95,7 @@ class SessionSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source="user.email", read_only=True)
     email_verified = serializers.SerializerMethodField()
+    verify_required = serializers.SerializerMethodField()
     avatar_file_id = serializers.UUIDField(source="avatar_id", read_only=True)
     version = serializers.IntegerField(required=False)
 
@@ -102,12 +103,16 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = [
             "first_name", "last_name", "username", "public_id", "phone", "gender", "birth_date",
-            "avatar_file_id", "email", "email_verified", "version", "updated_at",
+            "avatar_file_id", "email", "email_verified", "verify_required", "version", "updated_at",
         ]
         read_only_fields = ["public_id", "updated_at"]
 
     def get_email_verified(self, obj):
         return obj.user.email_verified_at is not None
+
+    def get_verify_required(self, obj):
+        from .services.accounts import verify_required
+        return verify_required(obj.user)
 
     def validate_username(self, value):
         return value.lower() if value else None

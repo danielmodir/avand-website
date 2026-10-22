@@ -35,7 +35,7 @@ function tj_config(): array {
     $cfg = is_file($path) ? require $path : ['db_dsn' => 'sqlite:' . tj_data_dir() . '/toojibee.sqlite'];
     $cfg += [
         'app_url'   => 'https://toojibee.ir/demo/',
-        'mail_from' => 'Toojibee <no-reply@toojibee.ir>',
+        'mail_from' => 'توجیبی Toojibee <support@toojibee.ir>',
         'send_mail' => true,
     ];
     return $cfg;
@@ -280,6 +280,12 @@ function tj_migrate(PDO $db): void {
         )$tail");
         try { $db->exec('CREATE INDEX tj_push_queue_due ON tj_push_queue (sent_at, due_at)'); } catch (PDOException $e) { /* already there */ }
         $db->exec('INSERT INTO tj_schema (version) VALUES (12)');
+    }
+    if ($v < 13) {
+        // Emailed one-time codes (lib/auth.php): wrong tries are counted
+        // on the code's row; 5 and it stops working.
+        try { $db->exec('ALTER TABLE tj_tokens ADD COLUMN attempts INT NOT NULL DEFAULT 0'); } catch (PDOException $e) { /* already there */ }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (13)');
     }
 }
 

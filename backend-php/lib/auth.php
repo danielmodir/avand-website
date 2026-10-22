@@ -72,6 +72,7 @@ function tj_public_user(array $u): array {
         'first_name' => $u['first_name'], 'last_name' => $u['last_name'],
         'username' => $u['username'] ?? null, 'gender' => $u['gender'] ?? null, 'birth_date' => $u['birth_date'] ?? null,
         'email_verified' => $u['email_verified_at'] !== null,
+        'verify_required' => $u['email_verified_at'] === null && (string)($u['created_at'] ?? '') >= TJ_VERIFY_REQUIRED_SINCE,
     ];
 }
 
@@ -94,6 +95,50 @@ function tj_consume_email_token(string $token, string $purpose): int {
     if (!$row) tj_fail(400, 'invalid_or_expired_token');
     $db->prepare('UPDATE tj_tokens SET used_at = ? WHERE id = ?')->execute([tj_now(), $row['id']]);
     return (int)$row['user_id'];
+}
+
+/* ---- one-time email codes (reset password, confirm email) ----
+ * 6 digits, 10 minutes, one live code per purpose, 5 wrong tries and it's
+ * gone. Stored as an HMAC with the server's secret key (a 6-digit code
+ * hashed plainly could be brute-forced from a leaked database). */
+const TJ_CODE_TTL = 600;
+const TJ_CODE_TRIES = 5;
+// Accounts made from this moment on must confirm their email before using
+// the app; older ones aren't locked out by the change.
+const TJ_VERIFY_REQUIRED_SINCE = '2026-10-22 00:00:00';
+
+function tj_code_hash(int $userId, string $purpose, string $code): string {
+    return hash_hmac('sha256', "$userId|$purpose|$code", base64_decode(tj_secrets()['enc_key']));
+}
+
+/* Persian/Arabic digits and spaces are fine in what people type. */
+function tj_clean_code(string $s): string {
+    $s = strtr($s, ['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9',
+                    '٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9']);
+    return preg_replace('/\D/', '', $s) ?? '';
+}
+
+function tj_issue_code(int $userId, string $purpose): string {
+    $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $db = tj_db();
+    $db->prepare('DELETE FROM tj_tokens WHERE user_id = ? AND purpose = ?')->execute([$userId, $purpose]);
+    $db->prepare('INSERT INTO tj_tokens (user_id, purpose, token_hash, expires_at, created_at, attempts) VALUES (?, ?, ?, ?, ?, 0)')
+        ->execute([$userId, $purpose, tj_code_hash($userId, $purpose, $code), tj_now(TJ_CODE_TTL), tj_now()]);
+    return $code;
+}
+
+/* Uses up the code, or fails with invalid_code / code_expired. */
+function tj_check_code(int $userId, string $purpose, string $code): void {
+    $db = tj_db();
+    $q = $db->prepare('SELECT id, token_hash, attempts FROM tj_tokens WHERE user_id = ? AND purpose = ? AND used_at IS NULL AND expires_at > ?');
+    $q->execute([$userId, $purpose, tj_now()]);
+    $row = $q->fetch();
+    if (!$row || (int)$row['attempts'] >= TJ_CODE_TRIES) tj_fail(400, 'code_expired');
+    if (strlen($code) !== 6 || !hash_equals($row['token_hash'], tj_code_hash($userId, $purpose, $code))) {
+        $db->prepare('UPDATE tj_tokens SET attempts = attempts + 1 WHERE id = ?')->execute([$row['id']]);
+        tj_fail(400, (int)$row['attempts'] + 1 >= TJ_CODE_TRIES ? 'code_expired' : 'invalid_code');
+    }
+    $db->prepare('UPDATE tj_tokens SET used_at = ? WHERE id = ?')->execute([tj_now(), $row['id']]);
 }
 
 /* ---- endpoints ---- */
@@ -128,8 +173,8 @@ function tj_register(): void {
                    tj_new_public_id(), tj_new_display_id($db), tj_now(), tj_now()]);
     $userId = (int)$db->lastInsertId();
 
-    $token = tj_issue_email_token($userId, 'verify', 7 * 86400);
-    tj_send_verify_email($email, $token);
+    // The app asks for this code straight after signing up (POST /auth/email/verify-code).
+    tj_send_verify_code($email, tj_issue_code($userId, 'verify_code'));
     tj_json(tj_new_session($userId), 201);
 }
 
@@ -186,8 +231,42 @@ function tj_forgot_password(): void {
     $q = tj_db()->prepare('SELECT id, email FROM tj_users WHERE email = ? AND status = ?');
     $q->execute([$email, 'active']);
     $user = $q->fetch();
-    if ($user) tj_send_reset_email($user['email'], tj_issue_email_token((int)$user['id'], 'reset', 3600));
+    if ($user) tj_send_reset_code($user['email'], tj_issue_code((int)$user['id'], 'reset_code'));
     // Never reveal whether an address has an account.
+    tj_json(['ok' => true]);
+}
+
+/* POST /auth/password/code {email, code} — the code from the email; gives
+ * back a short-lived token for POST /auth/password/reset. */
+function tj_reset_code(): void {
+    $b = tj_body();
+    $email = strtolower(tj_str($b, 'email', 254));
+    tj_throttle('reset_code', $email . '|' . tj_client_ip(), 10, 900);
+    tj_throttle('reset_code_ip', tj_client_ip(), 30, 900);
+    $q = tj_db()->prepare('SELECT id FROM tj_users WHERE email = ? AND status = ?');
+    $q->execute([$email, 'active']);
+    $user = $q->fetch();
+    if (!$user) tj_fail(400, 'code_expired'); // same as an address with no live code
+    tj_check_code((int)$user['id'], 'reset_code', tj_clean_code(tj_str($b, 'code', 40)));
+    tj_json(['token' => tj_issue_email_token((int)$user['id'], 'reset', 900)]);
+}
+
+/* POST /auth/email/verify-code {code} — signed in, straight after sign-up. */
+function tj_verify_code(): void {
+    $u = tj_require_user();
+    if ($u['email_verified_at'] !== null) tj_json(['ok' => true]);
+    tj_throttle('verify_code', (string)$u['id'], 15, 900);
+    tj_check_code((int)$u['id'], 'verify_code', tj_clean_code(tj_str(tj_body(), 'code', 40)));
+    tj_db()->prepare('UPDATE tj_users SET email_verified_at = ?, updated_at = ? WHERE id = ?')->execute([tj_now(), tj_now(), $u['id']]);
+    tj_json(['ok' => true]);
+}
+
+/* POST /auth/email/resend — a new confirmation code. */
+function tj_resend_verify(): void {
+    $u = tj_require_user();
+    if ($u['email_verified_at'] !== null) tj_json(['ok' => true]);
+    tj_throttle('verify_resend', (string)$u['id'], 4, 900);
+    tj_send_verify_code($u['email'], tj_issue_code((int)$u['id'], 'verify_code'));
     tj_json(['ok' => true]);
 }
 

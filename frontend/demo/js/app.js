@@ -131,6 +131,8 @@ async function boot(){
       await loadFromCloud();
       state.guest = false;
       state.authScreen = false;
+      // A new account that hasn't typed its emailed code yet (auth.js).
+      if(state.profile.verifyRequired) openVerifyEmail(state.profile.email);
     }catch(err){
       /* A 401 with a failed refresh already switched to guest mode and
          opened sign-in (Cloud.onSessionExpired). Anything else — offline,

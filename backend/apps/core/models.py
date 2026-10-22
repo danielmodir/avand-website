@@ -162,12 +162,16 @@ class AuthSession(models.Model):
 
 
 class AuthToken(models.Model):
-    """Single-use links sent by email; only the hash is stored."""
+    """Single-use links and 6-digit codes sent by email; only the hash is
+    stored (codes as an HMAC with the server's secret, see
+    services/accounts.py). A code dies after CODE_TRIES wrong attempts."""
 
     class Purpose(models.TextChoices):
         VERIFY_EMAIL = "verify_email"
         RESET_PASSWORD = "reset_password"
         CHANGE_EMAIL = "change_email"
+        VERIFY_CODE = "verify_email_code"
+        RESET_CODE = "reset_password_code"
 
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="auth_tokens")
@@ -177,6 +181,7 @@ class AuthToken(models.Model):
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         indexes = [

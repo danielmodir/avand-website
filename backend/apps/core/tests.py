@@ -138,7 +138,14 @@ class AuthFlowTests(ApiTestCase):
         client = self.register()
         APIClient().post("/api/v1/auth/password/forgot", {"email": "user@example.com"}, format="json")
         mail = EmailOutbox.objects.filter(template="reset_password").latest("created_at")
-        token = re.search(r"reset-password=(.+)$", mail.payload["link"]).group(1)
+        code = mail.payload["code"]
+        wrong = APIClient().post("/api/v1/auth/password/code", {"email": "user@example.com", "code": "000000" if code != "000000" else "111111"}, format="json")
+        self.assertEqual(wrong.json()["error"], "invalid_code")
+        # Persian digits are fine.
+        fa_code = code.translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+        token = APIClient().post("/api/v1/auth/password/code", {"email": "user@example.com", "code": fa_code}, format="json").json()["token"]
+        again = APIClient().post("/api/v1/auth/password/code", {"email": "user@example.com", "code": code}, format="json")
+        self.assertEqual(again.json()["error"], "code_expired")  # a code works once
         done = APIClient().post("/api/v1/auth/password/reset", {"token": token, "password": "New-pass-9876"}, format="json")
         self.assertEqual(done.status_code, 204)
         self.assertEqual(client.get("/api/v1/me").status_code, 401)  # old sessions revoked
@@ -146,6 +153,25 @@ class AuthFlowTests(ApiTestCase):
         self.assertEqual(reuse.status_code, 400)  # single use
         login = APIClient().post("/api/v1/auth/login", {"email": "user@example.com", "password": "New-pass-9876"}, format="json")
         self.assertEqual(login.status_code, 200)
+
+    def test_reset_code_dies_after_five_wrong_tries(self):
+        self.register()
+        APIClient().post("/api/v1/auth/password/forgot", {"email": "user@example.com"}, format="json")
+        code = EmailOutbox.objects.filter(template="reset_password").latest("created_at").payload["code"]
+        bad = "123456" if code != "123456" else "654321"
+        errors = [APIClient().post("/api/v1/auth/password/code", {"email": "user@example.com", "code": bad}, format="json").json()["error"] for _ in range(5)]
+        self.assertEqual(errors, ["invalid_code"] * 4 + ["code_expired"])
+        right = APIClient().post("/api/v1/auth/password/code", {"email": "user@example.com", "code": code}, format="json")
+        self.assertEqual(right.json()["error"], "code_expired")
+
+    def test_signup_email_code(self):
+        client = self.register()
+        me = client.get("/api/v1/me").json()["profile"]
+        self.assertEqual((me["email_verified"], me["verify_required"]), (False, True))
+        code = EmailOutbox.objects.filter(template="verify_email").latest("created_at").payload["code"]
+        self.assertEqual(client.post("/api/v1/auth/email/verify-code", {"code": code}, format="json").status_code, 204)
+        me = client.get("/api/v1/me").json()["profile"]
+        self.assertEqual((me["email_verified"], me["verify_required"]), (True, False))
 
     def test_unknown_email_reset_request_looks_identical(self):
         response = APIClient().post("/api/v1/auth/password/forgot", {"email": "ghost@example.com"}, format="json")

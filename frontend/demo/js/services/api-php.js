@@ -127,6 +127,7 @@
       // Always the server's random code (an older copy in the synced
       // document could still hold the old sequential TJ0012-style id).
       userId: 'TJ-' + me.display_id,
+      emailVerified: !!me.email_verified, verifyRequired: !!me.verify_required,
     });
     profile.name = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
     loaded = true;
@@ -248,6 +249,10 @@
     forgotPassword: function (email) { return request('POST', '/auth/password/forgot', { email: email }, { auth: false }); },
     resetPassword: function (token, password) { return request('POST', '/auth/password/reset', { token: token, password: password }, { auth: false }); },
     verifyEmail: function (token) { return request('POST', '/auth/email/verify', { token: token }, { auth: false }); },
+    // One-time emailed codes: reset password, confirm the email after sign-up.
+    checkResetCode: function (email, code) { return request('POST', '/auth/password/code', { email: email, code: code }, { auth: false }).then(function (r) { return r.token; }); },
+    verifyEmailCode: function (code) { return request('POST', '/auth/email/verify-code', { code: code }); },
+    resendVerifyCode: function () { return request('POST', '/auth/email/resend'); },
     takeEmailLink: base.takeEmailLink,
     // Banner picture/title from the admin panel (public, no sign-in).
     siteContent: function () { return request('GET', '/content', undefined, { auth: false }); },

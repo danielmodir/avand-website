@@ -17,13 +17,14 @@ SUBJECTS = {
 }
 
 BODIES = {
+    # One-time codes (6 digits, 10 minutes) typed into the app.
     "verify_email": {
-        "fa": "برای تأیید ایمیلت روی این لینک بزن (تا ۲۴ ساعت معتبره):\n{link}",
-        "en": "Confirm your email with this link (valid for 24 hours):\n{link}",
+        "fa": "سلام! برای تأیید ایمیلت این کد رو تو توجیبی وارد کن:\n\n{code}\n\nاین کد فقط یک بار و تا ۱۰ دقیقه کار می‌کنه.",
+        "en": "Hi! Enter this code in Toojibee to confirm your email:\n\n{code}\n\nIt works once, for 10 minutes.",
     },
     "reset_password": {
-        "fa": "برای انتخاب رمز جدید روی این لینک بزن (تا یک ساعت معتبره):\n{link}\nاگه درخواست نداده بودی، این ایمیل رو نادیده بگیر.",
-        "en": "Choose a new password with this link (valid for one hour):\n{link}\nIf you didn't ask for this, ignore this email.",
+        "fa": "سلام! برای انتخاب رمز جدید این کد رو تو توجیبی وارد کن:\n\n{code}\n\nاین کد فقط یک بار و تا ۱۰ دقیقه کار می‌کنه. اگه درخواست نداده بودی، این ایمیل رو نادیده بگیر.",
+        "en": "Hi! Enter this code in Toojibee to choose a new password:\n\n{code}\n\nIt works once, for 10 minutes. If you didn't ask for this, ignore this email.",
     },
     "change_email": {
         "fa": "برای تأیید ایمیل جدیدت روی این لینک بزن:\n{link}",

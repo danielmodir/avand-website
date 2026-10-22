@@ -1,7 +1,9 @@
 """Account lifecycle and sign-in sessions."""
+import hashlib
+import hmac
 import re
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from django.conf import settings
 from django.contrib.auth import password_validation
@@ -242,11 +244,89 @@ def _lang(user):
     return settings_row.language if settings_row else "fa"
 
 
+# ── one-time email codes (same rules as backend-php/lib/auth.php) ────────
+CODE_LIFETIME = timedelta(minutes=10)
+CODE_TRIES = 5
+# Accounts made from this moment on confirm their email before using the
+# app (the app asks right after sign-up); older ones aren't locked out.
+VERIFY_REQUIRED_SINCE = datetime(2026, 10, 22, tzinfo=dt_timezone.utc)
+_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
+def _code_hash(user_id, purpose, code):
+    return hmac.new(settings.SECRET_KEY.encode(), f"{user_id}|{purpose}|{code}".encode(), hashlib.sha256).hexdigest()
+
+
+def clean_code(value):
+    return re.sub(r"\D", "", str(value or "").translate(_DIGITS))
+
+
+def _issue_code(user, purpose):
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    AuthToken.objects.filter(user=user, purpose=purpose).delete()
+    AuthToken.objects.create(user=user, purpose=purpose, token_hash=_code_hash(user.pk, purpose, code),
+                             expires_at=timezone.now() + CODE_LIFETIME)
+    return code
+
+
+def _check_code(user, purpose, code):
+    """Uses up the code, or raises invalid_code / code_expired."""
+    token = AuthToken.objects.select_for_update().filter(user=user, purpose=purpose, used_at__isnull=True, expires_at__gt=timezone.now()).first()
+    if token is None or token.attempts >= CODE_TRIES:
+        raise ApiError("code_expired", 400)
+    if len(code) != 6 or not hmac.compare_digest(token.token_hash, _code_hash(user.pk, purpose, code)):
+        token.attempts += 1
+        token.save(update_fields=["attempts"])
+        raise ApiError("code_expired" if token.attempts >= CODE_TRIES else "invalid_code", 400)
+    token.used_at = timezone.now()
+    token.save(update_fields=["used_at"])
+
+
+def verify_required(user):
+    return user.email_verified_at is None and user.created_at >= VERIFY_REQUIRED_SINCE
+
+
 def send_email_verification(user):
     if user.email_verified_at:
         return
-    raw = _issue_link_token(user, AuthToken.Purpose.VERIFY_EMAIL, settings.EMAIL_TOKEN_LIFETIME)
-    queue_email(user, EmailOutbox.Template.VERIFY_EMAIL, _lang(user), {"link": f"{settings.FRONTEND_URL}#verify-email={raw}"})
+    code = _issue_code(user, AuthToken.Purpose.VERIFY_CODE)
+    queue_email(user, EmailOutbox.Template.VERIFY_EMAIL, _lang(user), {"code": code})
+
+
+def verify_email_code(request, user, code):
+    """The code from the sign-up email, typed into the app (signed in).
+    Commits the wrong-try count even when the code is wrong."""
+    if user.email_verified_at:
+        return
+    with transaction.atomic():
+        try:
+            _check_code(user, AuthToken.Purpose.VERIFY_CODE, clean_code(code))
+        except ApiError as e:
+            error = e
+        else:
+            error = None
+            User.objects.filter(pk=user.pk).update(email_verified_at=timezone.now())
+    log_event(request, AuthEvent.Event.EMAIL_VERIFY, error is None, user)
+    if error:
+        raise error
+
+
+def exchange_reset_code(request, email, code):
+    """Code from the reset email -> a short-lived token for reset_password."""
+    user = User.objects.filter(email=(email or "").strip().lower()).first()
+    if user is None or user.status == User.Status.SUSPENDED:
+        raise ApiError("code_expired", 400)  # same as an address with no live code
+    with transaction.atomic():
+        try:
+            _check_code(user, AuthToken.Purpose.RESET_CODE, clean_code(code))
+        except ApiError as e:
+            error = e
+        else:
+            error = None
+            raw = _issue_link_token(user, AuthToken.Purpose.RESET_PASSWORD, timedelta(minutes=15))
+    if error:
+        raise error
+    return raw
 
 
 def consume_link_token(raw, purpose):
@@ -270,8 +350,8 @@ def request_password_reset(request, email):
     user = User.objects.filter(email=(email or "").strip().lower()).first()
     log_event(request, AuthEvent.Event.PASSWORD_RESET_REQUEST, bool(user), user, email)
     if user and user.status != User.Status.SUSPENDED:
-        raw = _issue_link_token(user, AuthToken.Purpose.RESET_PASSWORD, settings.PASSWORD_RESET_TOKEN_LIFETIME)
-        queue_email(user, EmailOutbox.Template.RESET_PASSWORD, _lang(user), {"link": f"{settings.FRONTEND_URL}#reset-password={raw}"})
+        code = _issue_code(user, AuthToken.Purpose.RESET_CODE)
+        queue_email(user, EmailOutbox.Template.RESET_PASSWORD, _lang(user), {"code": code})
 
 
 @transaction.atomic

@@ -158,6 +158,26 @@ class ResendVerificationView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class VerifyEmailCodeView(APIView):
+    """The 6-digit code from the sign-up email (signed in)."""
+    throttle_scope = "password_reset"
+
+    def post(self, request):
+        accounts.verify_email_code(request, request.user, request.data.get("code"))
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PasswordCodeView(PublicView):
+    """{email, code} from the reset email -> {token} for /auth/password/reset."""
+    throttle_scope = "password_reset"
+
+    def post(self, request):
+        data = s.EmailSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        token = accounts.exchange_reset_code(request, data.validated_data["email"], request.data.get("code"))
+        return Response({"token": token})
+
+
 class PasswordForgotView(PublicView):
     throttle_scope = "password_reset"
 

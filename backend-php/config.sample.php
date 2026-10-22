@@ -9,5 +9,5 @@ return [
     'db_user' => 'toojibee_app',
     'db_pass' => 'PUT-THE-DATABASE-PASSWORD-HERE',
     'app_url' => 'https://toojibee.ir/demo/',
-    'mail_from' => 'Toojibee <no-reply@toojibee.ir>',
+    'mail_from' => 'توجیبی Toojibee <support@toojibee.ir>',
 ];
