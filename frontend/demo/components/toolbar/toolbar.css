@@ -13,8 +13,10 @@
   box-shadow:var(--shadow); overflow:hidden;
 }
 .toolbar-avatar-btn{
-  position:relative; flex:0 0 auto; width:41px; height:41px; border-radius:50%; border:none;
-  margin-top:4px;
+  /* 40 + 5 + 5 = the pill's 50px inside: exactly centered, with an even
+     gap from the pill's edge (it used to sit 4px low against the edge). */
+  position:relative; flex:0 0 auto; width:40px; height:40px; border-radius:50%; border:none;
+  margin:5px;
   background-color:var(--primary); background-size:cover; background-position:center;
   color:var(--on-primary); font-weight:700; font-size:14px; line-height:1;
   display:flex; align-items:center; justify-content:center; cursor:pointer;
