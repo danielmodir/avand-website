@@ -229,3 +229,11 @@ body{
 @media (prefers-reduced-motion:reduce){
   .fab-add:hover, .btn-primary:hover, .pop-submit:hover{ transform:none; }
 }
+
+/* Day/night switch (switchThemeAnimated in js/core/util.js): the new
+   theme is revealed in one piece, so no part animates its own colors. */
+::view-transition-old(root), ::view-transition-new(root){ animation:none; mix-blend-mode:normal; }
+::view-transition-new(root){ z-index:2; }
+.theme-switching, .theme-switching *, .theme-switching *::before, .theme-switching *::after{ transition:none !important; }
+.theme-veil{ position:fixed; inset:0; z-index:10000; pointer-events:none; opacity:1; transition:opacity .42s cubic-bezier(.4,0,.2,1) !important; }
+.theme-veil.out{ opacity:0; }

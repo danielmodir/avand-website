@@ -42,6 +42,38 @@ function applyAppearance(){
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[palette][mode]);
 }
 
+/* Day <-> night as one movement, not every part fading on its own clock:
+   the new theme opens as a circle from where the switch was tapped (View
+   Transitions API: the browser snapshots the old page and reveals the new
+   one over it). Browsers without it get one short cross-fade of the whole
+   screen; "reduce motion" gets an instant switch. Per-element color
+   transitions are off for the moment of the switch (.theme-switching). */
+function switchThemeAnimated(x, y, apply){
+  const root = document.documentElement;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const run = () => { root.classList.add('theme-switching'); apply(); };
+  const done = () => setTimeout(() => root.classList.remove('theme-switching'), 30);
+  if(reduce){ run(); done(); return; }
+  if(document.startViewTransition){
+    const vt = document.startViewTransition(run);
+    vt.ready.then(() => {
+      const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      root.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+        { duration: 650, easing: 'cubic-bezier(.4,0,.2,1)', pseudoElement: '::view-transition-new(root)' });
+    }).catch(() => {});
+    vt.finished.then(done, done);
+    return;
+  }
+  // Fallback: a veil in the old background color over everything, faded out.
+  const veil = document.createElement('div');
+  veil.className = 'theme-veil';
+  veil.style.background = getComputedStyle(document.body).backgroundColor;
+  document.body.appendChild(veil);
+  run();
+  requestAnimationFrame(() => requestAnimationFrame(() => veil.classList.add('out')));
+  setTimeout(() => { veil.remove(); done(); }, 480);
+}
+
 /* Every background save/delete goes through here. With no real session
    (no-login demo mode) there's nothing to save to, so it doesn't call
    the backend at all — that was the 401 on each change. With a session,

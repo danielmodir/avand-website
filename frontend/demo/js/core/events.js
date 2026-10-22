@@ -195,10 +195,13 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'toggle-app-theme'){
-    state.settings.theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    applyAppearance();
+    const r = el.getBoundingClientRect();
+    switchThemeAnimated(e.clientX || r.left + r.width / 2, e.clientY || r.top + r.height / 2, () => {
+      state.settings.theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyAppearance();
+      render();
+    });
     cloudSync(() => Cloud.saveSettings(state.settings));
-    render();
     return;
   }
   if(action === 'set-palette'){

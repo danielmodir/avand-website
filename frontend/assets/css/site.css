@@ -547,3 +547,10 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .today-faq dt { font-weight: 700; margin-top: var(--space-3); }
 .today-faq dd { margin: var(--space-1) 0 0 0; color: var(--color-text-muted); }
 .today-page ul.today-month li { font-size: var(--font-size-sm); }
+
+/* Day/night switch (assets/js/theme.js): revealed in one piece. */
+::view-transition-old(root), ::view-transition-new(root){ animation:none; mix-blend-mode:normal; }
+::view-transition-new(root){ z-index:2; }
+.theme-switching, .theme-switching *, .theme-switching *::before, .theme-switching *::after{ transition:none !important; }
+.theme-veil{ position:fixed; inset:0; z-index:10000; pointer-events:none; opacity:1; transition:opacity .42s cubic-bezier(.4,0,.2,1) !important; }
+.theme-veil.out{ opacity:0; }
