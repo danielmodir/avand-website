@@ -1,0 +1,22 @@
+/* Birthday greeting (components/birthday/birthday.js). Theme variables only. */
+.bday-overlay{ position:fixed; inset:0; z-index:400; display:flex; align-items:center; justify-content:center; padding:24px;
+  background:color-mix(in srgb, var(--bg) 70%, transparent); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  animation:bday-in .3s ease both; overflow:hidden; }
+.bday-overlay.out{ animation:bday-out .26s ease both; }
+.bday-card{ position:relative; width:min(360px, 100%); text-align:center; padding:30px 22px 22px; border-radius:26px;
+  background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow); animation:bday-pop .5s cubic-bezier(.34,1.56,.64,1) both; }
+.bday-cake{ font-size:56px; line-height:1; margin-bottom:10px; animation:bday-bob 2.4s ease-in-out infinite; }
+.bday-title{ font-size:21px; font-weight:800; color:var(--text); }
+.bday-text{ margin-top:8px; font-size:14px; line-height:1.9; color:var(--text-muted); }
+.bday-btn{ margin-top:18px; width:100%; padding:13px; border-radius:14px; }
+.bday-confetti{ position:absolute; inset:0; pointer-events:none; }
+.bday-confetti i{ position:absolute; top:-12px; left:var(--x); width:8px; height:14px; border-radius:2px;
+  background:var(--primary); transform:rotate(var(--r)); animation:bday-fall 2.8s var(--d) cubic-bezier(.3,.7,.5,1) both; }
+.bday-confetti i[style*="--c:1"]{ background:var(--secondary, var(--primary-soft)); }
+.bday-confetti i[style*="--c:2"]{ background:var(--text-muted); width:6px; height:6px; border-radius:50%; }
+@keyframes bday-in{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes bday-out{ to{ opacity:0; } }
+@keyframes bday-pop{ from{ opacity:0; transform:scale(.85) translateY(12px); } to{ opacity:1; transform:none; } }
+@keyframes bday-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+@keyframes bday-fall{ to{ transform:translateY(110vh) rotate(calc(var(--r) + 540deg)); opacity:.9; } }
+@media (prefers-reduced-motion:reduce){ .bday-overlay, .bday-card, .bday-cake, .bday-confetti i{ animation:none !important; } .bday-confetti{ display:none; } }

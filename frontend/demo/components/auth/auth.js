@@ -306,6 +306,7 @@ async function enterSignedIn(){
   loadSharedPeriods();
   startReminders();
   refreshContactUnread();
+  maybeShowBirthday();
 }
 
 /* Shown while boot() is checking a saved session against the backend
