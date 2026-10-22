@@ -23,7 +23,12 @@ class ProfileInput(serializers.Serializer):
     period_length = serializers.IntegerField(min_value=1, max_value=15, required=False)
     quiz_step = serializers.IntegerField(min_value=0, max_value=4, required=False)  # 4 = done
     show_on_calendar = serializers.BooleanField(required=False)
+    enabled = serializers.BooleanField(required=False)
+    last_start = serializers.DateField(required=False, allow_null=True)
     version = serializers.IntegerField(min_value=0)
+
+    def validate_last_start(self, value):
+        return value.isoformat() if value else None  # stored inside encrypted JSON
 
 
 class PeriodView(APIView):

@@ -23,6 +23,15 @@ class PeriodTests(ApiTestCase):
         self.assertNotIn(b"cycle_length", blob)
         self.assertNotIn(b'"period_length": 5', blob)
 
+    def test_desk_switch_and_last_start_stay_saved(self):
+        saved = self.client.put("/api/v1/period/profile", {"enabled": True, "last_start": "2026-10-05", "quiz_step": 4, "version": 0}, format="json")
+        self.assertEqual(saved.status_code, 200, saved.content)
+        again = self.client.get("/api/v1/period/profile").json()
+        self.assertEqual((again["enabled"], again["last_start"], again["quiz_step"]), (True, "2026-10-05", 4))
+        # A later save that only changes another field keeps the switch on.
+        self.client.put("/api/v1/period/profile", {"show_on_calendar": True, "version": again["version"]}, format="json")
+        self.assertTrue(self.client.get("/api/v1/period/profile").json()["enabled"])
+
     def test_ciphertext_moved_to_another_row_does_not_decrypt(self):
         a, b = str(uuid.uuid4()), str(uuid.uuid4())
         self.client.put(f"/api/v1/period/cycles/{a}", {"start_date": "2026-09-01"}, format="json")

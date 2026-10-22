@@ -298,6 +298,14 @@ function refreshPeriodShareRow(){
    friend's that was shared with this person (Settings → period →
    "Share with…" on the friend's side). A man sees the desk only when
    someone shared with him. */
+/* Every change to her own period setup (on/off, the setup quiz, the
+   calendar reminder) is saved right away. Before, it rode along only when
+   something else happened to be saved, so the desk could vanish on the
+   next load and come back later ("jumping"). */
+function savePeriodSetup(){
+  cloudSync(() => Cloud.savePeriod ? Cloud.savePeriod(state.period) : Promise.resolve());
+}
+
 function periodViews(){
   const views = [];
   if(state.profile.gender === 'female' && state.period.enabled) views.push({ own: true, p: state.period });
@@ -518,7 +526,8 @@ function periodQuizNext(){
   } else {
     const v = Number(d.periodLength);
     if(!inRange(v, PERIOD_LIMITS.period) || v >= d.cycleLength){ d.error = t('periodLengthInvalid'); renderPeriodQuiz(); return; }
-    Object.assign(state.period, { lastStart: d.lastStart, cycleLength: d.cycleLength, periodLength: v, step: 'done' });
+    Object.assign(state.period, { lastStart: d.lastStart, cycleLength: d.cycleLength, periodLength: v, step: 'done', enabled: true });
+    savePeriodSetup();
     periodDraft = null;
     closePeriodQuiz();
     render();

@@ -265,6 +265,8 @@
     onStateChanged: schedulePush,
     saveTask: queued, deleteTask: queuedDelete, saveHabit: queued, deleteHabit: queuedDelete,
     saveEvent: queued, deleteEvent: queuedDelete, saveProfile: saveProfile, saveSettings: queued,
+    // The period setup lives in the synced document too: saving it sends the document.
+    savePeriod: queued,
     usernameAvailable: function (name) { return request('GET', '/me/profile/username-available?username=' + encodeURIComponent(name)).then(function (r) { return !!r.available; }); },
     changePassword: function (current, next) { return request('POST', '/me/password', { current_password: current, new_password: next }); },
     deleteAccount: function (password) {

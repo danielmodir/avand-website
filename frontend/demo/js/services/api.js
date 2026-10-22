@@ -321,7 +321,14 @@
     var enabled = st.calendars_enabled || [];
     var planning = (me.modules || []).filter(function (m) { return m.key === 'planning'; })[0];
     loadPhotosInBackground(tasks);
+    // The period profile (encrypted on the server, apps/period): only for
+    // women; nothing stored yet = version 0, the app's defaults.
+    var period = null;
+    if (p.gender === 'female') {
+      try { period = periodFromApi(await request('GET', '/period/profile')); } catch (e) { period = null; }
+    }
     return {
+      period: period,
       profile: {
         firstName: p.first_name, lastName: p.last_name, username: p.username || '', email: p.email,
         phone: p.phone || '', gender: p.gender || '', dob: p.birth_date || '', photo: null, userId: 'TJ-' + p.public_id,
@@ -618,13 +625,32 @@
   function pushUnsubscribe(id) { return request('DELETE', '/notifications/subscriptions/' + id); }
   function pushSchedule(items) { return request('PUT', '/notifications/schedule', { items: items }); }
 
+  // ── period (apps/period profile) ─────────────────────────────────────
+  var periodVersion = 0;
+  function periodFromApi(r) {
+    periodVersion = r.version || 0;
+    return { enabled: !!r.enabled, lastStart: r.last_start || null, cycleLength: r.cycle_length, periodLength: r.period_length,
+             step: r.quiz_step === 4 ? 'done' : (r.quiz_step || 0), calendarReminder: !!r.show_on_calendar };
+  }
+  async function savePeriod(pd) {
+    var body = { enabled: !!pd.enabled, last_start: pd.lastStart || null, cycle_length: Number(pd.cycleLength) || 28,
+                 period_length: Number(pd.periodLength) || 5, quiz_step: pd.step === 'done' ? 4 : (Number(pd.step) || 0),
+                 show_on_calendar: !!pd.calendarReminder, version: periodVersion };
+    try { periodFromApi(await request('PUT', '/period/profile', body)); }
+    catch (e) {
+      // Someone else's save got in first: take its version and save ours on top.
+      if (e.status === 409 && e.body && e.body.current) { periodVersion = e.body.current.version; body.version = periodVersion; periodFromApi(await request('PUT', '/period/profile', body)); }
+      else throw e;
+    }
+  }
+
   // ── "Contact us" (apps/core support messages) ────────────────────────
   function sendSupportMessage(kind, body, lang, appInfo) { return request('POST', '/support/messages', { kind: kind, body: body, lang: lang, app_info: appInfo }); }
   function supportMessages() { return request('GET', '/support/messages'); }
   function supportUnread() { return request('GET', '/support/unread').then(function (r) { return r.count || 0; }); }
 
   Object.assign(api, {
-    sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread,
+    sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread, savePeriod: savePeriod,
     pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,
     changePassword: changePassword, deleteAccount: deleteAccount, usernameAvailable: usernameAvailable,
     uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,

@@ -10,7 +10,9 @@ from . import crypto
 from .models import PeriodCycle, PeriodProfile, PeriodUserKey
 
 DB = "period"
-DEFAULT_PROFILE = {"cycle_length": 28, "period_length": 6, "quiz_step": 0, "show_on_calendar": False}
+# enabled / last_start: the app's period desk switch and the setup quiz's
+# last start date, saved with the rest so the desk stays on once turned on.
+DEFAULT_PROFILE = {"cycle_length": 28, "period_length": 6, "quiz_step": 0, "show_on_calendar": False, "enabled": False, "last_start": None}
 
 
 def user_key(user_id, create=False):
