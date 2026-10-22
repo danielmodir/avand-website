@@ -207,20 +207,44 @@ function attachAuthPopupDismiss(){
 /* The top banner's picture and title, as set in the admin panel (PHP
    backend: GET /content from our own API). Nothing set, or no backend:
    the banner keeps its plain look and the app name. */
+/* Which header picture shows: the occasion banner while it lasts (its end
+   time from the panel), else the main one; the night picture in dark mode,
+   the day one in light (either stands in when the other isn't set). GIFs
+   move. Re-run on theme change (applyAppearance) and when the occasion
+   ends while the app is open. */
+let bannerTimer = null;
+function activeBanner(){
+  const b = SITE_BANNER || {};
+  const occ = b.occasion;
+  if(occ && (occ.light || occ.dark) && (!occ.until || Date.parse(occ.until) > Date.now())) return { set: occ, occasion: true };
+  return { set: b.main || { light: b.image || null, dark: null }, occasion: false };
+}
+function bannerTitleNow(){
+  const a = activeBanner();
+  return (a.occasion && a.set.title && a.set.title[lang()]) || (SITE_BANNER.title && SITE_BANNER.title[lang()]) || '';
+}
+function applyBanner(){
+  const bg = document.getElementById('app-banner-bg'), banner = document.getElementById('app-banner');
+  if(!bg || !banner) return;
+  const { set } = activeBanner();
+  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const url = (dark ? set.dark || set.light : set.light || set.dark) || '';
+  // Only our own uploads (/uploads/...), never an outside address.
+  const ok = /^\/uploads\/[a-f0-9]{32}\.(webp|jpg|png|gif)$/.test(url);
+  bg.style.backgroundImage = ok ? `url("${url}")` : '';
+  bg.classList.toggle('has-image', ok);
+  banner.classList.toggle('has-image', ok);
+  applyLanguageDom();
+  clearTimeout(bannerTimer);
+  const until = SITE_BANNER.occasion && SITE_BANNER.occasion.until ? Date.parse(SITE_BANNER.occasion.until) - Date.now() : 0;
+  if(until > 0 && until < 2147483000) bannerTimer = setTimeout(applyBanner, until + 1000);
+}
+
 function loadSiteContent(){
   if(!Cloud.siteContent) return;
   Cloud.siteContent().then(c => {
     SITE_BANNER = (c && c.banner) || {};
-    const bg = document.getElementById('app-banner-bg');
-    if(bg && SITE_BANNER.image){
-      // Only our own uploads (/uploads/...), never an outside address.
-      if(/^\/uploads\/[a-f0-9]{32}\.(webp|jpg|png)$/.test(SITE_BANNER.image)){
-        bg.style.backgroundImage = `url("${SITE_BANNER.image}")`;
-        bg.classList.add('has-image');
-        document.getElementById('app-banner').classList.add('has-image');
-      }
-    }
-    applyLanguageDom();
+    applyBanner();
   }).catch(() => { /* offline: keep the plain banner */ });
   if(Cloud.featuredArticles){
     Cloud.featuredArticles().then(a => { SITE_ARTICLES = a || {}; render(); }).catch(() => {});

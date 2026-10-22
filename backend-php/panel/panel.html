@@ -210,6 +210,13 @@ textarea.tall{ min-height:340px; line-height:1.9; }
           <div><label for="ct-banner-fa">فارسی</label><input id="ct-banner-fa" type="text" placeholder="توجیبی"></div>
           <div><label for="ct-banner-en">English</label><input id="ct-banner-en" type="text" dir="ltr" placeholder="Toojibee"></div>
         </div>
+        <h2 class="mt">سربرگ مناسبتی</h2>
+        <p class="hint">اگه عکس سربرگ مناسبتی گذاشته باشی، تا زمان پایان به‌جای سربرگ اصلی نشون داده می‌شه؛ بعدش خودکار پاک می‌شه و سربرگ اصلی برمی‌گرده. زمان پایان خالی = تا وقتی خودت برش داری. عنوان خالی = همون عنوان اصلی.</p>
+        <div class="two">
+          <div><label for="ct-occ-fa">عنوان مناسبتی · فارسی</label><input id="ct-occ-fa" type="text" placeholder="مثلاً یلدا مبارک"></div>
+          <div><label for="ct-occ-en">Occasion title · English</label><input id="ct-occ-en" type="text" dir="ltr" placeholder="Happy Yalda"></div>
+          <div><label for="ct-occ-until">پایان نمایش (به وقت همین دستگاه)</label><input id="ct-occ-until" type="datetime-local"></div>
+        </div>
         <button class="btn block" type="submit">ذخیره‌ی متن‌ها</button>
         <div class="alert error hidden" role="alert"></div>
         <div class="alert ok hidden" id="ct-saved">ذخیره شد و روی سایت اعمال شد.</div>
@@ -430,6 +437,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     uploads_unwritable: 'سرور نتونست پوشه‌ی عکس‌ها رو بسازه.',
     network: 'اتصال به سرور برقرار نشد.',
     reply_required: 'متن جواب خالیه.',
+    until_in_past: 'زمان پایان سربرگ مناسبتی باید بعد از الان باشه.',
+    gif_too_large: 'GIF حداکثر ۳ مگابایت؛ برای اینترنت کند کاربرها سبک‌ترش کن.',
     not_found: 'پیدا نشد.',
   };
   var ACTIONS = {
@@ -738,14 +747,20 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   };
   var CT_FIELDS = [['eyebrow', 'جمله‌ی کوچیک بالای عنوان'], ['title', 'عنوان اصلی'], ['text', 'متن زیر عنوان']];
   var SLOT_INFO = {
-    banner: ['بنر بالای برنامه', 'عریض، حداقل ۱۶۰۰ پیکسل پهنا'],
+    banner_main_light: ['سربرگ اصلی · روز', 'عریض، حداقل ۱۶۰۰ پیکسل پهنا · عکس یا GIF'], banner_main_dark: ['سربرگ اصلی · شب', 'عریض، حداقل ۱۶۰۰ پیکسل پهنا · عکس یا GIF'],
+    banner_occ_light: ['سربرگ مناسبتی · روز', 'تا زمان پایان، جای سربرگ اصلی نشون داده می‌شه · عکس یا GIF'], banner_occ_dark: ['سربرگ مناسبتی · شب', 'تا زمان پایان، جای سربرگ اصلی نشون داده می‌شه · عکس یا GIF'],
     hero_mobile_light: ['اسکرین‌شات موبایل · روشن', 'نسبت گوشی (مثل ۷۵۰×۱۶۲۴)'], hero_mobile_dark: ['اسکرین‌شات موبایل · تیره', 'نسبت گوشی (مثل ۷۵۰×۱۶۲۴)'],
     desktop_light: ['اسکرین‌شات دسکتاپ · روشن', 'نسبت ۱۶۰۰×۱۰۱۸'], desktop_dark: ['اسکرین‌شات دسکتاپ · تیره', 'نسبت ۱۶۰۰×۱۰۱۸'],
   };
   var content = null;
+  // 'YYYY-MM-DD HH:MM:SS' (UTC, from the server) -> a datetime-local value in this device's time.
+  function localInput(utc) {
+    var d = new Date(utc.replace(' ', 'T') + 'Z'), p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
 
   function defaultImage(slot) {
-    if (slot === 'banner') return null;
+    if (slot.indexOf('banner') === 0) return null;
     var p = slot.split('.'), lang = p[0], k = p[1];
     var kind = k.indexOf('hero_mobile') === 0 ? 'mobile' : 'desktop';
     return '/assets/img/app-home-' + kind + '-' + lang + '-' + (/dark$/.test(k) ? 'dark' : 'light') + '.jpg';
@@ -775,7 +790,10 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       });
       $('ct-banner-fa').value = c.banner.title_fa || '';
       $('ct-banner-en').value = c.banner.title_en || '';
-      $('ct-banner-fa').maxLength = $('ct-banner-en').maxLength = c.limits.banner_title;
+      $('ct-banner-fa').maxLength = $('ct-banner-en').maxLength = $('ct-occ-fa').maxLength = $('ct-occ-en').maxLength = c.limits.banner_title;
+      $('ct-occ-fa').value = c.banner.occ_title_fa || '';
+      $('ct-occ-en').value = c.banner.occ_title_en || '';
+      $('ct-occ-until').value = c.banner.occ_until ? localInput(c.banner.occ_until) : '';
       $('ct-img-hint').textContent = 'JPEG، PNG یا WebP تا ۶ مگابایت. ' + (c.gd
         ? 'عکس خودکار به اندازه‌ی جاش برش می‌خوره، کوچیک می‌شه و به WebP تبدیل می‌شه تا سایت سبک بمونه.'
         : 'این هاست ابزار تبدیل عکس نداره؛ عکس همون‌طور که هست ذخیره می‌شه، پس خودت سبکش کن.');
@@ -801,7 +819,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       else thumb.appendChild(el('span', 'hint', 'بدون عکس'));
       card.appendChild(thumb);
       card.appendChild(el('span', custom ? 'custom' : 'hint', custom ? 'عکس جدید (از پنل)' : 'عکس پیش‌فرض سایت · ' + info[1]));
-      var file = el('input'); file.type = 'file'; file.accept = 'image/jpeg,image/png,image/webp';
+      var file = el('input'); file.type = 'file'; file.accept = 'image/jpeg,image/png,image/webp' + (slot.indexOf('banner') === 0 ? ',image/gif' : '');
       file.addEventListener('change', function () { if (file.files[0]) uploadImage(slot, file.files[0], card); });
       card.appendChild(file);
       if (custom) {
@@ -1420,7 +1438,9 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     $('ct-saved').classList.add('hidden');
     var landing = { fa: {}, en: {} };
     ['fa', 'en'].forEach(function (l) { CT_FIELDS.forEach(function (f) { landing[l][f[0]] = $('ct-' + l + '-' + f[0]).value; }); });
-    return api('PUT', '/content', { landing: landing, banner: { title_fa: $('ct-banner-fa').value, title_en: $('ct-banner-en').value } })
+    return api('PUT', '/content', { landing: landing, banner: { title_fa: $('ct-banner-fa').value, title_en: $('ct-banner-en').value,
+      occ_title_fa: $('ct-occ-fa').value, occ_title_en: $('ct-occ-en').value,
+      occ_until: $('ct-occ-until').value ? new Date($('ct-occ-until').value).toISOString() : '' } })
       .then(function () { $('ct-saved').classList.remove('hidden'); return loadContent(); });
   });
 

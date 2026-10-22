@@ -426,5 +426,5 @@ function applyLanguageDom(){
   var habitLabel = document.getElementById('nav-add-habit-label'); if(habitLabel) habitLabel.textContent = t('newHabit');
   var eventLabel = document.getElementById('nav-add-event-label'); if(eventLabel) eventLabel.textContent = t('newEvent');
   // A title set in the admin panel wins over the app name (SITE_BANNER, loadSiteContent in app.js).
-  var bannerTitle = document.getElementById('app-banner-title'); if(bannerTitle) bannerTitle.textContent = (SITE_BANNER.title && SITE_BANNER.title[lang()]) || t('appName');
+  var bannerTitle = document.getElementById('app-banner-title'); if(bannerTitle) bannerTitle.textContent = (typeof bannerTitleNow === 'function' && bannerTitleNow()) || t('appName');
 }

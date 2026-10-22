@@ -45,7 +45,8 @@
    since it's touching the device edge there) instead of floating with
    a margin like desktop — only the bottom stays separated/rounded. */
 @media (max-width:600px){
-.app-banner{ aspect-ratio:6.7/1; margin:0 0 10px 0; border-radius:0 0 24px 24px; }
+/* 20% taller than the earlier 6.7:1 (6.7 / 1.2 ≈ 5.58), at the repo owner's request. */
+.app-banner{ aspect-ratio:5.58/1; margin:0 0 10px 0; border-radius:0 0 24px 24px; }
 }
 /* Sign-in button for signed-out guests, at the far end from the logo. */
 .app-banner-auth{
