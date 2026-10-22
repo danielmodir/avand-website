@@ -68,6 +68,12 @@ def main(path):
         text_fa, author_fa = clean(r.get(1)), clean(r.get(4))
         # English: the translation when the original isn't English, else the original.
         text_en, author_en = clean(r.get(3)) or clean(r.get(2)), clean(r.get(5))
+        # Whole sentences only: a fragment cut from a longer passage reads
+        # oddly on its own (the English shows it: lowercase start, no end mark).
+        if not re.fullmatch(r"[A-Z“\"].{20,}[.!?”\"]", text_en) or "…" in text_en or "..." in text_en:
+            continue
+        if "«" in text_fa or "»" in text_fa:  # the hero adds its own quote marks
+            continue
         if text_fa and author_fa and len(text_fa) <= MAX_LEN:
             fa.append(text_fa + "\t" + author_fa)
         if text_en and author_en and len(text_en) <= MAX_LEN and re.fullmatch(r"[\x20-\x7E‘-”–—…]+", text_en):
