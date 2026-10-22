@@ -52,6 +52,33 @@ $html = [regex]::Replace($html, '<div data-include="([^"]+)"></div>', {
 })
 # The partial preloads are no longer needed once they're inline.
 $html = [regex]::Replace($html, '\s*<link rel="preload" href="components/[^"]+\.html[^"]*" as="fetch"[^>]*>', '')
+
+# 3b. One stylesheet and one script instead of ~50 files: on Iran's slow,
+#     high-latency networks (HTTP/1.1, a few connections at a time) the
+#     number of requests costs more than the bytes. Same files, same order
+#     (classic scripts already share one global scope, so joining them
+#     changes nothing). The CSS bundle sits in css/ so base.css's relative
+#     font paths stay right; component CSS has no url()s.
+$ver = ([regex]::Match($html, 'css/base\.css\?v=([^"]+)')).Groups[1].Value
+$cssFiles = [regex]::Matches($html, '<link rel="stylesheet" href="([^"?]+\.css)\?v=[^"]*">') | ForEach-Object { $_.Groups[1].Value }
+$css = ($cssFiles | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $stage 'demo') ($_ -replace '/', '\'))).Trim() }) -join "`n"
+[IO.File]::WriteAllText((Join-Path $stage 'demo\css\bundle.css'), $css, (New-Object Text.UTF8Encoding $false))
+$first = $true
+$html = [regex]::Replace($html, '<link rel="stylesheet" href="[^"?]+\.css\?v=[^"]*">\r?\n?', {
+  param($m)
+  if ($script:first) { $script:first = $false; return "<link rel=`"stylesheet`" href=`"css/bundle.css?v=$ver`">`n" }
+  ''
+})
+$jsFiles = [regex]::Matches($html, '<script src="([^"?]+\.js)\?v=[^"]*"></script>') | ForEach-Object { $_.Groups[1].Value }
+$js = ($jsFiles | ForEach-Object { ";`n" + [IO.File]::ReadAllText((Join-Path (Join-Path $stage 'demo') ($_ -replace '/', '\'))).Trim() }) -join "`n"
+[IO.File]::WriteAllText((Join-Path $stage 'demo\js\bundle.js'), $js, (New-Object Text.UTF8Encoding $false))
+$first = $true
+$html = [regex]::Replace($html, '<script src="[^"?]+\.js\?v=[^"]*"></script>\r?\n?', {
+  param($m)
+  if ($script:first) { $script:first = $false; return "<script src=`"js/bundle.js?v=$ver`"></script>`n" }
+  ''
+})
+if ($cssFiles.Count -lt 10 -or $jsFiles.Count -lt 20) { throw "bundling found too few files ($($cssFiles.Count) css, $($jsFiles.Count) js)" }
 [IO.File]::WriteAllText($index, $html, (New-Object Text.UTF8Encoding $false))
 
 # 4. Zip with "/" entry names.

@@ -8,6 +8,12 @@
       "port": 8080
     },
     {
+      "name": "stage-check",
+      "runtimeExecutable": "npx.cmd",
+      "runtimeArgs": ["-y", "http-server", "dist/stage", "-p", "8090", "-c-1"],
+      "port": 8090
+    },
+    {
       "name": "toojibee-api",
       "runtimeExecutable": "backend/.venv/Scripts/python.exe",
       "runtimeArgs": ["backend/manage.py", "runserver", "127.0.0.1:8000", "--noreload"],

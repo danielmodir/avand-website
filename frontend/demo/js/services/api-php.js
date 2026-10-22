@@ -108,8 +108,9 @@
   }
 
   async function loadAll() {
-    var me = await request('GET', '/me');
-    var doc = await request('GET', '/sync');
+    // Both at once: one round trip instead of two on a slow network.
+    var both = await Promise.all([request('GET', '/me'), request('GET', '/sync')]);
+    var me = both[0], doc = both[1];
     version = doc.version || 0;
     var data = doc.data || {};
     // First sign-in on a device that was used without an account: what
