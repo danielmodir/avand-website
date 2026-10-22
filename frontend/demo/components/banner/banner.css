@@ -35,7 +35,7 @@
   cursor:pointer;
 }
 /* Same navy-circle/orange-mark badge as the marketing site's header
-   (assets/icons/logo.svg) — fills the slot completely instead of a
+   (assets/icons/logo.svg?v=tj2) — fills the slot completely instead of a
    CSS-drawn translucent circle behind a flat, circle-less mark, and
    needs no theme-swap filter since the banner itself is always
    orange regardless of app theme. */

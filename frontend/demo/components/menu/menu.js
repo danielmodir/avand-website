@@ -411,7 +411,7 @@ function renderSharePage(){
   return `
     ${subHeader(t('shareToojibee'))}
     <div class="share-hero">
-      <div class="share-app-icon"><img class="brand-mark-img" src="../assets/icons/logo-mark.png" alt=""></div>
+      <div class="share-app-icon"><img class="brand-mark-img" src="../assets/icons/logo.svg?v=tj2" alt=""></div>
       <div class="share-app-name">${t('appName')}</div>
       <div class="share-app-desc">${t('shareDesc')}</div>
     </div>
@@ -426,7 +426,7 @@ function renderAboutPage(){
   const customText = state.aboutText[lang()];
   return `
     ${subHeader(t('aboutUs'))}
-    <div class="about-logo"><img class="brand-mark-img" src="../assets/icons/logo-mark.png" alt=""></div>
+    <div class="about-logo"><img class="brand-mark-img" src="../assets/icons/logo.svg?v=tj2" alt=""></div>
     <div class="about-name">${t('appName')}</div>
     <div class="about-version">${t('aboutVersion')}</div>
     <div class="empty-hint">${escapeHtml(customText || t('aboutDesc'))}</div>

@@ -51,10 +51,12 @@ Read the relevant doc before any big change.
   time.ir has no public API; it is a feature reference only, never fetched.
 - Every color, spacing and radius comes from CSS variables in /assets/css/tokens.css.
   Never hardcode colors anywhere else.
-- Brand mark is assets/icons/logo-mark.png (the "Tj" monogram) on a forest-green circle —
-  swap that one file to rebrand everywhere (assets/icons/logo.svg, favicon.svg,
-  og-image.svg, and demo/'s header banner all reference it). Keep it swappable in
-  one place.
+- Brand mark (2026-10-22, the repo owner's new "Tj road" concept): drawn ONCE, as
+  vectors, in deploy/make-logo.js, which writes every logo SVG (logo.svg, favicon.svg,
+  logo-header(-dark).svg, logo-mark.svg, og-image.svg) — light: cream mark with orange
+  road lines on a forest circle; dark header: olive mark on an orange circle. The PNG
+  sizes (favicon-48, apple-touch-icon, icon-192/512, logo-mark, og-image) are rendered
+  from those SVGs with headless Chrome. Change the drawing there, re-run, re-render.
 - /demo/ holds the HTML prototype. It must have noindex. noindex still applies, and the
   marketing site (outside /demo/) must still never describe it as the finished product.
   The visible "this is a preview" banner was removed by explicit product decision (SPEC.md §11.9).

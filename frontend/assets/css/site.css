@@ -92,7 +92,7 @@ a { color: inherit; }
 
 .brand { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; }
 .brand-mark {
-  /* Single source for the placeholder brand mark: assets/icons/logo.svg.
+  /* Single source for the placeholder brand mark: assets/icons/logo.svg?v=tj2.
      Swap that one file to rebrand every page at once (per CLAUDE.md).
      42px = the shared logo.svg's old 38px circle, 10% bigger. */
   width: 42px; height: 42px; border-radius: var(--radius-md); flex: 0 0 auto; display: block;

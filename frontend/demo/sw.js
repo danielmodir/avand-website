@@ -23,8 +23,8 @@ self.addEventListener('push', e => {
     const fa = /[؀-ۿ]/.test((m.title || '') + (m.body || ''));
     await self.registration.showNotification(m.title || 'Toojibee', {
       body: m.body || '', tag, lang: fa ? 'fa' : 'en', dir: fa ? 'rtl' : 'ltr',
-      icon: new URL('../assets/icons/icon-192.png', scope).href,
-      badge: new URL('../assets/icons/favicon-48.png', scope).href,
+      icon: new URL('../assets/icons/icon-192.png?v=tj2', scope).href,
+      badge: new URL('../assets/icons/favicon-48.png?v=tj2', scope).href,
       data: m.data || {},
     });
     try {

@@ -106,8 +106,8 @@ function reminderBody(r){
 
 function showReminder(r, missed){
   const body = (missed ? t('notifMissedPrefix') + ' · ' : '') + reminderBody(r);
-  const opts = { body, tag: r.slot, lang: lang(), dir: lang() === 'fa' ? 'rtl' : 'ltr', icon: '../assets/icons/icon-192.png',
-    badge: '../assets/icons/favicon-48.png', data: { kind: r.kind, id: r.id, date: r.date } };
+  const opts = { body, tag: r.slot, lang: lang(), dir: lang() === 'fa' ? 'rtl' : 'ltr', icon: '../assets/icons/icon-192.png?v=tj2',
+    badge: '../assets/icons/favicon-48.png?v=tj2', data: { kind: r.kind, id: r.id, date: r.date } };
   if(notifyAllowed()){
     if(notifyReg) notifyReg.showNotification(r.title, opts).catch(() => {});
     else try{ const n = new Notification(r.title, opts); n.onclick = () => { window.focus(); openReminderTarget(opts.data); }; }catch(e){ /* phones need sw.js */ }

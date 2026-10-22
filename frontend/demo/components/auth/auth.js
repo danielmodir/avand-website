@@ -234,7 +234,7 @@ function renderAuthScreen(){
   return `
     <div class="auth-card" dir="${lang()==='fa'?'rtl':'ltr'}" role="dialog" aria-modal="true" aria-label="${t('loginSignup')}">
       ${tab === 'verify' ? '' : `<button type="button" class="auth-close" data-action="close-auth" aria-label="${t('closeBtn')}">${ICONS.close}</button>`}
-      <div class="auth-logo"><img src="../assets/icons/logo.svg" alt=""></div>
+      <div class="auth-logo"><img src="../assets/icons/logo.svg?v=tj2" alt=""></div>
       ${body}
     </div>`;
 }

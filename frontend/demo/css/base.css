@@ -149,7 +149,7 @@ body{
 .hidden{ display:none !important; }
 :root[data-theme="light"] .theme-toggle-btn .icon-sun{ opacity:0; transform:translate(-50%,-50%) rotate(90deg) scale(.4); }
 :root[data-theme="light"] .theme-toggle-btn .icon-moon{ opacity:1; transform:translate(-50%,-50%) rotate(0deg) scale(1); }
-:root[data-theme="light"] .brand-mark-img{ filter:invert(1); }
+
 /* ===== Desktop layout (>=960px): calendar + home side by side =====
    Below 960px, #page-home is the single merged Calendar+Home page (see
    .home-cal-widget), Menu opens from the hamburger as a full-screen
