@@ -14,6 +14,7 @@ try {
     require __DIR__ . '/lib/bootstrap.php';
     require __DIR__ . '/lib/content.php';
     require __DIR__ . '/lib/articles.php';
+    require __DIR__ . '/lib/dates.php'; // the footer's "Calendar <year>" link
     $html = tj_render_landing($html, $lang);
     $html = tj_footer_with_articles($html, $lang);
     $html = tj_landing_articles($html, $lang); // articles ticked "landing page"

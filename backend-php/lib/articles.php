@@ -293,6 +293,11 @@ function tj_footer_with_articles(string $html, string $lang): string {
     // "Today's date" (today.php) is always there on the live host.
     if (strpos($html, '<li><a href="/' . $lang . '/today/">') === false)
         $li .= '<li><a href="/' . $lang . '/today/">' . ($lang === 'fa' ? 'تاریخ امروز' : "Today's date") . '</a></li>';
+    // The year calendar (yearcal.php), named with the year people search for.
+    if (strpos($html, '<li><a href="/' . $lang . '/calendar/">') === false && function_exists('tj_jalali')) {
+        [$jy] = tj_jalali((int)date('Y'), (int)date('n'), (int)date('j'));
+        $li .= '<li><a href="/' . $lang . '/calendar/">' . ($lang === 'fa' ? 'تقویم ' . tj_fa_digits((string)$jy) : "Calendar $jy") . '</a></li>';
+    }
     if (strpos($html, '<li><a href="/' . $lang . '/articles/">') === false && tj_articles_in($lang, 'list', 1))
         $li .= '<li><a href="/' . $lang . '/articles/">' . ($lang === 'fa' ? 'مقاله‌ها' : 'Articles') . '</a></li>';
     if ($li === '') return $html;

@@ -554,3 +554,23 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .theme-switching, .theme-switching *, .theme-switching *::before, .theme-switching *::after{ transition:none !important; }
 .theme-veil{ position:fixed; inset:0; z-index:10000; pointer-events:none; opacity:1; transition:opacity .42s cubic-bezier(.4,0,.2,1) !important; }
 .theme-veil.out{ opacity:0; }
+
+/* Year calendar (api/yearcal.php): twelve month grids, Saturday first. */
+.yc-page { max-width: 980px; }
+.yc-lead { color: var(--color-text-muted); }
+.yc-years { margin-top: var(--space-3); }
+.yc-years b { color: var(--color-primary); }
+.yc-jump { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-4) 0; }
+.yc-jump a { padding: 4px 12px; border-radius: var(--radius-full); background: var(--color-bg-soft); border: 1px solid var(--color-border); font-size: var(--font-size-xs); text-decoration: none; color: inherit; }
+.yc-jump a:hover { border-color: var(--color-primary); }
+.yc-months { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4); }
+.yc-month { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); scroll-margin-top: 80px; }
+.today-page .yc-month h2 { margin: 0; }
+.yc-range { margin: 2px 0 var(--space-3); font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.yc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
+.yc-wd { font-size: var(--font-size-xs); color: var(--color-text-muted); padding: 2px 0; }
+.yc-day { padding: 6px 0; border-radius: var(--radius-sm); font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; }
+.yc-day.off { color: var(--color-error); font-weight: 700; }
+.yc-day.today { background: var(--color-primary); color: var(--color-on-primary, var(--color-surface)); font-weight: 800; }
+.yc-day[title] { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.yc-occ { margin-top: var(--space-3); font-size: var(--font-size-xs); }

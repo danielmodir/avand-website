@@ -23,6 +23,16 @@ $extra = '';
 foreach (['fa', 'en'] as $l) {
     $extra .= "  <url>\n    <loc>$base/$l/today/</loc>\n    <lastmod>$today</lastmod>\n    <changefreq>daily</changefreq>\n"
         . $pair('/fa/today/', '/en/today/') . "  </url>\n";
+    // The year calendar (yearcal.php): this year, and the next one too
+    // (searched from autumn on).
+    $extra .= "  <url>\n    <loc>$base/$l/calendar/</loc>\n    <lastmod>$today</lastmod>\n    <changefreq>weekly</changefreq>\n"
+        . $pair('/fa/calendar/', '/en/calendar/') . "  </url>\n";
+}
+require_once __DIR__ . '/lib/dates.php';
+[$jyNow] = tj_jalali((int)date('Y'), (int)date('n'), (int)date('j'));
+foreach (['fa', 'en'] as $l) {
+    $y = $jyNow + 1;
+    $extra .= "  <url>\n    <loc>$base/$l/calendar/$y/</loc>\n" . $pair("/fa/calendar/$y/", "/en/calendar/$y/") . "  </url>\n";
 }
 try {
     foreach (['fa', 'en'] as $l) {

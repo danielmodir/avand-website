@@ -12,6 +12,7 @@ Options -Indexes
   RewriteRule ^page\.php$ - [L]
   RewriteRule ^articles\.php$ - [L]
   RewriteRule ^today\.php$ - [L]
+  RewriteRule ^yearcal\.php$ - [L]
   RewriteRule ^sitemap\.php$ - [L]
   RewriteRule ^v1(/.*)?$ v1/index.php [L,QSA]
   RewriteRule ^ - [F]
