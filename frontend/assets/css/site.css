@@ -202,7 +202,11 @@ a { color: inherit; }
   border-radius: var(--radius-full); padding: var(--space-1) var(--space-4);
   font-size: var(--font-size-xs); font-weight: 700; color: var(--color-link);
   margin: 0 0 var(--space-5) 0; box-shadow: var(--shadow-soft-sm);
+  max-width: 100%; line-height: 1.7;
 }
+/* The live site puts a random quote here (api/page.php); it may run to two lines. */
+.hero-eyebrow:has(.hero-quote-by) { border-radius: var(--radius-lg); padding-block: var(--space-2); }
+.hero-quote-by { font-weight: 600; opacity: .75; white-space: nowrap; }
 .hero-eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-success); flex: 0 0 auto; animation: pulse-dot 2.4s var(--ease-standard) infinite; }
 @media (prefers-reduced-motion: reduce) { .hero-eyebrow .dot { animation: none; } }
 @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }

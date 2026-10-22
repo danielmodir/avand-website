@@ -144,6 +144,30 @@ function tj_render_landing(string $html, string $lang): string {
     return $html;
 }
 
+/* The hero's small line above the title: a random short quote on every
+ * request, from data/quotes-<lang>.txt ("sentence<TAB>author" per line,
+ * made by deploy/make-quotes.py). Jumps to a random byte and takes the
+ * next whole line, so the file is never read in full. Without the file
+ * the eyebrow text (static or from the panel) stays. */
+function tj_landing_quote(string $html, string $lang): string {
+    $file = dirname(__DIR__) . "/data/quotes-$lang.txt";
+    $size = @filesize($file);
+    $f = $size ? @fopen($file, 'rb') : false;
+    if (!$f) return $html;
+    fseek($f, random_int(0, $size - 1));
+    fgets($f); // the rest of the line we landed in
+    $line = fgets($f);
+    if ($line === false || trim($line) === '') { rewind($f); $line = fgets($f); } // past the last line
+    fclose($f);
+    $parts = explode("\t", trim((string)$line), 2);
+    if (count($parts) !== 2 || $parts[0] === '') return $html;
+    [$open, $close] = $lang === 'fa' ? ['«', '»'] : ["\u{201C}", "\u{201D}"];
+    $inner = htmlspecialchars($open . $parts[0] . $close, ENT_QUOTES, 'UTF-8')
+        . ' <span class="hero-quote-by">— ' . htmlspecialchars($parts[1], ENT_QUOTES, 'UTF-8') . '</span>';
+    return preg_replace_callback('#(<(\w+)[^>]*\sdata-c="eyebrow"[^>]*>)(.*?)(</\2>)#s',
+        function ($m) use ($inner) { return $m[1] . $inner . $m[4]; }, $html, 1);
+}
+
 /* ---- admin ---- */
 
 function tj_admin_content(): void {
