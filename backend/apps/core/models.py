@@ -545,6 +545,7 @@ class EmailOutbox(models.Model):
         CHANGE_EMAIL = "change_email"
         DELETION_SCHEDULED = "account_deletion_scheduled"
         ACCOUNT_DELETED = "account_deleted"
+        SUPPORT_REPLY = "support_reply"
 
     class Status(models.TextChoices):
         PENDING = "pending"
@@ -568,3 +569,40 @@ class EmailOutbox(models.Model):
     class Meta:
         indexes = [models.Index(fields=["status", "next_attempt_at"], name="core_outbox_queue_idx")]
         verbose_name_plural = "email outbox"
+
+
+# ── "Contact us" ─────────────────────────────────────────────────────────
+
+class SupportMessage(models.Model):
+    """A message from the app's "Contact us" page and the team's answer
+    (Django admin here; the live PHP API has the same in its own panel).
+    The answer shows in the app and is emailed (EmailOutbox support_reply)."""
+
+    class Kind(models.TextChoices):
+        SUGGESTION = "suggestion"
+        CRITICISM = "criticism"
+        SUPPORT = "support"
+        BUG = "bug"
+        ACCOUNT = "account"
+        OTHER = "other"
+
+    class Status(models.TextChoices):
+        OPEN = "open"
+        ANSWERED = "answered"
+        CLOSED = "closed"
+
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="support_messages")
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    body = models.TextField(max_length=3000)
+    lang = models.CharField(max_length=2, choices=LANG_CHOICES, default="fa")
+    app_info = models.CharField(max_length=300, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    reply = models.TextField(max_length=3000, blank=True)
+    replied_at = models.DateTimeField(null=True, blank=True)
+    user_seen_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "created_at"], name="core_support_status_idx")]

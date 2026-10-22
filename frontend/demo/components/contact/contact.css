@@ -1,0 +1,21 @@
+/* Contact us (components/contact/contact.js). Theme variables only. */
+.contact-intro{ margin-bottom:16px; }
+.contact-form{ display:flex; flex-direction:column; gap:8px; }
+.contact-label{ font-size:12.5px; font-weight:700; color:var(--text-muted); margin-top:6px; }
+.contact-select{ width:100%; }
+.contact-body{
+  width:100%; min-height:130px; resize:vertical; padding:12px 14px; border-radius:14px;
+  border:1px solid var(--border); background:var(--bg-soft); color:var(--text); font:inherit; font-size:14px; line-height:1.8;
+}
+.contact-body:focus{ outline:none; border-color:var(--primary); }
+.contact-error{ color:var(--danger); font-size:12.5px; font-weight:700; }
+.contact-send{ margin-top:6px; padding:14px; border-radius:14px; font-size:14px; }
+.contact-msg{ border:1px solid var(--border); border-radius:16px; padding:12px 14px; margin-bottom:10px; background:var(--bg-soft); }
+.contact-msg-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); }
+.contact-kind{ font-weight:800; color:var(--text); }
+.contact-state{ margin-inline-start:auto; padding:2px 9px; border-radius:999px; background:var(--bg-soft); font-weight:700; }
+.contact-state.answered{ background:var(--primary-soft); color:var(--primary); }
+.contact-msg-body{ margin-top:6px; font-size:13.5px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere; }
+.contact-reply{ margin-top:10px; padding:10px 12px; border-radius:12px; background:var(--primary-soft); font-size:13.5px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere; }
+.contact-reply b{ display:block; font-size:12px; color:var(--primary); margin-bottom:2px; }
+.count.contact-unread{ background:var(--primary); color:var(--on-primary); }

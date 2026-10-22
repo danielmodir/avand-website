@@ -17,6 +17,7 @@ require __DIR__ . '/../lib/articles.php';
 require __DIR__ . '/../lib/calendar.php';
 require __DIR__ . '/../lib/social.php';
 require __DIR__ . '/../lib/push.php';
+require __DIR__ . '/../lib/support.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -54,6 +55,12 @@ $routes = [
     'GET /period/shares'        => 'tj_period_shares_get',
     'PUT /period/shares'        => 'tj_period_shares_put',
     'GET /period/shared-with-me'=> 'tj_period_shared_with_me',
+    'POST /support/messages'    => 'tj_support_send',
+    'GET /support/messages'     => 'tj_support_mine',
+    'GET /support/unread'       => 'tj_support_unread',
+    'GET /admin/messages'       => 'tj_admin_messages',
+    'GET /admin/messages/canned'=> 'tj_admin_canned_get',
+    'PUT /admin/messages/canned'=> 'tj_admin_canned_put',
     'GET /notifications/push-key'      => 'tj_push_key',
     'POST /notifications/subscriptions'=> 'tj_push_subscribe',
     'PUT /notifications/schedule'      => 'tj_push_schedule',
@@ -130,6 +137,11 @@ if (preg_match('#^/social/(connections|blocks)/([a-f0-9]{32})(?:/(request|respon
     tj_fail(405, 'method_not_allowed');
 }
 
+// "Contact us" in the panel: /admin/messages/<public id>/(reply|close|reopen).
+if (preg_match('#^/admin/messages/([a-f0-9]{32})/(reply|close|reopen)$#', $path, $m)) {
+    if ($method === 'POST') tj_admin_message_action($m[1], $m[2]);
+    tj_fail(405, 'method_not_allowed');
+}
 // Web Push: /notifications/subscriptions/<public id> (DELETE).
 if (preg_match('#^/notifications/subscriptions/([a-f0-9]{32})$#', $path, $m)) {
     if ($method === 'DELETE') tj_push_unsubscribe($m[1]);

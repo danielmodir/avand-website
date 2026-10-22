@@ -97,6 +97,21 @@ textarea:focus{ outline:none; border-color:var(--color-primary); }
 .slot .custom{ color:var(--color-success); font-size:var(--font-size-xs); }
 .slot input[type=file]{ font-size:var(--font-size-xs); max-width:100%; }
 textarea.tall{ min-height:340px; line-height:1.9; }
+/* User messages ("Contact us") */
+.msg-list{ display:flex; flex-direction:column; gap:10px; }
+.msg{ border:1px solid var(--color-border); border-radius:var(--radius-md); padding:12px 14px; cursor:pointer; }
+.msg:hover, .msg.on{ border-color:var(--color-primary); }
+.msg-head{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:var(--font-size-xs); color:var(--color-text-muted); }
+.msg-head b{ color:var(--color-text); }
+.msg-body{ margin-top:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.msg-preview{ margin-top:6px; color:var(--color-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.msg-reply{ margin-top:12px; padding:10px 12px; border-radius:var(--radius-sm); background:var(--color-bg-soft); white-space:pre-wrap; overflow-wrap:anywhere; }
+.chips{ display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
+.chip{ border:1px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text); border-radius:var(--radius-full); padding:6px 12px; font:inherit; font-size:var(--font-size-xs); font-weight:700; cursor:pointer; display:inline-flex; gap:6px; align-items:center; }
+.chip:hover{ border-color:var(--color-primary); }
+.chip .x{ color:var(--color-text-muted); font-weight:400; }
+.filters{ display:flex; gap:6px; flex-wrap:wrap; }
+.filters .btn.ghost.on{ border-color:var(--color-primary); color:var(--color-primary); }
 .article-preview{ line-height:1.9; }
 .article-preview h2{ font-size:var(--font-size-md); display:block; margin:18px 0 8px; }
 .article-preview a{ color:var(--color-link); }
@@ -313,6 +328,19 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       </div>
     </section>
 
+    <section id="tab-messages" class="hidden stack">
+      <div class="card">
+        <h2>پیام کاربرها</h2>
+        <div class="filters" id="m-filters"></div>
+        <div class="hint">پیام‌هایی که کاربرها از «ارتباط با ما» تو برنامه فرستادن. جوابت تو برنامه بهشون نشون داده می‌شه و از support@toojibee.ir هم ایمیل می‌شه.</div>
+      </div>
+      <div class="card hidden" id="m-detail"></div>
+      <div class="card">
+        <div class="msg-list" id="m-list"></div>
+        <button class="btn ghost hidden mt" id="m-more" type="button">بیشتر</button>
+      </div>
+    </section>
+
     <section id="tab-admins" class="hidden stack">
       <form class="card" id="new-admin" novalidate>
         <h2>افزودن ادمین</h2>
@@ -368,6 +396,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     'content.manage': ['محتوای سایت', 'متن بالای لندینگ، بنر برنامه و اسکرین‌شات‌ها'],
     'articles.write': ['نوشتن مقاله', 'نوشتن مقاله و فرستادن برای بررسی'],
     'articles.review': ['بررسی مقاله‌ها', 'تأیید و انتشار، رد با توضیح، برداشتن از سایت'],
+    'support.reply': ['پیام کاربرها', 'خوندن و جواب دادن پیام‌های «ارتباط با ما»'],
     'system.view': ['دیتابیس و سرور', 'جدول‌ها، حجم دیتابیس، دیسک، رم و وضعیت سرور'],
     'audit.view': ['گزارش فعالیت', 'دیدن کارهای همه‌ی ادمین‌ها'],
     'admins.manage': ['مدیریت ادمین‌ها', 'افزودن ادمین و تعیین دسترسی‌ها'],
@@ -399,6 +428,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     no_file: 'فایلی انتخاب نشد.',
     uploads_unwritable: 'سرور نتونست پوشه‌ی عکس‌ها رو بسازه.',
     network: 'اتصال به سرور برقرار نشد.',
+    reply_required: 'متن جواب خالیه.',
+    not_found: 'پیدا نشد.',
   };
   var ACTIONS = {
     login_ok: ['ورود موفق', 'good'], login_failed: ['ورود ناموفق', 'bad'], login_locked: ['تلاش در زمان قفل', 'bad'],
@@ -412,6 +443,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     article_published: ['انتشار مقاله', 'good'], article_rejected: ['رد مقاله', 'bad'], article_unpublished: ['برداشتن مقاله از سایت', 'warn'],
     article_deleted: ['حذف مقاله', 'bad'], article_cover: ['کاور مقاله', ''],
     hijri_months_saved: ['ذخیره‌ی تقویم قمری', 'warn'],
+    message_replied: ['جواب به پیام کاربر', 'good'], message_closed: ['بستن پیام کاربر', ''], message_reopened: ['بازکردن دوباره‌ی پیام', ''],
+    canned_saved: ['ذخیره‌ی جواب‌های آماده', ''],
     content_saved: ['ذخیره‌ی متن سایت', 'warn'], image_uploaded: ['آپلود عکس', 'warn'], image_reset: ['برگشت عکس به پیش‌فرض', 'warn'],
   };
   var USTATUS = { active: ['فعال', 'good'], suspended: ['معلق', 'bad'] };
@@ -490,7 +523,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   function enterDash(s) {
     me = { csrf: s.csrf, email: s.email, permissions: s.permissions || [], isOwner: !!s.is_owner };
     $('who').textContent = 'وارد شده با ' + me.email + (me.isOwner ? ' · مالک' : '');
-    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['content', 'محتوای سایت', 'content.manage'], ['articles', 'مقاله‌ها', ['articles.write', 'articles.review']], ['system', 'دیتابیس و سرور', 'system.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
+    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['messages', 'پیام کاربرها', 'support.reply'], ['content', 'محتوای سایت', 'content.manage'], ['articles', 'مقاله‌ها', ['articles.write', 'articles.review']], ['system', 'دیتابیس و سرور', 'system.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
       .filter(function (t) { return [].concat(t[2]).some(can); });
     var nav = $('tabs');
     nav.textContent = '';
@@ -508,9 +541,143 @@ textarea.tall{ min-height:340px; line-height:1.9; }
 
   function openTab(name) {
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
-    ['overview', 'visits', 'users', 'content', 'articles', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
-    ({ overview: loadOverview, visits: loadVisits, content: loadContent, articles: loadArticles, system: loadSystem, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
+    ['overview', 'visits', 'users', 'messages', 'content', 'articles', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
+    ({ overview: loadOverview, visits: loadVisits, messages: function () { msgs.offset = 0; return loadMessages(); }, content: loadContent, articles: loadArticles, system: loadSystem, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
       .catch(onAuthError).catch(function (err) { alert(errorText(err)); });
+  }
+
+  /* ---- user messages ("Contact us" in the app) ---- */
+
+  var KINDS = { suggestion: 'پیشنهاد', criticism: 'انتقاد', support: 'پشتیبانی', bug: 'گزارش خطا', account: 'حساب کاربری', other: 'سایر' };
+  var MSTATUS = { open: ['جواب‌نداده', 'warn'], answered: ['جواب‌داده', 'good'], closed: ['بسته', ''] };
+  var msgs = { status: 'open', offset: 0, items: [], current: null, canned: null };
+
+  function loadMessages(append) {
+    return api('GET', '/messages?status=' + msgs.status + '&offset=' + msgs.offset).then(function (r) {
+      msgs.items = append ? msgs.items.concat(r.items) : r.items;
+      var f = $('m-filters');
+      f.textContent = '';
+      [['open', 'جواب‌نداده'], ['answered', 'جواب‌داده'], ['closed', 'بسته'], ['all', 'همه']].forEach(function (x) {
+        var n = x[0] === 'all' ? r.counts.open + r.counts.answered + r.counts.closed : r.counts[x[0]];
+        var b = el('button', 'btn ghost' + (msgs.status === x[0] ? ' on' : ''), x[1] + ' (' + fa(n) + ')');
+        b.type = 'button';
+        b.addEventListener('click', function () { msgs.status = x[0]; msgs.offset = 0; msgs.current = null; $('m-detail').classList.add('hidden'); loadMessages().catch(onAuthError); });
+        f.appendChild(b);
+      });
+      var list = $('m-list');
+      list.textContent = '';
+      if (!msgs.items.length) list.appendChild(el('div', 'hint', 'پیامی اینجا نیست.'));
+      msgs.items.forEach(function (m) {
+        var row = el('div', 'msg' + (msgs.current === m.id ? ' on' : ''));
+        var head = el('div', 'msg-head');
+        head.appendChild(el('span', 'tag ' + MSTATUS[m.status][1], MSTATUS[m.status][0]));
+        head.appendChild(el('span', 'tag', KINDS[m.kind] || m.kind));
+        head.appendChild(el('b', '', m.user.username ? '@' + m.user.username : m.user.code));
+        head.appendChild(el('span', '', when(m.created_at)));
+        row.appendChild(head);
+        row.appendChild(el('div', 'msg-preview', m.body));
+        row.addEventListener('click', function () { openMessage(m); });
+        list.appendChild(row);
+      });
+      $('m-more').classList.toggle('hidden', !r.more);
+    });
+  }
+
+  function loadCanned() {
+    if (msgs.canned) return Promise.resolve(msgs.canned);
+    return api('GET', '/messages/canned').then(function (list) { msgs.canned = list; return list; });
+  }
+
+  function saveCanned() {
+    return api('PUT', '/messages/canned', { items: msgs.canned }).then(function (list) { msgs.canned = list; });
+  }
+
+  function openMessage(m) {
+    msgs.current = m.id;
+    Array.prototype.forEach.call($('m-list').children, function (c, i) { c.classList.toggle('on', msgs.items[i] && msgs.items[i].id === m.id); });
+    var box = $('m-detail');
+    box.textContent = '';
+    box.classList.remove('hidden');
+    var h = el('h2', '', 'پیام ' + (KINDS[m.kind] || ''));
+    h.appendChild(el('span', 'tag ' + MSTATUS[m.status][1], MSTATUS[m.status][0]));
+    box.appendChild(h);
+    var kv = el('div', 'kv');
+    [['کاربر', (m.user.username ? '@' + m.user.username + ' · ' : '') + m.user.code], ['ایمیل', m.user.email + (m.user.verified ? '' : ' (تأییدنشده)')],
+     ['زمان پیام', when(m.created_at)], ['عضو از', when(m.user.joined)], ['زبان برنامه', m.lang === 'en' ? 'انگلیسی' : 'فارسی'], ['دستگاه', m.app_info || '—']]
+      .forEach(function (p) { var d = el('div'); d.appendChild(el('b', '', p[0])); d.appendChild(document.createTextNode(p[1])); kv.appendChild(d); });
+    box.appendChild(kv);
+    box.appendChild(el('div', 'msg-body', m.body));
+    if (m.reply) {
+      var r = el('div', 'msg-reply', m.reply);
+      box.appendChild(el('div', 'hint mt', 'جواب داده‌شده · ' + when(m.replied_at) + (m.replied_by ? ' · ' + m.replied_by : '') + (m.seen ? ' · کاربر دیده' : ' · کاربر هنوز ندیده')));
+      box.appendChild(r);
+    }
+    var form = el('form');
+    form.noValidate = true;
+    form.appendChild(el('label', 'mt', m.reply ? 'جواب جدید (جای قبلی رو می‌گیره)' : 'جواب'));
+    var chips = el('div', 'chips');
+    form.appendChild(chips);
+    var ta = el('textarea');
+    ta.id = 'm-reply';
+    ta.placeholder = 'جوابت رو بنویس یا یکی از جواب‌های آماده رو بزن…';
+    form.appendChild(ta);
+    var acts = el('div', 'actions mt');
+    var send = el('button', 'btn', 'ارسال جواب'); send.type = 'submit';
+    var keep = el('button', 'btn ghost', 'ذخیره به‌عنوان جواب آماده'); keep.type = 'button';
+    var toggle = el('button', 'btn ghost', m.status === 'closed' ? 'بازکردن دوباره' : 'بستن پیام'); toggle.type = 'button';
+    acts.appendChild(send); acts.appendChild(keep); acts.appendChild(toggle);
+    form.appendChild(acts);
+    form.appendChild(el('div', 'alert error hidden'));
+    var ok = el('div', 'alert ok hidden'); form.appendChild(ok);
+    box.appendChild(form);
+
+    function drawChips() {
+      chips.textContent = '';
+      (msgs.canned || []).forEach(function (c, i) {
+        var b = el('button', 'chip', c.title); b.type = 'button';
+        b.title = c.text;
+        b.addEventListener('click', function () { ta.value = c.text; ta.focus(); });
+        var x = el('span', 'x', '×');
+        x.title = 'حذف از جواب‌های آماده';
+        x.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (!confirm('«' + c.title + '» از جواب‌های آماده حذف بشه؟')) return;
+          msgs.canned.splice(i, 1);
+          saveCanned().then(drawChips).catch(onAuthError).catch(function (err) { alert(errorText(err)); });
+        });
+        b.appendChild(x);
+        chips.appendChild(b);
+      });
+    }
+    loadCanned().then(drawChips).catch(onAuthError);
+
+    keep.addEventListener('click', function () {
+      var text = ta.value.trim();
+      if (!text) { setAlert(form, 'اول متن جواب رو بنویس.'); return; }
+      var title = prompt('یه عنوان کوتاه برای این جواب آماده:', text.split('\n')[0].slice(0, 30));
+      if (!title) return;
+      msgs.canned = (msgs.canned || []).concat([{ title: title.trim().slice(0, 60), text: text }]);
+      saveCanned().then(drawChips).catch(onAuthError).catch(function (err) { setAlert(form, errorText(err)); });
+    });
+    toggle.addEventListener('click', function () {
+      api('POST', '/messages/' + m.id + '/' + (m.status === 'closed' ? 'reopen' : 'close')).then(function () {
+        $('m-detail').classList.add('hidden'); msgs.current = null; return loadMessages();
+      }).catch(onAuthError).catch(function (err) { setAlert(form, errorText(err)); });
+    });
+    submitForm(form, function () {
+      var reply = ta.value.trim();
+      if (!reply) throw { code: 'reply_required' };
+      return api('POST', '/messages/' + m.id + '/reply', { reply: reply }).then(function () {
+        ok.textContent = 'جواب فرستاده شد (تو برنامه و با ایمیل).';
+        ok.classList.remove('hidden');
+        ta.value = '';
+        return loadMessages().then(function () {
+          var fresh = msgs.items.filter(function (x) { return x.id === m.id; })[0];
+          if (fresh) openMessage(fresh);
+        });
+      });
+    });
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   /* ---- site visits (from the host's access logs) ---- */
@@ -844,7 +1011,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     tj_users: 'حساب‌های کاربرها', tj_user_data: 'داده‌های ذخیره‌شده‌ی کاربرها', tj_sessions: 'نشست‌های ورود کاربرها',
     tj_tokens: 'لینک‌های ایمیل (تأیید/بازیابی)', tj_attempts: 'محدودیت تلاش‌ها', tj_admins: 'ادمین‌ها',
     tj_admin_sessions: 'نشست‌های ادمین', tj_admin_audit: 'گزارش فعالیت ادمین‌ها', tj_schema: 'نسخه‌ی ساختار دیتابیس',
-    tj_connections: 'دوستی‌ها و درخواست‌ها', tj_blocks: 'مسدودی‌ها', tj_period_shares: 'اشتراک عادت ماهانه با دوستان', tj_push_subs: 'نشانی اعلان مرورگرها', tj_push_queue: 'یادآورهای در صف ارسال', tj_content: 'محتوای سایت', tj_articles: 'مقاله‌ها',
+    tj_connections: 'دوستی‌ها و درخواست‌ها', tj_blocks: 'مسدودی‌ها', tj_period_shares: 'اشتراک عادت ماهانه با دوستان', tj_push_subs: 'نشانی اعلان مرورگرها', tj_push_queue: 'یادآورهای در صف ارسال', tj_messages: 'پیام‌های «ارتباط با ما»', tj_content: 'محتوای سایت', tj_articles: 'مقاله‌ها',
     tj_hijri_months: 'شروع ماه‌های قمری (رسمی)',
   };
   var DB_GROUPS = {
@@ -852,6 +1019,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     userdata: ['داده‌های کاربرها', 'کارها، عادت‌ها، رویدادها، تنظیمات و اطلاعات پریود هر کاربر (پریود رمزنگاری‌شده). محتوا هیچ‌وقت نشون داده نمی‌شه.'],
     social: ['دوستان', 'دوستی‌ها، درخواست‌های دوستی، مسدودی‌ها و اشتراک عادت ماهانه. ردیف‌ها نشون داده نمی‌شن.'],
     notifications: ['اعلان‌ها', 'نشانی اعلان هر مرورگر و یادآورهایی که سرور سر وقت می‌فرسته. ردیف‌ها نشون داده نمی‌شن.'],
+    support: ['پیام کاربرها', 'پیام‌های «ارتباط با ما» و جواب‌هاشون. ردیف‌ها نشون داده نمی‌شن.'],
     admin: ['پنل ادمین', 'ادمین‌ها، نشست‌هاشون و گزارش فعالیت.'],
     content: ['محتوا و مقاله‌ها', 'متن و عکس‌های سایت، مقاله‌ها و تقویم قمری رسمی.'],
     system: ['سیستم', 'نسخه‌ی ساختار دیتابیس (مایگریشن‌ها).'],
@@ -1225,6 +1393,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   });
   $('u-filter').addEventListener('change', function () { $('user-search').requestSubmit(); });
   $('u-more').addEventListener('click', function () { loadUsers().catch(onAuthError); });
+  $('m-more').addEventListener('click', function () { msgs.offset += 30; loadMessages(true).catch(onAuthError); });
 
   // The backup comes through fetch (it needs the panel header), then is
   // handed to the browser as a download.

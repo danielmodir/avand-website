@@ -293,6 +293,10 @@
     },
     // Web Push (backend-php/lib/push.php): this browser's push address,
     // and the reminders the server sends while the app is closed.
+    // "Contact us" (backend-php/lib/support.php).
+    sendSupportMessage: function (kind, body, lang, appInfo) { return request('POST', '/support/messages', { kind: kind, body: body, lang: lang, app_info: appInfo }); },
+    supportMessages: function () { return request('GET', '/support/messages'); },
+    supportUnread: function () { return request('GET', '/support/unread').then(function (r) { return r.count || 0; }); },
     pushKey: function () { return request('GET', '/notifications/push-key', undefined, { auth: false }).then(function (r) { return r.public_key; }); },
     pushSubscribe: pushSubscribe,
     pushUnsubscribe: function (id) { return request('DELETE', '/notifications/subscriptions/' + id); },

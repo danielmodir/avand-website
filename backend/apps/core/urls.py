@@ -19,6 +19,8 @@ urlpatterns = [
     path("auth/email/verify", v.VerifyEmailView.as_view()),
     path("auth/email/resend", v.ResendVerificationView.as_view()),
     path("auth/email/verify-code", v.VerifyEmailCodeView.as_view()),
+    path("support/messages", v.SupportMessagesView.as_view()),
+    path("support/unread", v.SupportUnreadView.as_view()),
     path("auth/password/code", v.PasswordCodeView.as_view()),
     path("auth/password/forgot", v.PasswordForgotView.as_view()),
     path("auth/password/reset", v.PasswordResetView.as_view()),

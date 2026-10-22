@@ -309,3 +309,20 @@ class FileTests(ApiTestCase):
         fake.name = "x.png"
         client = self.register()
         self.assertEqual(client.post("/api/v1/files", {"file": fake}, format="multipart").status_code, 400)
+
+
+class SupportMessageTests(ApiTestCase):
+    def test_send_list_and_answer(self):
+        from django.utils import timezone as tz
+        from .models import SupportMessage
+        client = self.register()
+        bad = client.post("/api/v1/support/messages", {"kind": "nope", "body": "hi"}, format="json")
+        self.assertEqual(bad.status_code, 400)
+        sent = client.post("/api/v1/support/messages", {"kind": "bug", "body": "The calendar jumps a day.", "lang": "fa"}, format="json")
+        self.assertEqual(sent.status_code, 201)
+        self.assertEqual(client.get("/api/v1/support/unread").json()["count"], 0)
+        SupportMessage.objects.filter(id=sent.json()["id"]).update(reply="Fixed, thanks!", replied_at=tz.now(), status="answered")
+        self.assertEqual(client.get("/api/v1/support/unread").json()["count"], 1)
+        mine = client.get("/api/v1/support/messages").json()
+        self.assertEqual((mine[0]["kind"], mine[0]["reply"]), ("bug", "Fixed, thanks!"))
+        self.assertEqual(client.get("/api/v1/support/unread").json()["count"], 0)  # seen now

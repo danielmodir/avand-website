@@ -620,7 +620,13 @@
   function pushUnsubscribe(id) { return request('DELETE', '/notifications/subscriptions/' + id); }
   function pushSchedule(items) { return request('PUT', '/notifications/schedule', { items: items }); }
 
+  // ── "Contact us" (apps/core support messages) ────────────────────────
+  function sendSupportMessage(kind, body, lang, appInfo) { return request('POST', '/support/messages', { kind: kind, body: body, lang: lang, app_info: appInfo }); }
+  function supportMessages() { return request('GET', '/support/messages'); }
+  function supportUnread() { return request('GET', '/support/unread').then(function (r) { return r.count || 0; }); }
+
   Object.assign(api, {
+    sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread,
     pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,
     changePassword: changePassword, deleteAccount: deleteAccount, usernameAvailable: usernameAvailable,
     uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,

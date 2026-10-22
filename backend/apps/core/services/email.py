@@ -14,6 +14,7 @@ SUBJECTS = {
     "change_email": {"fa": "تأیید ایمیل جدید", "en": "Confirm your new email"},
     "account_deletion_scheduled": {"fa": "حذف حساب توجیبی", "en": "Your Toojibee account will be deleted"},
     "account_deleted": {"fa": "حساب توجیبی حذف شد", "en": "Your Toojibee account was deleted"},
+    "support_reply": {"fa": "پاسخ تیم توجیبی به پیامت", "en": "Toojibee replied to your message"},
 }
 
 BODIES = {
@@ -37,6 +38,10 @@ BODIES = {
     "account_deleted": {
         "fa": "حساب و همه‌ی داده‌هات حذف شد.",
         "en": "Your account and all of its data have been deleted.",
+    },
+    "support_reply": {
+        "fa": "سلام! تیم توجیبی به پیامت جواب داد:\n\n{reply}\n\n— — —\nپیام تو:\n{question}\n\nاین جواب تو برنامه هم، بخش «ارتباط با ما»، هست.",
+        "en": "Hi! The Toojibee team replied to your message:\n\n{reply}\n\n— — —\nYour message:\n{question}\n\nYou can also read it in the app, under \"Contact us\".",
     },
 }
 

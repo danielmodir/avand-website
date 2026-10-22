@@ -147,7 +147,7 @@ async function boot(){
   }
   handleEmailLink();
   openAuthFromLink();
-  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); startReminders(); takeReminderFromLink(); }
+  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); }
   else if(state.guest && pendingInvite() && !state.authOpen) openAuth('signup', 'inviteSignInFirst');
 }
 

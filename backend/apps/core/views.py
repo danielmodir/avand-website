@@ -418,3 +418,46 @@ class LatestReleaseView(PublicView):
         if release is None:
             raise Http404
         return Response(s.AppReleaseSerializer(release).data)
+
+
+# ── "Contact us" ─────────────────────────────────────────────────────────
+
+class SupportMessagesView(APIView):
+    """POST {kind, body, lang, app_info}: a message to the team.
+    GET: the person's own messages with answers (marks answers seen)."""
+    throttle_scope = "support"
+
+    def get(self, request):
+        from .models import SupportMessage
+        rows = list(SupportMessage.objects.filter(user=request.user)[:50])
+        SupportMessage.objects.filter(user=request.user, user_seen_at__isnull=True).exclude(reply="").update(user_seen_at=timezone.now())
+        return Response([support_row(m) for m in rows])
+
+    def post(self, request):
+        from .models import SupportMessage
+        kind = str(request.data.get("kind") or "")
+        body = str(request.data.get("body") or "").strip()[:3000]
+        fields = {}
+        if kind not in SupportMessage.Kind.values:
+            fields["kind"] = ["required"]
+        if len(body) < 5:
+            fields["body"] = ["too_short"]
+        if fields:
+            raise ApiError("validation_error", 400, extra={"fields": fields})
+        m = SupportMessage.objects.create(
+            user=request.user, kind=kind, body=body, lang="en" if request.data.get("lang") == "en" else "fa",
+            app_info=str(request.data.get("app_info") or "")[:300],
+        )
+        return Response(support_row(m), status=status.HTTP_201_CREATED)
+
+
+class SupportUnreadView(APIView):
+    def get(self, request):
+        from .models import SupportMessage
+        n = SupportMessage.objects.filter(user=request.user, user_seen_at__isnull=True).exclude(reply="").count()
+        return Response({"count": n})
+
+
+def support_row(m):
+    return {"id": str(m.id), "kind": m.kind, "body": m.body, "status": m.status, "reply": m.reply or None,
+            "replied_at": m.replied_at, "created_at": m.created_at}

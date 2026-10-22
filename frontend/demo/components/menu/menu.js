@@ -1,5 +1,5 @@
 const MENU_PARENT = {
-  'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
+  'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'contact': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings',
   // Monthly-cycle settings live with the desks in Management (its gear), not in Settings.
   'settings-period': 'admin',
@@ -20,6 +20,7 @@ function subHeader(title){
 function renderMenu(){
   const sub = state.menuSubView;
   if(sub !== 'profile-edit' || !state.menuPanelOpen) profileDraft = null; // left the edit page: unsaved edits are gone
+  if((sub !== 'contact' || !state.menuPanelOpen) && !contactLoading) contactList = null; // fetched fresh each time the page opens
   if(sub === 'profile') return renderProfilePage();
   if(sub === 'profile-edit') return renderProfileEditPage();
   if(sub === 'friends') return renderFriendsPage();
@@ -27,6 +28,7 @@ function renderMenu(){
   if(sub === 'admin') return renderAdminPanel();
   if(sub === 'share') return renderSharePage();
   if(sub === 'about') return renderAboutPage();
+  if(sub === 'contact') return renderContactPage();
   if(sub === 'settings') return renderSettingsList();
   if(sub === 'settings-general') return renderGeneralSettings();
   if(sub === 'settings-calendar') return renderCalendarSettings();
@@ -93,6 +95,9 @@ function renderProfilePage(){
       </div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="about">
         <div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t('aboutUs')}</div>${ICONS.chevronRightSmall}
+      </div>
+      <div class="menu-item-row" data-action="menu-nav" data-sub="contact">
+        <div class="menu-item-icon">${ICONS.mail}</div><div class="menu-item-label">${t('contactUs')} ${contactRowBadge()}</div>${ICONS.chevronRightSmall}
       </div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings">
         <div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('settings')}</div>${ICONS.chevronRightSmall}

@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
@@ -6,7 +7,7 @@ from django.utils import timezone
 
 from .models import (
     AppContent, AppRelease, AuthEvent, AuthSession, EmailOutbox, LegalDocument, Module, Profile, StoredFile,
-    User, UserModule, UserPurgeTask, UserSettings,
+    SupportMessage, User, UserModule, UserPurgeTask, UserSettings,
 )
 
 
@@ -152,3 +153,56 @@ admin.site.register(UserSettings)
 admin.site.register(UserModule)
 admin.site.site_header = "Toojibee admin"
 admin.site.site_title = "Toojibee"
+
+
+# ── "Contact us" messages: read and answer here (the live PHP API has the
+# same in its own panel, with canned replies). Saving with an answer
+# marks it answered and emails it to the person.
+
+SUPPORT_CANNED = [
+    ("", "— جواب آماده —"),
+    ("سلام، ممنون که وقت گذاشتی و پیشنهادت رو برامون فرستادی. ثبتش کردیم و تو برنامه‌ریزی نسخه‌های بعدی حتماً بررسیش می‌کنیم.\nتیم توجیبی", "تشکر از پیشنهاد"),
+    ("سلام، ممنون از صراحتت. انتقادت رو جدی گرفتیم و تیم داره روش کار می‌کنه.\nتیم توجیبی", "تشکر از انتقاد"),
+    ("سلام، مشکلی که گفتی رو بررسی کردیم و برطرف شد. لطفاً برنامه رو یه بار ببند و دوباره باز کن.\nتیم توجیبی", "مشکل بررسی شد"),
+    ("سلام، پیامت رسید و در حال بررسیه. به‌زودی نتیجه رو همین‌جا بهت می‌گیم.\nتیم توجیبی", "در حال بررسی"),
+]
+
+
+class SupportMessageForm(forms.ModelForm):
+    canned = forms.ChoiceField(choices=SUPPORT_CANNED, required=False, label="جواب آماده",
+                               help_text="اگه انتخاب بشه و متن جواب خالی باشه، همین فرستاده می‌شه.")
+
+    class Meta:
+        model = SupportMessage
+        fields = ["status", "reply"]
+
+
+@admin.register(SupportMessage)
+class SupportMessageAdmin(admin.ModelAdmin):
+    form = SupportMessageForm
+    list_display = ["created_at", "kind", "status", "user", "short_body"]
+    list_filter = ["status", "kind"]
+    search_fields = ["user__email", "body"]
+    readonly_fields = ["user", "kind", "body", "lang", "app_info", "created_at", "replied_at", "user_seen_at"]
+    fields = ["user", "kind", "body", "lang", "app_info", "created_at", "canned", "reply", "status", "replied_at", "user_seen_at"]
+
+    @admin.display(description="پیام")
+    def short_body(self, obj):
+        return obj.body[:80]
+
+    def has_add_permission(self, request):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if not obj.reply and form.cleaned_data.get("canned"):
+            obj.reply = form.cleaned_data["canned"]
+        answered = "reply" in form.changed_data or (form.cleaned_data.get("canned") and obj.reply)
+        if obj.reply and answered:
+            obj.replied_at = timezone.now()
+            obj.user_seen_at = None
+            if obj.status == SupportMessage.Status.OPEN:
+                obj.status = SupportMessage.Status.ANSWERED
+        super().save_model(request, obj, form, change)
+        if obj.reply and answered:
+            from .services.email import queue_email
+            queue_email(obj.user, EmailOutbox.Template.SUPPORT_REPLY, obj.lang, {"reply": obj.reply, "question": obj.body})

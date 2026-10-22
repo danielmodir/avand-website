@@ -42,6 +42,7 @@ const TJ_ADMIN_PERMISSIONS = [
     'content.manage',   // site header, images, texts
     'articles.write',   // write articles and send them for review
     'articles.review',  // approve or reject articles
+    'support.reply',    // read and answer "Contact us" messages
     'system.view',      // database tables, disk, memory, server
     'audit.view',       // the admins' activity log
     'admins.manage',    // add admins, change their access, remove them

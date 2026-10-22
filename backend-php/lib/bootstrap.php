@@ -287,6 +287,30 @@ function tj_migrate(PDO $db): void {
         try { $db->exec('ALTER TABLE tj_tokens ADD COLUMN attempts INT NOT NULL DEFAULT 0'); } catch (PDOException $e) { /* already there */ }
         $db->exec('INSERT INTO tj_schema (version) VALUES (13)');
     }
+    if ($v < 14) {
+        // "Contact us" (lib/support.php): a person's message, the team's
+        // answer from the admin panel, and whether they've seen it.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_messages (
+            id $id,
+            public_id CHAR(32) NOT NULL UNIQUE,
+            user_id $fk NOT NULL,
+            kind VARCHAR(20) NOT NULL,
+            body $text NOT NULL,
+            lang VARCHAR(2) NOT NULL DEFAULT 'fa',
+            app_info VARCHAR(300) NOT NULL DEFAULT '',
+            status VARCHAR(10) NOT NULL DEFAULT 'open',
+            reply $text NULL,
+            replied_at DATETIME NULL,
+            replied_by $fk NULL,
+            user_seen_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        try { $db->exec('CREATE INDEX tj_messages_status ON tj_messages (status, created_at)'); } catch (PDOException $e) { /* already there */ }
+        try { $db->exec('CREATE INDEX tj_messages_user ON tj_messages (user_id)'); } catch (PDOException $e) { /* already there */ }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (14)');
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

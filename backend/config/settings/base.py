@@ -200,6 +200,7 @@ REST_FRAMEWORK = {
         "search": "30/min",
         "report": "20/day",
         "upload": "60/hour",
+        "support": "60/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
     "UNAUTHENTICATED_USER": None,
