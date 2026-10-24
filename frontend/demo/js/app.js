@@ -130,6 +130,11 @@ async function boot(){
     // sample person or sample tasks.
     state.authScreen = false;
     loadLocalData();
+    // Local testing only (never the live site, which has a backend): cycles
+    // "shared with me" from localStorage, to try the partner view offline.
+    if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)){
+      try{ const f = JSON.parse(localStorage.getItem('toojibee-dev-shared-periods') || 'null'); if(Array.isArray(f)) state.sharedPeriods = f; }catch(e){}
+    }
     render();
     startReminders(); takeReminderFromLink(); // js/core/notify.js
     welcomeChain();
