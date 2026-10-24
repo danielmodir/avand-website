@@ -321,6 +321,36 @@ function tj_migrate(PDO $db): void {
         }
         $db->exec('INSERT INTO tj_schema (version) VALUES (15)');
     }
+    if ($v < 16) {
+        // Article drafts written for the site (data/articles/*.md), put in
+        // the panel's review queue ("pending"): an admin reads, edits and
+        // approves each one before it is published. Never overwrites an
+        // article that already has the slug.
+        tj_seed_article_drafts($db);
+        $db->exec('INSERT INTO tj_schema (version) VALUES (16)');
+    }
+}
+
+/* data/articles/*.md: a front matter block (lang, slug, title, summary,
+ * category, placements) and the body in the panel's simple markup. */
+function tj_seed_article_drafts(PDO $db): void {
+    foreach (glob(dirname(__DIR__) . '/data/articles/*.md') ?: [] as $file) {
+        $raw = str_replace("\r\n", "\n", (string)file_get_contents($file));
+        if (!preg_match('/^---\n(.*?)\n---\n(.*)$/s', $raw, $mm)) continue;
+        $f = [];
+        foreach (explode("\n", $mm[1]) as $line) {
+            if (preg_match('/^(\w+):\s*(.*)$/u', $line, $kv)) $f[$kv[1]] = trim($kv[2]);
+        }
+        if (empty($f['lang']) || empty($f['slug']) || empty($f['title'])) continue;
+        $q = $db->prepare('SELECT 1 FROM tj_articles WHERE lang = ? AND slug = ?');
+        $q->execute([$f['lang'], $f['slug']]);
+        if ($q->fetch()) continue;
+        $places = array_values(array_filter(array_map('trim', explode(',', $f['placements'] ?? 'list'))));
+        $db->prepare('INSERT INTO tj_articles (public_id, lang, slug, title, summary, body, placements, category, status, created_at, updated_at, submitted_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+           ->execute([bin2hex(random_bytes(16)), $f['lang'], $f['slug'], mb_substr($f['title'], 0, 160), mb_substr($f['summary'] ?? '', 0, 300), trim($mm[2]),
+                      json_encode($places ?: ['list']), $f['category'] ?? 'other', 'pending', tj_now(), tj_now(), tj_now()]);
+    }
 }
 
 /* v3: random account ids, and the admin panel's own tables.

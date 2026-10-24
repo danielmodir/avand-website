@@ -28,6 +28,14 @@ foreach (['fa', 'en'] as $l) {
     $extra .= "  <url>\n    <loc>$base/$l/calendar/</loc>\n    <lastmod>$today</lastmod>\n    <changefreq>weekly</changefreq>\n"
         . $pair('/fa/calendar/', '/en/calendar/') . "  </url>\n";
 }
+// The free tools and the month pages (convert.php, world-clock.php, monthcal.php).
+$tools = ['/convert/' => 'monthly', '/world-clock/' => 'monthly', '/calendar/months/' => 'monthly'];
+foreach (['farvardin', 'ordibehesht', 'khordad', 'tir', 'mordad', 'shahrivar', 'mehr', 'aban', 'azar', 'dey', 'bahman', 'esfand'] as $mo) $tools["/calendar/$mo/"] = 'weekly';
+foreach (['fa', 'en'] as $l) {
+    foreach ($tools as $p => $freq) {
+        $extra .= "  <url>\n    <loc>$base/$l$p</loc>\n    <lastmod>$today</lastmod>\n    <changefreq>$freq</changefreq>\n" . $pair("/fa$p", "/en$p") . "  </url>\n";
+    }
+}
 require_once __DIR__ . '/lib/dates.php';
 [$jyNow] = tj_jalali((int)date('Y'), (int)date('n'), (int)date('j'));
 foreach (['fa', 'en'] as $l) {

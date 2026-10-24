@@ -299,6 +299,11 @@ function tj_footer_with_articles(string $html, string $lang): string {
         [$jy] = tj_jalali((int)date('Y'), (int)date('n'), (int)date('j'));
         $li .= '<li><a href="/' . $lang . '/calendar/">' . ($lang === 'fa' ? 'تقویم ' . tj_fa_digits((string)$jy) : "Calendar $jy") . '</a></li>';
     }
+    // The free tools and the month pages (convert.php, world-clock.php, monthcal.php).
+    foreach ([['/calendar/months/', 'ماه‌های سال', 'Persian months'], ['/convert/', 'تبدیل تاریخ', 'Date converter'], ['/world-clock/', 'ساعت جهانی', 'World clock']] as [$p, $tfa, $ten]) {
+        if (strpos($html, '<li><a href="/' . $lang . $p . '">') === false)
+            $li .= '<li><a href="/' . $lang . $p . '">' . ($lang === 'fa' ? $tfa : $ten) . '</a></li>';
+    }
     if (strpos($html, '<li><a href="/' . $lang . '/articles/">') === false && tj_articles_in($lang, 'list', 1))
         $li .= '<li><a href="/' . $lang . '/articles/">' . ($lang === 'fa' ? 'مقاله‌ها' : 'Articles') . '</a></li>';
     if ($li === '') return $html;

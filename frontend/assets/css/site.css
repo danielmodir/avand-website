@@ -598,6 +598,39 @@ html.reveal-armed [data-reveal].is-visible { opacity: 1; transform: none; }
 .theme-veil{ position:fixed; inset:0; z-index:10000; pointer-events:none; opacity:1; transition:opacity .42s cubic-bezier(.4,0,.2,1) !important; }
 .theme-veil.out{ opacity:0; }
 
+/* Free tools (api/convert.php, api/world-clock.php) and the month pages
+   (api/monthcal.php): plain forms, result cards, tables, month cards. */
+.conv-page, .wc-page, .months-page, .month-page { max-width: 860px; }
+.conv-today { padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-bg-soft); }
+.conv-forms { display: grid; gap: var(--space-4); margin-top: var(--space-5); }
+.conv-form { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); }
+.today-page .conv-form h2 { margin: 0 0 var(--space-3) 0; }
+.conv-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+.conv-row label { display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--font-size-xs); color: var(--color-text-muted); flex: 1 1 120px; }
+.conv-row select, .conv-row input { font: inherit; font-size: var(--font-size-sm); color: var(--color-text); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 10px 12px; min-height: 44px; width: 100%; }
+.conv-row .btn { flex: 0 0 auto; }
+.conv-result { margin-top: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-primary); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); }
+.conv-weekday { font-weight: 700; margin: var(--space-3) 0 0 0; }
+.conv-result .conv-weekday { margin-top: 0; }
+.conv-dates { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-4); margin: var(--space-3) 0; }
+.conv-dates dt { color: var(--color-text-muted); }
+.conv-dates dd { margin: 0; font-weight: 700; }
+.conv-error { color: var(--color-error); font-weight: 700; }
+.wc-table { width: 100%; border-collapse: collapse; margin: var(--space-4) 0; font-size: var(--font-size-sm); }
+.wc-table th, .wc-table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); text-align: start; }
+.wc-table thead th { color: var(--color-text-muted); font-weight: 600; font-size: var(--font-size-xs); }
+.wc-time { font-weight: 800; font-variant-numeric: tabular-nums; }
+.month-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+.month-card { display: block; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); color: inherit; text-decoration: none; }
+.month-card:hover { border-color: var(--color-primary); }
+.today-page .month-card h2 { margin: 0 0 var(--space-1) 0; }
+.month-card p { margin: 0; font-size: var(--font-size-sm); }
+.month-card .month-card-sub { color: var(--color-text-muted); font-size: var(--font-size-xs); margin-top: var(--space-2); }
+.month-page .yc-month { margin-top: var(--space-4); }
+.tools-nav { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+.tools-nav a, .tools-nav b { padding: 4px 12px; border-radius: var(--radius-full); background: var(--color-bg-soft); border: 1px solid var(--color-border); font-size: var(--font-size-xs); text-decoration: none; color: inherit; }
+.tools-nav b { border-color: var(--color-primary); }
+
 /* Year calendar (api/yearcal.php): twelve month grids, Saturday first. */
 .yc-page { max-width: 980px; }
 .yc-lead { color: var(--color-text-muted); }
