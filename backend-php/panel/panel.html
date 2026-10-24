@@ -60,6 +60,14 @@ td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
 .perm small{ color:var(--color-text-muted); }
 .perm.soon b::after{ content:' (به‌زودی)'; color:var(--color-text-muted); font-weight:400; }
 .actions{ display:flex; gap:6px; flex-wrap:wrap; }
+/* Users: more filters; birth date/age only with users.personal (body.no-personal hides them). */
+.u-more-filters{ margin-top:10px; }
+.u-more-filters summary{ cursor:pointer; font-size:var(--font-size-xs); font-weight:700; color:var(--color-link); }
+.filter-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:4px 10px; }
+.filter-grid label{ margin:8px 0 0; }
+.filter-grid input, .filter-grid select{ margin-top:4px; width:100%; }
+body.no-personal .personal-only{ display:none; }
+label.radio, label.check{ display:flex; gap:6px; align-items:center; font-weight:400; margin:6px 0; }
 .code{ direction:ltr; font-weight:800; font-size:var(--font-size-md); letter-spacing:.06em; padding:10px 14px; background:var(--color-bg-soft); border-radius:var(--radius-sm); display:inline-block; margin:6px 0; user-select:all; }
 .stack > * + *{ margin-top:16px; }
 .note{ margin-top:18px; color:var(--color-text-muted); font-size:var(--font-size-xs); }
@@ -321,6 +329,26 @@ textarea.tall{ min-height:340px; line-height:1.9; }
           </select>
           <button class="btn" type="submit">جستجو</button>
         </div>
+        <details class="u-more-filters">
+          <summary>فیلترهای بیشتر</summary>
+          <div class="filter-grid">
+            <label>جنسیت<select id="uf-gender"><option value="">همه</option><option value="female">خانم</option><option value="male">آقا</option><option value="none">نامشخص</option></select></label>
+            <label class="personal-only">سن از<input id="uf-age_min" type="number" min="0" max="120" inputmode="numeric"></label>
+            <label class="personal-only">سن تا<input id="uf-age_max" type="number" min="0" max="120" inputmode="numeric"></label>
+            <label class="personal-only">متولد از<input id="uf-born_from" type="date"></label>
+            <label class="personal-only">متولد تا<input id="uf-born_to" type="date"></label>
+            <label>ثبت‌نام از<input id="uf-joined_from" type="date"></label>
+            <label>ثبت‌نام تا<input id="uf-joined_to" type="date"></label>
+            <label>فعال در … روز اخیر<input id="uf-active_days" type="number" min="1" max="3650" inputmode="numeric"></label>
+            <label>غیرفعال بیش از … روز<input id="uf-inactive_days" type="number" min="1" max="3650" inputmode="numeric"></label>
+            <label>ایمیل<select id="uf-verified"><option value="">همه</option><option value="yes">تأییدشده</option><option value="no">تأییدنشده</option></select></label>
+          </div>
+          <div class="actions mt">
+            <button class="btn ghost" type="button" id="uf-clear">پاک کردن فیلترها</button>
+            <button class="btn ghost hidden" type="button" id="uf-message">پیام به همین گروه</button>
+          </div>
+          <div class="hint">تاریخ‌ها میلادی‌اند. فیلتر سن و تاریخ تولد فقط با دسترسی «اطلاعات شخصی» دیده می‌شه.</div>
+        </details>
         <div class="alert error hidden" role="alert"></div>
       </form>
       <div class="card hidden" id="user-detail"></div>
@@ -328,11 +356,42 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <h2><span id="u-count">کاربرها</span></h2>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>کد</th><th>نام کاربری</th><th>ایمیل</th><th>وضعیت</th><th>ثبت‌نام</th><th>آخرین حضور</th></tr></thead>
+            <thead><tr><th>کد</th><th>نام کاربری</th><th>ایمیل</th><th>وضعیت</th><th class="personal-only">تاریخ تولد و سن</th><th>ثبت‌نام</th><th>آخرین حضور</th></tr></thead>
             <tbody id="users"></tbody>
           </table>
         </div>
         <button class="btn ghost hidden" id="u-more" type="button">بیشتر</button>
+      </div>
+    </section>
+
+    <section id="tab-notices" class="hidden stack">
+      <form class="card" id="notice-form" novalidate>
+        <h2>ارسال پیام به کاربرها</h2>
+        <label>گیرنده</label>
+        <div class="filters" id="nt-to">
+          <label class="radio"><input type="radio" name="nt-to" value="all" checked> همه‌ی کاربرها</label>
+          <label class="radio"><input type="radio" name="nt-to" value="filter"> کاربرهای فیلترشده (از برگه‌ی کاربرها)</label>
+          <label class="radio hidden" id="nt-user-opt"><input type="radio" name="nt-to" value="user"> <span id="nt-user-label"></span></label>
+        </div>
+        <div class="hint" id="nt-count"></div>
+        <label for="nt-title">عنوان</label>
+        <input id="nt-title" type="text" maxlength="120" autocomplete="off">
+        <label for="nt-body">متن پیام</label>
+        <textarea id="nt-body" rows="5" maxlength="2000"></textarea>
+        <label class="check"><input type="checkbox" id="nt-push" checked> به‌صورت نوتیفیکیشن هم بفرست (برای کسایی که یادآورها رو روشن کردن)</label>
+        <button class="btn block" type="submit">ارسال پیام</button>
+        <div class="alert error hidden" role="alert"></div>
+        <div class="alert ok hidden" id="nt-out"></div>
+        <div class="hint">پیام تو برنامه، موقع باز شدن، به‌صورت پاپ‌آپ نشون داده می‌شه و تو «پروفایل ← پیام‌ها» می‌مونه. فقط حساب‌های فعال (نه معلق) دریافتش می‌کنن.</div>
+      </form>
+      <div class="card">
+        <h2>پیام‌های ارسال‌شده</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>زمان</th><th>عنوان</th><th>گیرنده</th><th>دیده‌شده</th><th>فرستنده</th></tr></thead>
+            <tbody id="notices"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -408,17 +467,25 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   var PERMS = {
     'stats.view': ['دیدن آمار', 'تعداد کاربرها، ثبت‌نام‌ها و کاربرهای فعال'],
     'users.view': ['دیدن کاربرها', 'اطلاعات حساب‌ها و آمار استفاده، بدون محتوای کارها و پریود'],
-    'users.manage': ['مدیریت کاربرها', 'تعلیق، خارج کردن و حذف حساب'],
+    'users.personal': ['اطلاعات شخصی کاربرها', 'تاریخ دقیق تولد و سن، و فیلتر بر اساس آن‌ها'],
+    'users.manage': ['مدیریت کاربرها', 'تعلیق حساب و خارج کردن از دستگاه‌ها'],
+    'users.delete': ['حذف حساب کاربرها', 'حذف کامل و برگشت‌ناپذیر حساب'],
+    'users.message': ['ارسال پیام به کاربرها', 'پیام به یک نفر، گروهی با فیلتر، یا همه'],
     'content.manage': ['محتوای سایت', 'متن بالای لندینگ، بنر برنامه و اسکرین‌شات‌ها'],
+    'calendar.manage': ['تقویم قمری', 'تنظیم شروع رسمی ماه‌های قمری'],
     'articles.write': ['نوشتن مقاله', 'نوشتن مقاله و فرستادن برای بررسی'],
     'articles.review': ['بررسی مقاله‌ها', 'تأیید و انتشار، رد با توضیح، برداشتن از سایت'],
-    'support.reply': ['پیام کاربرها', 'خوندن و جواب دادن پیام‌های «ارتباط با ما»'],
+    'support.view': ['دیدن پیام کاربرها', 'خوندن پیام‌های «ارتباط با ما»، بدون جواب دادن'],
+    'support.reply': ['جواب به پیام کاربرها', 'جواب دادن و ویرایش جواب‌های آماده'],
     'system.view': ['دیتابیس و سرور', 'جدول‌ها، حجم دیتابیس، دیسک، رم و وضعیت سرور'],
+    'system.maintenance': ['نگهداری دیتابیس', 'پاک‌سازی، بهینه‌سازی و بررسی سلامت'],
+    'system.backup': ['پشتیبان دیتابیس', 'دانلود فایل پشتیبان کل دیتابیس'],
     'audit.view': ['گزارش فعالیت', 'دیدن کارهای همه‌ی ادمین‌ها'],
     'admins.manage': ['مدیریت ادمین‌ها', 'افزودن ادمین و تعیین دسترسی‌ها'],
   };
   var MESSAGES = {
     invalid_credentials: 'ایمیل یا رمز عبور اشتباهه.',
+    notice_empty: 'عنوان و متن پیام رو بنویس.',
     locked: 'به‌خاطر تلاش‌های اشتباه، ورود به این حساب ۱۵ دقیقه قفل شده.',
     throttled: 'تلاش‌ها زیاد شد. چند دقیقه بعد دوباره امتحان کن.',
     bad_setup_code: 'کد راه‌اندازی درست نیست.',
@@ -466,7 +533,13 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     content_saved: ['ذخیره‌ی متن سایت', 'warn'], image_uploaded: ['آپلود عکس', 'warn'], image_reset: ['برگشت عکس به پیش‌فرض', 'warn'],
   };
   var USTATUS = { active: ['فعال', 'good'], suspended: ['معلق', 'bad'] };
-  var users = { q: '', filter: 'all', offset: 0 };
+  var users = { q: '', filter: 'all', offset: 0, extra: {} };
+  var UF = ['gender', 'age_min', 'age_max', 'born_from', 'born_to', 'joined_from', 'joined_to', 'active_days', 'inactive_days', 'verified'];
+  function userFilters() {
+    var o = {};
+    UF.forEach(function (k) { var v = $('uf-' + k).value.trim(); if (v !== '') o[k] = v; });
+    return o;
+  }
   var dur = function (sec) {
     sec = Number(sec) || 0;
     var h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
@@ -540,8 +613,10 @@ textarea.tall{ min-height:340px; line-height:1.9; }
 
   function enterDash(s) {
     me = { csrf: s.csrf, email: s.email, permissions: s.permissions || [], isOwner: !!s.is_owner };
+    document.body.classList.toggle('no-personal', !can('users.personal'));
+    $('uf-message').classList.toggle('hidden', !can('users.message'));
     $('who').textContent = 'وارد شده با ' + me.email + (me.isOwner ? ' · مالک' : '');
-    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['messages', 'پیام کاربرها', 'support.reply'], ['content', 'محتوای سایت', 'content.manage'], ['articles', 'مقاله‌ها', ['articles.write', 'articles.review']], ['system', 'دیتابیس و سرور', 'system.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
+    var tabs = [['overview', 'نمای کلی', 'stats.view'], ['visits', 'بازدید سایت', 'stats.view'], ['users', 'کاربرها', 'users.view'], ['notices', 'ارسال پیام', 'users.message'], ['messages', 'پیام کاربرها', ['support.view', 'support.reply']], ['content', 'محتوای سایت', ['content.manage', 'calendar.manage']], ['articles', 'مقاله‌ها', ['articles.write', 'articles.review']], ['system', 'دیتابیس و سرور', 'system.view'], ['admins', 'ادمین‌ها', 'admins.manage'], ['audit', 'گزارش فعالیت', 'audit.view']]
       .filter(function (t) { return [].concat(t[2]).some(can); });
     var nav = $('tabs');
     nav.textContent = '';
@@ -559,8 +634,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
 
   function openTab(name) {
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
-    ['overview', 'visits', 'users', 'messages', 'content', 'articles', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
-    ({ overview: loadOverview, visits: loadVisits, messages: function () { msgs.offset = 0; return loadMessages(); }, content: loadContent, articles: loadArticles, system: loadSystem, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
+    ['overview', 'visits', 'users', 'notices', 'messages', 'content', 'articles', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
+    ({ overview: loadOverview, visits: loadVisits, messages: function () { msgs.offset = 0; return loadMessages(); }, notices: loadNotices, content: loadContent, articles: loadArticles, system: loadSystem, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
       .catch(onAuthError).catch(function (err) { alert(errorText(err)); });
   }
 
@@ -775,6 +850,10 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   }
 
   function loadContent() {
+    // Site content and the Hijri calendar are separate permissions.
+    Array.prototype.forEach.call($('tab-content').children, function (card) { if (card.id !== 'hijri-card') card.classList.toggle('hidden', !can('content.manage')); });
+    $('hijri-card').classList.toggle('hidden', !can('calendar.manage'));
+    if (!can('content.manage')) return loadHijri();
     return api('GET', '/content').then(function (c) {
       content = c;
       var box = $('ct-fields');
@@ -806,7 +885,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         ? 'عکس خودکار به اندازه‌ی جاش برش می‌خوره، کوچیک می‌شه و به WebP تبدیل می‌شه تا سایت سبک بمونه.'
         : 'این هاست ابزار تبدیل عکس نداره؛ عکس همون‌طور که هست ذخیره می‌شه، پس خودت سبکش کن.');
       renderSlots();
-      loadHijri().catch(onAuthError);
+      if (can('calendar.manage')) loadHijri().catch(onAuthError);
       $('ct-last').textContent = c.last_change ? 'آخرین تغییر: ' + when(c.last_change.updated_at) + (c.last_change.email ? ' · ' + c.last_change.email : '') : '';
     });
   }
@@ -1070,7 +1149,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   }
 
   function loadSystem() {
-    $('sys-owner').classList.toggle('hidden', !me.isOwner);
+    $('sys-owner').classList.toggle('hidden', !can('system.maintenance'));
     return api('GET', '/system').then(function (s) {
       var d = s.database, dbBytes = (d.file_bytes || 0) + (d.wal_bytes || 0);
       var rows = s.tables.reduce(function (a, t) { return a + t.rows; }, 0);
@@ -1194,7 +1273,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   /* ---- users ---- */
 
   function loadUsers() {
-    var qs = '?q=' + encodeURIComponent(users.q) + '&filter=' + users.filter + '&offset=' + users.offset;
+    var qs = '?q=' + encodeURIComponent(users.q) + '&filter=' + users.filter + '&offset=' + users.offset
+      + Object.keys(users.extra).map(function (k) { return '&' + k + '=' + encodeURIComponent(users.extra[k]); }).join('');
     return api('GET', '/users' + qs).then(function (res) {
       var body = $('users');
       if (users.offset === 0) body.textContent = '';
@@ -1209,6 +1289,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         if (u.online) tdS.appendChild(el('span', 'dot'));
         tdS.appendChild(el('span', 'tag ' + st[1], u.online ? 'آنلاین' : st[0]));
         tr.appendChild(tdS);
+        if (res.personal) tr.appendChild(el('td', '', u.birth_date ? birthLabel(u.birth_date) : '—'));
         tr.appendChild(el('td', '', when(u.created_at)));
         tr.appendChild(el('td', '', when(u.last_seen_at)));
         tr.addEventListener('click', function () { openUser(u.id); });
@@ -1243,18 +1324,19 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         });
         t.appendChild(tb); var w = el('div', 'table-wrap'); w.appendChild(t); box.appendChild(w);
       }
-      if (can('users.manage')) {
+      if (can('users.manage') || can('users.delete') || can('users.message')) {
         var acts = el('div', 'actions'); acts.style.marginTop = '14px';
         var act = function (label, cls, run) { var b = el('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', run); acts.appendChild(b); };
         var after = function () { users.offset = 0; return Promise.all([loadUsers(), openUser(id)]); };
         var fail = function (e) { onAuthError(e); };
-        act(u.status === 'suspended' ? 'رفع تعلیق' : 'تعلیق حساب', 'ghost', function () {
+        if (can('users.message')) act('ارسال پیام به این کاربر', 'ghost', function () { noticeToUser(u); });
+        if (can('users.manage')) act(u.status === 'suspended' ? 'رفع تعلیق' : 'تعلیق حساب', 'ghost', function () {
           api('POST', '/users/' + id + '/suspend', { suspended: u.status !== 'suspended' }).then(after).catch(fail).catch(function (e) { alert(errorText(e)); });
         });
-        act('خارج کردن از همه‌ی دستگاه‌ها', 'ghost', function () {
+        if (can('users.manage')) act('خارج کردن از همه‌ی دستگاه‌ها', 'ghost', function () {
           api('POST', '/users/' + id + '/signout').then(after).catch(fail).catch(function (e) { alert(errorText(e)); });
         });
-        act('حذف حساب', 'danger', function () {
+        if (can('users.delete')) act('حذف حساب', 'danger', function () {
           var typed = prompt('حذف کامل و برگشت‌ناپذیر. برای تأیید، ایمیل این کاربر رو تایپ کن:\n' + u.email);
           if (typed === null) return;
           api('POST', '/users/' + id + '/delete', { confirm_email: typed.trim() })
@@ -1269,7 +1351,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   }
 
   function loadOverview() {
-    $('backup-card').classList.toggle('hidden', !me.isOwner);
+    $('backup-card').classList.toggle('hidden', !can('system.backup'));
     return api('GET', '/overview').then(function (o) {
       var stats = $('stats');
       stats.textContent = '';
@@ -1414,8 +1496,68 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       .then(function (r) { $('n-email').value = ''; showInvite(email, r.invite_code); return loadAdmins(); });
   });
 
+  /* ---- messages to users (lib/notices.php) ---- */
+  var notice = { user: null };
+  var AUD = { all: 'همه', filter: 'گروه فیلترشده', user: 'یک کاربر' };
+  function noticeAudience() { var r = document.querySelector('input[name="nt-to"]:checked'); return r ? r.value : 'all'; }
+  function noticePreview() {
+    var to = noticeAudience(), out = $('nt-count');
+    if (to === 'user') { out.textContent = notice.user ? 'گیرنده: ' + (notice.user.username || notice.user.email) : ''; return Promise.resolve(); }
+    var f = to === 'filter' ? users.extra : {};
+    var qs = Object.keys(f).map(function (k) { return k + '=' + encodeURIComponent(f[k]); }).join('&');
+    if (to === 'filter' && users.q) qs += (qs ? '&' : '') + 'q=' + encodeURIComponent(users.q);
+    if (to === 'filter' && users.filter !== 'all') qs += (qs ? '&' : '') + 'filter=' + users.filter;
+    return api('GET', '/notices/preview' + (qs ? '?' + qs : '')).then(function (r) {
+      out.textContent = 'این پیام به ' + fa(r.count) + ' نفر می‌رسه' + (to === 'filter' && !qs ? ' (فیلتری انتخاب نشده؛ یعنی همه).' : '.');
+    });
+  }
+  function loadNotices() {
+    $('nt-user-opt').classList.toggle('hidden', !notice.user);
+    if (notice.user) $('nt-user-label').textContent = 'فقط ' + (notice.user.username || notice.user.email) + ' (' + notice.user.code + ')';
+    noticePreview().catch(onAuthError);
+    return api('GET', '/notices').then(function (rows) {
+      var body = $('notices'); body.textContent = '';
+      if (!rows.length) { var tr = el('tr'); var td = el('td', '', 'هنوز پیامی فرستاده نشده.'); td.colSpan = 5; tr.appendChild(td); body.appendChild(tr); }
+      rows.forEach(function (n) {
+        var tr = el('tr');
+        tr.appendChild(el('td', '', when(n.created_at)));
+        var td = el('td'); td.appendChild(el('b', '', n.title)); td.appendChild(el('div', 'hint', n.body.length > 120 ? n.body.slice(0, 120) + '…' : n.body)); tr.appendChild(td);
+        tr.appendChild(el('td', '', (AUD[n.audience] || n.audience) + ' · ' + fa(n.recipients) + ' نفر'));
+        tr.appendChild(el('td', '', fa(n.seen) + ' از ' + fa(n.recipients)));
+        tr.appendChild(el('td', 'ltr', n.sender || '—'));
+        body.appendChild(tr);
+      });
+    });
+  }
+  function noticeToUser(u) {
+    notice.user = u;
+    openTab('notices');
+    setTimeout(function () { var r = document.querySelector('input[name="nt-to"][value="user"]'); r.checked = true; noticePreview().catch(onAuthError); $('nt-title').focus(); }, 0);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="nt-to"]'), function (r) { r.addEventListener('change', function () { noticePreview().catch(onAuthError); }); });
+  submitForm($('notice-form'), function () {
+    $('nt-out').classList.add('hidden');
+    var to = noticeAudience();
+    var body = { title: $('nt-title').value.trim(), body: $('nt-body').value.trim(), to: to, push: $('nt-push').checked };
+    if (!body.title || !body.body) throw { code: 'notice_empty' };
+    if (to === 'user') body.user = notice.user && notice.user.id;
+    if (to === 'filter') body.filters = Object.assign({ q: users.q, filter: users.filter }, users.extra);
+    if (!confirm('این پیام برای ' + ($('nt-count').textContent || 'گیرنده‌ها') + ' فرستاده بشه؟')) return Promise.resolve();
+    return api('POST', '/notices', body).then(function (r) {
+      $('nt-title').value = ''; $('nt-body').value = '';
+      var ok = $('nt-out'); ok.textContent = 'فرستاده شد به ' + fa(r.recipients) + ' نفر.'; ok.classList.remove('hidden');
+      return loadNotices();
+    });
+  });
+  $('uf-clear').addEventListener('click', function () { UF.forEach(function (k) { $('uf-' + k).value = ''; }); $('user-search').requestSubmit(); });
+  $('uf-message').addEventListener('click', function () {
+    users.extra = userFilters(); users.q = $('u-q').value.trim(); users.filter = $('u-filter').value;
+    notice.user = null; openTab('notices');
+    setTimeout(function () { document.querySelector('input[name="nt-to"][value="filter"]').checked = true; noticePreview().catch(onAuthError); }, 0);
+  });
+
   submitForm($('user-search'), function () {
-    users = { q: $('u-q').value.trim(), filter: $('u-filter').value, offset: 0 };
+    users = { q: $('u-q').value.trim(), filter: $('u-filter').value, offset: 0, extra: userFilters() };
     $('user-detail').classList.add('hidden');
     return loadUsers();
   });

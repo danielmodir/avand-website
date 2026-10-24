@@ -335,6 +335,43 @@ function tj_migrate(PDO $db): void {
         tj_seed_article_drafts($db, true);
         $db->exec('INSERT INTO tj_schema (version) VALUES (17)');
     }
+    if ($v < 18) {
+        // Finer admin permissions (lib/admin.php): admins keep exactly what
+        // they could do: users.manage still deletes, content.manage still
+        // edits the Hijri months, support.reply still reads messages.
+        $split = ['users.manage' => 'users.delete', 'content.manage' => 'calendar.manage', 'support.reply' => 'support.view'];
+        foreach ($db->query('SELECT id, permissions FROM tj_admins WHERE is_owner = 0')->fetchAll() as $a) {
+            $p = json_decode((string)$a['permissions'], true);
+            if (!is_array($p)) continue;
+            foreach ($split as $old => $new) if (in_array($old, $p, true) && !in_array($new, $p, true)) $p[] = $new;
+            $db->prepare('UPDATE tj_admins SET permissions = ? WHERE id = ?')->execute([json_encode(array_values($p)), $a['id']]);
+        }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (18)');
+    }
+    if ($v < 19) {
+        // Messages from the team to users (lib/notices.php).
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_notices (
+            id $id,
+            public_id CHAR(32) NOT NULL UNIQUE,
+            title VARCHAR(120) NOT NULL,
+            body $text NOT NULL,
+            audience VARCHAR(10) NOT NULL,
+            filters $text NULL,
+            recipients INT NOT NULL DEFAULT 0,
+            created_by $fk NULL,
+            created_at DATETIME NOT NULL
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_notice_recipients (
+            notice_id $fk NOT NULL,
+            user_id $fk NOT NULL,
+            seen_at DATETIME NULL,
+            PRIMARY KEY (notice_id, user_id),
+            FOREIGN KEY (notice_id) REFERENCES tj_notices(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        try { $db->exec('CREATE INDEX tj_notice_recipients_user ON tj_notice_recipients (user_id, seen_at)'); } catch (PDOException $e) { /* already there */ }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (19)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

@@ -18,6 +18,7 @@ require __DIR__ . '/../lib/calendar.php';
 require __DIR__ . '/../lib/social.php';
 require __DIR__ . '/../lib/push.php';
 require __DIR__ . '/../lib/support.php';
+require __DIR__ . '/../lib/notices.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -56,6 +57,11 @@ $routes = [
     'POST /support/messages'    => 'tj_support_send',
     'GET /support/messages'     => 'tj_support_mine',
     'GET /support/unread'       => 'tj_support_unread',
+    'GET /me/notices'           => 'tj_notices_mine',
+    'POST /me/notices/seen'     => 'tj_notices_seen',
+    'GET /admin/notices'        => 'tj_admin_notices',
+    'POST /admin/notices'       => 'tj_admin_notice_send',
+    'GET /admin/notices/preview'=> 'tj_admin_notice_preview',
     'GET /admin/messages'       => 'tj_admin_messages',
     'GET /admin/messages/canned'=> 'tj_admin_canned_get',
     'PUT /admin/messages/canned'=> 'tj_admin_canned_put',

@@ -372,7 +372,7 @@ function renderPeriodPage(headerHtml){
           <span class="period-legend-item"><span class="dot" style="background:var(--period-fertile);"></span>${t('legendFertile')}</span>
         </div>
         ${view.own ? periodNotes(p).map(k => `<div class="period-q-note">${t(k)}</div>`).join('') : ''}
-        <div class="empty-hint" style="margin-top:12px;">${t('periodDisclaimer')}</div>
+        <div class="empty-hint" style="margin-top:12px;">${view.own ? t('periodDisclaimer') : escapeHtml(t('periodDisclaimerShared').replace('{name}', view.name || ''))}</div>
       </div>
     `;
   })();

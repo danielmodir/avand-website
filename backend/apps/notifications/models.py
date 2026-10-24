@@ -107,3 +107,40 @@ class NotificationLog(models.Model):
             models.Index(fields=["status", "scheduled_for"], name="notif_log_queue_idx"),
             models.Index(fields=["user_id", "created_at"], name="notif_log_user_idx"),
         ]
+
+
+class Notice(models.Model):
+    """A message from the team to users (the PHP host's admin panel has the
+    same: backend-php/lib/notices.php). Sent from the Django admin to one
+    account or to every active one; each recipient gets a row. The app shows
+    an unread one as a popup when it opens and keeps all of them under
+    Profile → Messages."""
+
+    class Audience(models.TextChoices):
+        ALL = "all"
+        USER = "user"
+        FILTER = "filter"
+
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    title = models.CharField(max_length=120)
+    body = models.TextField(max_length=2000)
+    audience = models.CharField(max_length=10, choices=Audience.choices, default=Audience.ALL)
+    recipients = models.PositiveIntegerField(default=0, editable=False)
+    created_by = models.UUIDField(null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+
+class NoticeRecipient(models.Model):
+    notice = models.ForeignKey(Notice, on_delete=models.CASCADE, related_name="deliveries")
+    user_id = models.UUIDField()
+    seen_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["notice", "user_id"], name="notif_notice_user_uq")]
+        indexes = [models.Index(fields=["user_id", "seen_at"], name="notif_notice_user_idx")]

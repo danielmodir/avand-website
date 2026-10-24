@@ -99,7 +99,8 @@ class ScheduleView(NotificationsView):
                       "date": date if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) else ""},
             )
         with transaction.atomic(using="notifications"):
-            ScheduledPush.objects.filter(user_id=request.user.id, sent_at__isnull=True).delete()
+            # The team's messages (Notice) aren't the app's to replace.
+            ScheduledPush.objects.filter(user_id=request.user.id, sent_at__isnull=True).exclude(slot__startswith="notice|").delete()
             sent = set(ScheduledPush.objects.filter(user_id=request.user.id).values_list("slot", flat=True))
             fresh = [r for s, r in rows.items() if s not in sent]
             ScheduledPush.objects.bulk_create(fresh)
@@ -136,3 +137,31 @@ class MuteView(NotificationsView):
     def delete(self, request, module_key):
         NotificationMute.objects.filter(user_id=request.user.id, module_key=module_key).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MyNoticesView(APIView):
+    """GET /me/notices: messages from the team, newest first."""
+
+    def get(self, request):
+        from .notices import notices_for
+        return Response(notices_for(request.user.id))
+
+
+class MyNoticesSeenView(APIView):
+    """POST /me/notices/seen {ids: [...]} (or {} for all)."""
+
+    def post(self, request):
+        import uuid
+        from .notices import mark_seen
+        ids = request.data.get("ids")
+        if isinstance(ids, list):
+            ok = []
+            for x in ids[:100]:
+                try:
+                    ok.append(uuid.UUID(str(x)))
+                except ValueError:
+                    continue
+            mark_seen(request.user.id, ok)
+        else:
+            mark_seen(request.user.id)
+        return Response({"ok": True})

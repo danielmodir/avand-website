@@ -36,17 +36,34 @@ const TJ_ADMIN_COOKIE = '__Host-tj_admin';
 /* What an admin can be allowed to do. The panel shows a checkbox for
  * each; tools that don't exist yet are listed so access can be planned. */
 const TJ_ADMIN_PERMISSIONS = [
-    'stats.view',       // numbers: users, sign-ups, sessions
-    'users.view',       // see accounts (no task or period content)
-    'users.manage',     // suspend, sign out, delete accounts
-    'content.manage',   // site header, images, texts
-    'articles.write',   // write articles and send them for review
-    'articles.review',  // approve or reject articles
-    'support.reply',    // read and answer "Contact us" messages
-    'system.view',      // database tables, disk, memory, server
-    'audit.view',       // the admins' activity log
-    'admins.manage',    // add admins, change their access, remove them
+    'stats.view',         // numbers: users, sign-ups, sessions
+    'users.view',         // see accounts (no task or period content)
+    'users.personal',     // see a person's exact birth date and age
+    'users.manage',       // suspend accounts, sign them out
+    'users.delete',       // delete accounts for good
+    'users.message',      // send messages to one user, a filtered group or everyone
+    'content.manage',     // site header, images, texts
+    'calendar.manage',    // Iran's official Hijri month starts
+    'articles.write',     // write articles and send them for review
+    'articles.review',    // approve or reject articles
+    'support.view',       // read "Contact us" messages
+    'support.reply',      // answer them (and edit the ready answers)
+    'system.view',        // database tables, disk, memory, server
+    'system.maintenance', // database cleanup and health check
+    'system.backup',      // download the database backup
+    'audit.view',         // the admins' activity log
+    'admins.manage',      // add admins, change their access, remove them
 ];
+
+/* The first that the admin has, else 403 (e.g. reading messages: view or reply). */
+function tj_admin_require_any(array $perms): array {
+    tj_admin_gate();
+    $a = tj_admin_current();
+    if (!array_intersect($perms, tj_admin_perms($a))) tj_fail(403, 'forbidden');
+    return $a;
+}
+
+function tj_admin_has(array $a, string $perm): bool { return in_array($perm, tj_admin_perms($a), true); }
 
 function tj_admin_file(): string {
     return getenv('TJ_ADMIN_FILE') ?: tj_home() . '/toojibee-admin.php';

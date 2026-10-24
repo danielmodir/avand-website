@@ -193,7 +193,8 @@ function tj_push_schedule(): void {
     $db = tj_db();
     tj_tx_begin($db);
     try {
-        $db->prepare('DELETE FROM tj_push_queue WHERE user_id = ? AND sent_at IS NULL')->execute([$me['id']]);
+        // The team's messages (lib/notices.php) aren't the app's to replace.
+        $db->prepare("DELETE FROM tj_push_queue WHERE user_id = ? AND sent_at IS NULL AND slot NOT LIKE 'notice|%'")->execute([$me['id']]);
         $sent = $db->prepare('SELECT slot FROM tj_push_queue WHERE user_id = ?');
         $sent->execute([$me['id']]);
         $done = array_flip(array_column($sent->fetchAll(), 'slot'));

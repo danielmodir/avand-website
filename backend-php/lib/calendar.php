@@ -39,13 +39,13 @@ function tj_public_hijri_months(): void {
 }
 
 function tj_admin_hijri_months(): void {
-    tj_admin_require('content.manage');
+    tj_admin_require('calendar.manage');
     tj_json(['months' => tj_hijri_months()]);
 }
 
 /* The list must be consecutive months, each 29 or 30 days long. */
 function tj_admin_hijri_months_save(): void {
-    $me = tj_admin_require('content.manage');
+    $me = tj_admin_require('calendar.manage');
     $rows = tj_body()['months'] ?? null;
     if (!is_array($rows) || !$rows || count($rows) > 240) tj_fail(400, 'validation_error');
     $clean = [];

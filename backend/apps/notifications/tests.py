@@ -83,3 +83,34 @@ class PushTests(ApiTestCase):
         pem, public = vapid_keys()
         headers = Vapid.from_pem(pem.encode()).sign({"sub": "mailto:support@toojibee.ir", "aud": "https://fcm.googleapis.com"})
         self.assertIn("vapid t=", headers["Authorization"])
+
+
+class NoticeTests(ApiTestCase):
+    def setUp(self):
+        self.sara = self.register("sara@example.com", "Sara")
+        self.ali = self.register("ali@example.com", "Ali")
+
+    def test_team_message_reaches_its_users_and_is_marked_seen(self):
+        from .models import Notice
+        from .notices import send_notice
+        import uuid
+        n = Notice.objects.create(title="Hello", body="A new feature is here.")
+        count = send_notice(n, [uuid.UUID(self.sara.tokens["user_id"])], push=False)
+        self.assertEqual(count, 1)
+        mine = self.sara.get("/api/v1/me/notices").json()
+        self.assertEqual([(m["title"], m["seen"]) for m in mine], [("Hello", False)])
+        self.assertEqual(self.ali.get("/api/v1/me/notices").json(), [])
+        self.assertEqual(self.sara.post("/api/v1/me/notices/seen", {"ids": [mine[0]["id"]]}, format="json").status_code, 200)
+        self.assertTrue(self.sara.get("/api/v1/me/notices").json()[0]["seen"])
+
+    def test_app_schedule_does_not_drop_a_team_push(self):
+        from .models import Notice
+        from .notices import send_notice
+        import uuid
+        uid = uuid.UUID(self.sara.tokens["user_id"])
+        PushSubscription.objects.create(user_id=uid, platform="web", provider="webpush", token=ENDPOINT, token_hash="h" * 64,
+                                        web_p256dh=P256DH, web_auth=AUTH)
+        n = Notice.objects.create(title="Hi", body="Body")
+        send_notice(n, [uid])
+        self.sara.put("/api/v1/notifications/schedule", {"items": []}, format="json")
+        self.assertTrue(ScheduledPush.objects.filter(user_id=uid, slot__startswith="notice|").exists())

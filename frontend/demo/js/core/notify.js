@@ -155,6 +155,7 @@ async function reminderTick(){
    had to be opened): that day, and the item's details. */
 function openReminderTarget(d){
   if(!d) return;
+  if(d.kind === 'notice'){ state.menuPanelOpen = true; state.menuSubView = 'notices'; noticeList = null; render(); return; } // a message from the team
   if(d.date && /^\d{4}-\d{2}-\d{2}$/.test(d.date)){
     const day = parseDateKey(d.date);
     state.homeDate = day; state.selectedDate = day; state.calCursor = new Date(day);

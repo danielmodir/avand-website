@@ -110,11 +110,18 @@ async function handleEmailLink(){
 }
 
 /* On entering the app, at most one thing on top of it, in this order: a
-   birthday greeting, the gentle period question, the first-visit tour. */
+   birthday greeting, a message from the team, the gentle period question,
+   the first-visit tour. */
 function welcomeChain(){
   maybeShowBirthday();
   if(document.getElementById('bday-overlay')) return;
-  setTimeout(() => { maybeAskPeriod(); if(!document.getElementById('period-ask-overlay')) maybeStartFirstTour(); }, 400);
+  setTimeout(() => {
+    maybeShowNotice().catch(() => false).then(shown => {
+      if(shown) return;
+      maybeAskPeriod();
+      if(!document.getElementById('period-ask-overlay')) maybeStartFirstTour();
+    });
+  }, 400);
 }
 
 async function boot(){

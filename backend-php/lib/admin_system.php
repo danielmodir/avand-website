@@ -44,7 +44,7 @@ const TJ_DB_GROUPS = [
     'userdata' => ['tj_user_data'],
     'social'   => ['tj_connections', 'tj_blocks', 'tj_period_shares'],
     'notifications' => ['tj_push_subs', 'tj_push_queue'],
-    'support'  => ['tj_messages'],
+    'support'  => ['tj_messages', 'tj_notices', 'tj_notice_recipients'],
     'admin'    => ['tj_admins', 'tj_admin_sessions', 'tj_admin_audit'],
     'content'  => ['tj_content', 'tj_articles', 'tj_hijri_months'],
     'system'   => ['tj_schema'],
@@ -195,7 +195,7 @@ function tj_admin_system(): void {
 function tj_admin_system_cleanup(): void {
     tj_admin_gate();
     $me = tj_admin_current();
-    if ((int)$me['is_owner'] !== 1) tj_fail(403, 'forbidden');
+    if (!tj_admin_has($me, 'system.maintenance')) tj_fail(403, 'forbidden');
     $db = tj_db();
     $now = tj_now();
     $n = 0;
@@ -216,7 +216,7 @@ function tj_admin_system_cleanup(): void {
 function tj_admin_system_check(): void {
     tj_admin_gate();
     $me = tj_admin_current();
-    if ((int)$me['is_owner'] !== 1) tj_fail(403, 'forbidden');
+    if (!tj_admin_has($me, 'system.maintenance')) tj_fail(403, 'forbidden');
     $result = tj_driver() === 'sqlite' ? tj_db()->query('PRAGMA quick_check')->fetchAll(PDO::FETCH_COLUMN) : ['not available'];
     tj_admin_audit((int)$me['id'], 'db_check', implode('; ', array_slice($result, 0, 3)));
     tj_json(['ok' => $result === ['ok'], 'result' => array_slice($result, 0, 20)]);

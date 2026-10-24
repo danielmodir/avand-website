@@ -300,6 +300,9 @@
     sendSupportMessage: function (kind, body, lang, appInfo) { return request('POST', '/support/messages', { kind: kind, body: body, lang: lang, app_info: appInfo }); },
     supportMessages: function () { return request('GET', '/support/messages'); },
     supportUnread: function () { return request('GET', '/support/unread').then(function (r) { return r.count || 0; }); },
+    // Messages from the team (backend-php/lib/notices.php).
+    notices: function () { return request('GET', '/me/notices'); },
+    noticesSeen: function (ids) { return request('POST', '/me/notices/seen', ids ? { ids: ids } : {}); },
     pushKey: function () { return request('GET', '/notifications/push-key', undefined, { auth: false }).then(function (r) { return r.public_key; }); },
     pushSubscribe: pushSubscribe,
     pushUnsubscribe: function (id) { return request('DELETE', '/notifications/subscriptions/' + id); },

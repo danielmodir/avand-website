@@ -85,7 +85,7 @@ const TJ_SUPPORT_CANNED_DEFAULT = [
 ];
 
 function tj_admin_messages(): void {
-    tj_admin_require('support.reply');
+    tj_admin_require_any(['support.view', 'support.reply']);
     $status = (string)($_GET['status'] ?? 'open');
     $offset = max(0, (int)($_GET['offset'] ?? 0));
     $where = in_array($status, ['open', 'answered', 'closed'], true) ? 'WHERE m.status = ?' : '';
@@ -131,7 +131,7 @@ function tj_admin_message_action(string $pid, string $action): void {
 }
 
 function tj_admin_canned_get(): void {
-    tj_admin_require('support.reply');
+    tj_admin_require_any(['support.view', 'support.reply']);
     $q = tj_db()->prepare("SELECT value FROM tj_content WHERE name = 'support_canned'");
     $q->execute();
     $v = $q->fetch();

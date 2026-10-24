@@ -9,4 +9,6 @@ urlpatterns = [
     path("notifications/subscriptions/<uuid:sub_id>", views.SubscriptionDetailView.as_view()),
     path("notifications/preferences", views.PreferenceView.as_view()),
     path("notifications/mutes/<slug:module_key>", views.MuteView.as_view()),
+    path("me/notices", views.MyNoticesView.as_view()),
+    path("me/notices/seen", views.MyNoticesSeenView.as_view()),
 ]

@@ -653,9 +653,12 @@
   function sendSupportMessage(kind, body, lang, appInfo) { return request('POST', '/support/messages', { kind: kind, body: body, lang: lang, app_info: appInfo }); }
   function supportMessages() { return request('GET', '/support/messages'); }
   function supportUnread() { return request('GET', '/support/unread').then(function (r) { return r.count || 0; }); }
+  // Messages from the team (apps/notifications Notice).
+  function notices() { return request('GET', '/me/notices'); }
+  function noticesSeen(ids) { return request('POST', '/me/notices/seen', ids ? { ids: ids } : {}); }
 
   Object.assign(api, {
-    sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread, savePeriod: savePeriod,
+    sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread, notices: notices, noticesSeen: noticesSeen, savePeriod: savePeriod,
     pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,
     changePassword: changePassword, deleteAccount: deleteAccount, usernameAvailable: usernameAvailable,
     uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,
