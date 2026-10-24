@@ -329,11 +329,17 @@ function tj_migrate(PDO $db): void {
         tj_seed_article_drafts($db);
         $db->exec('INSERT INTO tj_schema (version) VALUES (16)');
     }
+    if ($v < 17) {
+        // The drafts' text was corrected (festival dates as in the official
+        // calendar): drafts nobody has touched yet take the new text.
+        tj_seed_article_drafts($db, true);
+        $db->exec('INSERT INTO tj_schema (version) VALUES (17)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,
  * category, placements) and the body in the panel's simple markup. */
-function tj_seed_article_drafts(PDO $db): void {
+function tj_seed_article_drafts(PDO $db, bool $refresh = false): void {
     foreach (glob(dirname(__DIR__) . '/data/articles/*.md') ?: [] as $file) {
         $raw = str_replace("\r\n", "\n", (string)file_get_contents($file));
         if (!preg_match('/^---\n(.*?)\n---\n(.*)$/s', $raw, $mm)) continue;
@@ -342,9 +348,15 @@ function tj_seed_article_drafts(PDO $db): void {
             if (preg_match('/^(\w+):\s*(.*)$/u', $line, $kv)) $f[$kv[1]] = trim($kv[2]);
         }
         if (empty($f['lang']) || empty($f['slug']) || empty($f['title'])) continue;
-        $q = $db->prepare('SELECT 1 FROM tj_articles WHERE lang = ? AND slug = ?');
+        $q = $db->prepare('SELECT status, created_at, updated_at FROM tj_articles WHERE lang = ? AND slug = ?');
         $q->execute([$f['lang'], $f['slug']]);
-        if ($q->fetch()) continue;
+        if ($row = $q->fetch()) {
+            // Only a seeded draft still untouched in the review queue.
+            if ($refresh && $row['status'] === 'pending' && $row['created_at'] === $row['updated_at'])
+                $db->prepare('UPDATE tj_articles SET title = ?, summary = ?, body = ? WHERE lang = ? AND slug = ?')
+                   ->execute([mb_substr($f['title'], 0, 160), mb_substr($f['summary'] ?? '', 0, 300), trim($mm[2]), $f['lang'], $f['slug']]);
+            continue;
+        }
         $places = array_values(array_filter(array_map('trim', explode(',', $f['placements'] ?? 'list'))));
         $db->prepare('INSERT INTO tj_articles (public_id, lang, slug, title, summary, body, placements, category, status, created_at, updated_at, submitted_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')

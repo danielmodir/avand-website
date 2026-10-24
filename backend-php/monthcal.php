@@ -34,7 +34,7 @@ const TJ_MONTH_INFO = [
     ['از «خشَثرَه وَئیریه» در اوستا؛ به معنای شهریاری آرمانی و نیک.', 'From the Avestan Khshathra Vairya, "desirable dominion".',
      'سُنبُله (خوشه)', 'Virgo (the Ear of Grain)', 'شهریورگان (۴ شهریور).', 'Shahrivargan (4 Shahrivar).'],
     ['از «میترا» (مهر)؛ ایزد پیمان، دوستی و روشنایی.', 'From Mithra (Mehr), the deity of covenant, friendship and light.',
-     'میزان (ترازو)', 'Libra (the Scales)', 'مهرگان (۱۶ مهر، روز مهر از ماه مهر)، از بزرگ‌ترین جشن‌های ایران باستان.', 'Mehregan (16 Mehr, the day of Mehr in the month of Mehr), one of the great festivals of ancient Iran.'],
+     'میزان (ترازو)', 'Libra (the Scales)', 'مهرگان (۱۰ مهر در تقویم امروز؛ در گاه‌شماری کهن ۱۶ مهر، روز مهر از ماه مهر)، از بزرگ‌ترین جشن‌های ایران باستان.', 'Mehregan (10 Mehr in today''s calendar; 16 Mehr, the day of Mehr in the month of Mehr, in the old one), one of the great festivals of ancient Iran.'],
     ['از «آپ» به معنای آب‌ها؛ ماه ایزدان نگهبان آب.', 'From ap, "waters": the month of the guardians of water.',
      'عَقرَب (کژدم)', 'Scorpio (the Scorpion)', 'آبانگان (۱۰ آبان).', 'Abangan (10 Aban).'],
     ['از «آتَر» (آذر) به معنای آتش.', 'From atar (Azar), "fire".',
@@ -42,10 +42,11 @@ const TJ_MONTH_INFO = [
     ['از «دَدْوَه» به معنای آفریدگار.', 'From dadvah, "the Creator".',
      'جَدی (بز)', 'Capricorn (the Goat)', 'خرم‌روز (۱ دی) و دی‌گان‌ها (۸، ۱۵ و ۲۳ دی).', 'Khorram-ruz (1 Dey) and the Deygan days (8, 15 and 23 Dey).'],
     ['از «وُهومَنه» در اوستا؛ به معنای اندیشه‌ی نیک.', 'From the Avestan Vohu Manah, "good mind".',
-     'دَلو (آبریز)', 'Aquarius (the Water-bearer)', 'بهمنگان (۲ بهمن) و جشن سده (۱۰ بهمن)، جشن آتش.', 'Bahmangan (2 Bahman) and Sadeh (10 Bahman), the fire festival.'],
+     'دَلو (آبریز)', 'Aquarius (the Water-bearer)', 'بهمنگان (۲ بهمن)، جشن سده (۱۰ بهمن)، جشن آتش، و سپندارمذگان (۲۹ بهمن در تقویم امروز).', 'Bahmangan (2 Bahman), Sadeh (10 Bahman), the fire festival, and Sepandarmazgan (29 Bahman in today''s calendar).'],
     ['از «سپندارمذ» (سپنتا آرمئیتی)؛ نماد زمین و فروتنی.', 'From Spenta Armaiti (Sepandarmaz), symbol of the earth and devotion.',
-     'حوت (ماهی)', 'Pisces (the Fish)', 'سپندارمذگان (۵ اسفند) و چهارشنبه‌سوری (شب آخرین چهارشنبه‌ی سال).', 'Sepandarmazgan (5 Esfand) and Chaharshanbe Suri (the eve of the last Wednesday of the year).'],
+     'حوت (ماهی)', 'Pisces (the Fish)', 'چهارشنبه‌سوری (شب آخرین چهارشنبه‌ی سال)؛ سپندارمذگان در گاه‌شماری کهن ۵ اسفند بود و امروز ۲۹ بهمن جشن گرفته می‌شود.', 'Chaharshanbe Suri (the eve of the last Wednesday of the year); Sepandarmazgan was on 5 Esfand in the old calendar and is now held on 29 Bahman.'],
 ];
+const TJ_ORDINALS_FA = ['نخستین', 'دومین', 'سومین', 'چهارمین', 'پنجمین', 'ششمین', 'هفتمین', 'هشتمین', 'نهمین', 'دهمین', 'یازدهمین', 'دوازدهمین'];
 const TJ_SEASONS = [['بهار', 'spring'], ['تابستان', 'summer'], ['پاییز', 'autumn'], ['زمستان', 'winter']];
 
 $now = new DateTime('now', new DateTimeZone('Asia/Tehran'));
@@ -127,7 +128,7 @@ $nav = '<p class="yc-years"><a href="/' . $lang . '/calendar/' . TJ_MONTH_SLUGS[
 
 $main = $nav
     . '<p class="yc-lead">' . ($fa
-        ? "{$name} ماه " . $n($m) . "ام سال شمسی است، " . $days($m) . " روز دارد و از ماه‌های " . $season($m) . " است. {$range}"
+        ? "{$name} " . TJ_ORDINALS_FA[$m - 1] . " ماه سال شمسی است، " . $days($m) . " روز دارد و از ماه‌های " . $season($m) . " است. {$range}"
         : "{$name} is month {$m} of the Persian (Solar Hijri) year, with " . $days($m) . " days, in " . $season($m) . ". {$range}") . '</p>'
     . '<section class="yc-month"><h2>' . tj_h($name . ' ' . $Y) . '</h2><div class="yc-grid" role="grid" aria-label="' . tj_h($name . ' ' . $Y) . '">'
     . implode('', array_map(function ($w) { return '<span class="yc-wd">' . $w . '</span>'; }, $wd)) . $cells . '</div>' . $occHtml . '</section>'
