@@ -208,8 +208,16 @@
 .period-view-arrow svg{ width:15px; height:15px; }
 .period-view-arrow:hover{ color:var(--primary); border-color:var(--primary); }
 .period-view-arrow:active{ transform:translateY(-50%) scale(.9); }
-.period-view-arrow.prev{ inset-inline-start:0; }
-.period-view-arrow.next{ inset-inline-end:0; }
+/* Out at the card's inner edges, not hugging the ring: the card is the
+   container, the ring (at most 240px) sits in its middle, so each arrow
+   moves out by the free space beside the ring. Persian: "previous" on the
+   right and "next" on the left (reading order), each chevron pointing out. */
+.period-themed .store-card{ container-type:inline-size; }
+.period-wheel-wrap{ --arrow-out:calc(-1 * (100cqw - min(240px, 100cqw)) / 2); }
+.period-view-arrow.prev{ left:var(--arrow-out, 0px); }
+.period-view-arrow.next{ right:var(--arrow-out, 0px); }
+.device.lang-fa .period-view-arrow.prev{ left:auto; right:var(--arrow-out, 0px); }
+.device.lang-fa .period-view-arrow.next{ right:auto; left:var(--arrow-out, 0px); }
 .period-view-switch{ position:relative; height:40px; margin-top:10px; }
 .period-view-dots{ display:flex; justify-content:center; gap:6px; margin-top:6px; }
 .period-view-dots span{ width:6px; height:6px; border-radius:50%; background:var(--border); transition:width .2s ease, background .2s ease; }
