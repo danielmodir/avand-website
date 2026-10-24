@@ -372,6 +372,40 @@ function tj_migrate(PDO $db): void {
         try { $db->exec('CREATE INDEX tj_notice_recipients_user ON tj_notice_recipients (user_id, seen_at)'); } catch (PDOException $e) { /* already there */ }
         $db->exec('INSERT INTO tj_schema (version) VALUES (19)');
     }
+    if ($v < 20) {
+        // An article's earlier addresses, so links already out there 301 to
+        // the new one (articles.php).
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_article_old_slugs (
+            lang VARCHAR(2) NOT NULL,
+            slug VARCHAR(80) NOT NULL,
+            article_id $fk NOT NULL,
+            PRIMARY KEY (lang, slug),
+            FOREIGN KEY (article_id) REFERENCES tj_articles(id) ON DELETE CASCADE
+        )$tail");
+        // Panel articles saved without an address got a random one (a-xxxxxx):
+        // give them readable ones, and fix links to them inside other articles.
+        $renames = [
+            'a-232561' => 'jalali-calendar', 'a-q6y4hc' => 'iran-official-calendar-law',
+            'a-r0edwz' => 'iranian-calendars-guide', 'a-1nh79e' => 'zoroastrian-avestan-calendar',
+            'a-ztagvg' => 'solar-hijri-calendar', 'a-jxmejr' => 'persian-month-and-day-names',
+            'a-p18dxr' => 'yazdegerdi-calendar', 'a-6hb1f5' => 'sogdian-khwarazmian-tabari-calendars',
+            'a-n1jx4f' => 'history-of-iranian-timekeeping', 'a-d8w6jh' => 'achaemenid-calendars',
+            'a-c7hc70' => 'practical-planning-methods', 'a-gva37t' => 'what-is-planning',
+            'a-nq6398' => 'lunar-hijri-calendar', 'a-sgt0cc' => 'heavy-period-bleeding-causes',
+            'a-9snjkp' => 'history-of-calendars', 'a-px96s9' => 'crisis-stress-and-period',
+            'a-swxc1h' => 'period-myths',
+        ];
+        $find = $db->prepare("SELECT id FROM tj_articles WHERE lang = 'fa' AND slug = ?");
+        foreach ($renames as $old => $new) {
+            $find->execute([$old]); $a = $find->fetch();
+            $find->execute([$new]); $taken = $find->fetch();
+            if (!$a || $taken) continue;
+            $db->prepare('UPDATE tj_articles SET slug = ? WHERE id = ?')->execute([$new, $a['id']]);
+            $db->prepare("INSERT INTO tj_article_old_slugs (lang, slug, article_id) VALUES ('fa', ?, ?)")->execute([$old, $a['id']]);
+            $db->prepare('UPDATE tj_articles SET body = REPLACE(body, ?, ?)')->execute(["/articles/$old/", "/articles/$new/"]);
+        }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (20)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

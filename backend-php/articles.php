@@ -65,6 +65,10 @@ try {
     } else {
         if (!preg_match('/^[a-z0-9]+(-[a-z0-9]+)*$/', $slug)) tj_not_found();
         $a = tj_published_article($lang, $slug);
+        if (!$a && ($moved = tj_article_moved($lang, $slug))) {
+            header('Location: ' . $moved, true, 301);
+            exit;
+        }
         if (!$a) tj_not_found();
         $path = "/$lang/articles/{$a['slug']}/";
         // Search results show about 60 characters: the site name only when it fits.

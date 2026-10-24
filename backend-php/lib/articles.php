@@ -167,6 +167,11 @@ function tj_article_fields(array $b, ?array $current): array {
     if (strlen($body) > 100000) tj_fail(400, 'too_large');
     $f['body'] = $body;
     $slug = strtolower(tj_str($b, 'slug', 80));
+    // No address given: an English title makes one ("Why sleep matters" -> why-sleep-matters).
+    if ($slug === '' && !$current && !preg_match('/[^\x00-\x7f]/', $f['title'])) {
+        $slug = trim(substr(trim((string)preg_replace('/[^a-z0-9]+/', '-', strtolower($f['title'])), '-'), 0, 80), '-');
+        if (strlen($slug) < 3) $slug = '';
+    }
     if ($slug === '') $slug = $current['slug'] ?? ('a-' . strtolower(tj_random_code(6)));
     if (!preg_match('/^[a-z0-9]+(-[a-z0-9]+)*$/', $slug) || strlen($slug) < 3) tj_fail(400, 'validation_error', ['fields' => ['slug' => ['invalid']]]);
     $q = tj_db()->prepare('SELECT public_id FROM tj_articles WHERE lang = ? AND slug = ?');
@@ -228,6 +233,12 @@ function tj_admin_article_update(string $id): void {
     $f = tj_article_fields(tj_body(), $a);
     tj_db()->prepare('UPDATE tj_articles SET lang = ?, slug = ?, title = ?, summary = ?, body = ?, placements = ?, category = ?, updated_at = ? WHERE id = ?')
         ->execute([$f['lang'], $f['slug'], $f['title'], $f['summary'], $f['body'], $f['placements'], $f['category'], tj_now(), $a['id']]);
+    // A published article's old address keeps working (301 in articles.php).
+    if ($a['published_at'] && ($f['slug'] !== $a['slug'] || $f['lang'] !== $a['lang'])) {
+        $db = tj_db();
+        $db->prepare('DELETE FROM tj_article_old_slugs WHERE (lang = ? AND slug = ?) OR (lang = ? AND slug = ?)')->execute([$a['lang'], $a['slug'], $f['lang'], $f['slug']]);
+        $db->prepare('INSERT INTO tj_article_old_slugs (lang, slug, article_id) VALUES (?, ?, ?)')->execute([$a['lang'], $a['slug'], $a['id']]);
+    }
     tj_admin_audit((int)$me['id'], 'article_edited', $f['lang'] . '/' . $f['slug']);
     tj_json(tj_article_public(tj_article_find($id), true));
 }
@@ -314,4 +325,13 @@ function tj_published_article(string $lang, string $slug): ?array {
     $q = tj_db()->prepare("SELECT * FROM tj_articles WHERE lang = ? AND slug = ? AND status = 'published'");
     $q->execute([$lang, $slug]);
     return $q->fetch() ?: null;
+}
+
+/* Where an article that used to live at /<lang>/articles/<slug>/ is now, if published. */
+function tj_article_moved(string $lang, string $slug): ?string {
+    $q = tj_db()->prepare("SELECT ar.lang, ar.slug FROM tj_article_old_slugs o JOIN tj_articles ar ON ar.id = o.article_id
+                           WHERE o.lang = ? AND o.slug = ? AND ar.status = 'published'");
+    $q->execute([$lang, $slug]);
+    $a = $q->fetch();
+    return $a ? '/' . $a['lang'] . '/articles/' . $a['slug'] . '/' : null;
 }
