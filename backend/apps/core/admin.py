@@ -45,8 +45,13 @@ class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     ordering = ["-created_at"]
-    list_display = ["email", "status", "email_verified_at", "is_staff", "created_at"]
+    list_display = ["email", "status", "birth_date", "email_verified_at", "is_staff", "created_at"]
     list_filter = ["status", "is_staff", "is_superuser"]
+
+    @admin.display(description="Birth date", ordering="profile__birth_date")
+    def birth_date(self, obj):
+        profile = getattr(obj, "profile", None)
+        return profile.birth_date if profile else None
     search_fields = ["email", "profile__username", "profile__public_id"]
     readonly_fields = ["id", "created_at", "updated_at", "last_login", "deletion_requested_at"]
     inlines = [ProfileInline]

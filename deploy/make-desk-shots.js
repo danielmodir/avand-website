@@ -18,7 +18,9 @@ const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application
 const SITE = 'http://127.0.0.1:8080/demo/';
 const OUT = path.join(__dirname, '..', 'dist', 'desk-shots');
 const W = 375, H = 700, PORT = 9333;
-const SECTIONS = (process.argv[2] || 'calendar,occasions,planning,period,friends').split(',');
+const SECTIONS = (process.argv[2] || 'calendar,occasions,planning,period,friends,hero,desktop').split(',');
+// hero: the landing's phone picture; desktop: its wide one (the rest are the desks section).
+const VIEWPORTS = { hero: [375, 812], desktop: [1280, 814] };
 
 /* Runs in the page: example content in the page's language, then the view. */
 function setup(section, theme) {
@@ -70,7 +72,8 @@ function setup(section, theme) {
     if (i >= 0) goToDesktopIndex(i);
   };
   if (section === 'occasions') desk('occasionsDesktop');
-  if (section === 'planning' || section === 'calendar') desk('planning');
+  if (section === 'planning' || section === 'calendar' || section === 'hero' || section === 'desktop') desk('planning');
+  if (section === 'hero') setCalDensity('compact'); // the week strip, as the app opens on a phone
   if (section === 'period') desk('periodDesktop');
   if (section === 'friends') { state.menuPanelOpen = true; state.menuSubView = 'friends'; render(); }
   window.scrollTo(0, 0);
@@ -111,6 +114,9 @@ async function main() {
     for (const theme of ['light', 'dark']) {
       await evaluate(`localStorage.clear(); localStorage.setItem('toojibee-theme','${theme}'); localStorage.setItem('toojibee-lang','${lng}'); localStorage.setItem('toojibee-tour-done-v1','1'); localStorage.setItem('toojibee-bday-shown','9999'); 1`);
       for (const section of SECTIONS) {
+        const big = section === 'desktop', vp = VIEWPORTS[section] || [W, H];
+        await send('Emulation.setDeviceMetricsOverride', { width: vp[0], height: vp[1], deviceScaleFactor: 2, mobile: !big });
+        await send('Emulation.setTouchEmulationEnabled', { enabled: !big });
         await send('Page.navigate', { url: SITE }); await sleep(2500);
         await evaluate(`document.getElementById('bday-overlay')?.remove(); document.getElementById('tour-root')?.remove(); 1`);
         const desks = await evaluate(`(${setup.toString()})(${JSON.stringify(section)}, '${theme}')`);

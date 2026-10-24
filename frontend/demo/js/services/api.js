@@ -630,12 +630,14 @@
   function periodFromApi(r) {
     periodVersion = r.version || 0;
     return { enabled: !!r.enabled, lastStart: r.last_start || null, cycleLength: r.cycle_length, periodLength: r.period_length,
-             step: r.quiz_step === 4 ? 'done' : (r.quiz_step || 0), calendarReminder: !!r.show_on_calendar };
+             step: r.quiz_step === 4 ? 'done' : (r.quiz_step || 0), calendarReminder: !!r.show_on_calendar,
+             regular: r.regular || '', pain: r.pain || '', remindDays: r.remind_days || 0 };
   }
   async function savePeriod(pd) {
     var body = { enabled: !!pd.enabled, last_start: pd.lastStart || null, cycle_length: Number(pd.cycleLength) || 28,
                  period_length: Number(pd.periodLength) || 5, quiz_step: pd.step === 'done' ? 4 : (Number(pd.step) || 0),
-                 show_on_calendar: !!pd.calendarReminder, version: periodVersion };
+                 show_on_calendar: !!pd.calendarReminder, regular: pd.regular || '', pain: pd.pain || '',
+                 remind_days: Math.min(3, Math.max(0, Number(pd.remindDays) || 0)), version: periodVersion };
     try { periodFromApi(await request('PUT', '/period/profile', body)); }
     catch (e) {
       // Someone else's save got in first: take its version and save ours on top.

@@ -118,8 +118,8 @@ function renderHomeCalWidget(fullScreen){
     const isToday = sameDay(day, today);
     const isSelected = sameDay(day, d);
     const rng = rangeCellClass(day, ranges, i % 7);
-    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(day)?'holiday':''} ${periodPhaseClass(day, i % 7)} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-      <span class="day-cell-bg" aria-hidden="true"></span>${rangeDotHtml(rng)}${dayCellDateHtml(day)}
+    return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(day)?'holiday':''} ${isOwnBirthday(day)?'birthday':''} ${periodPhaseClass(day, i % 7)} ${rng}" data-date="${dateKey(day)}" aria-label="${dayLabel(day)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+      <span class="day-cell-bg" aria-hidden="true"></span>${rangeDotHtml(rng)}${dayCellDateHtml(day)}${birthdayMarkHtml(day)}
       <div class="day-dots">${dayDotsHtml(day)}</div>
     </button>`;
   };
@@ -193,8 +193,8 @@ function renderCalendar(){
           const isToday = sameDay(d, today);
           const isSelected = sameDay(d, state.homeDate);
           const rng = rangeCellClass(d, ranges, i % 7);
-          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(d)?'holiday':''} ${periodPhaseClass(d, i % 7)} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
-            <span class="day-cell-bg" aria-hidden="true"></span>${rangeDotHtml(rng)}${dayCellDateHtml(d)}
+          return `<button type="button" class="day-cell ${inMonth?'':'other-month'} ${isToday?'today':''} ${isSelected?'selected':''} ${isHolidayOn(d)?'holiday':''} ${isOwnBirthday(d)?'birthday':''} ${periodPhaseClass(d, i % 7)} ${rng}" data-date="${dateKey(d)}" aria-label="${dayLabel(d)}" aria-current="${isToday?'date':'false'}" aria-pressed="${isSelected}">
+            <span class="day-cell-bg" aria-hidden="true"></span>${rangeDotHtml(rng)}${dayCellDateHtml(d)}${birthdayMarkHtml(d)}
             <div class="day-dots">${dayDotsHtml(d)}</div>
           </button>`;
         }).join('')}
@@ -299,8 +299,8 @@ function renderCalFull(){
     const chips = calFullChips(day);
     const shown = chips.length > limit + 1 ? chips.slice(0, limit) : chips;
     const more = chips.length - shown.length;
-    return `<div class="cf-cell ${cellInCurrentMonth(day, c)?'':'other-month'} ${sameDay(day, today)?'today':''} ${sameDay(day, state.homeDate)?'selected':''} ${isHolidayOn(day)?'holiday':''}" data-action="cal-full-pick" data-date="${dateKey(day)}" role="button" tabindex="0" aria-label="${dayLabel(day)}">
-      <div class="cf-head">${dayCellDateHtml(day)}</div>
+    return `<div class="cf-cell ${cellInCurrentMonth(day, c)?'':'other-month'} ${sameDay(day, today)?'today':''} ${sameDay(day, state.homeDate)?'selected':''} ${isHolidayOn(day)?'holiday':''} ${isOwnBirthday(day)?'birthday':''}" data-action="cal-full-pick" data-date="${dateKey(day)}" role="button" tabindex="0" aria-label="${dayLabel(day)}">
+      <div class="cf-head">${dayCellDateHtml(day)}${birthdayMarkHtml(day)}</div>
       <div class="cf-chips">${shown.join('')}${more ? `<span class="cf-more">+${dig(more)}</span>` : ''}</div>
     </div>`;
   };

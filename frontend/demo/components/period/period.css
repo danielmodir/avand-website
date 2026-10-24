@@ -135,7 +135,22 @@
 .period-q-hint{ font-size:11.5px; color:var(--text-muted); margin-top:6px; }
 .period-quiz-dots{ display:flex; justify-content:center; gap:6px; margin-bottom:18px; }
 .period-quiz-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); }
-.period-quiz-dots span.active{ background:var(--primary); }
+.period-quiz-dots span.active{ background:var(--primary); width:18px; border-radius:4px; }
+.period-quiz-dots span.done{ background:color-mix(in srgb, var(--primary) 45%, transparent); }
+.period-quiz-dots span{ transition:width .25s ease, background .25s ease; }
+/* The 8-question setup popup: answers as big tap targets, Back/Next below. */
+.period-choices{ display:grid; gap:8px; margin-top:4px; }
+.period-choice{
+  display:flex; align-items:center; min-height:46px; padding:0 16px; border-radius:14px; cursor:pointer;
+  border:1.5px solid var(--border); background:transparent; color:var(--text); font:inherit; font-size:14px; font-weight:700; text-align:start;
+  transition:border-color .2s ease, background .2s ease;
+}
+.period-choice.active{ border-color:var(--period-flow, var(--primary)); background:color-mix(in srgb, var(--period-flow, var(--primary)) 16%, transparent); }
+.period-q-note{ margin-top:10px; padding:10px 12px; border-radius:12px; font-size:13px; line-height:1.7; color:var(--text-muted, var(--text));
+  background:color-mix(in srgb, var(--period-flow, var(--primary)) 10%, transparent); }
+.period-quiz-nav{ display:flex; gap:10px; margin-top:6px; }
+.period-quiz-nav .btn{ flex:1; }
+.period-quiz-body .period-share-row{ padding-inline:0; }
 @media (min-width: 960px){
 .period-quiz-overlay{ position:fixed; }
 .period-quiz-sheet{

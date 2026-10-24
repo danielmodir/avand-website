@@ -64,6 +64,7 @@ function tj_admin_user_detail(string $publicId): void {
     $data = $d->fetch() ?: ['version' => 0, 'updated_at' => null, 'bytes' => 0];
     tj_json(tj_admin_user_row($u) + [
         'gender' => $u['gender'],
+        'birth_date' => $u['birth_date'] ?: null, // the exact day (owner's request, 2026-10-22)
         'birth_year' => $u['birth_date'] ? (int)substr($u['birth_date'], 0, 4) : null,
         'email_verified' => $u['email_verified_at'] !== null,
         'active_seconds' => (int)$u['active_seconds'],

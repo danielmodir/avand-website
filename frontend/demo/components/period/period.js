@@ -218,7 +218,7 @@ function loadPeriodShares(){
   if(periodSharesLoading || !Cloud.periodShares) return;
   periodSharesLoading = true;
   Promise.all([Cloud.periodShares(), Cloud.listConnections()])
-    .then(([shares, conns]) => { state.periodShares = shares; state.connections = conns; render(); })
+    .then(([shares, conns]) => { state.periodShares = shares; state.connections = conns; render(); if(periodDraft) renderPeriodQuiz(); })
     .catch(() => { state.periodShares = state.periodShares || []; })
     .finally(() => { periodSharesLoading = false; });
 }
@@ -371,6 +371,8 @@ function renderPeriodPage(headerHtml){
           <span class="period-legend-item"><span class="dot" style="background:var(--period-pms);"></span>${t('legendPms')}</span>
           <span class="period-legend-item"><span class="dot" style="background:var(--period-fertile);"></span>${t('legendFertile')}</span>
         </div>
+        ${view.own && p.regular === 'no' ? `<div class="period-q-note">${t('periodIrregularNote')}</div>` : ''}
+        ${view.own && p.pain === 'severe' ? `<div class="period-q-note">${t('periodPainSevereNote')}</div>` : ''}
         <div class="empty-hint" style="margin-top:12px;">${t('periodDisclaimer')}</div>
       </div>
     `;
@@ -454,45 +456,51 @@ function startPeriodTipsRotator(){
    a 40-day period or a start date a year ago). */
 const PERIOD_LIMITS = { lastStartDays: 45, cycle: [21, 45], period: [2, 10] };
 
-/* The quiz works on a draft; the real setup only changes on "Finish", so
-   closing it half way leaves an existing setup exactly as it was. */
+/* The setup popup: eight short questions, one per screen (the sheet slides
+   up from the bottom). It works on a draft; the real setup only changes
+   on "Finish", so closing it half way leaves an existing setup exactly as
+   it was. Sharing (the last step) saves at once, like in Settings. */
 let periodDraft = null;
+const PERIOD_QUIZ_STEPS = 8;
+
+function periodChoiceHtml(field, options){
+  const d = periodDraft;
+  return `<div class="period-choices" role="radiogroup">${options.map(([v, k]) =>
+    `<button type="button" class="period-choice ${String(d[field]) === String(v) ? 'active' : ''}" role="radio" aria-checked="${String(d[field]) === String(v)}" data-period-pick="${field}" data-value="${v}">${t(k)}</button>`).join('')}</div>`;
+}
 
 function periodQuizStepHtml(){
   const d = periodDraft;
   const err = d.error ? `<div class="auth-field-error">${escapeHtml(d.error)}</div>` : '';
+  const q = (label, body, hint) => `<div class="field"><label class="field-label">${t(label)}</label>${body}${hint ? `<div class="period-q-hint">${t(hint)}</div>` : ''}${err}</div>`;
+  let html;
   if(d.step === 1){
-    return `
-      <div class="period-quiz-step">
-        <div class="field">
-          <label class="field-label">${t('periodQ1')}</label>
-          <button type="button" class="date-field-btn" id="period-q1">${d.lastStart ? formatDateLabel(d.lastStart) : t('periodQ1')}${ICONS.calendarIcon}</button>
-          <div class="period-q-hint">${t('periodQ1Hint')}</div>${err}
-        </div>
-        <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
-      </div>
-    `;
+    html = q('periodQ1', `<button type="button" class="date-field-btn" id="period-q1">${d.lastStart ? formatDateLabel(d.lastStart) : t('periodQ1')}${ICONS.calendarIcon}</button>`, 'periodQ1Hint');
+  } else if(d.step === 2){
+    html = q('periodQ2', `<input type="number" inputmode="numeric" id="period-q2" value="${d.cycleLength}" min="${PERIOD_LIMITS.cycle[0]}" max="${PERIOD_LIMITS.cycle[1]}">`, 'periodQ2Hint');
+  } else if(d.step === 3){
+    html = q('periodQ3', `<input type="number" inputmode="numeric" id="period-q3" value="${d.periodLength}" min="${PERIOD_LIMITS.period[0]}" max="${PERIOD_LIMITS.period[1]}">`, 'periodQ3Hint');
+  } else if(d.step === 4){
+    html = q('periodQ4', periodChoiceHtml('regular', [['yes', 'regYes'], ['no', 'regNo'], ['unsure', 'regUnsure']]), 'periodQ4Hint');
+  } else if(d.step === 5){
+    html = q('periodQ5', periodChoiceHtml('pain', [['none', 'painNone'], ['mild', 'painMild'], ['moderate', 'painModerate'], ['severe', 'painSevere']]))
+      + (d.pain === 'severe' ? `<div class="period-q-note">${t('periodPainSevereNote')}</div>` : '');
+  } else if(d.step === 6){
+    html = q('periodQ6', periodChoiceHtml('remindDays', [[0, 'remindNone'], [1, 'remindDays1'], [2, 'remindDays2'], [3, 'remindDays3']]), 'periodQ6Hint');
+  } else if(d.step === 7){
+    html = q('periodQ7', periodChoiceHtml('calendarReminder', [[true, 'answerYes'], [false, 'answerNo']]));
+  } else {
+    const canShare = Cloud.periodShares && Cloud.hasSession();
+    html = q('periodQ8', canShare ? periodShareRowHtml() : `<div class="period-q-note">${t('periodShareLater')}</div>`, canShare ? 'periodQ8Hint' : '');
   }
-  if(d.step === 2){
-    return `
-      <div class="period-quiz-step">
-        <div class="field">
-          <label class="field-label">${t('periodQ2')}</label>
-          <input type="number" inputmode="numeric" id="period-q2" value="${d.cycleLength}" min="${PERIOD_LIMITS.cycle[0]}" max="${PERIOD_LIMITS.cycle[1]}">
-          <div class="period-q-hint">${t('periodQ2Hint')}</div>${err}
-        </div>
-        <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-next">${t('nextBtn')}</button>
-      </div>
-    `;
-  }
+  const last = d.step === PERIOD_QUIZ_STEPS;
   return `
     <div class="period-quiz-step">
-      <div class="field">
-        <label class="field-label">${t('periodQ3')}</label>
-        <input type="number" inputmode="numeric" id="period-q3" value="${d.periodLength}" min="${PERIOD_LIMITS.period[0]}" max="${PERIOD_LIMITS.period[1]}">
-        <div class="period-q-hint">${t('periodQ3Hint')}</div>${err}
+      ${html}
+      <div class="period-quiz-nav">
+        ${d.step > 1 ? `<button class="btn btn-outline" data-action="period-quiz-back">${t('quizBack')}</button>` : ''}
+        <button class="btn btn-primary" data-action="${last ? 'period-quiz-finish' : 'period-quiz-next'}">${t(last ? 'finishBtn' : 'nextBtn')}</button>
       </div>
-      <button class="btn btn-primary" style="width:100%;" data-action="period-quiz-finish">${t('finishBtn')}</button>
     </div>
   `;
 }
@@ -500,43 +508,59 @@ function periodQuizStepHtml(){
 function renderPeriodQuiz(){
   const d = periodDraft;
   if(!d) return;
-  const dots = [1,2,3].map(n => `<span class="${d.step===n?'active':''}"></span>`).join('');
-  document.getElementById('period-quiz-body').innerHTML = `<div class="period-quiz-dots">${dots}</div>${periodQuizStepHtml()}`;
+  const dots = Array.from({ length: PERIOD_QUIZ_STEPS }, (_, i) => `<span class="${d.step === i + 1 ? 'active' : d.step > i + 1 ? 'done' : ''}"></span>`).join('');
+  const body = document.getElementById('period-quiz-body');
+  body.innerHTML = `<div class="period-quiz-dots">${dots}</div>${periodQuizStepHtml()}`;
   document.getElementById('period-q1')?.addEventListener('click', () => openDatePicker({
     title: t('periodQ1'), value: d.lastStart, max: dateKey(today), min: dateKey(addDays(today, -PERIOD_LIMITS.lastStartDays)),
     onPick: v => { d.lastStart = v; d.error = ''; renderPeriodQuiz(); },
   }));
   document.getElementById('period-q2')?.addEventListener('input', e => { d.cycleLength = e.target.value; });
   document.getElementById('period-q3')?.addEventListener('input', e => { d.periodLength = e.target.value; });
+  body.querySelectorAll('[data-period-pick]').forEach(b => b.addEventListener('click', () => {
+    const f = b.dataset.periodPick, v = b.dataset.value;
+    d[f] = f === 'remindDays' ? Number(v) : f === 'calendarReminder' ? v === 'true' : v;
+    d.error = '';
+    renderPeriodQuiz();
+  }));
 }
 
 /* "Next" / "Finish": check this step's answer, stay on it with a message
-   if it's out of range. */
+   if it's out of range. The choice questions can be skipped. */
 function periodQuizNext(){
   const d = periodDraft;
   const inRange = (v, [lo, hi]) => Number.isInteger(v) && v >= lo && v <= hi;
   if(d.step === 1){
     const oldest = dateKey(addDays(today, -PERIOD_LIMITS.lastStartDays));
     if(!d.lastStart || d.lastStart > dateKey(today) || d.lastStart < oldest){ d.error = t('periodQ1Hint'); renderPeriodQuiz(); return; }
-    d.step = 2;
   } else if(d.step === 2){
     const v = Number(d.cycleLength);
     if(!inRange(v, PERIOD_LIMITS.cycle)){ d.error = t('periodCycleInvalid'); renderPeriodQuiz(); return; }
-    d.cycleLength = v; d.step = 3;
-  } else {
+    d.cycleLength = v;
+  } else if(d.step === 3){
     const v = Number(d.periodLength);
     if(!inRange(v, PERIOD_LIMITS.period) || v >= d.cycleLength){ d.error = t('periodLengthInvalid'); renderPeriodQuiz(); return; }
-    Object.assign(state.period, { lastStart: d.lastStart, cycleLength: d.cycleLength, periodLength: v, step: 'done', enabled: true });
+    d.periodLength = v;
+  } else if(d.step === PERIOD_QUIZ_STEPS){
+    Object.assign(state.period, { lastStart: d.lastStart, cycleLength: d.cycleLength, periodLength: d.periodLength,
+      regular: d.regular, pain: d.pain, remindDays: d.remindDays, calendarReminder: d.calendarReminder, step: 'done', enabled: true });
     savePeriodSetup();
     periodDraft = null;
     closePeriodQuiz();
     render();
     return;
   }
+  d.step++;
   d.error = '';
   renderPeriodQuiz();
 }
 
+function periodQuizBack(){
+  const d = periodDraft;
+  if(!d || d.step <= 1) return;
+  d.step--; d.error = '';
+  renderPeriodQuiz();
+}
 function openPeriodQuiz(){
   const p = state.period;
   const oldest = dateKey(addDays(today, -PERIOD_LIMITS.lastStartDays));
@@ -545,7 +569,8 @@ function openPeriodQuiz(){
   let last = p.lastStart;
   if(p.step === 'done' && last && last < oldest){ const c = dateKey(computePeriodCycleStart()); last = c >= oldest ? c : null; }
   if(!last || last < oldest || last > dateKey(today)) last = null;
-  periodDraft = { step: 1, lastStart: last, cycleLength: p.cycleLength || 28, periodLength: p.periodLength || 5, error: '' };
+  periodDraft = { step: 1, lastStart: last, cycleLength: p.cycleLength || 28, periodLength: p.periodLength || 5, error: '',
+    regular: p.regular || '', pain: p.pain || '', remindDays: Number(p.remindDays) || 0, calendarReminder: !!p.calendarReminder };
   document.getElementById('period-quiz-overlay').classList.add('show');
   document.getElementById('period-quiz-sheet').classList.add('show');
   renderPeriodQuiz();

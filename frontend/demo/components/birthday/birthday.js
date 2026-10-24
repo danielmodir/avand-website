@@ -7,10 +7,15 @@
    doesn't have it. Needs only the birth date already in the profile. */
 const BDAY_KEY = 'toojibee-birthday-shown';
 
-function isBirthdayToday(dob){
+function isBirthdayToday(dob){ return isBirthdayOn(dob, new Date()); }
+
+/* Also used by the calendars: the person's own birthday is bold with a
+   little cake (birthdayMarkHtml below). */
+function isBirthdayOn(dob, day){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(dob || '')) return false;
   const [by, bm, bd] = dob.split('-').map(Number);
-  const now = new Date();
+  const now = new Date(day);
+  if(now < new Date(by, bm - 1, bd)) return false; // not born yet
   if(typeof isJalali === 'function' && isJalali()){
     const b = toJalali(by, bm, bd), t2 = toJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
     if(b.jm !== t2.jm) return false;
@@ -26,6 +31,19 @@ function isBirthdayToday(dob){
   if(bd === now.getDate()) return true;
   return bm === 2 && bd === 29 && now.getDate() === 28 && new Date(now.getFullYear(), 1, 29).getMonth() !== 1;
 }
+
+/* Memoized per render: the calendars ask for every visible day. */
+let bdayMemo = { dob: null, map: {} };
+function isOwnBirthday(day){
+  const dob = !state.guest && state.profile ? state.profile.dob : '';
+  if(!dob) return false;
+  if(bdayMemo.dob !== dob + '|' + (typeof isJalali === 'function' && isJalali())) bdayMemo = { dob: dob + '|' + (typeof isJalali === 'function' && isJalali()), map: {} };
+  const k = dateKey(day);
+  if(!(k in bdayMemo.map)) bdayMemo.map[k] = isBirthdayOn(dob, day);
+  return bdayMemo.map[k];
+}
+const BDAY_CAKE_SVG = '<svg class="bday-cake" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2c.9 1 1.4 1.9 1.4 2.6a1.4 1.4 0 0 1-2.8 0C10.6 3.9 11.1 3 12 2zm-.8 4.6h1.6V9h-1.6zM5 10h14a2 2 0 0 1 2 2v2.2c-.9.6-1.6.6-2.5 0-1.1-.8-2.4-.8-3.5 0-.9.6-1.6.6-2.5 0-1.1-.8-2.4-.8-3.5 0-.9.6-1.6.6-2.5 0-.6-.4-1.2-.6-1.5-.6V12a2 2 0 0 1 2-2zm-2 6.5c.3 0 .6.1 1 .4 1.4 1 3 1 4.5 0 .6-.4 1.4-.4 2 0 1.4 1 3 1 4.5 0 .6-.4 1.4-.4 2 0 .9.6 1.9.8 3 .5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+function birthdayMarkHtml(day){ return isOwnBirthday(day) ? BDAY_CAKE_SVG : ''; }
 
 function birthdayAge(dob){
   const [by] = dob.split('-').map(Number);

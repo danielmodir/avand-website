@@ -32,6 +32,14 @@ class PeriodTests(ApiTestCase):
         self.client.put("/api/v1/period/profile", {"show_on_calendar": True, "version": again["version"]}, format="json")
         self.assertTrue(self.client.get("/api/v1/period/profile").json()["enabled"])
 
+    def test_setup_popup_answers_are_saved(self):
+        body = {"regular": "no", "pain": "moderate", "remind_days": 2, "version": 0}
+        self.assertEqual(self.client.put("/api/v1/period/profile", body, format="json").status_code, 200)
+        got = self.client.get("/api/v1/period/profile").json()
+        self.assertEqual((got["regular"], got["pain"], got["remind_days"]), ("no", "moderate", 2))
+        bad = self.client.put("/api/v1/period/profile", {"remind_days": 9, "version": got["version"]}, format="json")
+        self.assertEqual(bad.status_code, 400)
+
     def test_ciphertext_moved_to_another_row_does_not_decrypt(self):
         a, b = str(uuid.uuid4()), str(uuid.uuid4())
         self.client.put(f"/api/v1/period/cycles/{a}", {"start_date": "2026-09-01"}, format="json")

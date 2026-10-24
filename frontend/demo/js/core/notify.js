@@ -73,6 +73,18 @@ function reminderSlots(day){
   state.tasks.filter(x => occursOnDate(x, day)).forEach(x => forItem('task', x, taskStatusOn(x, key) === 'done'));
   state.habits.filter(h => habitOccursOnDate(h, day)).forEach(h => forItem('habit', h, h.completedDates.includes(key)));
   state.events.filter(e => occursOnDate(e, day)).forEach(e => forItem('event', e, false));
+  // Her period, N days ahead (the setup popup's "remind me" answer), at 9.
+  const pd = state.period, ahead = Number(pd && pd.remindDays) || 0;
+  if(ahead && pd.enabled && pd.step === 'done' && pd.lastStart && state.profile.gender === 'female'){
+    const cycle = periodCycleLen(pd);
+    let start = computePeriodCycleStart(pd);
+    while(dateKey(start) < key) start = addDays(start, cycle);
+    if(dateKey(addDays(start, -ahead)) === key){
+      const title = ahead === 1 ? t('periodRemindTomorrow') : t('periodRemindTitle').replace('{n}', lang() === 'fa' ? `${dig(ahead)} روز` : `${ahead} days`);
+      const item = { id: 'period', title };
+      out.push({ slot: `period|period|${dateKey(start)}|${key}`, kind: '', id: '', date: dateKey(start), title, body: t('periodRemindBody'), at: atTimeOn(day, '09:00'), item });
+    }
+  }
   return out;
 }
 

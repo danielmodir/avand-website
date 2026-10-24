@@ -394,6 +394,14 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   var allPerms = [];
   var $ = function (id) { return document.getElementById(id); };
   var fa = function (n) { return Number(n).toLocaleString('fa-IR'); };
+  /* "1378-05-12" -> "۱۲ مرداد ۱۳۷۸ (۳ اوت ۱۹۹۹) · ۲۷ ساله": the exact birth day, solar and Gregorian. */
+  function birthLabel(iso) {
+    var p = String(iso).split('-').map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+    if (isNaN(d)) return iso;
+    var opt = { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' };
+    var now = new Date(), age = now.getFullYear() - p[0] - ((now.getMonth() + 1 < p[1] || (now.getMonth() + 1 === p[1] && now.getDate() < p[2])) ? 1 : 0);
+    return d.toLocaleDateString('fa-IR-u-ca-persian', opt) + ' (' + d.toLocaleDateString('fa-IR-u-ca-gregory', opt) + ') · ' + fa(age) + ' ساله';
+  }
   var when = function (s) { return s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('fa-IR') : '—'; };
   var can = function (p) { return me.permissions.indexOf(p) !== -1; };
 
@@ -763,7 +771,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     if (slot.indexOf('banner') === 0) return null;
     var p = slot.split('.'), lang = p[0], k = p[1];
     var kind = k.indexOf('hero_mobile') === 0 ? 'mobile' : 'desktop';
-    return '/assets/img/app-home-' + kind + '-' + lang + '-' + (/dark$/.test(k) ? 'dark' : 'light') + '.jpg';
+    return '/assets/img/app-home-' + kind + '-' + lang + '-' + (/dark$/.test(k) ? 'dark' : 'light') + '.webp';
   }
 
   function loadContent() {
@@ -1221,7 +1229,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       h.appendChild(close); box.appendChild(h);
       var kv = el('div', 'kv');
       [['ایمیل', u.email + (u.email_verified ? ' ✓' : ' (تأییدنشده)')], ['وضعیت', u.online ? 'آنلاین' : (USTATUS[u.status] || [u.status])[0]],
-       ['جنسیت', u.gender === 'female' ? 'خانم' : u.gender === 'male' ? 'آقا' : '—'], ['سال تولد', u.birth_year ? fa(u.birth_year) : '—'],
+       ['جنسیت', u.gender === 'female' ? 'خانم' : u.gender === 'male' ? 'آقا' : '—'], ['تاریخ تولد', u.birth_date ? birthLabel(u.birth_date) : (u.birth_year ? fa(u.birth_year) : '—')],
        ['ثبت‌نام', when(u.created_at)], ['آخرین حضور', when(u.last_seen_at)], ['زمان استفاده از برنامه', dur(u.active_seconds)],
        ['تعداد ذخیره‌ها', fa(u.saves)], ['آخرین ذخیره', when(u.last_save_at)], ['حجم داده', kb(u.data_bytes)],
        ['دستگاه‌های وارد‌شده', fa(u.devices.length)]].forEach(function (p) {

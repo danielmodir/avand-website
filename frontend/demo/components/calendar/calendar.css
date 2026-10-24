@@ -107,6 +107,11 @@
 }
 /* Public holidays (Occasions settings): the day number in red. */
 .day-cell.holiday:not(.selected) .day-cell-num{ color:var(--holiday, var(--danger)); }
+/* The person's own birthday (birthday.js): bold, with a small cake. */
+.day-cell.birthday .day-cell-num, .cf-cell.birthday .day-cell-num{ font-weight:900; }
+.day-cell .bday-cake{ position:absolute; top:1px; inset-inline-end:2px; width:13px; height:13px; color:var(--primary); z-index:2; pointer-events:none; }
+.day-cell.birthday.selected .bday-cake, .day-cell.birthday.today .bday-cake{ color:var(--text); }
+.cf-head .bday-cake{ width:13px; height:13px; color:var(--primary); flex:0 0 auto; }
 /* Press feedback: only the circle shrinks (the cell stays put, see theme.css). */
 .day-cell.press .day-cell-bg{ opacity:1; transform:translate(-50%,-50%) scale(.88); }
 .day-cell.press:not(.selected) .day-cell-bg{ background:var(--primary-soft); }

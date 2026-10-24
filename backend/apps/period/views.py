@@ -25,6 +25,9 @@ class ProfileInput(serializers.Serializer):
     show_on_calendar = serializers.BooleanField(required=False)
     enabled = serializers.BooleanField(required=False)
     last_start = serializers.DateField(required=False, allow_null=True)
+    regular = serializers.ChoiceField(choices=["", "yes", "no", "unsure"], required=False)
+    pain = serializers.ChoiceField(choices=["", "none", "mild", "moderate", "severe"], required=False)
+    remind_days = serializers.IntegerField(min_value=0, max_value=3, required=False)
     version = serializers.IntegerField(min_value=0)
 
     def validate_last_start(self, value):

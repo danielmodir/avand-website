@@ -12,7 +12,9 @@ from .models import PeriodCycle, PeriodProfile, PeriodUserKey
 DB = "period"
 # enabled / last_start: the app's period desk switch and the setup quiz's
 # last start date, saved with the rest so the desk stays on once turned on.
-DEFAULT_PROFILE = {"cycle_length": 28, "period_length": 6, "quiz_step": 0, "show_on_calendar": False, "enabled": False, "last_start": None}
+# regular / pain / remind_days: the setup popup's other answers (2026-10-22).
+DEFAULT_PROFILE = {"cycle_length": 28, "period_length": 6, "quiz_step": 0, "show_on_calendar": False, "enabled": False, "last_start": None,
+                   "regular": "", "pain": "", "remind_days": 0}
 
 
 def user_key(user_id, create=False):
