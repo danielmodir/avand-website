@@ -61,12 +61,14 @@ try {
             . ($cards !== '' ? '<div class="article-list">' . $cards . '</div>' : '<p>' . tj_h($T['empty']) . '</p>')
             . '</section>';
         $other = '/' . ($fa ? 'en' : 'fa') . '/articles/';
+        $pair = ['fa' => '/fa/articles/', 'en' => '/en/articles/']; // the lists are each other's translation
     } else {
         if (!preg_match('/^[a-z0-9]+(-[a-z0-9]+)*$/', $slug)) tj_not_found();
         $a = tj_published_article($lang, $slug);
         if (!$a) tj_not_found();
         $path = "/$lang/articles/{$a['slug']}/";
-        $title = $a['title'] . ' — ' . $T['site'];
+        // Search results show about 60 characters: the site name only when it fits.
+        $title = (function_exists('mb_strlen') ? mb_strlen($a['title']) : strlen($a['title'])) > 52 ? $a['title'] : $a['title'] . ' — ' . $T['site'];
         $plain = trim((string)preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags(tj_article_html($a['body'])), ENT_QUOTES, 'UTF-8')));
         $desc = $a['summary'] !== '' ? $a['summary'] : $plain;
         // Search results show about 160 characters: cut at a word, not mid-word.
@@ -83,6 +85,10 @@ try {
             . '<div class="article-body">' . tj_article_html($a['body']) . '</div>'
             . '</article>';
         $other = '/' . ($fa ? 'en' : 'fa') . '/articles/';
+        // The same address in the other language is its translation (e.g. cyrus-cylinder).
+        $twin = tj_published_article($fa ? 'en' : 'fa', $a['slug']);
+        $pair = $twin ? [$lang => $path, ($fa ? 'en' : 'fa') => '/' . ($fa ? 'en' : 'fa') . "/articles/{$a['slug']}/"] : [$lang => $path];
+        if ($twin) $other = $pair[$fa ? 'en' : 'fa'];
     }
 } catch (Throwable $e) {
     error_log('[toojibee-articles] ' . $e->getMessage());
@@ -102,6 +108,10 @@ $html = $put($html, '#(<meta (?:property|name)="(?:og:title|twitter:title)" cont
 $html = $put($html, '#(<link rel="canonical" href=")[^"]*(")#', $url);
 $html = $put($html, '#(<meta property="og:url" content=")[^"]*(")#', $url);
 $html = preg_replace('#<link rel="alternate" hreflang="[^"]+" href="[^"]*">\s*#', '', $html);
+$alts = '';
+foreach ($pair as $l => $p) $alts .= '<link rel="alternate" hreflang="' . $l . '" href="https://toojibee.ir' . $p . '">';
+if (isset($pair['fa'])) $alts .= '<link rel="alternate" hreflang="x-default" href="https://toojibee.ir' . $pair['fa'] . '">';
+$html = str_replace('</head>', $alts . '</head>', $html);
 $html = preg_replace('#<script type="application/ld\+json">.*?</script>\s*#s', '', $html); // the About page's own
 // An empty list is a thin page: keep it out of search until there's something to read.
 if ($slug === '' && $cards === '') $html = str_replace('</head>', '<meta name="robots" content="noindex, follow"></head>', $html);

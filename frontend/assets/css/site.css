@@ -190,6 +190,9 @@ a { color: inherit; }
 .hero {
   position: relative; padding: var(--space-7) 0 var(--space-8) 0; text-align: start;
   isolation: isolate;
+  /* The glow (::before) is wider than the page; clip it sideways only, or
+     the page scrolls a few pixels on phones (RTL pages most visibly). */
+  overflow-x: clip;
 }
 .hero::before {
   content: ""; position: absolute; inset: -10% -10% auto -10%; height: 140%;

@@ -81,7 +81,7 @@ if ($m === false) {
     ];
     tj_render_page([
         'lang' => $lang, 'path' => "/$lang/calendar/months/", 'alt' => ['fa' => '/fa/calendar/months/', 'en' => '/en/calendar/months/'],
-        'title' => $fa ? 'ماه‌های سال شمسی: فروردین تا اسفند، معنی نام‌ها، برج‌ها و جشن‌ها | توجیبی' : 'Persian Calendar Months: Names, Meanings, Zodiac and Festivals | Toojibee',
+        'title' => $fa ? 'ماه‌های سال شمسی: معنی نام‌ها، برج‌ها و جشن‌ها | توجیبی' : 'Persian Months: Names, Meanings and Festivals | Toojibee',
         'desc' => $fa ? 'ماه‌های تقویم ایرانی از فروردین تا اسفند: تعداد روزها، معنی و ریشه‌ی نام هر ماه، برج فلکی (نماد ماه تولد) و جشن‌های ایرانی مثل نوروز، مهرگان، یلدا و سده.'
             : 'The months of the Iranian calendar from Farvardin to Esfand: days, the meaning of each name, its zodiac sign and Persian festivals like Nowruz, Mehregan, Yalda and Sadeh.',
         'h1' => $fa ? 'ماه‌های سال شمسی (تقویم ایرانی)' : 'The months of the Persian calendar',
@@ -155,7 +155,7 @@ $faq = array_values(array_filter($faq, function ($q) { return $q[1] !== ''; }));
 $slugM = TJ_MONTH_SLUGS[$m - 1];
 tj_render_page([
     'lang' => $lang, 'path' => "/$lang/calendar/$slugM/", 'alt' => ['fa' => "/fa/calendar/$slugM/", 'en' => "/en/calendar/$slugM/"],
-    'title' => $fa ? "تقویم {$name} {$Y}: مناسبت‌ها، تعطیلات، برج و جشن‌های {$name} | توجیبی" : "{$name} {$thisYear}: Persian calendar month, holidays and festivals | Toojibee",
+    'title' => $fa ? "تقویم {$name} {$Y}: مناسبت‌ها، تعطیلات و جشن‌ها | توجیبی" : "{$name} {$thisYear}: Persian month and holidays | Toojibee",
     'desc' => $fa ? "تقویم {$name} {$Y} با تاریخ میلادی و قمری، مناسبت‌ها و تعطیلات رسمی؛ معنی نام {$name}، برج {$info[2]} و " . trim(preg_split('/[؛(]/u', $info[4])[0]) . '.'
         : "The {$name} {$thisYear} calendar with Gregorian and Hijri dates, occasions and holidays; what {$name} means, its sign ({$info[3]}) and its festivals.",
     'h1' => $fa ? "تقویم {$name} {$Y}" : "{$name} {$thisYear} (Persian calendar)",

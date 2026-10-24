@@ -125,8 +125,8 @@ try {
         . '</section>';
 
     $title = $fa
-        ? "امروز چندمه؟ تاریخ امروز {$today['weekday']} {$today['jalali']} به شمسی، قمری و میلادی | توجیبی"
-        : "Today's date in Iran: {$today['weekday']} {$today['jalali']} ({$today['gregorian']}) | Toojibee";
+        ? "امروز چندمه؟ تاریخ امروز {$today['weekday']} {$today['jalali']} | توجیبی"
+        : "Today in Iran: {$today['weekday']} {$today['jalali']} | Toojibee";
     $desc = $fa
         ? "تاریخ امروز {$today['weekday']} {$today['jalali']} برابر با {$today['hijri']} و {$today['gregorian']}؛ مناسبت‌ها و تعطیلات امروز و هفت روز آینده در تقویم توجیبی."
         : "Today in Iran is {$today['weekday']} {$today['jalali']} (Solar Hijri), {$today['hijri']} (Hijri) and {$today['gregorian']}: today's occasions, holidays and the week ahead.";
