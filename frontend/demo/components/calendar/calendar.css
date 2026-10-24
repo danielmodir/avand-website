@@ -235,7 +235,7 @@
   background-color:color-mix(in srgb, var(--ph-color) var(--phase-focus-strength), var(--card));
   filter:brightness(1.06) saturate(1.2);
 }
-.day-cell.ph-period{ --ph-color:var(--period-flow); }
+.day-cell.ph-period{ --ph-color:var(--period-blood); }
 .day-cell.ph-pms{ --ph-color:var(--period-pms); }
 .day-cell.ph-fertile{ --ph-color:var(--period-fertile); }
 .day-cell.ph-cap-s::after{ inset-inline-start:calc(50% - var(--day-circle-r)); border-start-start-radius:999px; border-end-start-radius:999px; }

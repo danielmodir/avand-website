@@ -76,6 +76,7 @@
   /* Period phase colors (period.css' palette), also needed outside the
      period desk: the calendar's phase capsules (calendar.css). */
   --period-flow:#FF84BA; --period-pms:#FFDF82; --period-fertile:#99C2FF;
+  --period-blood:#E5484D; /* the period days themselves (ring, legend, calendar): red, not the desk's pink */
   --phase-capsule-strength:13%; /* just a shadow of the phase color */
   --phase-focus-strength:26%;   /* the phase picked on the period ring */
 }

@@ -66,7 +66,7 @@ function periodSummaryText(cats, own = true, pd = state.period){
    and PMS. Hovering (or tapping) an arc lifts it and shows the phase's
    name, length and dates in the middle; a dot marks today. */
 // Fills (arcs, legend dots) and text shades — period.css' .period-themed tokens.
-const PERIOD_PHASE_COLOR = { period:'var(--period-flow)', pms:'var(--period-pms)', fertile:'var(--period-fertile)', normal:'var(--period-ring-rest)' };
+const PERIOD_PHASE_COLOR = { period:'var(--period-blood)', pms:'var(--period-pms)', fertile:'var(--period-fertile)', normal:'var(--period-ring-rest)' };
 const PERIOD_PHASE_INK = { period:'var(--period-flow-ink)', pms:'var(--period-pms-ink)', fertile:'var(--period-fertile-ink)', normal:'var(--text)' };
 const PERIOD_PHASE_LABEL = { period:'legendPeriod', pms:'legendPms', fertile:'legendFertile', normal:'legendRegular' };
 
@@ -367,22 +367,25 @@ function renderPeriodPage(headerHtml){
         </div>
         ${dots}
         <div class="period-legend">
-          <span class="period-legend-item"><span class="dot" style="background:var(--period-flow);"></span>${t('legendPeriod')}</span>
+          <span class="period-legend-item"><span class="dot" style="background:var(--period-blood);"></span>${t('legendPeriod')}</span>
           <span class="period-legend-item"><span class="dot" style="background:var(--period-pms);"></span>${t('legendPms')}</span>
           <span class="period-legend-item"><span class="dot" style="background:var(--period-fertile);"></span>${t('legendFertile')}</span>
         </div>
         ${view.own ? periodNotes(p).map(k => `<div class="period-q-note">${t(k)}</div>`).join('') : ''}
-        <div class="empty-hint" style="margin-top:12px;">${view.own ? t('periodDisclaimer') : escapeHtml(t('periodDisclaimerShared').replace('{name}', view.name || ''))}</div>
+        ${state.profile.gender === 'female' ? `<div class="period-tips-title">${t('tipsTitle')}</div>${periodTipsHtml()}` : ''}
       </div>
     `;
   })();
+  // "Did you know?" sits in the ring's card (where the disclaimer was); with
+  // no ring (setup not done, or the doctor note) it stays below.
+  const tipsInCard = p.step === 'done' && !(view.own && periodAbnormal(p));
   return `
     <div class="period-themed">
     ${headerHtml}
-    ${view.own ? periodCheckinHtml(periodCheckin()) : ''}
+    ${view.own ? periodCheckinHtml(periodCheckinToday()) : ''}
     ${trackerBody}
     ${view.own && p.step === 'done' ? periodLogHtml() : ''}
-    ${state.profile.gender === 'female' ? `<div class="section-title">${t('tipsTitle')}</div>${periodTipsHtml()}` : ''}
+    ${state.profile.gender === 'female' && !tipsInCard ? `<div class="section-title">${t('tipsTitle')}</div>${periodTipsHtml()}` : ''}
     </div>
   `;
 }
@@ -671,12 +674,8 @@ function periodCheckin(){
 function periodCheckinHtml(c){
   if(!c) return '';
   const q = c.kind === 'end' ? t('periodAskEnd') : c.late ? t('periodAskStartLate') : t('periodAskStart');
-  const btns = c.kind === 'end'
-    ? `<button class="btn btn-primary btn-small" data-action="period-answer" data-answer="ended">${t('periodAnsEnded')}</button>
-       <button class="btn btn-outline btn-small" data-action="period-answer" data-answer="ended-earlier">${t('periodAnsEarlier')}</button>
-       <button class="btn btn-outline btn-small" data-action="period-answer" data-answer="not-yet">${t('periodAnsNotYet')}</button>`
-    : `<button class="btn btn-primary btn-small" data-action="period-answer" data-answer="started">${t('periodAnsStarted')}</button>
-       <button class="btn btn-outline btn-small" data-action="period-answer" data-answer="started-earlier">${t('periodAnsEarlier')}</button>
+  // "Yes" opens the calendar on today: one tap confirms, or she picks the real day.
+  const btns = `<button class="btn btn-primary btn-small" data-action="period-answer" data-answer="${c.kind === 'end' ? 'ended' : 'started'}">${ICONS.calendarIcon} ${t(c.kind === 'end' ? 'periodAnsEnded' : 'periodAnsStarted')}</button>
        <button class="btn btn-outline btn-small" data-action="period-answer" data-answer="not-yet">${t('periodAnsNotYet')}</button>`;
   return `<div class="period-ask" dir="${lang() === 'fa' ? 'rtl' : 'ltr'}"><div class="period-ask-q">${q}</div>
     ${c.kind === 'start' && c.late ? `<div class="period-ask-sub">${t('periodLateNote')}</div>` : ''}
@@ -693,20 +692,41 @@ function periodAnswer(answer){
     p.asked = Object.assign({}, p.asked, { [c.key]: dateKey(today) });
     savePeriodSetup(); done(); return;
   }
-  const log = periodLogOf(p);
-  if(answer === 'started'){ log.push({ s: dateKey(today), e: null }); setPeriodLog(log); done(); showToast(t('periodLogged')); return; }
-  if(answer === 'ended'){ log[log.length - 1].e = dateKey(today); setPeriodLog(log); done(); showToast(t('periodLogged')); return; }
-  // "Earlier": which day.
-  const isEnd = answer === 'ended-earlier';
+  // Which day: the calendar opens on today.
+  const isEnd = answer === 'ended';
   closePeriodAsk();
   openDatePicker({
     title: t(isEnd ? 'periodPickEnd' : 'periodPickStart'), value: dateKey(today), max: dateKey(today),
     min: isEnd ? c.start : dateKey(addDays(today, -20)),
     onPick: v => {
-      if(isEnd) log[log.length - 1].e = v; else log.push({ s: v, e: null });
+      const log = periodLogOf(state.period);
+      if(isEnd){
+        const open = log.find(x => x.s === c.start);
+        if(open) open.e = v < open.s ? open.s : v;
+      } else if(!periodLogAccept(log, v)) return;
+      else log.push({ s: v, e: null });
       setPeriodLog(log); render(); showToast(t('periodLogged'));
     },
   });
+}
+
+/* The desk's card hides for the day once she answered "not yet" (the
+   popup and the card ask the same question). */
+function periodCheckinToday(){
+  const c = periodCheckin();
+  return c && (state.period.asked || {})[c.key] === dateKey(today) ? null : c;
+}
+
+/* A new start must not land inside (or right next to) a period already
+   logged: that's the same period logged twice. */
+function periodLogAccept(log, s){
+  const d = parseDateKey(s);
+  const clash = log.find(x => {
+    const from = addDays(parseDateKey(x.s), -2), to = x.e ? addDays(parseDateKey(x.e), 2) : addDays(parseDateKey(x.s), periodLen() + 1);
+    return d >= from && d <= to;
+  });
+  if(clash){ showToast(t('periodLogDup')); return false; }
+  return true;
 }
 
 /* Once a day at most, when the app opens: the same question as a small
@@ -758,7 +778,7 @@ function periodLogAdd(what){
   }
   openDatePicker({ title: t('periodPickStart'), value: dateKey(today), max: dateKey(today), min: dateKey(addDays(today, -365)),
     onPick: v => {
-      if(log.some(x => x.s === v)){ showToast(t('periodLogDup')); return; }
+      if(!periodLogAccept(log, v)) return;
       if(open && v > open.s && !open.e) open.e = dateKey(addDays(parseDateKey(open.s), periodLen() - 1)); // a new start closes the old one
       log.push({ s: v, e: null }); setPeriodLog(log); render(); showToast(t('periodLogged'));
     } });
