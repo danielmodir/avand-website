@@ -70,6 +70,29 @@ function reminderSlots(day){
       push(kind, item, 'before', at, text || t('notifStartsAt').replace('{t}', dig(item.startTime)));
     }
   };
+  /* "Over and over until it starts" (countdown): the occurrence may be up to
+     7 days later than `day`; only the reminders falling on `day` are kept. */
+  const dayStart = new Date(day).setHours(0, 0, 0, 0), dayEnd = new Date(day).setHours(24, 0, 0, 0);
+  const countdown = (kind, item, isDone) => {
+    const n = item.notification || {};
+    if(n.type !== 'countdown' || !item.startTime) return;
+    const lead = Math.min(10080, Math.max(15, Number(n.leadMinutes) || 1440)) * 60000;
+    const every = Math.max(15, Number(n.everyMinutes) || 60) * 60000;
+    for(let k = 0; k <= 7; k++){
+      const occ = addDays(day, k);
+      const occKey = dateKey(occ);
+      if(!occursOnDate(item, occ) || isDone(occKey)) continue;
+      const start = atTimeOn(occ, item.startTime);
+      for(let at = start - lead; at < start; at += every){
+        if(at < dayStart || at >= dayEnd) continue;
+        const left = Math.round((start - at) / 60000);
+        const body = n.text || t('countdownLeft').replace('{t}', durationLabel(left)).replace('{at}', dig(item.startTime));
+        out.push({ slot: `countdown|${kind}|${item.id}|${occKey}|${at}`, kind, id: item.id, date: occKey, title: item.title, body, at, item });
+      }
+    }
+  };
+  state.tasks.forEach(x => countdown('task', x, k => taskStatusOn(x, k) === 'done'));
+  state.events.forEach(e => countdown('event', e, () => false));
   state.tasks.filter(x => occursOnDate(x, day)).forEach(x => forItem('task', x, taskStatusOn(x, key) === 'done'));
   state.habits.filter(h => habitOccursOnDate(h, day)).forEach(h => forItem('habit', h, h.completedDates.includes(key)));
   state.events.filter(e => occursOnDate(e, day)).forEach(e => forItem('event', e, false));

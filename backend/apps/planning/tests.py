@@ -81,6 +81,17 @@ class PlanningTests(ApiTestCase):
         self.assertEqual([t["id"] for t in full["tasks"]], [keep])
 
     def test_events_with_time(self):
+        # Over and over before it starts: from 2 days before, every 6 hours.
+        cd = self.put("events", new_id(), {"title": "Exam", "start_date": "2026-10-20", "all_day": False, "start_time": "09:00",
+                                           "reminder_type": "countdown", "reminder_lead_minutes": 2880, "reminder_every_minutes": 360})
+        self.assertIn(cd.status_code, (200, 201), cd.content)
+        self.assertEqual((cd.json()["reminder_lead_minutes"], cd.json()["reminder_every_minutes"]), (2880, 360))
+        too_often = self.put("events", new_id(), {"title": "Exam", "start_date": "2026-10-20", "all_day": False, "start_time": "09:00",
+                                                  "reminder_type": "countdown", "reminder_lead_minutes": 2880, "reminder_every_minutes": 5})
+        self.assertEqual(too_often.json()["error"], "reminder_countdown_invalid")
+        no_time = self.put("tasks", new_id(), {"title": "Pay rent", "start_date": "2026-10-20", "reminder_type": "countdown",
+                                               "reminder_lead_minutes": 120, "reminder_every_minutes": 30})
+        self.assertEqual(no_time.json()["error"], "start_time_required")
         ok = self.put("events", new_id(), {"title": "Class", "start_date": "2026-10-15", "all_day": False, "start_time": "19:30", "end_time": "21:00", "reminder_type": "before_start", "reminder_minutes_before": 15})
         self.assertEqual(ok.status_code, 201, ok.content)
         bad = self.put("events", new_id(), {"title": "Class", "start_date": "2026-10-15", "all_day": False, "start_time": "21:00", "end_time": "19:30"})

@@ -37,6 +37,8 @@ function resetFormDraft(type, existing){
       time: existing ? (existing.notification?.time || '09:00') : '09:00',
       repeatHours: existing ? (existing.notification?.repeatHours || 1) : 1,
       minutesBefore: existing ? (existing.notification?.minutesBefore || 15) : 15,
+      leadMinutes: existing ? (existing.notification?.leadMinutes || 1440) : 1440,
+      everyMinutes: existing ? (existing.notification?.everyMinutes || 60) : 60,
       text: existing ? (existing.notification?.text || '') : ''
     }
   };
@@ -116,6 +118,7 @@ function itemDetailsHtml(type, item){
   if(n.type === 'time') rows.push([ICONS.bellIcon, t('reminderAt') + ' ' + `<span dir="ltr">${dig(n.time)}</span>`]);
   if(n.type === 'repeat') rows.push([ICONS.bellIcon, t('reminderEveryNHours').replace('{n}', dig(n.repeatHours || 1))]);
   if(n.type === 'before') rows.push([ICONS.bellIcon, t('reminderMinutesBefore').replace('{n}', dig(n.minutesBefore || 15))]);
+  if(n.type === 'countdown') rows.push([ICONS.bellIcon, t('countdownSummary').replace('{lead}', durationLabel(n.leadMinutes || 1440)).replace('{every}', durationLabel(n.everyMinutes || 60))]);
   const subs = (item.subtasks || []).map(s => `<li class="${s.done ? 'done' : ''}">${escapeHtml(subTitle(s))}</li>`).join('');
   return `
     <h2 class="details-title">${escapeHtml(item.title || '')}</h2>
@@ -276,6 +279,19 @@ function repeatSubviewHtml(type){
    done), or N minutes before an event starts. A draft until "Confirm",
    like the repeat page. Delivered by js/core/notify.js. ---- */
 const REMINDER_BEFORE_CHOICES = [5, 10, 15, 30, 60, 120, 1440];
+/* "Over and over until it starts": from a day and time before the start
+   (saved as minutes before it, so a repeating item gets it every time),
+   every N minutes, up to the start. At most 7 days ahead. */
+const COUNTDOWN_EVERY = [15, 30, 60, 120, 180, 360, 720, 1440];
+const COUNTDOWN_MAX_LEAD = 10080;
+function countdownStart(n){
+  if(!formDraft.date || !formDraft.startTime) return null;
+  const s = new Date(formDraft.date + 'T' + formDraft.startTime + ':00');
+  return new Date(s.getTime() - n.leadMinutes * 60000);
+}
+function durationLabel(m){
+  return m % 1440 === 0 ? t('durDays').replace('{n}', dig(m / 1440)) : m % 60 === 0 ? t('durHours').replace('{n}', dig(m / 60)) : t('durMinutes').replace('{n}', dig(m));
+}
 let reminderDraft = null;
 
 function startReminderDraft(){
@@ -284,14 +300,16 @@ function startReminderDraft(){
     type: n.type || 'time', time: n.time || formDraft.startTime || '09:00',
     repeatHours: Math.min(12, Math.max(1, Number(n.repeatHours) || 1)),
     minutesBefore: n.minutesBefore || 15, text: n.text || '',
+    leadMinutes: Math.min(COUNTDOWN_MAX_LEAD, Math.max(15, Number(n.leadMinutes) || 1440)),
+    everyMinutes: COUNTDOWN_EVERY.includes(Number(n.everyMinutes)) ? Number(n.everyMinutes) : 60,
   };
 }
 
 function notificationSubviewHtml(){
   const n = reminderDraft || (startReminderDraft(), reminderDraft);
   const isEvent = state.popupType === 'event';
-  const types = ['time', 'repeat'].concat(isEvent ? ['before'] : []);
-  const label = { time: t('atATime'), repeat: t('repeating'), before: t('reminderBefore') };
+  const types = ['time', 'repeat'].concat(isEvent ? ['before'] : []).concat(state.popupType !== 'habit' ? ['countdown'] : []);
+  const label = { time: t('atATime'), repeat: t('repeating'), before: t('reminderBefore'), countdown: t('reminderCountdown') };
   const beforeLabel = m => m % 1440 === 0 ? t('reminderDaysBefore').replace('{n}', dig(m / 1440))
     : m % 60 === 0 ? t('reminderHoursBefore').replace('{n}', dig(m / 60)) : t('reminderMinutesBefore').replace('{n}', dig(m));
   const permission = !('Notification' in window) ? 'unsupported' : Notification.permission;
@@ -313,6 +331,18 @@ function notificationSubviewHtml(){
       <div class="rec-block"><select class="settings-select" id="notif-before-select" style="width:100%;">
         ${REMINDER_BEFORE_CHOICES.map(m => `<option value="${m}" ${n.minutesBefore === m ? 'selected' : ''}>${beforeLabel(m)}</option>`).join('')}
       </select></div>` : `<div class="profile-hint rec-block">${t('reminderNeedsStart')}</div>`) : ''}
+    ${n.type === 'countdown' ? (formDraft.startTime ? (() => {
+      const from = countdownStart(n);
+      const times = Math.floor(n.leadMinutes / n.everyMinutes) + 1;
+      return `
+      <div class="rec-block"><span class="field-label">${t('countdownFrom')}</span>
+        <button type="button" class="dob-field-btn rec-day-btn" id="countdown-from">${ICONS.calendarIcon}<span>${formatDateLabel(dateKey(from))} · <span dir="ltr">${dig(String(from.getHours()).padStart(2, '0') + ':' + String(from.getMinutes()).padStart(2, '0'))}</span></span></button></div>
+      <div class="rec-block"><span class="field-label">${t('countdownEvery')}</span>
+        <select class="settings-select" id="countdown-every" style="width:100%;">
+          ${COUNTDOWN_EVERY.filter(m => m <= n.leadMinutes).map(m => `<option value="${m}" ${n.everyMinutes === m ? 'selected' : ''}>${durationLabel(m)}</option>`).join('')}
+        </select></div>
+      <div class="profile-hint">${t('countdownHint').replace('{lead}', durationLabel(n.leadMinutes)).replace('{every}', durationLabel(n.everyMinutes)).replace('{n}', dig(times))}</div>`;
+    })() : `<div class="profile-hint rec-block">${t('reminderNeedsStart')}</div>`) : ''}
     <div class="field rec-block"><input type="text" id="f-notif-text" placeholder="${t('customReminderText')}" value="${escapeAttr(n.text)}" maxlength="200"></div>
     ${permission !== 'granted' ? `<div class="profile-hint">${t(permission === 'denied' ? 'notifBlockedHint' : permission === 'unsupported' ? 'notifUnsupportedHint' : 'notifAskHint')}</div>` : ''}
     <button type="button" class="btn btn-primary rec-confirm" id="notif-confirm">${t('dpDone')}</button>
@@ -416,11 +446,31 @@ function wireSubviewInteractivity(){
       n.repeatHours = Math.min(12, Math.max(1, n.repeatHours + Number(b.dataset.hstep))); renderPopupBody();
     }));
     document.getElementById('notif-before-select')?.addEventListener('change', e => { n.minutesBefore = Number(e.target.value); });
+    document.getElementById('countdown-every')?.addEventListener('change', e => { n.everyMinutes = Number(e.target.value); renderPopupBody(); });
+    document.getElementById('countdown-from')?.addEventListener('click', () => {
+      // Pick the day and time to start from: up to 7 days before the start.
+      const start = new Date(formDraft.date + 'T' + formDraft.startTime + ':00');
+      const from = countdownStart(n);
+      openDatePicker({
+        title: t('countdownFrom'), value: dateKey(from), max: formDraft.date, min: dateKey(addDays(parseDateKey(formDraft.date), -7)),
+        time: { start: String(from.getHours()).padStart(2, '0') + ':' + String(from.getMinutes()).padStart(2, '0') },
+        onPick: (v, _end, picked) => {
+          const at = new Date(v + 'T' + ((picked && picked.start) || '09:00') + ':00');
+          const lead = Math.round((start - at) / 60000);
+          if(lead < 15){ showToast(t('countdownTooLate')); return; }
+          if(lead > COUNTDOWN_MAX_LEAD){ showToast(t('countdownTooEarly')); return; }
+          n.leadMinutes = lead;
+          if(n.everyMinutes > lead) n.everyMinutes = COUNTDOWN_EVERY.filter(m => m <= lead).pop() || 15;
+          renderPopupBody();
+        },
+      });
+    });
     document.getElementById('f-notif-text')?.addEventListener('input', e => { n.text = e.target.value; });
     document.getElementById('notif-confirm')?.addEventListener('click', () => {
       if(n.type === 'time' && !n.time){ showToast(t('reminderTimeRequired')); return; }
-      if(n.type === 'before' && !formDraft.startTime){ showToast(t('reminderNeedsStart')); return; }
-      formDraft.notification = { type: n.type, time: n.time || '09:00', repeatHours: n.repeatHours, minutesBefore: n.minutesBefore, text: n.text.trim() };
+      if((n.type === 'before' || n.type === 'countdown') && !formDraft.startTime){ showToast(t('reminderNeedsStart')); return; }
+      formDraft.notification = { type: n.type, time: n.time || '09:00', repeatHours: n.repeatHours, minutesBefore: n.minutesBefore,
+        leadMinutes: n.leadMinutes, everyMinutes: n.everyMinutes, text: n.text.trim() };
       reminderDraft = null; state.popupSubView = null;
       askNotificationPermission(); // the first reminder asks the browser once (js/core/notify.js)
       renderPopupBody();

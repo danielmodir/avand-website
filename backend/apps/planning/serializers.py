@@ -12,7 +12,7 @@ from .models import Category, Event, Habit, HabitLog, Task, TaskOccurrence
 COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 RECURRENCE_FIELDS = ["rec_mode", "rec_interval", "rec_weekdays", "rec_until", "rec_anchor", "rec_calendar"]
 REPEAT_KINDS = ("interval", "weekdays", "monthly", "yearly")
-REMINDER_FIELDS = ["reminder_type", "reminder_time", "reminder_every_hours", "reminder_text"]
+REMINDER_FIELDS = ["reminder_type", "reminder_time", "reminder_every_hours", "reminder_text", "reminder_lead_minutes", "reminder_every_minutes"]
 SYNC_FIELDS = ["id", "version", "created_at", "updated_at", "deleted_at"]
 READ_ONLY = ["id", "created_at", "updated_at", "deleted_at"]
 
@@ -62,6 +62,9 @@ class OwnedSerializer(serializers.ModelSerializer):
             raise ApiError("reminder_time_required")
         if rtype == "repeating" and not 1 <= (merged(attrs, inst, "reminder_every_hours") or 0) <= 24:
             raise ApiError("reminder_every_hours_invalid")
+        if rtype == "countdown" and not (15 <= (merged(attrs, inst, "reminder_lead_minutes") or 0) <= 10080
+                                         and 15 <= (merged(attrs, inst, "reminder_every_minutes") or 0) <= 1440):
+            raise ApiError("reminder_countdown_invalid")
 
 
 class CategorySerializer(OwnedSerializer):
@@ -104,6 +107,8 @@ class TaskSerializer(OwnedSerializer):
         self.check_schedule(attrs)
         if merged(attrs, self.instance, "reminder_type") == "before_start":
             raise ApiError("invalid_reminder_type")
+        if merged(attrs, self.instance, "reminder_type") == "countdown" and merged(attrs, self.instance, "start_time") is None:
+            raise ApiError("start_time_required")
         # Same day: the end time can't come before the start time.
         start_time, end_time = merged(attrs, self.instance, "start_time"), merged(attrs, self.instance, "end_time")
         if start_time is not None and end_time is not None and not merged(attrs, self.instance, "end_date") and end_time <= start_time:
@@ -143,7 +148,7 @@ class HabitSerializer(OwnedSerializer):
         if self.instance is None and "rec_mode" not in attrs:
             attrs["rec_mode"] = "interval"
         self.check_schedule(attrs, kinds=REPEAT_KINDS)
-        if merged(attrs, self.instance, "reminder_type") == "before_start":
+        if merged(attrs, self.instance, "reminder_type") in ("before_start", "countdown"):
             raise ApiError("invalid_reminder_type")
         return attrs
 
@@ -176,6 +181,8 @@ class EventSerializer(OwnedSerializer):
             minutes = merged(attrs, inst, "reminder_minutes_before")
             if all_day or minutes is None or minutes > 10080:
                 raise ApiError("invalid_reminder_minutes")
+        if merged(attrs, inst, "reminder_type") == "countdown" and all_day:
+            raise ApiError("start_time_required")
         origin = attrs.get("origin_event_id")
         if origin and not Event.objects.filter(pk=origin, user_id=self.user_id).exists():
             raise ApiError("event.origin_not_found")

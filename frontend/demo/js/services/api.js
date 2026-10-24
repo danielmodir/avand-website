@@ -193,8 +193,8 @@
   }
 
   // ── shape conversion ─────────────────────────────────────────────────
-  var NOTIF_TO_API = { time: 'at_time', repeat: 'repeating', before: 'before_start' };
-  var NOTIF_FROM_API = { at_time: 'time', repeating: 'repeat', before_start: 'before' };
+  var NOTIF_TO_API = { time: 'at_time', repeat: 'repeating', before: 'before_start', countdown: 'countdown' };
+  var NOTIF_FROM_API = { at_time: 'time', repeating: 'repeat', before_start: 'before', countdown: 'countdown' };
   var STATUS_TO_API = { done: 'done', not_done: 'not_done' };
 
   function weekdaysToMask(days) { return (days || []).reduce(function (m, d) { return m | (1 << d); }, 0); }
@@ -216,9 +216,12 @@
     return {
       reminder_type: type,
       // "N minutes before" an event counts from its start time, not a clock time.
-      reminder_time: type === 'none' || type === 'before_start' ? null : (n.time || '09:00'),
+      reminder_time: type === 'none' || type === 'before_start' || type === 'countdown' ? null : (n.time || '09:00'),
       reminder_every_hours: type === 'repeating' ? Math.min(24, Math.max(1, Number(n.repeatHours) || 1)) : null,
       reminder_text: (n && n.text) || '',
+      // "Over and over until it starts": from N minutes before, every M minutes.
+      reminder_lead_minutes: type === 'countdown' ? Math.min(10080, Math.max(15, Number(n.leadMinutes) || 1440)) : null,
+      reminder_every_minutes: type === 'countdown' ? Math.min(1440, Math.max(15, Number(n.everyMinutes) || 60)) : null,
     };
   }
   function reminderFromApi(row) {
@@ -227,6 +230,8 @@
       time: row.reminder_time ? row.reminder_time.slice(0, 5) : '09:00',
       repeatHours: row.reminder_every_hours || 1,
       minutesBefore: row.reminder_minutes_before || 15,
+      leadMinutes: row.reminder_lead_minutes || 1440,
+      everyMinutes: row.reminder_every_minutes || 60,
       text: row.reminder_text || '',
     };
   }

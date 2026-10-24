@@ -36,6 +36,10 @@ class ReminderType(models.TextChoices):
     AT_TIME = "at_time"
     REPEATING = "repeating"
     BEFORE_START = "before_start"  # events only
+    # Over and over before the start: from reminder_lead_minutes before it,
+    # every reminder_every_minutes, until it starts. Tasks and events with a
+    # time of day.
+    COUNTDOWN = "countdown"
 
 
 class Recurrence(models.Model):
@@ -57,6 +61,8 @@ class Reminder(models.Model):
     reminder_time = models.TimeField(null=True, blank=True)
     reminder_every_hours = models.PositiveSmallIntegerField(null=True, blank=True)
     reminder_text = models.CharField(max_length=200, blank=True)
+    reminder_lead_minutes = models.PositiveIntegerField(null=True, blank=True)
+    reminder_every_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -77,6 +83,8 @@ def _common_checks(prefix, allow_none_recurrence=True):
                 | Q(reminder_type="at_time", reminder_time__isnull=False)
                 | Q(reminder_type="repeating", reminder_time__isnull=False, reminder_every_hours__gte=1, reminder_every_hours__lte=24)
                 | Q(reminder_type="before_start")
+                | Q(reminder_type="countdown", reminder_lead_minutes__gte=15, reminder_lead_minutes__lte=10080,
+                    reminder_every_minutes__gte=15, reminder_every_minutes__lte=1440)
             ),
             name=f"{prefix}_reminder_ck",
         ),
@@ -126,6 +134,7 @@ class Task(UserOwnedSyncModel, Recurrence, Reminder):
         indexes = UserOwnedSyncModel.Meta.indexes + [models.Index(fields=["user_id", "start_date"], name="planning_task_date_idx")]
         constraints = _common_checks("planning_task") + [
             models.CheckConstraint(condition=~Q(reminder_type="before_start"), name="planning_task_reminder_kind_ck"),
+            models.CheckConstraint(condition=~Q(reminder_type="countdown") | Q(start_time__isnull=False), name="planning_task_countdown_ck"),
         ]
 
     def __str__(self):
@@ -210,7 +219,7 @@ class Habit(UserOwnedSyncModel, Recurrence, Reminder):
     class Meta(UserOwnedSyncModel.Meta):
         constraints = _common_checks("planning_habit", allow_none_recurrence=False) + [
             models.CheckConstraint(condition=~Q(rec_mode="none"), name="planning_habit_recurs_ck"),
-            models.CheckConstraint(condition=~Q(reminder_type="before_start"), name="planning_habit_reminder_kind_ck"),
+            models.CheckConstraint(condition=~Q(reminder_type__in=["before_start", "countdown"]), name="planning_habit_reminder_kind_ck"),
         ]
 
     def __str__(self):
@@ -266,6 +275,7 @@ class Event(UserOwnedSyncModel, Recurrence, Reminder):
                 condition=~Q(reminder_type="before_start") | Q(all_day=False, reminder_minutes_before__lte=10080),
                 name="planning_event_before_start_ck",
             ),
+            models.CheckConstraint(condition=~Q(reminder_type="countdown") | Q(all_day=False), name="planning_event_countdown_ck"),
         ]
 
     def __str__(self):

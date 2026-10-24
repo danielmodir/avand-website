@@ -74,6 +74,18 @@ const TOURS = {
     ['#add-popup .float-field', 'teTitle'], ['#add-popup [data-sub="calendar"]', 'teDate'], ['#add-popup [data-sub="repeat"]', 'taRepeat'],
     ['#add-popup [data-sub="notification"]', 'teRemind'], ['#popup-submit', 'taSave'],
   ])},
+  // The add form's Repeat and Reminder pages: the first time each opens.
+  repeat: { label: 'tourRepeat', available: () => state.popupOpen && state.popupSubView === 'repeat', steps: [
+    { sel: '#add-popup .popup-body .tj-select, #rec-mode-select', k: 'trKind' },
+    { sel: '#add-popup .weekday-picker, #add-popup .rec-every, #rec-day-btn', k: 'trDetail' },
+    { sel: '#add-popup .rec-confirm', k: 'trDone' },
+  ]},
+  reminder: { label: 'tourReminder', available: () => state.popupOpen && state.popupSubView === 'notification', steps: [
+    { sel: '#add-popup .popup-body .tj-select, #notif-type-select', k: 'tnKind' },
+    { sel: '#add-popup .tj-time, #add-popup .rec-every, #countdown-from, #add-popup .rec-block .tj-select', k: 'tnWhen' },
+    { sel: '#f-notif-text', k: 'tnText' },
+    { sel: '#notif-confirm', k: 'tnDone' },
+  ]},
 };
 
 /* The add form's steps: the first opens the form (unless it is already
@@ -229,7 +241,9 @@ const TOUR_DESKS = { planning: 'planning', occasionsDesktop: 'occasions', period
 let tourLastView = null; // null until the first look: the view the app opens on isn't "opened"
 function tourCurrentView(){
   let view = '';
-  if(state.popupOpen && !state.editingId && ['task', 'habit', 'event'].includes(state.popupType)) view = 'add' + state.popupType[0].toUpperCase() + state.popupType.slice(1);
+  if(state.popupOpen && state.popupSubView === 'repeat') view = 'repeat';
+  else if(state.popupOpen && state.popupSubView === 'notification') view = 'reminder';
+  else if(state.popupOpen && !state.editingId && ['task', 'habit', 'event'].includes(state.popupType)) view = 'add' + state.popupType[0].toUpperCase() + state.popupType.slice(1);
   else if(state.menuPanelOpen && state.menuSubView === 'friends') view = 'friends';
   else if(state.menuPanelOpen && state.menuSubView === 'admin') view = 'manage';
   else if(state.searchOpen) view = 'search';
