@@ -323,6 +323,10 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'close-period-quiz'){ closePeriodQuiz(); return; }
   if(action === 'period-quiz-next' || action === 'period-quiz-finish'){ periodQuizNext(); return; }
   if(action === 'period-quiz-back'){ periodQuizBack(); return; }
+  if(action === 'period-answer'){ periodAnswer(el.dataset.answer); return; }
+  if(action === 'period-ask-close'){ closePeriodAsk(); return; }
+  if(action === 'period-log-add'){ periodLogAdd(el.dataset.what); return; }
+  if(action === 'period-log-del'){ periodLogDelete(el.dataset.start); return; }
   if(action === 'logout-user'){
     /* Logging out now needs a 3s press-and-hold (see attachLogoutHold()),
        not a plain tap — a quick click just shows a hint toast instead. */

@@ -18,17 +18,36 @@ class PeriodEligible(BasePermission):
         return bool(request.user and profile and profile.gender == "female")
 
 
+class LogEntry(serializers.Serializer):
+    s = serializers.DateField()
+    e = serializers.DateField(required=False, allow_null=True)
+
+    def validate(self, data):
+        if data.get("e") and data["e"] < data["s"]:
+            raise serializers.ValidationError("end_before_start")
+        return {"s": data["s"].isoformat(), "e": data["e"].isoformat() if data.get("e") else None}
+
+
 class ProfileInput(serializers.Serializer):
-    cycle_length = serializers.IntegerField(min_value=18, max_value=60, required=False)
+    # Wide on purpose: unusual values are kept and the app shows a doctor note.
+    cycle_length = serializers.IntegerField(min_value=10, max_value=90, required=False)
     period_length = serializers.IntegerField(min_value=1, max_value=15, required=False)
     quiz_step = serializers.IntegerField(min_value=0, max_value=4, required=False)  # 4 = done
     show_on_calendar = serializers.BooleanField(required=False)
     enabled = serializers.BooleanField(required=False)
     last_start = serializers.DateField(required=False, allow_null=True)
     regular = serializers.ChoiceField(choices=["", "yes", "no", "unsure"], required=False)
-    pain = serializers.ChoiceField(choices=["", "none", "mild", "moderate", "severe"], required=False)
+    quiz_cycle = serializers.IntegerField(min_value=10, max_value=90, required=False, allow_null=True)
+    quiz_period = serializers.IntegerField(min_value=1, max_value=15, required=False, allow_null=True)
+    log = serializers.ListField(child=LogEntry(), max_length=24, required=False)
+    asked = serializers.DictField(child=serializers.DateField(), required=False)
     remind_days = serializers.IntegerField(min_value=0, max_value=3, required=False)
     version = serializers.IntegerField(min_value=0)
+
+    def validate_asked(self, value):
+        if len(value) > 20:
+            raise serializers.ValidationError("too_many")
+        return {str(k)[:40]: v.isoformat() for k, v in value.items()}
 
     def validate_last_start(self, value):
         return value.isoformat() if value else None  # stored inside encrypted JSON

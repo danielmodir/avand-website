@@ -119,16 +119,17 @@
 .desktop-box.period-mode{ transition:border-color .25s ease, box-shadow .25s ease; }
 .period-themed .switch.on{ box-shadow:0 0 0 3px var(--primary-soft), var(--glow-switch); }
 .period-themed .section-title .count{ color:var(--primary); }
-/* ===== period setup quiz (bottom sheet, slides up) ===== */
+/* ===== period setup quiz: a centered dialog (not a bottom sheet) ===== */
 .period-quiz-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .25s ease; }
 .period-quiz-overlay.show{ opacity:1; pointer-events:auto; }
 .period-quiz-sheet{
-  position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0; overflow:hidden;
-  z-index:71; box-shadow:0 -8px 24px rgba(0,0,0,0.4); max-height:72%;
-  transform:translateY(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+  position:absolute; left:50%; top:50%; width:min(400px, calc(100% - 32px)); max-height:min(560px, calc(100% - 48px));
+  background:var(--card); border-radius:24px; overflow:hidden; z-index:71; box-shadow:var(--shadow);
+  transform:translate(-50%,-50%) scale(.94); opacity:0; pointer-events:none;
+  transition:transform .26s cubic-bezier(.4,0,.2,1), opacity .2s ease;
   display:flex; flex-direction:column;
 }
-.period-quiz-sheet.show{ transform:translateY(0); }
+.period-quiz-sheet.show{ transform:translate(-50%,-50%) scale(1); opacity:1; pointer-events:auto; }
 .period-quiz-body{ padding:6px 22px 28px 22px; overflow-y:auto; scrollbar-width:none; }
 .period-quiz-body::-webkit-scrollbar{ display:none; }
 .period-quiz-step{ animation:stagger-in .32s cubic-bezier(.4,0,.2,1) both; }
@@ -150,16 +151,50 @@
   background:color-mix(in srgb, var(--period-flow, var(--primary)) 10%, transparent); }
 .period-quiz-nav{ display:flex; gap:10px; margin-top:6px; }
 .period-quiz-nav .btn{ flex:1; }
-.period-quiz-body .period-share-row{ padding-inline:0; }
 @media (min-width: 960px){
 .period-quiz-overlay{ position:fixed; }
-.period-quiz-sheet{
-  position:fixed; left:50%; right:auto; bottom:24px;
-  width:420px; max-width:90vw; max-height:70vh;
-  border-radius:20px; transform:translate(-50%,130%);
+.period-quiz-sheet{ position:fixed; width:420px; max-height:70vh; }
 }
-.period-quiz-sheet.show{ transform:translate(-50%,0); }
-}
+
+/* Numbers outside the usual range: a calm note instead of the ring. */
+.period-warn{ text-align:center; padding:8px 4px 4px; }
+.period-warn-icon{ width:44px; height:44px; margin:0 auto 10px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  color:var(--period-flow-ink, var(--primary)); background:color-mix(in srgb, var(--period-flow, var(--primary)) 16%, transparent); }
+.period-warn-icon svg{ width:24px; height:24px; }
+.period-warn-title{ font-size:16px; font-weight:800; margin-bottom:8px; }
+.period-warn p{ font-size:13.5px; line-height:1.8; margin:0 0 8px; color:var(--text); }
+.period-warn .period-warn-sub{ color:var(--text-muted); font-size:12.5px; margin-bottom:14px; }
+
+/* "Has it started / ended?" — a card on the desk and, once a day, a small
+   centered popup (maybeAskPeriod). */
+.period-ask{ margin-bottom:12px; padding:14px; border-radius:18px; border:1px solid var(--border);
+  background:color-mix(in srgb, var(--period-flow, var(--primary)) 12%, var(--card)); }
+.period-ask-q{ font-size:15px; font-weight:800; margin-bottom:6px; }
+.period-ask-sub{ font-size:12.5px; line-height:1.7; color:var(--text-muted); margin-bottom:8px; }
+.period-ask-btns{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.period-ask-btns .btn{ flex:1 1 auto; }
+.period-ask-overlay{ position:absolute; inset:0; z-index:80; display:flex; align-items:center; justify-content:center; padding:16px;
+  background:var(--overlay); opacity:0; transition:opacity .2s ease; }
+.period-ask-overlay.show{ opacity:1; }
+.period-ask-dialog{ position:relative; width:min(380px, 100%); padding:22px 18px 18px; border-radius:24px; background:var(--card); box-shadow:var(--shadow);
+  text-align:center; transform:scale(.95); transition:transform .22s cubic-bezier(.4,0,.2,1); }
+.period-ask-overlay.show .period-ask-dialog{ transform:scale(1); }
+.period-ask-dialog .popup-close{ position:absolute; top:10px; inset-inline-end:10px; }
+.period-ask-dialog .period-ask{ margin:0; border:none; background:none; padding:0; }
+.period-ask-icon{ width:46px; height:46px; margin:0 auto 10px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  color:var(--period-flow-ink, var(--primary)); background:color-mix(in srgb, var(--period-flow, var(--primary)) 18%, transparent); }
+.period-ask-icon svg{ width:24px; height:24px; }
+@media (min-width: 960px){ .period-ask-overlay{ position:fixed; } }
+
+/* The log under the ring. */
+.period-log-btns{ display:flex; flex-wrap:wrap; gap:8px; }
+.period-log-btns .btn{ flex:1 1 auto; }
+.period-log-list{ margin-top:12px; display:grid; gap:6px; }
+.period-log-row{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; font-size:13px; background:color-mix(in srgb, var(--text) 4%, transparent); }
+.period-log-row > span:first-child{ flex:1; min-width:0; }
+.period-log-days{ color:var(--text-muted); font-size:12px; white-space:nowrap; }
+.period-log-del{ width:28px; height:28px; border:none; border-radius:50%; background:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.period-log-del svg{ width:14px; height:14px; }
 
 /* Several cycles on the desk (own + shared by friends): arrows beside the
    ring, dots under it; someone else's cycle gets their name, a faint line

@@ -75,7 +75,7 @@ function reminderSlots(day){
   state.events.filter(e => occursOnDate(e, day)).forEach(e => forItem('event', e, false));
   // Her period, N days ahead (the setup popup's "remind me" answer), at 9.
   const pd = state.period, ahead = Number(pd && pd.remindDays) || 0;
-  if(ahead && pd.enabled && pd.step === 'done' && pd.lastStart && state.profile.gender === 'female'){
+  if(ahead && pd.enabled && pd.step === 'done' && pd.lastStart && state.profile.gender === 'female' && !periodAbnormal(pd)){
     const cycle = periodCycleLen(pd);
     let start = computePeriodCycleStart(pd);
     while(dateKey(start) < key) start = addDays(start, cycle);

@@ -56,7 +56,10 @@ Read the relevant doc before any big change.
   logo-header(-dark).svg, logo-mark.svg, og-image.svg) — light: cream mark with orange
   road lines on a forest circle; dark header: olive mark on an orange circle. The PNG
   sizes (favicon-48, apple-touch-icon, icon-192/512, logo-mark, og-image) are rendered
-  from those SVGs with headless Chrome. Change the drawing there, re-run, re-render.
+  from those SVGs with headless Chrome, and frontend/favicon.ico (16–64 px, made with
+  Pillow from icon-512.png; search engines ask for /favicon.ico). Change the drawing
+  there, re-run, re-render. Every icon/og-image URL carries ?v=tj5 — bump it so caches
+  drop an old logo.
 - /demo/ holds the HTML prototype. It must have noindex. noindex still applies, and the
   marketing site (outside /demo/) must still never describe it as the finished product.
   The visible "this is a preview" banner was removed by explicit product decision (SPEC.md §11.9).

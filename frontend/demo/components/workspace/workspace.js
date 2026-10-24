@@ -141,6 +141,7 @@ function goToDesktopIndex(i){
   // stays quiet until the animation settles).
   document.querySelectorAll('#desktop-dots span').forEach((el, idx) => el.classList.toggle('active', idx === i));
   syncDesktopTopbar(i);
+  tourWatch();
 }
 
 function attachDesktopPager(){
@@ -186,6 +187,7 @@ function attachDesktopPager(){
     settleTimer = setTimeout(() => {
       if(desktopPagerProgrammatic){ desktopPagerProgrammatic = false; shownIndex = state.activeDesktopIndex; return; }
       state.activeDesktopIndex = Math.round(Math.abs(wrap.scrollLeft) / wrap.clientWidth);
+      tourWatch();
     }, 120);
   }, {passive:true});
   /* Only a genuinely horizontal wheel/trackpad gesture switches

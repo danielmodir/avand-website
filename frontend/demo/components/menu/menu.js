@@ -817,13 +817,13 @@ function updateNav(){
     backBtn.classList.toggle('show', !sameDay(state.calCursor, today) || !sameDay(state.homeDate, today));
     const boxEl = document.getElementById('page-calendar');
     if(boxEl){
-      // Under the calendar, never over its days: just below the month
-      // grid; if the column is too short for that, below the frame itself.
+      // A fixed spot at the bottom of the calendar card, under the month:
+      // it doesn't follow the grid, so it stays put while the month grows
+      // or shrinks (5 or 6 weeks, density). The card keeps room for it
+      // (padding-bottom in css/layout.css), so it never covers a day.
       const boxRect = boxEl.getBoundingClientRect();
-      const gridEl = document.getElementById('cal-month-grid') || document.getElementById('cal-content');
       const h = backBtn.offsetHeight || 39;
-      let top = (gridEl ? gridEl.getBoundingClientRect().bottom : boxRect.bottom) + 12;
-      if(top + h > boxRect.bottom - BACK_TODAY_GAP) top = Math.min(boxRect.bottom + BACK_TODAY_GAP, window.innerHeight - h - 6);
+      const top = Math.min(boxRect.bottom - h - 14, window.innerHeight - h - 6);
       backBtn.style.left = (boxRect.left + boxRect.width / 2) + 'px';
       backBtn.style.bottom = 'auto';
       backBtn.style.top = top + 'px';

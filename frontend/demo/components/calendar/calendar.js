@@ -51,7 +51,7 @@ function rangeCellClass(day, map, col){
    start the user entered; nothing is drawn before it. */
 function periodPhaseOn(day){
   const p = state.period;
-  if(state.profile.gender !== 'female' || !p.enabled || p.step !== 'done' || !p.lastStart) return null;
+  if(state.profile.gender !== 'female' || !p.enabled || p.step !== 'done' || !p.lastStart || periodAbnormal(p)) return null;
   const since = daysBetween(parseDateKey(p.lastStart), day);
   if(since < 0) return null;
   const { len, segments } = periodCycleSegments();

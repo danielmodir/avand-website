@@ -82,13 +82,11 @@
 #page-calendar{
   display:block; position:relative;
   border:1px solid var(--border); border-radius:20px; background:var(--bg-soft);
-  padding:16px;
+  padding:16px 16px 64px;
   /* Same height:100%/frame treatment as #page-home's .desktop-box,
      so the two cards read as a matched pair instead of one being a
      short content-hugging box next to a tall one. The "back to
-     today" pill doesn't anchor to this card's own bottom edge
-     (which can sit far below the grid once this fills the column)
-     — it anchors to #cal-content's bottom instead, see
-     updateNav(). */
+     today" pill sits at a fixed spot in the 64px kept free at the
+     bottom (updateNav()), so it never moves with the month grid. */
 }
 }

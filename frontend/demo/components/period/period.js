@@ -355,7 +355,7 @@ function renderPeriodPage(headerHtml){
       <button class="btn btn-primary" style="width:100%; margin-top:12px;" data-action="period-quiz-start">${ICONS.dropIcon} ${t('startBtn')}</button>
       ${many ? `<div class="period-view-switch">${arrows}</div>${dots}` : ''}
     </div>
-  ` : (() => {
+  ` : view.own && periodAbnormal(p) ? `<div class="store-card">${periodAbnormalHtml(periodAbnormal(p))}</div>` : (() => {
     const cats = periodDayCategories(p);
     return `
       <div class="store-card">
@@ -371,8 +371,7 @@ function renderPeriodPage(headerHtml){
           <span class="period-legend-item"><span class="dot" style="background:var(--period-pms);"></span>${t('legendPms')}</span>
           <span class="period-legend-item"><span class="dot" style="background:var(--period-fertile);"></span>${t('legendFertile')}</span>
         </div>
-        ${view.own && p.regular === 'no' ? `<div class="period-q-note">${t('periodIrregularNote')}</div>` : ''}
-        ${view.own && p.pain === 'severe' ? `<div class="period-q-note">${t('periodPainSevereNote')}</div>` : ''}
+        ${view.own ? periodNotes(p).map(k => `<div class="period-q-note">${t(k)}</div>`).join('') : ''}
         <div class="empty-hint" style="margin-top:12px;">${t('periodDisclaimer')}</div>
       </div>
     `;
@@ -380,7 +379,9 @@ function renderPeriodPage(headerHtml){
   return `
     <div class="period-themed">
     ${headerHtml}
+    ${view.own ? periodCheckinHtml(periodCheckin()) : ''}
     ${trackerBody}
+    ${view.own && p.step === 'done' ? periodLogHtml() : ''}
     ${state.profile.gender === 'female' ? `<div class="section-title">${t('tipsTitle')}</div>${periodTipsHtml()}` : ''}
     </div>
   `;
@@ -454,14 +455,16 @@ function startPeriodTipsRotator(){
 
 /* Sensible ranges for the setup answers (it used to accept a 3-day cycle,
    a 40-day period or a start date a year ago). */
-const PERIOD_LIMITS = { lastStartDays: 45, cycle: [21, 45], period: [2, 10] };
+/* What the setup accepts. Wide on purpose: only typos are refused; an
+   unusual but real answer is kept and gets a doctor note (periodAbnormal). */
+const PERIOD_LIMITS = { lastStartDays: 45, cycle: [10, 90], period: [1, 15] };
 
-/* The setup popup: eight short questions, one per screen (the sheet slides
-   up from the bottom). It works on a draft; the real setup only changes
-   on "Finish", so closing it half way leaves an existing setup exactly as
-   it was. Sharing (the last step) saves at once, like in Settings. */
+/* The setup popup: five short questions, one per screen, in a centered
+   dialog. It works on a draft; the real setup only changes on "Finish", so
+   closing it half way leaves an existing setup exactly as it was. Showing
+   it on the calendar and sharing with friends stay in Settings → Period. */
 let periodDraft = null;
-const PERIOD_QUIZ_STEPS = 8;
+const PERIOD_QUIZ_STEPS = 5;
 
 function periodChoiceHtml(field, options){
   const d = periodDraft;
@@ -482,16 +485,8 @@ function periodQuizStepHtml(){
     html = q('periodQ3', `<input type="number" inputmode="numeric" id="period-q3" value="${d.periodLength}" min="${PERIOD_LIMITS.period[0]}" max="${PERIOD_LIMITS.period[1]}">`, 'periodQ3Hint');
   } else if(d.step === 4){
     html = q('periodQ4', periodChoiceHtml('regular', [['yes', 'regYes'], ['no', 'regNo'], ['unsure', 'regUnsure']]), 'periodQ4Hint');
-  } else if(d.step === 5){
-    html = q('periodQ5', periodChoiceHtml('pain', [['none', 'painNone'], ['mild', 'painMild'], ['moderate', 'painModerate'], ['severe', 'painSevere']]))
-      + (d.pain === 'severe' ? `<div class="period-q-note">${t('periodPainSevereNote')}</div>` : '');
-  } else if(d.step === 6){
-    html = q('periodQ6', periodChoiceHtml('remindDays', [[0, 'remindNone'], [1, 'remindDays1'], [2, 'remindDays2'], [3, 'remindDays3']]), 'periodQ6Hint');
-  } else if(d.step === 7){
-    html = q('periodQ7', periodChoiceHtml('calendarReminder', [[true, 'answerYes'], [false, 'answerNo']]));
   } else {
-    const canShare = Cloud.periodShares && Cloud.hasSession();
-    html = q('periodQ8', canShare ? periodShareRowHtml() : `<div class="period-q-note">${t('periodShareLater')}</div>`, canShare ? 'periodQ8Hint' : '');
+    html = q('periodQ6', periodChoiceHtml('remindDays', [[0, 'remindNone'], [1, 'remindDays1'], [2, 'remindDays2'], [3, 'remindDays3']]), 'periodQ6Hint');
   }
   const last = d.step === PERIOD_QUIZ_STEPS;
   return `
@@ -519,14 +514,15 @@ function renderPeriodQuiz(){
   document.getElementById('period-q3')?.addEventListener('input', e => { d.periodLength = e.target.value; });
   body.querySelectorAll('[data-period-pick]').forEach(b => b.addEventListener('click', () => {
     const f = b.dataset.periodPick, v = b.dataset.value;
-    d[f] = f === 'remindDays' ? Number(v) : f === 'calendarReminder' ? v === 'true' : v;
+    d[f] = f === 'remindDays' ? Number(v) : v;
     d.error = '';
     renderPeriodQuiz();
   }));
 }
 
-/* "Next" / "Finish": check this step's answer, stay on it with a message
-   if it's out of range. The choice questions can be skipped. */
+/* "Next" / "Finish": a step only stops on an answer that can't be real
+   (a typo); unusual but possible answers are taken, and the desk then shows
+   a doctor note instead of a guess (periodAbnormal below). */
 function periodQuizNext(){
   const d = periodDraft;
   const inRange = (v, [lo, hi]) => Number.isInteger(v) && v >= lo && v <= hi;
@@ -542,9 +538,14 @@ function periodQuizNext(){
     if(!inRange(v, PERIOD_LIMITS.period) || v >= d.cycleLength){ d.error = t('periodLengthInvalid'); renderPeriodQuiz(); return; }
     d.periodLength = v;
   } else if(d.step === PERIOD_QUIZ_STEPS){
-    Object.assign(state.period, { lastStart: d.lastStart, cycleLength: d.cycleLength, periodLength: d.periodLength,
-      regular: d.regular, pain: d.pain, remindDays: d.remindDays, calendarReminder: d.calendarReminder, step: 'done', enabled: true });
-    savePeriodSetup();
+    const p = state.period;
+    Object.assign(p, { lastStart: d.lastStart, cycleLength: d.cycleLength, periodLength: d.periodLength,
+      quizCycle: d.cycleLength, quizPeriod: d.periodLength, regular: d.regular, remindDays: d.remindDays, step: 'done', enabled: true });
+    // The answered start goes into the log too, so the "has it ended?"
+    // question can follow it and the estimates can learn from it.
+    const log = periodLogOf(p);
+    if(!log.some(x => Math.abs(daysBetween(parseDateKey(x.s), parseDateKey(d.lastStart))) < 10)) log.push({ s: d.lastStart, e: null });
+    setPeriodLog(log);
     periodDraft = null;
     closePeriodQuiz();
     render();
@@ -561,6 +562,213 @@ function periodQuizBack(){
   d.step--; d.error = '';
   renderPeriodQuiz();
 }
+
+/* ============ PERIOD LOG, CHECK-INS AND THE "SEE A DOCTOR" CASE ============
+   state.period.log: [{ s: start 'YYYY-MM-DD', e: end or null }], newest
+   last (at most PERIOD_LOG_MAX). Every change re-estimates the setup from
+   it: the latest start, the average gap between starts and the average
+   length, each blended with the setup answers so one odd month doesn't
+   swing everything. Ranges from the period knowledge base (2026-10):
+   cycle 21–35 days (NHS, S01) / 24–38 (FIGO, S37), up to 45 for teens
+   (NICHD, S15); bleeding 2–7 days (NHS) / up to 8 (FIGO). Outside them
+   the app shows a gentle "talk to a doctor" note instead of predictions
+   (warnings WY18 / WY19); it never diagnoses. */
+const PERIOD_LOG_MAX = 24;
+const PERIOD_NORMAL = { cycleMin: 21, cycleMaxAdult: 38, cycleMaxTeen: 45, periodMax: 8, swing: 9, missedCycles: 3 };
+
+function periodLogOf(p = state.period){ return Array.isArray(p.log) ? p.log.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(x.s)) : []; }
+
+function setPeriodLog(log){
+  const p = state.period;
+  log = log.slice().sort((a, b) => a.s < b.s ? -1 : 1).slice(-PERIOD_LOG_MAX);
+  p.log = log;
+  const avg = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+  if(log.length){
+    p.lastStart = log[log.length - 1].s;
+    const gaps = [];
+    for(let i = 1; i < log.length; i++){
+      const g = daysBetween(parseDateKey(log[i - 1].s), parseDateKey(log[i].s));
+      if(g >= 10 && g <= 120) gaps.push(g); // a much bigger gap: months not logged
+    }
+    const lens = log.filter(x => x.e).map(x => daysBetween(parseDateKey(x.s), parseDateKey(x.e)) + 1).filter(n => n >= 1 && n <= 20);
+    const qc = Number(p.quizCycle) || Number(p.cycleLength) || 28, qp = Number(p.quizPeriod) || Number(p.periodLength) || 5;
+    if(gaps.length) p.cycleLength = Math.round(avg([...gaps.slice(-6), qc]));
+    if(lens.length) p.periodLength = Math.round(avg([...lens.slice(-6), qp]));
+  }
+  savePeriodSetup();
+}
+
+function periodAgeYears(){
+  const dob = state.profile && state.profile.dob;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(dob || '')) return null;
+  return Math.floor(daysBetween(parseDateKey(dob), today) / 365.25);
+}
+
+/* '' when the numbers look usual; else which one is unusual. Only for
+   her own setup (a friend's shared cycle is shown as it comes). */
+function periodAbnormal(p = state.period){
+  if(p !== state.period || p.step !== 'done') return '';
+  const c = Number(p.cycleLength), len = Number(p.periodLength);
+  const age = periodAgeYears();
+  const max = age !== null && age < 18 ? PERIOD_NORMAL.cycleMaxTeen : PERIOD_NORMAL.cycleMaxAdult;
+  if(c && c < PERIOD_NORMAL.cycleMin) return 'short';
+  if(c && c > max) return 'long';
+  if(len && len > PERIOD_NORMAL.periodMax) return 'longBleed';
+  return '';
+}
+
+/* Gentler notes that keep the ring: gaps that swing a lot, or a long
+   time without a logged start. */
+function periodNotes(p = state.period){
+  const out = [];
+  const log = periodLogOf(p);
+  const gaps = [];
+  for(let i = 1; i < log.length; i++) gaps.push(daysBetween(parseDateKey(log[i - 1].s), parseDateKey(log[i].s)));
+  const recent = gaps.filter(g => g >= 10 && g <= 120).slice(-4);
+  if(recent.length >= 3 && Math.max(...recent) - Math.min(...recent) > PERIOD_NORMAL.swing) out.push('periodNoteSwing');
+  else if(p.regular === 'no') out.push('periodIrregularNote');
+  if(log.length && daysBetween(parseDateKey(log[log.length - 1].s), today) >= PERIOD_NORMAL.missedCycles * (Number(p.cycleLength) || 28)) out.push('periodNoteMissed');
+  return out;
+}
+
+function periodAbnormalHtml(kind){
+  const p = state.period, age = periodAgeYears();
+  const max = age !== null && age < 18 ? PERIOD_NORMAL.cycleMaxTeen : PERIOD_NORMAL.cycleMaxAdult;
+  const text = kind === 'longBleed'
+    ? t('periodWarnBleed').replace('{n}', dig(p.periodLength)).replace('{max}', dig(PERIOD_NORMAL.periodMax))
+    : t('periodWarnCycle').replace('{n}', dig(p.cycleLength)).replace('{min}', dig(PERIOD_NORMAL.cycleMin)).replace('{max}', dig(max));
+  return `<div class="period-warn" role="alert" dir="${lang() === 'fa' ? 'rtl' : 'ltr'}">
+    <div class="period-warn-icon">${ICONS.infoIcon}</div>
+    <div class="period-warn-title">${t('periodWarnTitle')}</div>
+    <p>${escapeHtml(text)}</p>
+    <p class="period-warn-sub">${t('periodWarnSub')}</p>
+    <button class="btn btn-outline btn-small" data-action="period-quiz-start">${t('editAnswers')}</button>
+  </div>`;
+}
+
+/* ---- check-ins: "has it started?" around the expected day, "has it
+   ended?" once it should be over. Asked once a day at most (state.period.
+   asked: { question key: last day asked }); "not yet" asks again tomorrow. */
+function periodCheckin(){
+  const p = state.period;
+  if(state.guest || state.profile.gender !== 'female' || !p.enabled || p.step !== 'done' || !p.lastStart || periodAbnormal(p)) return null;
+  const log = periodLogOf(p), last = log[log.length - 1];
+  const todayKey = dateKey(today);
+  if(last && !last.e){
+    const since = daysBetween(parseDateKey(last.s), today);
+    if(since >= Math.max(1, periodLen(p) - 1) && since <= 14) return { kind: 'end', key: 'end|' + last.s, start: last.s };
+    if(since <= 14) return null;
+  }
+  const cycle = periodCycleLen(p);
+  let next = computePeriodCycleStart(p);
+  if(daysBetween(next, today) > 10) next = addDays(next, cycle);
+  const off = daysBetween(next, today); // >0: that many days after the expected start
+  if(off < -2 || off > 10) return null;
+  if(log.some(x => Math.abs(daysBetween(parseDateKey(x.s), next)) <= 10)) return null;
+  return { kind: 'start', key: 'start|' + dateKey(next), expected: dateKey(next), late: off > 3 };
+}
+
+function periodCheckinHtml(c){
+  if(!c) return '';
+  const q = c.kind === 'end' ? t('periodAskEnd') : c.late ? t('periodAskStartLate') : t('periodAskStart');
+  const btns = c.kind === 'end'
+    ? `<button class="btn btn-primary btn-small" data-action="period-answer" data-answer="ended">${t('periodAnsEnded')}</button>
+       <button class="btn btn-outline btn-small" data-action="period-answer" data-answer="ended-earlier">${t('periodAnsEarlier')}</button>
+       <button class="btn btn-outline btn-small" data-action="period-answer" data-answer="not-yet">${t('periodAnsNotYet')}</button>`
+    : `<button class="btn btn-primary btn-small" data-action="period-answer" data-answer="started">${t('periodAnsStarted')}</button>
+       <button class="btn btn-outline btn-small" data-action="period-answer" data-answer="started-earlier">${t('periodAnsEarlier')}</button>
+       <button class="btn btn-outline btn-small" data-action="period-answer" data-answer="not-yet">${t('periodAnsNotYet')}</button>`;
+  return `<div class="period-ask" dir="${lang() === 'fa' ? 'rtl' : 'ltr'}"><div class="period-ask-q">${q}</div>
+    ${c.kind === 'start' && c.late ? `<div class="period-ask-sub">${t('periodLateNote')}</div>` : ''}
+    <div class="period-ask-btns">${btns}</div></div>`;
+}
+
+/* A check-in answer, from the desk card or the popup. */
+function periodAnswer(answer){
+  const c = periodCheckin();
+  if(!c) return;
+  const p = state.period;
+  const done = () => { closePeriodAsk(); render(); };
+  if(answer === 'not-yet'){
+    p.asked = Object.assign({}, p.asked, { [c.key]: dateKey(today) });
+    savePeriodSetup(); done(); return;
+  }
+  const log = periodLogOf(p);
+  if(answer === 'started'){ log.push({ s: dateKey(today), e: null }); setPeriodLog(log); done(); showToast(t('periodLogged')); return; }
+  if(answer === 'ended'){ log[log.length - 1].e = dateKey(today); setPeriodLog(log); done(); showToast(t('periodLogged')); return; }
+  // "Earlier": which day.
+  const isEnd = answer === 'ended-earlier';
+  closePeriodAsk();
+  openDatePicker({
+    title: t(isEnd ? 'periodPickEnd' : 'periodPickStart'), value: dateKey(today), max: dateKey(today),
+    min: isEnd ? c.start : dateKey(addDays(today, -20)),
+    onPick: v => {
+      if(isEnd) log[log.length - 1].e = v; else log.push({ s: v, e: null });
+      setPeriodLog(log); render(); showToast(t('periodLogged'));
+    },
+  });
+}
+
+/* Once a day at most, when the app opens: the same question as a small
+   centered popup, worded gently. */
+function maybeAskPeriod(){
+  const c = periodCheckin();
+  if(!c || (state.period.asked || {})[c.key] === dateKey(today) || document.getElementById('period-ask-overlay')) return;
+  try{ if(localStorage.getItem('toojibee-period-asked') === c.key + '|' + dateKey(today)) return; localStorage.setItem('toojibee-period-asked', c.key + '|' + dateKey(today)); }catch(e){}
+  const el = document.createElement('div');
+  el.id = 'period-ask-overlay';
+  el.className = 'period-ask-overlay period-themed';
+  el.innerHTML = `<div class="period-ask-dialog" role="dialog" aria-modal="true">
+    <button type="button" class="popup-close" data-action="period-ask-close" aria-label="${t('closeBtn')}">${ICONS.close}</button>
+    <div class="period-ask-icon">${ICONS.dropIcon}</div>${periodCheckinHtml(c)}</div>`;
+  el.addEventListener('click', e => { if(e.target === el) closePeriodAsk(); });
+  document.getElementById('device').appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+}
+function closePeriodAsk(){ document.getElementById('period-ask-overlay')?.remove(); }
+
+/* The log under the ring: add a start or an end on any day (also an
+   unusual one), and the recent periods with a remove button. */
+function periodLogHtml(){
+  const log = periodLogOf();
+  const open = log.length && !log[log.length - 1].e;
+  const rows = log.slice(-6).reverse().map(x => {
+    const days = x.e ? daysBetween(parseDateKey(x.s), parseDateKey(x.e)) + 1 : null;
+    return `<div class="period-log-row"><span>${formatDateLabel(x.s)}${x.e ? ' – ' + formatDateLabel(x.e) : ' – …'}</span>
+      ${days ? `<span class="period-log-days">${t('periodDaysN').replace('{n}', dig(days))}</span>` : ''}
+      <button type="button" class="period-log-del" data-action="period-log-del" data-start="${x.s}" aria-label="${t('remove')}">${ICONS.close}</button></div>`;
+  }).join('');
+  return `<div class="section-title" dir="${lang() === 'fa' ? 'rtl' : 'ltr'}">${t('periodLogTitle')}</div>
+    <div class="store-card period-log" dir="${lang() === 'fa' ? 'rtl' : 'ltr'}">
+      <div class="period-log-btns">
+        <button class="btn btn-primary btn-small" data-action="period-log-add" data-what="start">${ICONS.dropIcon} ${t('periodLogStart')}</button>
+        ${open ? `<button class="btn btn-outline btn-small" data-action="period-log-add" data-what="end">${t('periodLogEnd')}</button>` : ''}
+      </div>
+      ${rows ? `<div class="period-log-list">${rows}</div>` : `<div class="empty-hint">${t('periodLogEmpty')}</div>`}
+    </div>`;
+}
+
+function periodLogAdd(what){
+  const log = periodLogOf();
+  const open = log.length && !log[log.length - 1].e ? log[log.length - 1] : null;
+  if(what === 'end' && open){
+    openDatePicker({ title: t('periodPickEnd'), value: dateKey(today), max: dateKey(today), min: open.s,
+      onPick: v => { open.e = v; setPeriodLog(log); render(); showToast(t('periodLogged')); } });
+    return;
+  }
+  openDatePicker({ title: t('periodPickStart'), value: dateKey(today), max: dateKey(today), min: dateKey(addDays(today, -365)),
+    onPick: v => {
+      if(log.some(x => x.s === v)){ showToast(t('periodLogDup')); return; }
+      if(open && v > open.s && !open.e) open.e = dateKey(addDays(parseDateKey(open.s), periodLen() - 1)); // a new start closes the old one
+      log.push({ s: v, e: null }); setPeriodLog(log); render(); showToast(t('periodLogged'));
+    } });
+}
+
+function periodLogDelete(start){
+  const log = periodLogOf().filter(x => x.s !== start);
+  if(!log.length){ state.period.log = []; savePeriodSetup(); render(); return; }
+  setPeriodLog(log); render();
+}
 function openPeriodQuiz(){
   const p = state.period;
   const oldest = dateKey(addDays(today, -PERIOD_LIMITS.lastStartDays));
@@ -569,8 +777,8 @@ function openPeriodQuiz(){
   let last = p.lastStart;
   if(p.step === 'done' && last && last < oldest){ const c = dateKey(computePeriodCycleStart()); last = c >= oldest ? c : null; }
   if(!last || last < oldest || last > dateKey(today)) last = null;
-  periodDraft = { step: 1, lastStart: last, cycleLength: p.cycleLength || 28, periodLength: p.periodLength || 5, error: '',
-    regular: p.regular || '', pain: p.pain || '', remindDays: Number(p.remindDays) || 0, calendarReminder: !!p.calendarReminder };
+  periodDraft = { step: 1, lastStart: last, cycleLength: p.quizCycle || p.cycleLength || 28, periodLength: p.quizPeriod || p.periodLength || 5, error: '',
+    regular: p.regular || '', remindDays: Number(p.remindDays) || 0 };
   document.getElementById('period-quiz-overlay').classList.add('show');
   document.getElementById('period-quiz-sheet').classList.add('show');
   renderPeriodQuiz();

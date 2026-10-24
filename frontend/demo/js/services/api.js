@@ -631,12 +631,15 @@
     periodVersion = r.version || 0;
     return { enabled: !!r.enabled, lastStart: r.last_start || null, cycleLength: r.cycle_length, periodLength: r.period_length,
              step: r.quiz_step === 4 ? 'done' : (r.quiz_step || 0), calendarReminder: !!r.show_on_calendar,
-             regular: r.regular || '', pain: r.pain || '', remindDays: r.remind_days || 0 };
+             regular: r.regular || '', remindDays: r.remind_days || 0, quizCycle: r.quiz_cycle || null, quizPeriod: r.quiz_period || null,
+             log: Array.isArray(r.log) ? r.log : [], asked: r.asked || {} };
   }
   async function savePeriod(pd) {
     var body = { enabled: !!pd.enabled, last_start: pd.lastStart || null, cycle_length: Number(pd.cycleLength) || 28,
                  period_length: Number(pd.periodLength) || 5, quiz_step: pd.step === 'done' ? 4 : (Number(pd.step) || 0),
-                 show_on_calendar: !!pd.calendarReminder, regular: pd.regular || '', pain: pd.pain || '',
+                 show_on_calendar: !!pd.calendarReminder, regular: pd.regular || '',
+                 quiz_cycle: Number(pd.quizCycle) || null, quiz_period: Number(pd.quizPeriod) || null,
+                 log: (pd.log || []).slice(-24).map(function (x) { return { s: x.s, e: x.e || null }; }), asked: pd.asked || {},
                  remind_days: Math.min(3, Math.max(0, Number(pd.remindDays) || 0)), version: periodVersion };
     try { periodFromApi(await request('PUT', '/period/profile', body)); }
     catch (e) {

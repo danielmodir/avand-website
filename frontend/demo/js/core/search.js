@@ -128,6 +128,7 @@ function wireSearch(){
 function openSearch(){
   wireSearch();
   state.searchOpen = true; state.navExpanded = false;
+  setTimeout(tourWatch, 0);
   const input = document.getElementById('search-input');
   if(input) input.placeholder = t('searchPlaceholder');
   document.querySelector('#search-bar .search-bar-close')?.setAttribute('aria-label', t('closeSearch'));

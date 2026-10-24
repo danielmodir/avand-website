@@ -33,10 +33,16 @@ class PeriodTests(ApiTestCase):
         self.assertTrue(self.client.get("/api/v1/period/profile").json()["enabled"])
 
     def test_setup_popup_answers_are_saved(self):
-        body = {"regular": "no", "pain": "moderate", "remind_days": 2, "version": 0}
-        self.assertEqual(self.client.put("/api/v1/period/profile", body, format="json").status_code, 200)
+        body = {"regular": "no", "remind_days": 2, "quiz_cycle": 30, "cycle_length": 18, "version": 0,
+                "log": [{"s": "2026-09-01", "e": "2026-09-05"}, {"s": "2026-10-01", "e": None}], "asked": {"start|2026-10-29": "2026-10-24"}}
+        saved = self.client.put("/api/v1/period/profile", body, format="json")
+        self.assertEqual(saved.status_code, 200, saved.content)
         got = self.client.get("/api/v1/period/profile").json()
-        self.assertEqual((got["regular"], got["pain"], got["remind_days"]), ("no", "moderate", 2))
+        self.assertEqual((got["regular"], got["remind_days"], got["quiz_cycle"], got["cycle_length"]), ("no", 2, 30, 18))
+        self.assertEqual(got["log"], [{"s": "2026-09-01", "e": "2026-09-05"}, {"s": "2026-10-01", "e": None}])
+        self.assertEqual(got["asked"], {"start|2026-10-29": "2026-10-24"})
+        backwards = self.client.put("/api/v1/period/profile", {"log": [{"s": "2026-10-05", "e": "2026-10-01"}], "version": got["version"]}, format="json")
+        self.assertEqual(backwards.status_code, 400)
         bad = self.client.put("/api/v1/period/profile", {"remind_days": 9, "version": got["version"]}, format="json")
         self.assertEqual(bad.status_code, 400)
 

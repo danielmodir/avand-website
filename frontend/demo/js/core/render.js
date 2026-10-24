@@ -112,4 +112,5 @@ function render(){
     stopPeriodTipsRotator();
   }
   syncBackSteps(); // Back closes what's open (js/core/back-nav.js)
+  tourWatch(); // a part opened for the first time: its tutorial (tour.js)
 }

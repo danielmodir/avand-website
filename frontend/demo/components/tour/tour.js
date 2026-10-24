@@ -5,8 +5,13 @@
    opened (remembered on the device); every tour can be started again
    from Profile → Tutorials, which goes to that part of the app first.
    The period tour is offered only while the period desk is on. A step
-   whose target isn't on screen is skipped, so a tour never gets stuck. */
-const TOUR_DONE_KEY = 'toojibee-tour-done-v1';
+   whose target isn't on screen is skipped, so a tour never gets stuck.
+   Only for people with an account (not guests). Each tour runs by itself
+   once: the general one on the first visit, the others the first time
+   their part is opened (maybeFeatureTour). Finished or skipped, it is
+   remembered on the account (settings.prefs.tour<Id>, synced like every
+   setting) and on the device, so signing in again doesn't repeat it. */
+const TOUR_SEEN_KEY = 'toojibee-tours-seen-v2';
 
 function tourOpenMenu(sub){ state.menuPanelOpen = true; state.menuSubView = sub; render(); }
 function tourCloseMenu(){ if(state.menuPanelOpen){ state.menuPanelOpen = false; state.menuSubView = null; render(); } }
@@ -55,9 +60,42 @@ const TOURS = {
   ]},
   period: { label: 'tourPeriod', available: () => typeof periodViews === 'function' && periodViews().length > 0, steps: [
     { sel: '.period-pane, .desktop-box', k: 'tdRing', prep: () => tourGoToDesk('periodDesktop') },
+    { sel: '.period-log', k: 'tdLog' },
     { sel: '.desktop-box', k: 'tdShare' },
   ]},
+  addTask: { label: 'tourAddTask', steps: tourAddSteps('task', [
+    ['#add-popup .float-field', 'taTitle'], ['#add-subtask-btn', 'taSub'], ['#add-popup [data-sub="calendar"]', 'taDate'],
+    ['#add-popup [data-sub="repeat"]', 'taRepeat'], ['#add-popup [data-sub="notification"]', 'taRemind'], ['#f-description', 'taDesc'], ['#popup-submit', 'taSave'],
+  ])},
+  addHabit: { label: 'tourAddHabit', steps: tourAddSteps('habit', [
+    ['#add-popup .float-field', 'thTitle'], ['#add-popup [data-sub="repeat"]', 'thRepeat'], ['#add-popup [data-sub="notification"]', 'taRemind'], ['#popup-submit', 'taSave'],
+  ])},
+  addEvent: { label: 'tourAddEvent', steps: tourAddSteps('event', [
+    ['#add-popup .float-field', 'teTitle'], ['#add-popup [data-sub="calendar"]', 'teDate'], ['#add-popup [data-sub="repeat"]', 'taRepeat'],
+    ['#add-popup [data-sub="notification"]', 'teRemind'], ['#popup-submit', 'taSave'],
+  ])},
 };
+
+/* The add form's steps: the first opens the form (unless it is already
+   open, as when the tour starts because the person opened it). */
+function tourAddSteps(type, list){
+  return list.map(([sel, k], i) => i ? { sel, k } : { sel, k, prep: () => {
+    if(!(state.popupOpen && state.popupType === type && !state.editingId)){ tourCloseMenu(); openPopup(type, null); }
+  } });
+}
+
+function tourPrefKey(id){ return 'tour' + id[0].toUpperCase() + id.slice(1); }
+function tourSeenLocal(){ try{ return JSON.parse(localStorage.getItem(TOUR_SEEN_KEY)) || {}; }catch(e){ return {}; } }
+function tourSeen(id){ return !!(state.settings.prefs && state.settings.prefs[tourPrefKey(id)]) || !!tourSeenLocal()[id]; }
+function markTourSeen(id){
+  const local = tourSeenLocal(); local[id] = 1;
+  try{ localStorage.setItem(TOUR_SEEN_KEY, JSON.stringify(local)); }catch(e){}
+  if(state.settings.prefs && state.settings.prefs[tourPrefKey(id)]) return;
+  state.settings.prefs = Object.assign({}, state.settings.prefs, { [tourPrefKey(id)]: true });
+  cloudSync(() => Cloud.saveSettings(state.settings));
+}
+/* A real user on a ready screen: no guests, no sign-in page, no boot screen. */
+function tourAllowed(){ return !state.guest && !state.authOpen && !state.authScreen && !state.booting && !state.bootError; }
 
 let tour = null; // { id, i }
 
@@ -122,6 +160,7 @@ async function tourShow(dir = 1){
   }
   el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   const last = tour.i === steps.length - 1;
+  document.getElementById('tour-card').dir = lang() === 'fa' ? 'rtl' : 'ltr'; // the app is LTR outside the calendar
   document.getElementById('tour-card').innerHTML = `
     <div class="tour-progress">${steps.map((_, j) => `<i class="${j === tour.i ? 'on' : ''}"></i>`).join('')}</div>
     <div class="tour-title">${escapeHtml(t(step.k + 'T'))}</div>
@@ -163,7 +202,8 @@ function tourPlace(){
 }
 
 function endTour(markDone){
-  if(markDone){ try{ localStorage.setItem(TOUR_DONE_KEY, '1'); }catch(e){} }
+  if(markDone && tour) markTourSeen(tour.id);
+  if(tour) tourLastView = tourCurrentView(); // where the tour left off isn't a new opening
   tour = null;
   document.getElementById('tour-root')?.remove();
   window.removeEventListener('resize', tourPlace);
@@ -172,10 +212,41 @@ function endTour(markDone){
 
 /* First visit: the general tour, once, after the app has drawn. */
 function maybeStartFirstTour(){
-  let done = false;
-  try{ done = localStorage.getItem(TOUR_DONE_KEY) === '1'; }catch(e){ done = true; }
-  if(done || state.authOpen || document.getElementById('bday-overlay')) return;
-  setTimeout(() => { if(!tour && !state.authOpen) startTour('general'); }, 700);
+  if(!tourAllowed() || tourSeen('general') || document.getElementById('bday-overlay')) return;
+  setTimeout(() => { if(!tour && tourAllowed() && !tourSeen('general')) startTour('general'); }, 700);
+}
+
+/* The first time a part of the app is opened: its own tour (after the
+   view has drawn). Not while another tour runs, nor before the general one. */
+function maybeFeatureTour(id){
+  if(tour || !tourAllowed() || !tourAvailable(id) || tourSeen(id) || !tourSeen('general')) return;
+  setTimeout(() => { if(!tour && tourAllowed() && !tourSeen(id)) startTour(id); }, 450);
+}
+
+/* Which part is open now, checked after each render and desk change: when
+   it changes to one with a tour, that tour runs the first time. */
+const TOUR_DESKS = { planning: 'planning', occasionsDesktop: 'occasions', periodDesktop: 'period' };
+let tourLastView = null; // null until the first look: the view the app opens on isn't "opened"
+function tourCurrentView(){
+  let view = '';
+  if(state.popupOpen && !state.editingId && ['task', 'habit', 'event'].includes(state.popupType)) view = 'add' + state.popupType[0].toUpperCase() + state.popupType.slice(1);
+  else if(state.menuPanelOpen && state.menuSubView === 'friends') view = 'friends';
+  else if(state.menuPanelOpen && state.menuSubView === 'admin') view = 'manage';
+  else if(state.searchOpen) view = 'search';
+  else if(state.calFull) view = 'calendar';
+  else if(!state.menuPanelOpen && !state.popupOpen){
+    const dot = document.querySelectorAll('#desktop-dots span')[state.activeDesktopIndex || 0];
+    view = (dot && TOUR_DESKS[dot.dataset.key]) || '';
+  }
+  return view;
+}
+function tourWatch(){
+  if(tour) return;
+  const view = tourCurrentView();
+  if(tourLastView === null){ tourLastView = view; return; }
+  if(view === tourLastView) return;
+  tourLastView = view;
+  if(view) maybeFeatureTour(view);
 }
 
 /* Profile → Tutorials: the list. */

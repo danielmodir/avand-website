@@ -109,6 +109,14 @@ async function handleEmailLink(){
   catch(err){ showToast(authErrorMessage(err)); }
 }
 
+/* On entering the app, at most one thing on top of it, in this order: a
+   birthday greeting, the gentle period question, the first-visit tour. */
+function welcomeChain(){
+  maybeShowBirthday();
+  if(document.getElementById('bday-overlay')) return;
+  setTimeout(() => { maybeAskPeriod(); if(!document.getElementById('period-ask-overlay')) maybeStartFirstTour(); }, 400);
+}
+
 async function boot(){
   if(REAL_LOGIN_DISABLED){
     // No backend (the live site today): this device's own saved data, no
@@ -117,7 +125,7 @@ async function boot(){
     loadLocalData();
     render();
     startReminders(); takeReminderFromLink(); // js/core/notify.js
-    maybeShowBirthday(); maybeStartFirstTour();
+    welcomeChain();
     return;
   }
   try{ await Cloud.consumeOAuthRedirect(); }  // back from Google: #login_code -> tokens
@@ -146,9 +154,8 @@ async function boot(){
   }
   handleEmailLink();
   openAuthFromLink();
-  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); maybeShowBirthday(); }
+  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); welcomeChain(); }
   else if(state.guest && pendingInvite() && !state.authOpen) openAuth('signup', 'inviteSignInFirst');
-  if(!state.bootError) maybeStartFirstTour(); // the first visit: the general tour, once
 }
 
 /* A friend's invite link (/demo/#invite=CODE): remembered until the person
