@@ -406,6 +406,14 @@ function tj_migrate(PDO $db): void {
         }
         $db->exec('INSERT INTO tj_schema (version) VALUES (20)');
     }
+    if ($v < 21) {
+        // Two seeded titles too long for search results (data/articles/*.md
+        // has the new ones); only if nobody has retitled them in the panel.
+        $retitle = $db->prepare("UPDATE tj_articles SET title = ? WHERE lang = 'fa' AND slug = ? AND title = ?");
+        $retitle->execute(['فهرست کارها و مدیریت زمان؛ لیستی که واقعاً انجام شود', 'todo-list-time-management', 'فهرست کارها و مدیریت زمان؛ چطور لیست کارهایی بنویسیم که واقعاً انجام شود']);
+        $retitle->execute(['تقویم هخامنشی و گاه‌شماری زرتشتی؛ شمارش روزها در ایران باستان', 'zoroastrian-achaemenid-calendar', 'تقویم هخامنشی و گاه‌شماری زرتشتی؛ ایرانیان باستان چگونه روزها را می‌شمردند؟']);
+        $db->exec('INSERT INTO tj_schema (version) VALUES (21)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,
