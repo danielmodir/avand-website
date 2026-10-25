@@ -40,6 +40,7 @@ function applyAppearance(){
   const mode = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
   try{ localStorage.setItem('toojibee-palette', palette); localStorage.setItem('toojibee-theme', mode); }catch(e){}
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[palette][mode]);
+  if(androidApp) androidApp.setBars(THEME_COLOR[palette][mode], mode === 'light'); // js/core/android.js
   if(typeof applyBanner === 'function') applyBanner(); // day/night header picture
 }
 

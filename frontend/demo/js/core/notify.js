@@ -10,16 +10,22 @@
    an in-app toast while the app is on screen. Nothing leaves the device.
    Reminders that came due while the app was closed show up when it's
    next opened (within 12 hours, today only), grouped if there are many.
-   Step 2 (Web Push, for a closed app) is at the end of this file. */
+   Step 2 (Web Push, for a closed app) is at the end of this file.
+   In the Android app (js/core/android.js) the phone shows them instead:
+   it gets the same upcoming list Web Push would send the server
+   (syncAndroidSchedule) and sets its own alarms — offline, app closed. */
 const NOTIFIED_KEY = 'toojibee-notified-v1';
 const NOTIFY_CATCHUP_MS = 12 * 3600 * 1000;
 let notifyReg = null, notifyTimer = null;
 
-function notifySupported(){ return 'Notification' in window; }
-function notifyAllowed(){ return notifySupported() && Notification.permission === 'granted'; }
+function notifySupported(){ return !!androidApp || 'Notification' in window; }
+function notifyAllowed(){
+  if(androidApp) return androidApp.permission() === 'granted';
+  return notifySupported() && Notification.permission === 'granted';
+}
 
 async function registerReminderWorker(){
-  if(notifyReg || !('serviceWorker' in navigator)) return notifyReg;
+  if(androidApp || notifyReg || !('serviceWorker' in navigator)) return notifyReg;
   try{ notifyReg = await navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' }); }
   catch(e){ notifyReg = null; } // e.g. not served over https: plain notifications then
   return notifyReg;
@@ -28,6 +34,15 @@ async function registerReminderWorker(){
 /* Asked once, from a tap (the browser requires that): turning reminders
    on in Settings, or confirming a reminder on an item. */
 function askNotificationPermission(){
+  if(androidApp){
+    const p = androidApp.permission();
+    if(p !== 'default') return Promise.resolve(p);
+    // The app answers through window.toojibeePermission once the person chose.
+    return new Promise(resolve => {
+      window.toojibeePermission = r => { window.toojibeePermission = null; resolve(r); syncAndroidSchedule(true); };
+      androidApp.requestPermission();
+    });
+  }
   if(!notifySupported() || Notification.permission !== 'default') return Promise.resolve(notifySupported() ? Notification.permission : 'unsupported');
   return Notification.requestPermission().then(p => {
     if(p === 'granted') registerReminderWorker().then(() => { if(state.settings.notifications) enablePush(); });
@@ -143,7 +158,8 @@ function showReminder(r, missed){
   const body = (missed ? t('notifMissedPrefix') + ' · ' : '') + reminderBody(r);
   const opts = { body, tag: r.slot, lang: lang(), dir: lang() === 'fa' ? 'rtl' : 'ltr', icon: '../assets/icons/icon-192.png?v=tj5',
     badge: '../assets/icons/favicon-48.png?v=tj5', data: { kind: r.kind, id: r.id, date: r.date } };
-  if(notifyAllowed()){
+  if(androidApp && notifyAllowed()) androidApp.show(r.title, body, r.slot, r.kind || '', r.id || '', r.date || '');
+  else if(notifyAllowed()){
     if(notifyReg) notifyReg.showNotification(r.title, opts).catch(() => {});
     else try{ const n = new Notification(r.title, opts); n.onclick = () => { window.focus(); openReminderTarget(opts.data); }; }catch(e){ /* phones need sw.js */ }
   }
@@ -151,6 +167,7 @@ function showReminder(r, missed){
 }
 
 async function reminderTick(){
+  syncAndroidSchedule(false);
   if(!state.settings.notifications || state.guest || state.booting) return;
   const now = Date.now();
   const day = new Date(now); day.setHours(0, 0, 0, 0);
@@ -204,7 +221,7 @@ if('serviceWorker' in navigator){
 }
 document.addEventListener('visibilitychange', () => {
   if(!document.hidden) reminderTick();
-  else syncPushSchedule(false); // leaving the app: the server gets the latest list
+  else { syncPushSchedule(false); syncAndroidSchedule(false); } // leaving the app: the server / the phone gets the latest list
 });
 
 /* The app was opened from a notification while it was closed. */
@@ -335,6 +352,7 @@ async function syncPushSchedule(force){
 /* Slots sw.js showed from a push (kept in Cache Storage, which both sides
    can read); entries older than three days are dropped here. */
 async function shownByWorker(){
+  if(androidApp){ try{ return JSON.parse(androidApp.takeShown() || '[]'); }catch(e){ return []; } }
   if(!('caches' in window)) return [];
   try{
     const cache = await caches.open(SHOWN_CACHE);
@@ -347,4 +365,21 @@ async function shownByWorker(){
     }
     return out;
   }catch(e){ return []; }
+}
+
+/* ============ REMINDERS — in the Android app ============
+   The phone keeps the upcoming list (the next PUSH_DAYS days, as for Web
+   Push) and shows each one when it's due while the app is in the
+   background or closed; shownByWorker() then tells the app which ones it
+   already showed. Sent again whenever it changes; an empty list when
+   reminders are off, signed out, or not allowed. */
+let androidSent = null;
+function syncAndroidSchedule(force){
+  if(!androidApp || state.booting) return;
+  const on = state.settings.notifications && !state.guest && notifyAllowed();
+  const items = on ? pushScheduleItems() : [];
+  const json = JSON.stringify(items);
+  if(!force && json === androidSent) return;
+  androidSent = json;
+  try{ androidApp.schedule(json); }catch(e){ androidSent = null; }
 }

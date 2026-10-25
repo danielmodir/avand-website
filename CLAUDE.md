@@ -15,6 +15,14 @@ Read the relevant doc before any big change.
     js/services/api.js (API client), js/config.js (apiBase), js/app.js and
     components/<name>/ (html partial + css + js per component). See
     frontend/demo/README.md before editing.
+- android/ — the Android app (2026-10-25): the web app (frontend/demo) in a
+  WebView plus a thin Kotlin layer (no libraries) for offline files,
+  over-the-air file updates (demo/app-files.json from build-site-zip.ps1),
+  phone-scheduled reminders, share/back/status bar. Package ir.toojibee.app,
+  Android 7+. Build: deploy/build-android.ps1; release key:
+  deploy/make-keystore.ps1 (the repo owner's, never committed). See
+  android/README.md. The live CSS bundle gets old-WebView fallbacks
+  (deploy/css-compat.js, js/core/compat.js).
 - backend/ — Django 5.2 + DRF API, one Django app and one MySQL database per
   module (core, calendar_data, planning, period, social, notifications); not
   deployed yet. See backend/README.md. Tests: `python manage.py test apps

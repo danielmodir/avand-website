@@ -1,0 +1,8 @@
+.gradle/
+build/
+local.properties
+keystore.properties
+*.jks
+*.keystore
+# Copied in from the site package by deploy/build-android.ps1
+app/src/main/assets/web/

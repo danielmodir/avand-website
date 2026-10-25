@@ -63,6 +63,10 @@ $ver = ([regex]::Match($html, 'css/base\.css\?v=([^"]+)')).Groups[1].Value
 $cssFiles = [regex]::Matches($html, '<link rel="stylesheet" href="([^"?]+\.css)\?v=[^"]*">') | ForEach-Object { $_.Groups[1].Value }
 $css = ($cssFiles | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $stage 'demo') ($_ -replace '/', '\'))).Trim() }) -join "`n"
 [IO.File]::WriteAllText((Join-Path $stage 'demo\css\bundle.css'), $css, (New-Object Text.UTF8Encoding $false))
+# Fallbacks for phones with an old WebView/Chrome (inset, dvh, color-mix):
+# a current browser still applies the original declarations.
+& node (Join-Path $PSScriptRoot 'css-compat.js') (Join-Path $stage 'demo\css\bundle.css')
+if ($LASTEXITCODE) { throw 'css-compat failed' }
 $first = $true
 $html = [regex]::Replace($html, '<link rel="stylesheet" href="[^"?]+\.css\?v=[^"]*">\r?\n?', {
   param($m)
@@ -80,6 +84,28 @@ $html = [regex]::Replace($html, '<script src="[^"?]+\.js\?v=[^"]*"></script>\r?\
 })
 if ($cssFiles.Count -lt 10 -or $jsFiles.Count -lt 20) { throw "bundling found too few files ($($cssFiles.Count) css, $($jsFiles.Count) js)" }
 [IO.File]::WriteAllText($index, $html, (New-Object Text.UTF8Encoding $false))
+
+# 3c. demo/app-files.json: the files the Android app (android/) keeps on the
+#     phone, each with a content hash (SHA-256, first 16 hex digits — the
+#     same as WebFiles.kt), so an installed app downloads only the files
+#     that changed. deploy/build-android.ps1 puts the same files in the APK.
+$appFiles = @(
+  'demo/index.html', 'demo/css/bundle.css', 'demo/js/bundle.js',
+  'assets/fonts/baloo-bhaijaan-2/BalooBhaijaan2-Arabic-VF.woff2',
+  'assets/fonts/baloo-bhaijaan-2/BalooBhaijaan2-Latin-VF.woff2',
+  'assets/data/occasions.json', 'assets/data/hijri-months.json',
+  'assets/icons/logo.svg', 'assets/icons/icon-192.png', 'assets/icons/favicon-48.png'
+)
+$hashes = [ordered]@{}
+foreach ($f in $appFiles) {
+  $p = Join-Path $stage ($f -replace '/', '\')
+  if (-not (Test-Path $p)) { throw "app file missing: $f" }
+  $hashes[$f] = (Get-FileHash -Algorithm SHA256 $p).Hash.Substring(0, 16).ToLower()
+}
+# minApp: the oldest APK (versionCode) these files work with — raise it when
+# the web app starts needing something new from the bridge (js/core/android.js).
+$appList = [ordered]@{ built = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds(); minApp = 1; files = $hashes }
+[IO.File]::WriteAllText((Join-Path $stage 'demo\app-files.json'), ($appList | ConvertTo-Json -Compress), (New-Object Text.UTF8Encoding $false))
 
 # 4. Zip with "/" entry names.
 $zip = Join-Path $out 'toojibee-site.zip'

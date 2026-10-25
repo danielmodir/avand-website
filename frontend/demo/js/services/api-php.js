@@ -12,6 +12,12 @@
    server version number is taken and this device's copy written on top
    (last write wins), same rule as the Django client per item.
 
+   Offline: the last copy of the document is kept on the device
+   (ACCOUNT_CACHE_KEY) with a "not sent yet" flag. Without a connection
+   the app opens from it and keeps saving into it; the changes go up as
+   soon as the connection is back (the 'online' event, or the app coming
+   to the front), by the same versioned write and 409 rule as above.
+
    Not available on this backend (yet): Google sign-in, server-side
    occasions (the app falls back to its static
    dataset). Only talks to the project's own API (CLAUDE.md exception).
@@ -25,6 +31,7 @@
   var BASE = CONFIG.apiBase.replace(/\/$/, '');
   var SESSION_KEY = 'toojibee_session';
   var LOCAL_DATA_KEY = 'toojibee-local-data-v1'; // js/core/local-store.js
+  var ACCOUNT_CACHE_KEY = 'toojibee-account-cache-v1';
   var base = global.Cloud; // the Django client: reuse uuid(), takeEmailLink()
 
   function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; } }
@@ -93,12 +100,25 @@
   async function signOut() {
     clearTimeout(pushTimer);
     if (hasSession()) { try { await flush(); await request('POST', '/auth/logout'); } catch (e) { /* best effort */ } }
-    clearSession();
+    clearSession(); clearCache();
     version = 0; loaded = false;
   }
 
   // ── the account's document ───────────────────────────────────────────
-  var version = 0, loaded = false, pushTimer = null, pushing = null, dirty = false;
+  var version = 0, loaded = false, pushTimer = null, pushing = null, dirty = false, lastMe = null;
+
+  // This device's copy of the account (see the header): only ever read
+  // back for the account it was saved for.
+  function readCache() {
+    var s = loadSession();
+    try { var c = JSON.parse(localStorage.getItem(ACCOUNT_CACHE_KEY) || 'null'); return c && s && c.uid === s.user_id ? c : null; } catch (e) { return null; }
+  }
+  function saveCache(notSent, data) {
+    var s = loadSession();
+    if (!s || !loaded || !lastMe) return;
+    try { localStorage.setItem(ACCOUNT_CACHE_KEY, JSON.stringify({ uid: s.user_id, version: version, dirty: !!notSent, me: lastMe, data: data || snapshot() })); } catch (e) { /* storage full: online only */ }
+  }
+  function clearCache() { try { localStorage.removeItem(ACCOUNT_CACHE_KEY); } catch (e) { /* ignore */ } }
 
   function readLocalDeviceData() {
     try { var d = JSON.parse(localStorage.getItem(LOCAL_DATA_KEY) || 'null'); return d && d.v === 1 ? d : null; } catch (e) { return null; }
@@ -108,9 +128,22 @@
   }
 
   async function loadAll() {
-    // Both at once: one round trip instead of two on a slow network.
-    var both = await Promise.all([request('GET', '/me'), request('GET', '/sync')]);
-    var me = both[0], doc = both[1];
+    var cache = readCache(), me, doc;
+    try {
+      // Both at once: one round trip instead of two on a slow network.
+      var both = await Promise.all([request('GET', '/me'), request('GET', '/sync')]);
+      me = both[0]; doc = both[1];
+    } catch (err) {
+      // No connection (no HTTP status): open with this device's last copy.
+      if (err.status || !cache) throw err;
+      me = cache.me; doc = cache;
+    }
+    // Changes made here while offline and not sent yet win over the
+    // server's copy; they go up from the version they were based on, so a
+    // newer save from another device still merges in (flush, 409).
+    var pending = !!(cache && cache.dirty);
+    if (pending) doc = cache;
+    lastMe = me;
     version = doc.version || 0;
     var data = doc.data || {};
     // First sign-in on a device that was used without an account: what
@@ -133,7 +166,8 @@
     profile.name = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
     loaded = true;
     startHeartbeat();
-    if (adopt) { dirty = true; schedulePush(); }
+    if (adopt || pending) { dirty = true; schedulePush(); }
+    else saveCache(false, data);
     return { profile: profile, settings: data.settings || {}, tasks: data.tasks || [], habits: data.habits || [], events: data.events || [], period: data.period || null };
   }
 
@@ -147,7 +181,7 @@
     if (!loaded || !hasSession()) return;
     dirty = true;
     clearTimeout(pushTimer);
-    pushTimer = setTimeout(function () { flush().catch(onSaveError); }, 800);
+    pushTimer = setTimeout(function () { saveCache(true); flush().catch(onSaveError); }, 800);
   }
 
   async function flush() {
@@ -167,6 +201,7 @@
         version = current.version;
         version = (await request('PUT', '/sync', { version: version, data: snapshot() })).version;
       }
+      saveCache(dirty); // still "not sent" if something changed meanwhile
     })();
     try { await pushing; } finally { pushing = null; }
   }
@@ -184,6 +219,8 @@
   }
 
   function onSaveError(err) {
+    // No connection: it's kept on this device and sent when it's back.
+    if (!err || !err.status) { if (global.console) console.warn('[sync] offline, kept on device'); return; }
     if (global.showToast && global.t) global.showToast(global.t('saveFailed'));
     if (global.console) console.warn('[sync]', err && err.message);
   }
@@ -206,6 +243,7 @@
     if (p.dob && !server.dob) body.birth_date = p.dob;
     if (!Object.keys(body).length || !hasSession()) return Promise.resolve();
     return request('PATCH', '/me', body).then(function (me) {
+      lastMe = Object.assign({}, lastMe, me);
       server = { username: me.username || '', gender: me.gender || '', dob: me.birth_date || '' };
     });
   }
@@ -230,8 +268,13 @@
   global.document.addEventListener('visibilitychange', function () { if (!document.hidden && heartbeatTimer) heartbeat(); });
 
   // Save before the tab goes away (closing, switching apps on a phone).
-  global.addEventListener('pagehide', function () { if (dirty) flush().catch(function () {}); });
-  global.document.addEventListener('visibilitychange', function () { if (document.hidden && dirty) flush().catch(function () {}); });
+  global.addEventListener('pagehide', function () { if (dirty) { saveCache(true); flush().catch(function () {}); } });
+  global.document.addEventListener('visibilitychange', function () {
+    if (!dirty) return;
+    if (document.hidden) saveCache(true);
+    flush().catch(function () {}); // leaving: save now; back again: send what waited offline
+  });
+  global.addEventListener('online', function () { if (dirty) flush().catch(onSaveError); });
 
   function socialRows(rows) {
     return (rows || []).map(function (r) {
@@ -270,7 +313,7 @@
     usernameAvailable: function (name) { return request('GET', '/me/profile/username-available?username=' + encodeURIComponent(name)).then(function (r) { return !!r.available; }); },
     changePassword: function (current, next) { return request('POST', '/me/password', { current_password: current, new_password: next }); },
     deleteAccount: function (password) {
-      return request('POST', '/me/delete', { password: password }).then(function () { clearTimeout(pushTimer); dirty = false; clearSession(); version = 0; loaded = false; });
+      return request('POST', '/me/delete', { password: password }).then(function () { clearTimeout(pushTimer); dirty = false; clearSession(); clearCache(); version = 0; loaded = false; });
     },
     // Friends (backend-php/lib/social.php); people are addressed by their
     // public id, and shown by @username and TJ- code only.

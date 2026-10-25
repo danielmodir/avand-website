@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- assets/css/tokens.css / demo THEME_COLOR (js/core/util.js) -->
+    <color name="brand_forest">#2C5745</color>
+    <color name="brand_orange">#EB7D00</color>
+    <color name="canvas">#F7F3DA</color>
+</resources>

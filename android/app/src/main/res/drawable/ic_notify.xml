@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Tj road mark (deploy/make-logo.js) as one flat shape, for the
+     notification icon and the themed launcher icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="900" android:viewportHeight="900">
+            <group android:translateX="-188" android:translateY="-181">
+                <path android:fillColor="#FFFFFFFF" android:pathData="M321,258H939A46,46 0 0 1 939,350H321A46,46 0 0 1 321,258Z" />
+                <path android:fillColor="#FFFFFFFF" android:pathData="M321.5,382H781.5A46.5,46.5 0 0 1 781.5,475H321.5A46.5,46.5 0 0 1 321.5,382Z" />
+                <path android:strokeColor="#FFFFFFFF" android:strokeWidth="152" android:strokeLineJoin="round"
+                    android:pathData="M432,470V760Q432,830 520,895L640,975Q690,1005 740,975L860,895Q926,830 926,760V450" />
+                <path android:fillColor="#FFFFFFFF" android:pathData="M850,450A76,76 0 1 0 1002,450A76,76 0 1 0 850,450Z" />
+                <path android:fillColor="#FFFFFFFF" android:pathData="M318,474L357,474L357,520Q357,474 318,474Z" />
+                <path android:fillColor="#FFFFFFFF" android:pathData="M507,474L552,474Q507,474 507,518Z" />
+            </group>
+</vector>
