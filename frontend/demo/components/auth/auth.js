@@ -303,6 +303,7 @@ async function enterSignedIn(){
   authErrors = { ...EMPTY_AUTH_ERRORS };
   render();
   acceptPendingInvite(); // opened a friend's invite link before signing in (app.js)
+  loadGroups().then(joinPendingGroup); // ... or a group's link (js/core/groups.js)
   loadSharedPeriods();
   startReminders();
   refreshContactUnread();

@@ -71,6 +71,7 @@ function enterGuestMode(){
   state.connections = [];
   state.inviteToken = null;
   state.sharedPeriods = []; state.periodShares = null; state.periodViewIndex = 0;
+  clearGroupsState();
   state.profile = Object.assign({}, state.profile, { name:'', firstName:'', lastName:'', username:'', email:'', phone:'', gender:'', dob:'', photo:null });
   state.activeDesktopIndex = 0;
   state.selection = null;
@@ -152,6 +153,7 @@ async function boot(){
       await loadFromCloud();
       state.guest = false;
       state.authScreen = false;
+      loadGroupsCache(); // this device's last copy of the groups, until loadGroups() answers
     }catch(err){
       /* A 401 with a failed refresh already switched to guest mode and
          opened sign-in (Cloud.onSessionExpired). Anything else — offline,
@@ -166,8 +168,8 @@ async function boot(){
   }
   handleEmailLink();
   openAuthFromLink();
-  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); welcomeChain(); }
-  else if(state.guest && pendingInvite() && !state.authOpen) openAuth('signup', 'inviteSignInFirst');
+  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadGroups().then(joinPendingGroup); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); welcomeChain(); }
+  else if(state.guest && (pendingInvite() || pendingGroup()) && !state.authOpen) openAuth('signup', pendingInvite() ? 'inviteSignInFirst' : 'groupSignInFirst');
 }
 
 /* A friend's invite link (/demo/#invite=CODE): remembered until the person

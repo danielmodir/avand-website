@@ -63,6 +63,11 @@ const TOURS = {
     { sel: '.period-log', k: 'tdLog' },
     { sel: '.desktop-box', k: 'tdShare' },
   ]},
+  groups: { label: 'tourGroups', available: () => typeof groupsAvailable === 'function' && groupsAvailable() && pref('groupsEnabled'), steps: [
+    { sel: '.group-new-btn', k: 'tgrNew', prep: () => tourGoToDesk('groupsDesktop') },
+    { sel: '.group-card-head', k: 'tgrHold' },
+    { sel: '.group-add-item', k: 'tgrAdd' },
+  ]},
   addTask: { label: 'tourAddTask', steps: tourAddSteps('task', [
     ['#add-popup .float-field', 'taTitle'], ['#add-subtask-btn', 'taSub'], ['#add-popup [data-sub="calendar"]', 'taDate'],
     ['#add-popup [data-sub="repeat"]', 'taRepeat'], ['#add-popup [data-sub="notification"]', 'taRemind'], ['#f-description', 'taDesc'], ['#popup-submit', 'taSave'],
@@ -237,7 +242,7 @@ function maybeFeatureTour(id){
 
 /* Which part is open now, checked after each render and desk change: when
    it changes to one with a tour, that tour runs the first time. */
-const TOUR_DESKS = { planning: 'planning', occasionsDesktop: 'occasions', periodDesktop: 'period' };
+const TOUR_DESKS = { planning: 'planning', occasionsDesktop: 'occasions', periodDesktop: 'period', groupsDesktop: 'groups' };
 let tourLastView = null; // null until the first look: the view the app opens on isn't "opened"
 function tourCurrentView(){
   let view = '';

@@ -19,6 +19,7 @@ require __DIR__ . '/../lib/social.php';
 require __DIR__ . '/../lib/push.php';
 require __DIR__ . '/../lib/support.php';
 require __DIR__ . '/../lib/notices.php';
+require __DIR__ . '/../lib/groups.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -51,6 +52,9 @@ $routes = [
     'GET /social/invite'        => 'tj_social_invite',
     'POST /social/invite/reset' => 'tj_social_invite_reset',
     'POST /social/invite/accept'=> 'tj_social_invite_accept',
+    'GET /groups'               => 'tj_groups_list',
+    'POST /groups'              => 'tj_group_create',
+    'POST /groups/join'         => 'tj_group_join',
     'GET /period/shares'        => 'tj_period_shares_get',
     'PUT /period/shares'        => 'tj_period_shares_put',
     'GET /period/shared-with-me'=> 'tj_period_shared_with_me',
@@ -138,6 +142,25 @@ if (preg_match('#^/social/(connections|blocks)/([a-f0-9]{32})(?:/(request|respon
     } elseif ($act === '') {
         if ($method === 'PUT') tj_social_block($m[2]);
         if ($method === 'DELETE') tj_social_unblock($m[2]);
+    }
+    tj_fail(405, 'method_not_allowed');
+}
+
+// Group planning (lib/groups.php): /groups/<id>[/leave|/invite/reset] and
+// /groups/<id>/items/<item id>[/marks].
+if (preg_match('#^/groups/([a-f0-9]{32})(?:/(leave|invite/reset)|/items/([A-Za-z0-9-]{8,64})(/marks)?)?$#', $path, $m)) {
+    $act = $m[2] ?? ''; $item = $m[3] ?? ''; $marks = !empty($m[4]);
+    if ($item !== '') {
+        if ($marks && $method === 'PUT') tj_group_item_mark($m[1], $item);
+        if (!$marks && $method === 'PUT') tj_group_item_put($m[1], $item);
+        if (!$marks && $method === 'DELETE') tj_group_item_delete($m[1], $item);
+    } elseif ($act === 'leave') {
+        if ($method === 'POST') tj_group_leave($m[1]);
+    } elseif ($act === 'invite/reset') {
+        if ($method === 'POST') tj_group_invite_reset($m[1]);
+    } else {
+        if ($method === 'PATCH') tj_group_update($m[1]);
+        if ($method === 'DELETE') tj_group_delete($m[1]);
     }
     tj_fail(405, 'method_not_allowed');
 }

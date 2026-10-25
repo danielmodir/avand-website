@@ -122,15 +122,16 @@ function taskRow(task, key){
   const done = status === 'done', skipped = status === 'not_done';
   const open = subs.length > 0 && !!state.expandedTasks[task.id];
   const sel = isSelected('task', task.id);
-  return `<div class="swipe-wrap task-wrap ${open?'subs-open':''} ${sel?'is-selected':''}" data-swipe-type="task" data-swipe-id="${task.id}">
+  return `<div class="swipe-wrap task-wrap ${open?'subs-open':''} ${sel?'is-selected':''}" data-swipe-type="task" data-swipe-id="${task.id}"${groupStyleAttr(task)}>
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card task-row ${subs.length?'has-subtasks':''} ${done?'done':''} ${skipped?'skipped':''} ${sel?'is-selected':''}" data-select-type="task" data-select-id="${task.id}">
       <div class="checkbox ${done?'checked':''} ${skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" data-date="${key}" role="checkbox" aria-checked="${done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${done?ICONS.check:skipped?ICONS.close:''}</div>
       <div class="task-title-wrap" data-action="view-item" data-type="task" data-id="${task.id}">
         <p class="item-title">${escapeHtml(task.title)}</p>
         ${task.startTime ? `<span class="item-time" dir="ltr">${itemTimeLabel(task)}</span>` : ''}
+        ${groupRowBadge(task, key)}
       </div>
-      <button class="star-mini ${task.pinned?'active':''}" data-action="toggle-pin" data-id="${task.id}" aria-label="${task.pinned?t('unpinBtn'):t('pinBtn')}">${ICONS.star}</button>
+      ${task.groupId ? '' : `<button class="star-mini ${task.pinned?'active':''}" data-action="toggle-pin" data-id="${task.id}" aria-label="${task.pinned?t('unpinBtn'):t('pinBtn')}">${ICONS.star}</button>`}
       ${subs.length ? `<button type="button" class="subtask-toggle ${open?'open':''}" data-action="toggle-subtasks" data-id="${task.id}" aria-label="${t('subtasksLabel')}" aria-expanded="${open}">${ICONS.chevronDown}</button>` : ''}
     </div>
   </div>
@@ -154,11 +155,11 @@ function habitRow(h, date){
   const key = dateKey(date);
   const checked = h.completedDates.includes(key);
   const skipped = !checked && (h.skippedDates||[]).includes(key);
-  return `<div class="swipe-wrap ${isSelected('habit', h.id)?'is-selected':''}" data-swipe-type="habit" data-swipe-id="${h.id}">
+  return `<div class="swipe-wrap ${isSelected('habit', h.id)?'is-selected':''}" data-swipe-type="habit" data-swipe-id="${h.id}"${groupStyleAttr(h)}>
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card ${checked?'done':''} ${skipped?'skipped':''} ${isSelected('habit', h.id)?'is-selected':''}" data-select-type="habit" data-select-id="${h.id}">
       <div class="checkbox square ${checked?'checked':''} ${skipped?'skipped':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}" role="checkbox" aria-checked="${checked}" aria-label="${escapeAttr(h.title)}" tabindex="0">${checked?ICONS.check:skipped?ICONS.close:''}</div>
-      <p class="item-title" data-action="view-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}</p>
+      <p class="item-title" data-action="view-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}${groupRowBadge(h, key)}</p>
     </div>
   </div>`;
 }
@@ -179,8 +180,8 @@ function sortEvents(events){
 
 function eventCard(e){
   const time = e.startTime ? itemTimeLabel(e) : (eventTime(e) || '');
-  return `<div class="event-card" data-action="view-item" data-type="event" data-id="${e.id}">
-    <button class="mini-btn event-del" data-action="delete-event" data-id="${e.id}" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>
+  return `<div class="event-card ${e.groupId ? 'in-group' : ''}" data-action="view-item" data-type="event" data-id="${e.id}"${groupStyleAttr(e)}>
+    ${groupItemEditable(e) ? `<button class="mini-btn event-del" data-action="delete-event" data-id="${e.id}" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>` : ''}
     ${time?`<span class="event-time">${time}</span>`:''}
     <p class="event-title">${escapeHtml(e.title)}</p>
   </div>`;
@@ -276,7 +277,8 @@ function applyQuicksetState(cb, wantDone, markSkipped){
     // A one-off parent and its subtasks move together. A repeating parent
     // is ticked per day while its (one-off) subtasks keep their own state.
     if(!isRecurringTask(task)) (task.subtasks || []).forEach(s => { s.done = wantDone; s.skipped = isSkipped; });
-    cloudSync(() => Cloud.saveTask(task));
+    // A group's task: the tick is this person's mark (or everyone's), js/core/groups.js.
+    if(task.groupId) groupMarkTask(task, cb.dataset.date); else cloudSync(() => Cloud.saveTask(task));
     syncTaskDom(task);
   } else if(action === 'toggle-subtask'){
     const task = state.tasks.find(x => x.id === cb.dataset.taskId);
@@ -287,7 +289,7 @@ function applyQuicksetState(cb, wantDone, markSkipped){
       task.done = task.subtasks.every(s => s.done);
       if(task.done) task.skipped = false;
     }
-    cloudSync(() => Cloud.saveTask(task));
+    if(task.groupId) groupMarkTask(task, null, sub.id); else cloudSync(() => Cloud.saveTask(task));
     syncTaskDom(task);
   } else if(action === 'toggle-habit'){
     const habit = state.habits.find(x => x.id === cb.dataset.id);
@@ -300,7 +302,7 @@ function applyQuicksetState(cb, wantDone, markSkipped){
     const si = habit.skippedDates.indexOf(dk);
     if(isSkipped && si < 0) habit.skippedDates.push(dk);
     else if(!isSkipped && si >= 0) habit.skippedDates.splice(si, 1);
-    cloudSync(() => Cloud.saveHabit(habit));
+    if(habit.groupId) groupMarkHabit(habit, dk); else cloudSync(() => Cloud.saveHabit(habit));
     paintCheckbox(cb, wantDone, isSkipped);
   } else return;
   updateDayStatsInPlace();
@@ -341,7 +343,7 @@ function syncTaskDom(task){
 const LONG_PRESS_MS = 450;
 
 function selectableFrom(target){
-  if(target.closest('.star-mini, .subtask-toggle, .row-context-menu')) return null;
+  if(target.closest('.star-mini, .subtask-toggle, .row-context-menu, .group-add-item')) return null;
   return target.closest('[data-select-type]');
 }
 
@@ -371,11 +373,19 @@ function showRowContextMenu(el, point){
   menu.id = 'row-context-menu';
   menu.className = 'row-context-menu';
   menu.setAttribute('role', 'menu');
-  menu.innerHTML = `
+  const type = el.dataset.selectType, id = el.dataset.selectId;
+  // A group's header: its own menu (components/groups/groups.js).
+  const groupEntries = type === 'group' ? groupMenuEntries(id) : null;
+  // Someone else's item in a group: only ticking it.
+  const owner = type === 'habit' ? state.habits.find(x => x.id === id) : type === 'subtask' ? findTaskOrSub(id).parent : findTaskOrSub(id).item;
+  const editable = groupItemEditable(owner);
+  menu.innerHTML = groupEntries
+    ? groupEntries.map((e, i) => `<button type="button" role="menuitem" data-ctx="group" data-i="${i}" class="${e.danger ? 'danger' : ''}">${e.icon}${escapeHtml(e.label)}</button>`).join('')
+    : `
     <button type="button" role="menuitem" data-ctx="done">${ICONS.check}${t('qsDone')}</button>
     <button type="button" role="menuitem" data-ctx="undone">${ICONS.close}${t('qsUndone')}</button>
-    <button type="button" role="menuitem" data-ctx="edit">${ICONS.pencilIcon}${t('editBtn')}</button>
-    <button type="button" role="menuitem" data-ctx="delete" class="danger">${ICONS.trash}${t('deleteBtn')}</button>
+    ${editable ? `<button type="button" role="menuitem" data-ctx="edit">${ICONS.pencilIcon}${t('editBtn')}</button>
+    <button type="button" role="menuitem" data-ctx="delete" class="danger">${ICONS.trash}${t('deleteBtn')}</button>` : ''}
   `;
   document.body.appendChild(menu);
   const w = menu.offsetWidth, h = menu.offsetHeight;
@@ -395,6 +405,7 @@ function showRowContextMenu(el, point){
     const btn = e.target.closest('[data-ctx]');
     if(!btn) return;
     e.stopPropagation();
+    if(btn.dataset.ctx === 'group'){ clearSelection(); groupEntries[Number(btn.dataset.i)].run(); return; }
     runItemMenuAction(el, btn.dataset.ctx);
   });
   menu.querySelector('button')?.focus({ preventScroll: true });
@@ -416,6 +427,14 @@ function runItemMenuAction(el, action){
 }
 
 function deleteItem(type, id){
+  if(deleteGroupAware(type, id)) return; // a group's task or habit (js/core/groups.js)
+  if(type === 'subtask' && findTaskOrSub(id).parent?.groupId){
+    const { parent } = findTaskOrSub(id);
+    if(!groupItemEditable(parent)){ showToast(t('groupNotYours')); return; }
+    parent.subtasks = parent.subtasks.filter(s => s.id !== id);
+    groupSaveItem('task', parent);
+    return;
+  }
   if(type === 'task'){
     state.tasks = state.tasks.filter(x => x.id !== id);
     cloudSync(() => Cloud.deleteTask(id));

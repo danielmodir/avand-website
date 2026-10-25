@@ -83,10 +83,7 @@ function renderSearchResults(){
 
 /* The desk that shows this kind of thing: occasions, or planning for events. */
 function searchDeskIndex(kind){
-  const keys = [];
-  if(pref('occasionsEnabled')) keys.push('occasionsDesktop');
-  if(state.settings.planningEnabled && !state.guest) keys.push('planning');
-  if(periodViews().length) keys.push('periodDesktop');
+  const keys = deskKeys();
   const want = kind === 'event' && keys.includes('planning') ? 'planning' : 'occasionsDesktop';
   return Math.max(0, keys.indexOf(want));
 }

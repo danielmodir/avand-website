@@ -59,8 +59,9 @@ function attachSwipeToDelete(container){
           fg.style.transform = 'translateX(100%)';
           fg.style.opacity = '0';
           setTimeout(() => {
-            if(type === 'task'){ state.tasks = state.tasks.filter(x=>x.id!==id); cloudSync(() => Cloud.deleteTask(id)); }
-            if(type === 'habit'){ state.habits = state.habits.filter(x=>x.id!==id); cloudSync(() => Cloud.deleteHabit(id)); }
+            if(deleteGroupAware(type, id)){ /* a group's item: saved to the group (js/core/groups.js) */ }
+            else if(type === 'task'){ state.tasks = state.tasks.filter(x=>x.id!==id); cloudSync(() => Cloud.deleteTask(id)); }
+            else if(type === 'habit'){ state.habits = state.habits.filter(x=>x.id!==id); cloudSync(() => Cloud.deleteHabit(id)); }
             render();
           }, 190);
         }

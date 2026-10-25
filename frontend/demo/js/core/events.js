@@ -52,11 +52,23 @@ document.getElementById('device').addEventListener('click', (e) => {
     applyQuicksetState(el, !habit.completedDates.includes(dk));
     return;
   }
-  if(action === 'delete-event'){ state.events = state.events.filter(x=>x.id!==el.dataset.id); cloudSync(() => Cloud.deleteEvent(el.dataset.id)); render(); return; }
+  if(action === 'delete-event'){
+    if(!deleteGroupAware('event', el.dataset.id)){ state.events = state.events.filter(x=>x.id!==el.dataset.id); cloudSync(() => Cloud.deleteEvent(el.dataset.id)); }
+    render(); return;
+  }
+  // Group planning (components/groups/groups.js).
+  if(action === 'group-new'){ openGroupDialog(null); return; }
+  if(action === 'group-open'){ openGroupDialog(el.dataset.id); return; }
+  if(action === 'group-add-item'){ openGroupAddMenu(el); return; }
+  if(action === 'toggle-groups-enabled'){ setPref('groupsEnabled', !pref('groupsEnabled')); render(); return; }
 
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
   if(action === 'view-item'){ openItemDetails(el.dataset.type, el.dataset.id, el); return; } // tap: details first (popup.js)
-  if(action === 'edit-item'){ openPopup(el.dataset.type, el, findItem(el.dataset.type, el.dataset.id)); return; }
+  if(action === 'edit-item'){
+    const item = findItem(el.dataset.type, el.dataset.id);
+    if(!groupItemEditable(el.dataset.type === 'task' ? (findTaskOrSub(el.dataset.id).parent || item) : item)){ showToast(t('groupNotYours')); return; }
+    openPopup(el.dataset.type, el, item); return;
+  }
   if(action === 'close-popup'){ closePopup(); return; }
   if(action === 'toggle-desk-full'){ state.deskFull = !state.deskFull; haptic(10); render(); return; }
   // Full-screen month (calendar.js renderCalFull): opens on the month
@@ -160,7 +172,9 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'toggle-pin'){
-    const t = state.tasks.find(x=>x.id===el.dataset.id); t.pinned = !t.pinned;
+    const t = state.tasks.find(x=>x.id===el.dataset.id);
+    if(!t || t.groupId) return; // pins are personal; group tasks have none
+    t.pinned = !t.pinned;
     el.classList.toggle('active', t.pinned);
     cloudSync(() => Cloud.saveTask(t));
     return;

@@ -8,6 +8,7 @@ const DEFAULT_PREFS = {
   occasionsEnabled: true, occasionsJalali: true, occasionsHijri: true, occasionsGregorian: true,
   occasionsHolidaysOnly: false, occasionsMarkHolidays: true, occasionsShowEvents: true,
   notifyOverdue: true, // one reminder when a task turns "not done" (js/core/notify.js)
+  groupsEnabled: true, // the Group planning desk (components/groups)
 };
 function pref(key){
   const p = state.settings.prefs || {};

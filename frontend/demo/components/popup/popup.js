@@ -8,6 +8,10 @@ let formWeekdays = new Set();
 
 let formDraft = {};
 
+/* Set by a group's "+" (components/groups/groups.js) just before opening
+   the form, so the new item starts in that group. */
+let popupPresetGroup = null;
+
 function findItem(type, id){
   if(type === 'task') return findTaskOrSub(id).item; // tasks and subtasks share the editor
   const key = type === 'task' ? 'tasks' : type === 'habit' ? 'habits' : 'events';
@@ -40,8 +44,12 @@ function resetFormDraft(type, existing){
       leadMinutes: existing ? (existing.notification?.leadMinutes || 1440) : 1440,
       everyMinutes: existing ? (existing.notification?.everyMinutes || 60) : 60,
       text: existing ? (existing.notification?.text || '') : ''
-    }
+    },
+    // Group planning: which group (none = just me) and how it's ticked.
+    groupId: existing ? (existing.groupId || '') : (popupPresetGroup || ''),
+    doneMode: existing?.doneMode === 'shared' ? 'shared' : 'each',
   };
+  popupPresetGroup = null;
   formPhotos = existing ? [...(existing.photos||[])] : [];
   formSubtasks = existing ? (existing.subtasks || []).map(s => ({...s})) : [];
   formWeekdays = new Set(existing ? (existing.recurrence?.weekdays||[]) : []);
@@ -119,6 +127,11 @@ function itemDetailsHtml(type, item){
   if(n.type === 'repeat') rows.push([ICONS.bellIcon, t('reminderEveryNHours').replace('{n}', dig(n.repeatHours || 1))]);
   if(n.type === 'before') rows.push([ICONS.bellIcon, t('reminderMinutesBefore').replace('{n}', dig(n.minutesBefore || 15))]);
   if(n.type === 'countdown') rows.push([ICONS.bellIcon, t('countdownSummary').replace('{lead}', durationLabel(n.leadMinutes || 1440)).replace('{every}', durationLabel(n.everyMinutes || 60))]);
+  const g = item.groupId ? groupById(item.groupId) : null;
+  if(g){
+    const by = g.members.find(m => String(m.id) === String(item.groupBy));
+    rows.push([ICONS.peopleIcon, `<span class="group-tag" style="--group-c:${g.color}">${escapeHtml(g.name)}</span>${by ? ' · ' + escapeHtml(t('groupBy').replace('{name}', by.name)) : ''}`]);
+  }
   const subs = (item.subtasks || []).map(s => `<li class="${s.done ? 'done' : ''}">${escapeHtml(subTitle(s))}</li>`).join('');
   return `
     <h2 class="details-title">${escapeHtml(item.title || '')}</h2>
@@ -143,7 +156,7 @@ function openItemDetails(type, id, originEl){
       <button type="button" class="popup-close" data-action="close-popup" aria-label="${t('closeBtn')}">${ICONS.close}</button>
     </div>
     <div class="popup-body item-details" dir="${lang() === 'fa' ? 'rtl' : 'ltr'}">${itemDetailsHtml(type, item)}</div>
-    <div class="pop-submit-bar"><button class="pop-submit" data-action="edit-item" data-type="${type}" data-id="${escapeAttr(id)}">${ICONS.pencilIcon}<span>${t('editBtn')}</span></button></div>`;
+    ${groupItemEditable(type === 'task' ? (findTaskOrSub(id).parent || item) : item) ? `<div class="pop-submit-bar"><button class="pop-submit" data-action="edit-item" data-type="${type}" data-id="${escapeAttr(id)}">${ICONS.pencilIcon}<span>${t('editBtn')}</span></button></div>` : ''}`;
   if(originEl){
     const dev = document.getElementById('device').getBoundingClientRect(), o = originEl.getBoundingClientRect();
     popup.style.transformOrigin = `${o.left + o.width / 2 - dev.left}px ${o.top + o.height / 2 - dev.top}px`;
@@ -365,6 +378,7 @@ function renderPopupBody(){
     <div class="float-field"><input type="text" id="f-title" placeholder=" " value="${escapeAttr(formDraft.title)}" autocomplete="off"><label>${t('titleLabel')}</label></div>
     ${state.popupType === 'task' && !state.editingParentId ? subtasksBlock() : ''}
     ${formBody(state.popupType)}
+    ${groupFieldHtml()}
   `;
   wireMainFormInteractivity();
   // The Save button always sits at the bottom; it only works with a title.
@@ -375,7 +389,32 @@ function renderPopupBody(){
   titleInput.addEventListener('input', () => { formDraft.title = titleInput.value; paint(); });
 }
 
+/* The group drop-down (only with groups, never for a subtask) and, for a
+   task or habit in a group, how it's ticked. */
+function groupFieldHtml(){
+  if(state.editingParentId || !groupsAvailable() || !state.groups.length) return '';
+  const g = formDraft.groupId ? groupById(formDraft.groupId) : null;
+  return `
+    <div class="field group-field"${g ? ` style="--group-c:${g.color}"` : ''}>
+      <label class="field-label" for="f-group">${t('groupField')}</label>
+      <div class="group-select-wrap">${g ? '<span class="group-dot" aria-hidden="true"></span>' : ''}
+        <select class="settings-select" id="f-group" style="width:100%;">
+          <option value="">${t('groupNone')}</option>
+          ${state.groups.map(x => `<option value="${escapeAttr(x.id)}" ${x.id === formDraft.groupId ? 'selected' : ''}>${escapeHtml(x.name)}</option>`).join('')}
+        </select>
+      </div>
+      ${g && state.popupType !== 'event' ? `
+        <label class="field-label" for="f-done-mode" style="margin-top:10px;">${t('groupDoneMode')}</label>
+        <select class="settings-select" id="f-done-mode" style="width:100%;">
+          <option value="each" ${formDraft.doneMode !== 'shared' ? 'selected' : ''}>${t('groupDoneEach')}</option>
+          <option value="shared" ${formDraft.doneMode === 'shared' ? 'selected' : ''}>${t('groupDoneShared')}</option>
+        </select>` : ''}
+    </div>`;
+}
+
 function wireMainFormInteractivity(){
+  document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; renderPopupBody(); });
+  document.getElementById('f-done-mode')?.addEventListener('change', e => { formDraft.doneMode = e.target.value === 'shared' ? 'shared' : 'each'; });
   document.getElementById('f-description')?.addEventListener('input', e => { formDraft.description = e.target.value; });
   document.getElementById('desc-clip-btn')?.addEventListener('click', () => document.getElementById('f-photo-input').click());
   document.getElementById('f-photo-input')?.addEventListener('change', (e) => {
@@ -519,7 +558,7 @@ function submitPopup(){
         ...times,
         notification
       });
-      cloudSync(() => Cloud.saveTask(parent));
+      if(parent.groupId) groupSaveItem('task', parent); else cloudSync(() => Cloud.saveTask(parent));
     }
   } else if(type === 'task'){
     const existing = state.editingId ? findItem('task', state.editingId) : null;
@@ -571,10 +610,28 @@ function submitPopup(){
 }
 
 const CLOUD_SAVE_BY_ARRKEY = { tasks: Cloud.saveTask, habits: Cloud.saveHabit, events: Cloud.saveEvent };
+const CLOUD_DELETE_BY_ARRKEY = { tasks: Cloud.deleteTask, habits: Cloud.deleteHabit, events: Cloud.deleteEvent };
 
+/* Saves to the person's own data, or to a group (js/core/groups.js); an
+   item moved between the two (or between groups) leaves the old place. */
 function upsert(arrKey, obj){
   const arr = state[arrKey];
   const idx = arr.findIndex(x => x.id === obj.id);
+  const prev = idx >= 0 ? arr[idx] : null;
+  const kind = { tasks: 'task', habits: 'habit', events: 'event' }[arrKey];
+  const gid = formDraft.groupId && groupById(formDraft.groupId) ? formDraft.groupId : null;
+  if(gid){
+    Object.assign(obj, {
+      groupId: gid, doneMode: kind === 'event' ? 'each' : formDraft.doneMode, pinned: false,
+      groupMine: prev && prev.groupId ? prev.groupMine : true,
+      groupMarks: prev && prev.groupId === gid ? prev.groupMarks : [],
+    });
+    projectGroupMarks(obj, kind);
+  }
   if(idx >= 0) arr[idx] = obj; else arr.push(obj);
-  cloudSync(() => CLOUD_SAVE_BY_ARRKEY[arrKey](obj));
+  const left = prev && prev.groupId && prev.groupId !== gid ? prev : null;
+  if(prev && !prev.groupId && gid) cloudSync(() => CLOUD_DELETE_BY_ARRKEY[arrKey](prev.id));
+  if(left) groupCloud(() => Cloud.deleteGroupItem(left.groupId, left.id).then(() => gid ? Cloud.saveGroupItem(gid, kind, groupItemData(obj), obj.doneMode) : null));
+  else if(gid) groupSaveItem(kind, obj);
+  if(!gid) cloudSync(() => CLOUD_SAVE_BY_ARRKEY[arrKey](obj));
 }

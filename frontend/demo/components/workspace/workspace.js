@@ -49,23 +49,29 @@ function renderArticleStrip(place){
     </div>`;
 }
 
+/* Which desks show, in order (also used to jump to one: search, a group link). */
+function deskKeys(){
+  const keys = [];
+  if(pref('occasionsEnabled')) keys.push('occasionsDesktop');
+  // Guests only browse the calendar and occasions; planning needs an account.
+  if(state.settings.planningEnabled && !state.guest) keys.push('planning');
+  if(pref('groupsEnabled') && groupsAvailable()) keys.push('groupsDesktop'); // needs our API and an account
+  if(periodViews().length) keys.push('periodDesktop'); // her own cycle and/or ones friends share with this person
+  return keys;
+}
+
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;
-  const panes = [];
-  if(pref('occasionsEnabled')){
-    panes.push({ key:'occasionsDesktop', html: renderOccasionsPane(d, events) });
-  }
-  // Guests only browse the calendar and occasions; planning needs an account.
-  if(state.settings.planningEnabled && !state.guest){
-    panes.push({ key:'planning', html:`
+  const panes = deskKeys().map(key => {
+    if(key === 'occasionsDesktop') return { key, html: renderOccasionsPane(d, events) };
+    if(key === 'planning') return { key, html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
       ${pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
       ${renderItemSections(tasks,pref('planningShowHabits') ? habits : [], pref('planningShowEvents') ? events : [], d)}
-    ` });
-  }
-  if(periodViews().length){ // her own cycle and/or ones friends share with this person
-    panes.push({ key:'periodDesktop', html: renderPeriodPage('') + renderArticleStrip('app_period') });
-  }
+    ` };
+    if(key === 'groupsDesktop') return { key, html: renderGroupsPane(d) };
+    return { key, html: renderPeriodPage('') + renderArticleStrip('app_period') };
+  });
   /* Every desktop switched off: on a phone the app becomes a full-screen
      month calendar (no workspace box under it); on desktop the calendar
      column already fills the left, so the box just says how to get one back. */

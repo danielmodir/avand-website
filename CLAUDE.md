@@ -96,7 +96,10 @@ Read the relevant doc before any big change.
   it now also includes Social (Friends/Connections) and a Tool Store-style
   Feature Center, deliberately going beyond the docs' original MVP scope for
   demo/prototyping purposes. That expansion is /demo/-only — it does not change
-  what the marketing site is allowed to claim.
+  what the marketing site is allowed to claim. Same for the "Group planning"
+  desk (repo owner, 2026-10-25): groups of friends sharing tasks, habits and
+  events (js/core/groups.js, components/groups/, lib/groups.php,
+  apps/social/groups.py).
 - Do not name competitors in copy. Do not invent numbers, testimonials or user counts.
 - If something is not in /docs, ask me instead of guessing.
 

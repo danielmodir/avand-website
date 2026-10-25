@@ -125,3 +125,6 @@ def purge_user(user_id):
         InviteRedemption.objects.filter(invitee_user_id=user_id).delete()
         Invite.objects.filter(inviter_user_id=user_id).delete()
         Report.objects.filter(reporter_user_id=user_id, status=Report.Status.OPEN).delete()
+        from .groups import purge_user as purge_groups
+
+        purge_groups(user_id)

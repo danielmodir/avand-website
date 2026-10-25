@@ -72,6 +72,8 @@ const state = {
   inviteToken: null, // my personal invite link's code (Friends page)
   searchOpen: false, // the toolbar is the search field (js/core/search.js)
   sharedPeriods: [],    // cycles friends share with me: [{ id, name, userId, period }]
+  groups: [],           // group planning (js/core/groups.js): [{ id, name, color, owner, token, members }]
+  groupsLoaded: false,
   periodViewIndex: 0,   // which cycle the period desk shows (period.js periodViews)
   periodShares: null,   // friends I share my cycle with (null = not loaded yet)
   friendSearch: '',

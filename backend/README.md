@@ -84,6 +84,7 @@ Errors: `{"error": "<stable_code>", "detail": …}`. Auth: `Authorization: Beare
 | Planning | `GET planning/sync[?since]` · `PUT/DELETE planning/<categories\|tasks\|habits\|events>/<id>` · `PUT planning/tasks/<id>/occurrences/<date>` · `PUT planning/habits/<id>/logs/<date>` · `PUT/DELETE planning/<tasks\|events>/<id>/exceptions/<date>` · `PUT/DELETE planning/tasks/<id>/attachments/<file_id>` |
 | Period | `GET/PUT period/profile` · `GET period/cycles` · `PUT/DELETE period/cycles/<id>` · `GET period/predictions` |
 | Social | `GET social/connections` · `POST …/<user>/request` · `…/<user>/respond` · `DELETE …/<user>` · `PUT/DELETE social/blocks/<user>` · `GET social/search?q` · `GET/POST social/invites` · `DELETE social/invites/<id>` · `POST social/invites/<code>/redeem` · `POST social/reports` |
+| Groups | `GET/POST groups` · `POST groups/join` · `PATCH/DELETE groups/<id>` · `POST groups/<id>/leave` · `POST groups/<id>/invite/reset` · `PUT/DELETE groups/<id>/items/<item>` · `PUT groups/<id>/items/<item>/marks` (apps/social/groups.py; the PHP API has the same) |
 | Notifications | `POST notifications/subscriptions` · `DELETE …/<id>` · `GET/PUT notifications/preferences` · `PUT/DELETE notifications/mutes/<module>` |
 
 ## Admin

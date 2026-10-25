@@ -600,6 +600,18 @@
     });
   }
 
+  // ── group planning (apps/social/groups.py; same shapes as the PHP API) ──
+  function groups() { return request('GET', '/groups'); }
+  function createGroup(b) { return request('POST', '/groups', b); }
+  function updateGroup(id, b) { return request('PATCH', '/groups/' + id, b); }
+  function deleteGroup(id) { return request('DELETE', '/groups/' + id); }
+  function leaveGroup(id) { return request('POST', '/groups/' + id + '/leave'); }
+  function resetGroupLink(id) { return request('POST', '/groups/' + id + '/invite/reset'); }
+  function joinGroup(token) { return request('POST', '/groups/join', { token: token }); }
+  function saveGroupItem(gid, kind, data, mode) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode }); }
+  function deleteGroupItem(gid, id) { return request('DELETE', '/groups/' + gid + '/items/' + encodeURIComponent(id)); }
+  function markGroupItem(gid, id, key, status) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/marks', { key: key, status: status }); }
+
   // ── public calendar data ─────────────────────────────────────────────
   function calendarYear(jalaliYear) { return request('GET', '/calendar/occasions?year=' + jalaliYear, undefined, { auth: false }); }
 
@@ -677,6 +689,8 @@
     removeConnection: removeConnection, blockUser: blockUser, unblockUser: unblockUser, listConnections: listConnections,
     inviteToken: inviteToken, resetInviteToken: resetInviteToken, acceptInvite: acceptInvite,
     calendarYear: calendarYear,
+    supportsGroups: true, groups: groups, createGroup: createGroup, updateGroup: updateGroup, deleteGroup: deleteGroup, leaveGroup: leaveGroup,
+    resetGroupLink: resetGroupLink, joinGroup: joinGroup, saveGroupItem: saveGroupItem, deleteGroupItem: deleteGroupItem, markGroupItem: markGroupItem,
   });
   global.Cloud = api;
 })(window);

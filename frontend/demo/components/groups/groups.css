@@ -1,0 +1,93 @@
+/* Group planning desk + the new/edit group dialog (groups.js). A group's
+   color comes in as --group-c (each member's own pick). */
+.groups-head{ display:flex; justify-content:flex-end; margin:2px 0 10px; }
+.device.lang-fa .groups-head{ justify-content:flex-start; }
+.group-new-btn{
+  display:inline-flex; align-items:center; gap:6px; border:none; cursor:pointer; font-family:inherit;
+  background:var(--primary); color:var(--on-primary); font-size:13px; font-weight:700;
+  padding:8px 14px 8px 12px; border-radius:999px;
+}
+.group-new-btn svg{ width:18px; height:18px; }
+.groups-empty{ text-align:center; padding:26px 12px; color:var(--text-muted); font-size:13.5px; line-height:1.8; }
+.groups-empty p{ margin:8px 0 16px; }
+.groups-empty-icon{ width:52px; height:52px; margin:0 auto; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:color-mix(in srgb, var(--primary) 14%, transparent); color:var(--primary); }
+.groups-empty-icon svg{ width:26px; height:26px; }
+
+.group-card{
+  background:var(--card); border:1px solid var(--border); border-radius:20px; margin-bottom:12px; overflow:hidden;
+  border-top:4px solid var(--group-c, var(--primary));
+}
+.group-card-head{ display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:default; user-select:none; -webkit-user-select:none; }
+.group-card-head.is-selected{ background:var(--bg-soft); }
+/* The pager is LTR (rows flip themselves, items.css); the header and the
+   empty view read right-to-left in Persian. */
+.device.lang-fa .group-card-head, .device.lang-fa .groups-empty{ direction:rtl; }
+.group-dot{ width:12px; height:12px; border-radius:50%; flex:0 0 auto; background:var(--group-c, var(--primary)); }
+.group-name{ border:none; background:none; padding:0; font:inherit; font-size:15px; font-weight:800; color:var(--text); cursor:pointer; text-align:start; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.group-meta{ flex:1; font-size:11.5px; color:var(--text-muted); white-space:nowrap; }
+.group-add-item{
+  flex:0 0 auto; width:32px; height:32px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  background:color-mix(in srgb, var(--group-c, var(--primary)) 18%, transparent); color:var(--text);
+}
+.group-add-item svg{ width:18px; height:18px; }
+.group-card-body{ padding:0 10px 4px; }
+.group-card-body .empty-hint{ padding:6px 4px 12px; font-size:12.5px; }
+.group-card-body .events-scroll{ margin-bottom:8px; }
+
+/* A group item outside the group desk: its group's name; "2/5" done. */
+.group-tag{
+  display:inline-block; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle;
+  font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px; margin-inline-start:6px;
+  background:color-mix(in srgb, var(--group-c, var(--primary)) 20%, transparent); color:var(--text);
+}
+.group-card .group-tag{ display:none; }
+.group-count{ display:inline-block; font-size:10.5px; font-weight:800; color:var(--text-muted); margin-inline-start:6px; vertical-align:middle; }
+.swipe-wrap[style*="--group-c"] .item-card{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--group-c) 35%, transparent); }
+.details-row .group-tag{ margin-inline-start:0; max-width:none; }
+
+/* Group field in the add/edit form. */
+.group-field{ margin-top:12px; }
+.group-select-wrap{ position:relative; display:flex; align-items:center; gap:8px; }
+.group-select-wrap .settings-select{ flex:1; width:100%; }
+
+/* The dialog: centered, same look as the period questions. */
+.group-dialog-overlay{ position:absolute; inset:0; z-index:80; background:var(--overlay); display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .22s ease; padding:16px; }
+.group-dialog-overlay.show{ opacity:1; }
+.group-dialog{
+  width:min(420px, 100%); max-height:min(640px, calc(100% - 16px)); background:var(--card); border-radius:24px; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; overflow:hidden; transform:scale(.95); transition:transform .24s cubic-bezier(.4,0,.2,1);
+}
+.group-dialog-overlay.show .group-dialog{ transform:scale(1); }
+.group-dialog-body{ padding:4px 20px 8px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+.group-dialog-body > *{ flex-shrink:0; } /* the body scrolls; its parts keep their height */
+.group-dialog-body .field-label{ margin:12px 0 4px; }
+.group-dialog-name{ margin:4px 0 0; font-size:18px; }
+.group-friends-toggle{
+  display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; cursor:pointer; font:inherit; font-size:14px;
+  background:var(--bg-soft); color:var(--text); border:1px solid var(--border); border-radius:14px; padding:11px 14px; text-align:start;
+}
+.group-friends-toggle span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.group-friends-toggle svg{ width:18px; height:18px; flex:0 0 auto; transition:transform .2s ease; }
+.group-friends-toggle.open svg{ transform:rotate(180deg); }
+.group-friends-list{ border:1px solid var(--border); border-radius:14px; max-height:200px; overflow-y:auto; padding:4px; animation:stagger-in .2s ease both; }
+.group-friend{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:10px; cursor:pointer; }
+.group-friend:hover{ background:var(--bg-soft); }
+.group-friend input{ width:18px; height:18px; accent-color:var(--primary); flex:0 0 auto; }
+.group-friend-name{ flex:1; font-weight:600; font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.group-friend-sub{ font-size:11px; color:var(--text-muted); }
+.group-member-list{ display:flex; flex-wrap:wrap; gap:6px; }
+.group-member{ font-size:12.5px; padding:4px 10px; border-radius:999px; background:var(--bg-soft); }
+.group-member.owner{ font-weight:700; }
+.group-link-row{ display:flex; align-items:center; gap:10px; background:var(--bg-soft); border-radius:12px; padding:10px 12px; }
+.group-link-url{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--text-muted); }
+.group-newlink{ align-self:flex-start; margin-top:4px; }
+.group-dialog-actions{ display:flex; flex-direction:column; gap:8px; padding:12px 20px 18px; }
+.group-dialog-actions .group-save{ width:100%; }
+.group-danger{ display:flex; align-items:center; justify-content:center; gap:8px; color:var(--danger); border-color:color-mix(in srgb, var(--danger) 40%, transparent); }
+.group-danger svg{ width:16px; height:16px; }
+
+@media (min-width:960px){
+  .group-dialog-overlay{ position:fixed; }
+}

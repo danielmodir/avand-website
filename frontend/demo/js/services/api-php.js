@@ -43,7 +43,7 @@
 
   var api = {
     onSessionExpired: null, onPhotoLoaded: null, onAvatarLoaded: null,
-    supportsSocial: true, supportsCalendar: false,
+    supportsSocial: true, supportsCalendar: false, supportsGroups: true,
   };
 
   function ApiError(status, body) {
@@ -174,7 +174,9 @@
   function snapshot() {
     // `state` is the app's top-level const (js/core/state.js).
     /* global state */
-    return { profile: state.profile, settings: state.settings, tasks: state.tasks, habits: state.habits, events: state.events, period: state.period };
+    // A group's items live with the group (js/core/groups.js), not here.
+    var own = function (x) { return !x.groupId; };
+    return { profile: state.profile, settings: state.settings, tasks: state.tasks.filter(own), habits: state.habits.filter(own), events: state.events.filter(own), period: state.period };
   }
 
   function schedulePush() {
@@ -330,6 +332,17 @@
     acceptInvite: function (token) { return request('POST', '/social/invite/accept', { token: token }); },
     // Period sharing: the friends I show my cycle to (max 3), and the
     // cycles friends show me.
+    // Group planning (lib/groups.php); the changes answer with the whole list.
+    groups: function () { return request('GET', '/groups'); },
+    createGroup: function (b) { return request('POST', '/groups', b); },
+    updateGroup: function (id, b) { return request('PATCH', '/groups/' + id, b); },
+    deleteGroup: function (id) { return request('DELETE', '/groups/' + id); },
+    leaveGroup: function (id) { return request('POST', '/groups/' + id + '/leave'); },
+    resetGroupLink: function (id) { return request('POST', '/groups/' + id + '/invite/reset'); },
+    joinGroup: function (token) { return request('POST', '/groups/join', { token: token }); },
+    saveGroupItem: function (gid, kind, data, mode) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode }); },
+    deleteGroupItem: function (gid, id) { return request('DELETE', '/groups/' + gid + '/items/' + encodeURIComponent(id)); },
+    markGroupItem: function (gid, id, key, status) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/marks', { key: key, status: status }); },
     periodShares: function () { return request('GET', '/period/shares').then(socialRows); },
     savePeriodShares: function (ids) { return request('PUT', '/period/shares', { viewers: ids }).then(socialRows); },
     sharedPeriods: function () {

@@ -428,6 +428,13 @@ function renderAdminPanel(){
       <div class="desktop-manage-desc">${t('planningDesktopSub')}</div>
       <div class="switch ${state.settings.planningEnabled?'on':''}" data-action="toggle-planning-enabled"><div class="knob"></div></div>
     </div>
+    ${Cloud.supportsGroups && !REAL_LOGIN_DISABLED ? `
+      <div class="desktop-manage-card">
+        <div class="desktop-manage-title">${t('groupsDesktop')}</div>
+        <div class="desktop-manage-desc">${t('groupsDesktopSub')}</div>
+        <div class="switch ${pref('groupsEnabled')?'on':''}" data-action="toggle-groups-enabled"><div class="knob"></div></div>
+      </div>
+    ` : ''}
     ${state.profile.gender === 'female' ? `
       <div class="desktop-manage-card">
         <button type="button" class="desktop-manage-gear" data-action="open-desktop-settings" data-sub="settings-period" aria-label="${t('settings')}">${ICONS.gearIcon}</button>

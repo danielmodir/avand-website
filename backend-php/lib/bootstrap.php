@@ -414,6 +414,54 @@ function tj_migrate(PDO $db): void {
         $retitle->execute(['تقویم هخامنشی و گاه‌شماری زرتشتی؛ شمارش روزها در ایران باستان', 'zoroastrian-achaemenid-calendar', 'تقویم هخامنشی و گاه‌شماری زرتشتی؛ ایرانیان باستان چگونه روزها را می‌شمردند؟']);
         $db->exec('INSERT INTO tj_schema (version) VALUES (21)');
     }
+    if ($v < 22) {
+        // Group planning (lib/groups.php).
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_groups (
+            id $id,
+            public_id CHAR(32) NOT NULL UNIQUE,
+            name VARCHAR(60) NOT NULL,
+            owner_id $fk NOT NULL,
+            invite_token VARCHAR(20) NOT NULL UNIQUE,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            FOREIGN KEY (owner_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_group_members (
+            group_id $fk NOT NULL,
+            user_id $fk NOT NULL,
+            color VARCHAR(7) NOT NULL,
+            joined_at DATETIME NOT NULL,
+            PRIMARY KEY (group_id, user_id),
+            FOREIGN KEY (group_id) REFERENCES tj_groups(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_group_items (
+            id $id,
+            group_id $fk NOT NULL,
+            item_id VARCHAR(64) NOT NULL UNIQUE,
+            kind VARCHAR(8) NOT NULL,
+            data $text NOT NULL,
+            done_mode VARCHAR(8) NOT NULL DEFAULT 'each',
+            created_by $fk NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            FOREIGN KEY (group_id) REFERENCES tj_groups(id) ON DELETE CASCADE,
+            FOREIGN KEY (created_by) REFERENCES tj_users(id) ON DELETE SET NULL
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_group_marks (
+            item_id $fk NOT NULL,
+            user_id $fk NOT NULL,
+            mark_key VARCHAR(80) NOT NULL,
+            status VARCHAR(10) NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY (item_id, user_id, mark_key),
+            FOREIGN KEY (item_id) REFERENCES tj_group_items(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        try { $db->exec('CREATE INDEX tj_group_members_user ON tj_group_members (user_id)'); } catch (PDOException $e) { /* already there */ }
+        try { $db->exec('CREATE INDEX tj_group_items_group ON tj_group_items (group_id)'); } catch (PDOException $e) { /* already there */ }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (22)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

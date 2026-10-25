@@ -334,13 +334,14 @@ class UserSettings(models.Model):
         "occasions_mark_holidays": True,    # holidays in red on the calendar
         "occasions_show_events": True,      # my events under the occasions
         "notify_overdue": True,             # a reminder when a task turns "not done"
+        "groups_enabled": True,             # the Group planning desktop
         # Tutorials already seen (finished or skipped), so signing in again
         # doesn't repeat them (frontend/demo/components/tour/tour.js).
         "tour_general": False, "tour_calendar": False, "tour_planning": False,
         "tour_occasions": False, "tour_search": False, "tour_manage": False,
         "tour_friends": False, "tour_period": False,
         "tour_add_task": False, "tour_add_habit": False, "tour_add_event": False,
-        "tour_repeat": False, "tour_reminder": False,
+        "tour_repeat": False, "tour_reminder": False, "tour_groups": False,
     }
 
     user = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE, related_name="settings")

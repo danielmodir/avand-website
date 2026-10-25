@@ -23,7 +23,7 @@ demo/
     app.js              entry point: start() loads partials, wires listeners, boots
   components/           one folder per UI piece: .html partial / .css / .js
     banner/  toolbar/  workspace/  calendar/  items/  day-sheet/
-    popup/  menu/  period/  auth/
+    popup/  menu/  period/  auth/  groups/ (group planning desk; data in js/core/groups.js)
 ```
 
 ## Rules

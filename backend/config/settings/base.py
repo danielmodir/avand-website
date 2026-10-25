@@ -199,6 +199,7 @@ REST_FRAMEWORK = {
         "refresh": "30/min",
         "search": "30/min",
         "report": "20/day",
+        "groups": "60/hour",
         "upload": "60/hour",
         "support": "60/hour",
     },

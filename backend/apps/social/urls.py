@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import groups, views
 
 urlpatterns = [
     path("social/connections", views.ConnectionListView.as_view()),
@@ -13,4 +13,11 @@ urlpatterns = [
     path("social/invites/<uuid:invite_id>", views.InviteDetailView.as_view()),
     path("social/invites/<slug:code>/redeem", views.RedeemInviteView.as_view()),
     path("social/reports", views.ReportView.as_view()),
+    path("groups", groups.GroupListView.as_view()),
+    path("groups/join", groups.GroupJoinView.as_view()),
+    path("groups/<uuid:group_id>", groups.GroupDetailView.as_view()),
+    path("groups/<uuid:group_id>/leave", groups.GroupLeaveView.as_view()),
+    path("groups/<uuid:group_id>/invite/reset", groups.GroupInviteResetView.as_view()),
+    path("groups/<uuid:group_id>/items/<str:item_id>", groups.GroupItemView.as_view()),
+    path("groups/<uuid:group_id>/items/<str:item_id>/marks", groups.GroupMarkView.as_view()),
 ]
