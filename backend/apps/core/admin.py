@@ -1,8 +1,12 @@
+import re
+from datetime import timedelta
+
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
+from django.db.models import Q
 from django.utils import timezone
 
 from .models import (
@@ -40,13 +44,49 @@ class ProfileInline(admin.StackedInline):
     fk_name = "user"
 
 
+DEVICE_DAYS = 30
+
+
+def device_of(session):
+    """'Android app 1.2.0', 'Phone browser' or 'Computer' for a sign-in: the
+    app's WebView adds "ToojibeeAndroid/<version>" (android/.../AppWeb.kt)
+    and signs in as platform "android" (api.js deviceMeta). Same kinds as
+    the PHP panel (backend-php/lib/admin_users.php tj_device_of)."""
+    ua = session.user_agent or ""
+    m = re.search(r"ToojibeeAndroid/([\w.]+)", ua)
+    if m or session.platform == AuthSession.Platform.ANDROID:
+        return "Android app" + (f" {m.group(1)}" if m else "")
+    return "Phone browser" if re.search(r"Mobi|Android|iPhone|iPad", ua, re.I) else "Computer"
+
+
+class DeviceFilter(admin.SimpleListFilter):
+    """Signed in from the Android app, a phone's browser or a computer in the last 30 days."""
+    title = "device (last 30 days)"
+    parameter_name = "device"
+
+    def lookups(self, request, model_admin):
+        return [("app", "Android app"), ("phone", "Phone browser"), ("desktop", "Computer")]
+
+    def queryset(self, request, queryset):
+        recent = AuthSession.objects.filter(created_at__gte=timezone.now() - timedelta(days=DEVICE_DAYS))
+        app = Q(platform=AuthSession.Platform.ANDROID) | Q(user_agent__contains="ToojibeeAndroid/")
+        phone = Q(user_agent__iregex=r"Mobi|Android|iPhone|iPad")
+        rows = {"app": recent.filter(app), "phone": recent.exclude(app).filter(phone), "desktop": recent.exclude(app).exclude(phone)}.get(self.value())
+        return queryset if rows is None else queryset.filter(pk__in=rows.values("user_id"))
+
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     ordering = ["-created_at"]
-    list_display = ["email", "status", "birth_date", "email_verified_at", "is_staff", "created_at"]
-    list_filter = ["status", "is_staff", "is_superuser"]
+    list_display = ["email", "status", "device", "birth_date", "email_verified_at", "is_staff", "created_at"]
+    list_filter = ["status", DeviceFilter, "is_staff", "is_superuser"]
+
+    @admin.display(description="Device (newest sign-in)")
+    def device(self, obj):
+        last = AuthSession.objects.filter(user=obj).order_by("-created_at").first()
+        return device_of(last) if last else "—"
 
     @admin.display(description="Birth date", ordering="profile__birth_date")
     def birth_date(self, obj):

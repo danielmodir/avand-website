@@ -65,6 +65,9 @@
   var refreshing = null;
 
   function deviceMeta() {
+    // The Android app (its bridge, js/core/android.js) signs in as "android":
+    // the admin's device numbers count it apart from the browser.
+    if (global.ToojibeeAndroid) return { platform: 'android', device_name: 'Toojibee Android' };
     return { platform: 'web', device_name: (navigator.userAgentData && navigator.userAgentData.platform) || 'Browser' };
   }
 

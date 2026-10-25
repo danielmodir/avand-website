@@ -259,6 +259,23 @@ class AccountDeletionTests(ApiTestCase):
         self.assertEqual(User.objects.get(email="user@example.com").status, "active")
 
 
+class AdminDeviceTests(ApiTestCase):
+    def test_users_by_device(self):
+        from apps.core.admin import DeviceFilter, UserAdmin, device_of
+        from django.contrib.admin.sites import site
+
+        app_ua = "Mozilla/5.0 (Linux; Android 14; wv) Chrome/120 Mobile ToojibeeAndroid/1.2.0"
+        for email, ua in [("app@example.com", app_ua), ("phone@example.com", "Mozilla/5.0 (iPhone) Mobile Safari"),
+                          ("pc@example.com", "Mozilla/5.0 (Windows NT 10.0) Chrome/120")]:
+            self.register(email)
+            AuthSession.objects.filter(user__email=email).update(user_agent=ua)
+        self.assertEqual(device_of(AuthSession.objects.filter(user__email="app@example.com").first()), "Android app 1.2.0")
+        admin_obj = UserAdmin(User, site)
+        for value, email in [("app", "app@example.com"), ("phone", "phone@example.com"), ("desktop", "pc@example.com")]:
+            f = DeviceFilter(None, {"device": [value]}, User, admin_obj)  # Django 5: lists, like request.GET.lists()
+            self.assertEqual(list(f.queryset(None, User.objects.all()).values_list("email", flat=True)), [email], value)
+
+
 @override_settings(GOOGLE_WEB_CLIENT_ID="web-client", GOOGLE_WEB_CLIENT_SECRET="secret",
                    GOOGLE_REDIRECT_URI="https://api.example/api/v1/auth/google/callback",
                    CORS_ALLOWED_ORIGINS=["http://localhost:8080"])

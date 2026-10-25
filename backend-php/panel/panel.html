@@ -188,6 +188,12 @@ textarea.tall{ min-height:340px; line-height:1.9; }
 
     <section id="tab-overview" class="hidden stack">
       <div class="stats" id="stats"></div>
+      <div class="card">
+        <h2>موبایل و اپ <span class="hint">کاربرهایی که تو ۳۰ روز اخیر از هر کدوم وارد شدن (یه نفر ممکنه تو چندتا باشه)</span></h2>
+        <div class="stats" id="device-stats"></div>
+        <h3 class="mt">نسخه‌ی اپ اندروید کاربرها</h3>
+        <table><tbody id="app-versions"></tbody></table>
+      </div>
       <div class="card hidden" id="backup-card">
         <h2>پشتیبان دیتابیس <button class="btn ghost" id="backup" type="button">دانلود پشتیبان</button></h2>
         <p class="hint">فقط برای مالک. داده‌های عادت ماهانه داخل فایل رمزنگاری‌شده می‌مونن؛ کلیدشون (<span dir="ltr">toojibee-secrets.php</span>) جداست. یه نسخه از اون فایل رو هم جای امن نگه دار.</p>
@@ -206,6 +212,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <div class="card"><h2>صفحه‌های پربازدید</h2><table><tbody id="v-pages"></tbody></table></div>
         <div class="card"><h2>از کجا اومدن</h2><table><tbody id="v-refs"></tbody></table></div>
       </div>
+      <div class="card"><h2>دانلود اپ اندروید (۳۰ روز اخیر، هر نسخه)</h2><table><tbody id="v-apk"></tbody></table>
+        <p class="hint">هر نفر در هر روز یه بار شمرده می‌شه (دانلودی که چند تکه ادامه پیدا کنه، یکیه).</p></div>
     </section>
 
     <section id="tab-content" class="hidden stack">
@@ -342,6 +350,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
             <label>فعال در … روز اخیر<input id="uf-active_days" type="number" min="1" max="3650" inputmode="numeric"></label>
             <label>غیرفعال بیش از … روز<input id="uf-inactive_days" type="number" min="1" max="3650" inputmode="numeric"></label>
             <label>ایمیل<select id="uf-verified"><option value="">همه</option><option value="yes">تأییدشده</option><option value="no">تأییدنشده</option></select></label>
+            <label>دستگاه (۳۰ روز اخیر)<select id="uf-device"><option value="">همه</option><option value="app">اپ اندروید</option><option value="phone">مرورگر گوشی</option><option value="desktop">کامپیوتر</option></select></label>
           </div>
           <div class="actions mt">
             <button class="btn ghost" type="button" id="uf-clear">پاک کردن فیلترها</button>
@@ -356,7 +365,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <h2><span id="u-count">کاربرها</span></h2>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>کد</th><th>نام کاربری</th><th>ایمیل</th><th>وضعیت</th><th class="personal-only">تاریخ تولد و سن</th><th>ثبت‌نام</th><th>آخرین حضور</th></tr></thead>
+            <thead><tr><th>کد</th><th>نام کاربری</th><th>ایمیل</th><th>وضعیت</th><th>دستگاه</th><th class="personal-only">تاریخ تولد و سن</th><th>ثبت‌نام</th><th>آخرین حضور</th></tr></thead>
             <tbody id="users"></tbody>
           </table>
         </div>
@@ -534,7 +543,14 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   };
   var USTATUS = { active: ['فعال', 'good'], suspended: ['معلق', 'bad'] };
   var users = { q: '', filter: 'all', offset: 0, extra: {} };
-  var UF = ['gender', 'age_min', 'age_max', 'born_from', 'born_to', 'joined_from', 'joined_to', 'active_days', 'inactive_days', 'verified'];
+  var UF = ['gender', 'age_min', 'age_max', 'born_from', 'born_to', 'joined_from', 'joined_to', 'active_days', 'inactive_days', 'verified', 'device'];
+
+  /* A user's device (lib/admin_users.php tj_device_of): the Android app
+     with its version, a phone's browser, or a computer. */
+  function deviceLabel(kind, version) {
+    if (kind === 'app') return 'اپ اندروید' + (version ? ' ' + fa(version) : '');
+    return kind === 'phone' ? 'مرورگر گوشی' : kind === 'desktop' ? 'کامپیوتر' : '—';
+  }
   function userFilters() {
     var o = {};
     UF.forEach(function (k) { var v = $('uf-' + k).value.trim(); if (v !== '') o[k] = v; });
@@ -785,7 +801,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       stats.textContent = '';
       [[today.visitors, 'بازدیدکننده‌ی امروز'], [today.views, 'بازدید صفحه امروز'], [sum(last7, 'visitors'), 'بازدیدکننده ۷ روز اخیر'],
        [sum(days, 'visitors'), 'بازدیدکننده ۳۰ روز اخیر'], [sum(days, 'views'), 'بازدید صفحه ۳۰ روز اخیر'],
-       [v.devices.mobile + v.devices.desktop ? Math.round(v.devices.mobile * 100 / (v.devices.mobile + v.devices.desktop)) + '٪' : '—', 'با موبایل']].forEach(function (s) {
+       [v.devices.mobile + v.devices.desktop ? Math.round(v.devices.mobile * 100 / (v.devices.mobile + v.devices.desktop)) + '٪' : '—', 'با موبایل'],
+       [sum(days.map(function (d) { return { apk: d.apk || 0 }; }), 'apk'), 'دانلود اپ اندروید ۳۰ روز اخیر']].forEach(function (s) {
         var c = el('div', 'card stat');
         c.appendChild(el('div', 'n', typeof s[0] === 'number' ? fa(s[0]) : s[0]));
         c.appendChild(el('div', 'l', s[1]));
@@ -818,6 +835,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       };
       fill('v-pages', v.pages, function (p) { return PAGE_NAMES[p] || p; }, '');
       fill('v-refs', v.referrers, function (h) { return h; }, 'ltr');
+      fill('v-apk', v.apk_versions || [], function (n) { return 'نسخه‌ی ' + fa(n); }, '');
     });
   }
 
@@ -1289,6 +1307,10 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         if (u.online) tdS.appendChild(el('span', 'dot'));
         tdS.appendChild(el('span', 'tag ' + st[1], u.online ? 'آنلاین' : st[0]));
         tr.appendChild(tdS);
+        // The newest sign-in's device; "+ اپ" when the app was used lately too.
+        var tdD = el('td', '', deviceLabel(u.device, u.device === 'app' ? u.app_version : null));
+        if (u.uses_app && u.device !== 'app') tdD.appendChild(el('span', 'tag', '+ اپ'));
+        tr.appendChild(tdD);
         if (res.personal) tr.appendChild(el('td', '', u.birth_date ? birthLabel(u.birth_date) : '—'));
         tr.appendChild(el('td', '', when(u.created_at)));
         tr.appendChild(el('td', '', when(u.last_seen_at)));
@@ -1313,14 +1335,16 @@ textarea.tall{ min-height:340px; line-height:1.9; }
        ['جنسیت', u.gender === 'female' ? 'خانم' : u.gender === 'male' ? 'آقا' : '—'], ['تاریخ تولد', u.birth_date ? birthLabel(u.birth_date) : (u.birth_year ? fa(u.birth_year) : '—')],
        ['ثبت‌نام', when(u.created_at)], ['آخرین حضور', when(u.last_seen_at)], ['زمان استفاده از برنامه', dur(u.active_seconds)],
        ['تعداد ذخیره‌ها', fa(u.saves)], ['آخرین ذخیره', when(u.last_save_at)], ['حجم داده', kb(u.data_bytes)],
-       ['دستگاه‌های وارد‌شده', fa(u.devices.length)]].forEach(function (p) {
+       ['دستگاه‌های وارد‌شده', fa(u.devices.length)], ['آخرین دستگاه', deviceLabel(u.device, u.device === 'app' ? u.app_version : null)],
+       ['اپ اندروید', u.uses_app ? 'استفاده می‌کنه' + (u.app_version ? ' (نسخه‌ی ' + fa(u.app_version) + ')' : '') : 'تو ۳۰ روز اخیر نه']].forEach(function (p) {
         var d = el('div'); d.appendChild(el('b', '', p[0])); d.appendChild(document.createTextNode(p[1])); kv.appendChild(d);
       });
       box.appendChild(kv);
       if (u.devices.length) {
         var t = el('table'), tb = el('tbody');
         u.devices.forEach(function (dv) {
-          var tr = el('tr'); tr.appendChild(el('td', 'ltr', dv.user_agent || '—')); tr.appendChild(el('td', '', 'آخرین استفاده: ' + when(dv.last_used_at))); tb.appendChild(tr);
+          var tr = el('tr'); tr.appendChild(el('td', '', deviceLabel(dv.kind, dv.app_version))); tr.appendChild(el('td', 'ltr', dv.user_agent || '—'));
+          tr.appendChild(el('td', '', 'آخرین استفاده: ' + when(dv.last_used_at))); tb.appendChild(tr);
         });
         t.appendChild(tb); var w = el('div', 'table-wrap'); w.appendChild(t); box.appendChild(w);
       }
@@ -1362,6 +1386,24 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         c.appendChild(el('div', 'l', s[1]));
         stats.appendChild(c);
       });
+      // Where they use it: the Android app, a phone's browser, a computer (last 30 days).
+      var dev = $('device-stats');
+      dev.textContent = '';
+      [['app_users_30d', 'با اپ اندروید'], ['online_app', 'آنلاین الان با اپ'], ['phone_web_users_30d', 'با مرورگر گوشی'], ['desktop_users_30d', 'با کامپیوتر']].forEach(function (s) {
+        var c = el('div', 'card stat');
+        c.appendChild(el('div', 'n', fa(o[s[0]] || 0)));
+        c.appendChild(el('div', 'l', s[1]));
+        dev.appendChild(c);
+      });
+      var vs = $('app-versions');
+      vs.textContent = '';
+      (o.app_versions || []).forEach(function (v) {
+        var tr = el('tr');
+        tr.appendChild(el('td', '', 'نسخه‌ی ' + fa(v.version)));
+        tr.appendChild(el('td', 'num', fa(v.users) + ' نفر'));
+        vs.appendChild(tr);
+      });
+      if (!(o.app_versions || []).length) { var tr = el('tr'); tr.appendChild(el('td', 'hint', 'هنوز کسی تو ۳۰ روز اخیر با اپ وارد نشده.')); vs.appendChild(tr); }
     });
   }
 

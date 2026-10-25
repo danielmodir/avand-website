@@ -7,6 +7,52 @@ declare(strict_types=1);
 
 const TJ_ADMIN_PAGE = 50;
 
+/* Which kind of device a sign-in came from, by the browser string kept on
+ * each session (tj_sessions.user_agent; a session is renewed about every
+ * hour, so the newest one is where the person is now): the Android app
+ * (its WebView adds "ToojibeeAndroid/<version>", android/.../AppWeb.kt),
+ * a phone's browser, or a computer. */
+const TJ_SQL_APP = "user_agent LIKE '%ToojibeeAndroid/%'";
+const TJ_SQL_PHONE = "(user_agent LIKE '%Mobi%' OR user_agent LIKE '%Android%' OR user_agent LIKE '%iPhone%' OR user_agent LIKE '%iPad%')";
+const TJ_DEVICE_DAYS = 30;
+
+function tj_device_of(string $ua): array {
+    if (preg_match('#ToojibeeAndroid/([\w.]+)#', $ua, $m)) return ['kind' => 'app', 'app_version' => $m[1]];
+    return ['kind' => preg_match('/Mobi|Android|iPhone|iPad/i', $ua) ? 'phone' : 'desktop', 'app_version' => null];
+}
+
+/* For a page of users: the device of each one's newest sign-in, and
+ * whether they've used the app at all lately. */
+function tj_admin_user_devices(array $userIds): array {
+    if (!$userIds) return [];
+    $in = implode(',', array_fill(0, count($userIds), '?'));
+    $q = tj_db()->prepare("SELECT user_id, user_agent FROM tj_sessions WHERE user_id IN ($in) AND created_at >= ? ORDER BY created_at");
+    $q->execute(array_merge($userIds, [tj_now(-TJ_DEVICE_DAYS * 86400)]));
+    $out = [];
+    foreach ($q->fetchAll() as $s) {
+        $d = tj_device_of((string)$s['user_agent']);
+        $o = $out[$s['user_id']] ?? ['device' => null, 'app_version' => null, 'uses_app' => false];
+        $o['device'] = $d['kind'];                       // newest last
+        if ($d['kind'] === 'app') { $o['uses_app'] = true; $o['app_version'] = $d['app_version']; }
+        $out[$s['user_id']] = $o;
+    }
+    return $out;
+}
+
+/* Connect to AI (lib/mcp.php): for a page of users, who has a personal MCP
+ * link and when an AI app last used it. Only that: never what it did. */
+function tj_admin_user_ai(array $userIds): array {
+    if (!$userIds) return [];
+    $in = implode(',', array_fill(0, count($userIds), '?'));
+    $q = tj_db()->prepare("SELECT user_id, created_at, last_used_at FROM tj_mcp_keys WHERE user_id IN ($in)");
+    $q->execute($userIds);
+    $out = [];
+    foreach ($q->fetchAll() as $k) $out[$k['user_id']] = ['ai_linked' => true, 'ai_linked_at' => $k['created_at'], 'ai_last_used_at' => $k['last_used_at']];
+    return $out;
+}
+
+const TJ_AI_NONE = ['ai_linked' => false, 'ai_linked_at' => null, 'ai_last_used_at' => null];
+
 function tj_admin_user_row(array $u): array {
     return [
         'id' => $u['public_id'],
@@ -44,6 +90,8 @@ function tj_admin_user_birth(array $u, bool $personal): array {
  *   active_days  seen in the app in the last N days
  *   inactive_days  not seen for N days (or never)
  *   verified     yes | no (email)
+ *   device       app | phone | desktop: signed in from it in the last 30 days
+ *   ai           linked (has an MCP link) | used (an AI app used it in 30 days) | none
  * With users.personal only (they reveal the birth date):
  *   age_min, age_max     whole years today
  *   born_from, born_to   birth date, YYYY-MM-DD */
@@ -71,6 +119,16 @@ function tj_admin_user_where(array $src, bool $personal): array {
     $v = (string)($src['verified'] ?? '');
     if ($v === 'yes') $where[] = 'email_verified_at IS NOT NULL';
     if ($v === 'no') $where[] = 'email_verified_at IS NULL';
+    $dev = (string)($src['device'] ?? '');
+    $kinds = ['app' => TJ_SQL_APP, 'phone' => '(NOT ' . TJ_SQL_APP . ' AND ' . TJ_SQL_PHONE . ')', 'desktop' => '(NOT ' . TJ_SQL_APP . ' AND NOT ' . TJ_SQL_PHONE . ')'];
+    if (isset($kinds[$dev])) {
+        $where[] = "id IN (SELECT user_id FROM tj_sessions WHERE {$kinds[$dev]} AND created_at >= ?)";
+        $args[] = tj_now(-TJ_DEVICE_DAYS * 86400);
+    }
+    $ai = (string)($src['ai'] ?? '');
+    if ($ai === 'linked') $where[] = 'id IN (SELECT user_id FROM tj_mcp_keys)';
+    if ($ai === 'used') { $where[] = 'id IN (SELECT user_id FROM tj_mcp_keys WHERE last_used_at >= ?)'; $args[] = tj_now(-30 * 86400); }
+    if ($ai === 'none') $where[] = 'id NOT IN (SELECT user_id FROM tj_mcp_keys)';
     if ($personal) {
         $today = new DateTime('today');
         if (($n = $int('age_min')) !== null) { $where[] = 'birth_date <= ?'; $args[] = (clone $today)->modify("-$n years")->format('Y-m-d'); }
@@ -92,7 +150,14 @@ function tj_admin_users(): void {
     $c->execute($args);
     $s = $db->prepare("SELECT * FROM tj_users$sqlWhere ORDER BY created_at DESC LIMIT " . TJ_ADMIN_PAGE . " OFFSET $offset");
     $s->execute($args);
-    tj_json(['total' => (int)$c->fetch()['n'], 'offset' => $offset, 'page' => TJ_ADMIN_PAGE, 'items' => array_map(function ($u) use ($personal) { return tj_admin_user_row($u) + tj_admin_user_birth($u, $personal); }, $s->fetchAll()), 'personal' => $personal]);
+    $rows = $s->fetchAll();
+    $ids = array_map(function ($u) { return (int)$u['id']; }, $rows);
+    $devices = tj_admin_user_devices($ids);
+    $ai = tj_admin_user_ai($ids);
+    $none = ['device' => null, 'app_version' => null, 'uses_app' => false];
+    tj_json(['total' => (int)$c->fetch()['n'], 'offset' => $offset, 'page' => TJ_ADMIN_PAGE, 'items' => array_map(function ($u) use ($personal, $devices, $none, $ai) {
+        return tj_admin_user_row($u) + tj_admin_user_birth($u, $personal) + ($devices[(int)$u['id']] ?? $none) + ($ai[(int)$u['id']] ?? TJ_AI_NONE);
+    }, $rows), 'personal' => $personal]);
 }
 
 function tj_admin_user_detail(string $publicId): void {
@@ -113,8 +178,10 @@ function tj_admin_user_detail(string $publicId): void {
         'saves' => (int)$data['version'],
         'last_save_at' => $data['updated_at'],
         'data_bytes' => (int)$data['bytes'],
-        'devices' => $s->fetchAll(),
-    ]);
+        // Each signed-in device with its kind (app + version, phone, computer).
+        'devices' => array_map(function ($dv) { return $dv + tj_device_of((string)$dv['user_agent']); }, $s->fetchAll()),
+    ] + (tj_admin_user_devices([(int)$u['id']])[(int)$u['id']] ?? ['device' => null, 'app_version' => null, 'uses_app' => false])
+      + (tj_admin_user_ai([(int)$u['id']])[(int)$u['id']] ?? TJ_AI_NONE));
 }
 
 function tj_admin_user_suspend(string $publicId): void {

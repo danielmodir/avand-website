@@ -58,6 +58,20 @@ Update these with every change.
 
 Format: `date — surfaces — what changed (key files)`.
 
+- 2026-10-26 — admin panel (PHP), Django admin, api.js — mobile and app
+  users: each sign-in's device comes from its session's browser string
+  (the app's WebView adds "ToojibeeAndroid/<version>"; no schema change).
+  Dashboard card "موبایل و اپ": users in the last 30 days from the Android
+  app / a phone's browser / a computer, online now with the app, users per
+  app version (lib/admin.php tj_admin_device_overview). Users list: device
+  column (+ «+ اپ») and a device filter, also for messages to a group
+  (lib/admin_users.php TJ_SQL_APP/PHONE, tj_device_of,
+  tj_admin_user_devices); user page: last device, app version, each
+  device labelled. Visits: APK downloads in 30 days and per version, one
+  per person per day (lib/admin_visits.php). Django: api.js deviceMeta
+  signs in as platform "android" inside the app; UserAdmin device column
+  and DeviceFilter (core/admin.py, test AdminDeviceTests).
+
 - 2026-10-26.6 — web app, Android 1.2.0, Django (one preference) —
   * Smoother: occasions indexed once and kept per day (occasions.js
     occasionsIndex/occDayCache: same 713 results over 3 years, a month

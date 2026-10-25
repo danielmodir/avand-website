@@ -7,7 +7,7 @@
  * run (about daily), so these numbers trail real time by up to a day.
  *
  * Counted: successful GETs of pages (not files, not the API, not the
- * admin panel), without bots. A "visitor" is one IP + browser per day,
+ * admin panel), without bots; and downloads of the Android app's APK. A "visitor" is one IP + browser per day,
  * counted only as a number: no IP or browser string is stored. The
  * totals are cached in ~/toojibee-data/visits-cache.json and rebuilt
  * when a log file changes (at most once every 10 minutes).
@@ -42,14 +42,31 @@ function tj_visit_build(): array {
     $slug = tj_admin_settings()['panel_slug'];
     $own = '#^https?://(www\.)?toojibee\.ir#i';
     $days = []; $pages = []; $refs = []; $devices = ['mobile' => 0, 'desktop' => 0]; $seen = []; $latest = null;
+    $apkDays = []; $apkVersions = [];
     $re = '/^(\S+) \S+ \S+ \[([^\]]+)\] "(GET|HEAD) (\S+) [^"]*" (\d{3}) \S+ "([^"]*)" "([^"]*)"/';
     foreach (tj_visit_logs() as $file) {
         $gz = @gzopen($file, 'rb');
         if (!$gz) continue;
         while (($line = gzgets($gz, 16384)) !== false) {
             if (!preg_match($re, $line, $m)) continue;
-            if ($m[3] !== 'GET' || ($m[5] !== '200' && $m[5] !== '304')) continue;
             if (preg_match(TJ_BOT_RE, $m[7])) continue;
+            // The Android app's file from the download page: one download
+            // per person per day (a resumed download comes in pieces, 206).
+            if ($m[3] === 'GET' && ($m[5] === '200' || $m[5] === '206') && preg_match('#^/download/toojibee-([\d.]+)\.apk#', $m[4], $apk)) {
+                $t = DateTime::createFromFormat('d/M/Y:H:i:s O', $m[2]);
+                if ($t) {
+                    $t->setTimezone($tz);
+                    $day = $t->format('Y-m-d');
+                    $who = md5('apk|' . $day . '|' . $m[1] . '|' . $m[7]);
+                    if ($day >= $since && !isset($seen[$who])) {
+                        $seen[$who] = true;
+                        $apkDays[$day] = ($apkDays[$day] ?? 0) + 1;
+                        $apkVersions[$apk[1]] = ($apkVersions[$apk[1]] ?? 0) + 1;
+                    }
+                }
+                continue;
+            }
+            if ($m[3] !== 'GET' || ($m[5] !== '200' && $m[5] !== '304')) continue;
             $page = tj_visit_page($m[4], $slug);
             if ($page === null) continue;
             $t = DateTime::createFromFormat('d/M/Y:H:i:s O', $m[2]);
@@ -80,13 +97,14 @@ function tj_visit_build(): array {
     $d = new DateTime($since, $tz);
     for ($i = 0; $i < TJ_VISIT_DAYS; $i++) {
         $k = $d->format('Y-m-d');
-        $series[] = ['day' => $k] + ($days[$k] ?? ['views' => 0, 'visitors' => 0]);
+        $series[] = ['day' => $k] + ($days[$k] ?? ['views' => 0, 'visitors' => 0]) + ['apk' => $apkDays[$k] ?? 0];
         $d->modify('+1 day');
     }
     arsort($pages); arsort($refs);
     $top = function (array $a): array { $o = []; foreach (array_slice($a, 0, 15, true) as $k => $v) $o[] = ['name' => (string)$k, 'count' => $v]; return $o; };
     return [
         'days' => $series, 'pages' => $top($pages), 'referrers' => $top($refs), 'devices' => $devices,
+        'apk_versions' => $top($apkVersions),
         'data_until' => $latest ? $latest->format('Y-m-d H:i') : null,
         'built_at' => (new DateTime('now', $tz))->format('Y-m-d H:i'),
         'logs_found' => count(tj_visit_logs()),

@@ -335,7 +335,38 @@ function tj_admin_overview(): void {
         'active_1h' => $count('SELECT COUNT(*) AS n FROM tj_users WHERE last_seen_at >= ?', [tj_now(-3600)]),
         'online_now' => $count('SELECT COUNT(*) AS n FROM tj_users WHERE last_seen_at >= ?', [tj_now(-TJ_ONLINE_WINDOW)]),
         'suspended' => $count("SELECT COUNT(*) AS n FROM tj_users WHERE status = 'suspended'"),
-    ]);
+        // Connect to AI (lib/mcp.php): accounts with a link, and those an AI app used in 30 days.
+        'ai_linked' => $count('SELECT COUNT(*) AS n FROM tj_mcp_keys'),
+        'ai_used_30d' => $count('SELECT COUNT(*) AS n FROM tj_mcp_keys WHERE last_used_at >= ?', [tj_now(-30 * 86400)]),
+    ] + tj_admin_device_overview($count));
+}
+
+/* Where people use Toojibee (lib/admin_users.php TJ_SQL_*): users who
+ * signed in from the Android app, a phone's browser or a computer in the
+ * last 30 days (one person can be in more than one), who's online now
+ * through the app (a session from it in the last two hours), and how many
+ * are on each app version (their newest app session). */
+function tj_admin_device_overview(callable $count): array {
+    $since = tj_now(-TJ_DEVICE_DAYS * 86400);
+    $users = function (string $cond) use ($count, $since): int {
+        return $count("SELECT COUNT(DISTINCT user_id) AS n FROM tj_sessions WHERE $cond AND created_at >= ?", [$since]);
+    };
+    $versions = [];
+    $q = tj_db()->prepare('SELECT user_id, user_agent FROM tj_sessions WHERE ' . TJ_SQL_APP . ' AND created_at >= ? ORDER BY created_at');
+    $q->execute([$since]);
+    $newest = [];
+    foreach ($q->fetchAll() as $s) $newest[$s['user_id']] = tj_device_of((string)$s['user_agent'])['app_version'];
+    foreach ($newest as $v) $versions[$v] = ($versions[$v] ?? 0) + 1;
+    uksort($versions, function ($a, $b) { return version_compare($b, $a); });
+    return [
+        'app_users_30d' => $users(TJ_SQL_APP),
+        'phone_web_users_30d' => $users('NOT ' . TJ_SQL_APP . ' AND ' . TJ_SQL_PHONE),
+        'desktop_users_30d' => $users('NOT ' . TJ_SQL_APP . ' AND NOT ' . TJ_SQL_PHONE),
+        'online_app' => $count('SELECT COUNT(DISTINCT s.user_id) AS n FROM tj_sessions s JOIN tj_users u ON u.id = s.user_id
+                                WHERE ' . str_replace('user_agent', 's.user_agent', TJ_SQL_APP) . ' AND s.created_at >= ? AND u.last_seen_at >= ?',
+                                [tj_now(-7200), tj_now(-TJ_ONLINE_WINDOW)]),
+        'app_versions' => array_map(function ($v, $n) { return ['version' => (string)$v, 'users' => $n]; }, array_keys($versions), array_values($versions)),
+    ];
 }
 
 function tj_admin_audit_list(): void {
