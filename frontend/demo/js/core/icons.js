@@ -32,6 +32,8 @@ const ICONS = {
   manageIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>',
   dropIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s7 8.1 7 12.5A7 7 0 0 1 5 14.5C5 10.1 12 2 12 2z"/></svg>',
   wifiOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 3.5-2.3M12 20h.01M15.5 10.2A10 10 0 0 1 19 12.5"/></svg>',
-  pencilIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+  counterIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 5v3H5v2h3v3h2v-3h3v-2h-3V8H8zm6 2v2h5v-2h-5zm0 4v2h5v-2h-5z"/></svg>',
+  timerIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M9 1h6v2H9V1zm2 4.05V3.9h2v1.15a8.5 8.5 0 0 1 4.5 1.86l1.08-1.08 1.42 1.42-1.08 1.08A8.5 8.5 0 1 1 11 5.05zM12 20a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zm-1-10h2v4.4l3 1.8-1 1.7-4-2.4V10z"/></svg>',
+  pencilIcon:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
   copyIcon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
 };

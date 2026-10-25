@@ -157,6 +157,7 @@
   // ── caches of what the server last confirmed ─────────────────────────
   var versions = {};       // "<kind>:<id>" -> version
   var statuses = {};       // "<taskId>|<date>" or "habit:<id>|<date>" -> server status
+  var logValues = {};      // "habit:<id>|<date>" -> the log's counter / timer value
   var children = {};       // parent task id -> [subtask ids] on the server
   var attachments = {};    // task id -> { file_id: true }
   var photoFiles = {};     // object URL / data URL -> file id
@@ -166,7 +167,7 @@
   var queues = {};
 
   function resetCaches() {
-    versions = {}; statuses = {}; children = {}; attachments = {}; photoFiles = {}; categories = {};
+    versions = {}; statuses = {}; logValues = {}; children = {}; attachments = {}; photoFiles = {}; categories = {};
     meVersions = { profile: 0, settings: 0 }; avatarFileId = null; queues = {};
   }
 
@@ -297,9 +298,11 @@
       }, recurrence.mode ? { done: false, skipped: false } : oneOffState(row));
     });
 
-    var logs = {};
+    var logs = {}, progress = {};
     sync.habit_logs.forEach(function (l) {
       statuses['habit:' + l.habit_id + '|' + l.log_date] = l.status;
+      // A counter's count or a timer's seconds (js/core/trackers.js).
+      if (l.value != null) { logValues['habit:' + l.habit_id + '|' + l.log_date] = l.value; (progress[l.habit_id] = progress[l.habit_id] || {})[l.log_date] = l.value; }
       if (l.status !== 'pending') (logs[l.habit_id] = logs[l.habit_id] || []).push(l);
     });
     var habits = sync.habits.map(function (row) {
@@ -308,6 +311,7 @@
       return {
         id: row.id, title: row.title, startDate: row.start_date,
         recurrence: recurrenceFromApi(row), notification: reminderFromApi(row),
+        tracker: row.tracker || null, progress: progress[row.id] || {},
         completedDates: own.filter(function (l) { return l.status === 'done'; }).map(function (l) { return l.log_date; }),
         skippedDates: own.filter(function (l) { return l.status === 'skipped'; }).map(function (l) { return l.log_date; }),
       };
@@ -469,8 +473,9 @@
 
   function saveHabit(habit) {
     return enqueue('habit:' + habit.id, async function () {
-      await putVersioned('habits', habit.id, Object.assign({ title: habit.title, start_date: habit.startDate },
+      await putVersioned('habits', habit.id, Object.assign({ title: habit.title, start_date: habit.startDate, tracker: habit.tracker || null },
         recurrenceToApi(habit.recurrence, false), reminderToApi(habit.notification)));
+      var values = habit.progress || {};
       var want = {};
       (habit.completedDates || []).forEach(function (d) { want[d] = 'done'; });
       (habit.skippedDates || []).forEach(function (d) { want[d] = 'skipped'; });
@@ -478,11 +483,15 @@
       var dates = {};
       Object.keys(statuses).forEach(function (k) { if (k.indexOf(prefix) === 0) dates[k.slice(prefix.length)] = true; });
       Object.keys(want).forEach(function (d) { dates[d] = true; });
+      Object.keys(values).forEach(function (d) { dates[d] = true; });
+      Object.keys(logValues).forEach(function (k) { if (k.indexOf(prefix) === 0) dates[k.slice(prefix.length)] = true; });
       for (var d in dates) {
         var status = want[d] || 'pending';
-        if ((statuses[prefix + d] || 'pending') === status) continue;
-        await request('PUT', '/planning/habits/' + habit.id + '/logs/' + d, { status: status });
+        var value = values[d] ? Math.round(values[d]) : null;
+        if ((statuses[prefix + d] || 'pending') === status && (logValues[prefix + d] == null ? null : logValues[prefix + d]) === value) continue;
+        await request('PUT', '/planning/habits/' + habit.id + '/logs/' + d, { status: status, value: value });
         statuses[prefix + d] = status;
+        if (value == null) delete logValues[prefix + d]; else logValues[prefix + d] = value;
       }
     });
   }

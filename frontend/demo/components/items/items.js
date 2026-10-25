@@ -160,6 +160,7 @@ function habitRow(h, date){
     <div class="item-card ${checked?'done':''} ${skipped?'skipped':''} ${isSelected('habit', h.id)?'is-selected':''}" data-select-type="habit" data-select-id="${h.id}">
       <div class="checkbox square ${checked?'checked':''} ${skipped?'skipped':''}" data-action="toggle-habit" data-id="${h.id}" data-date="${key}" role="checkbox" aria-checked="${checked}" aria-label="${escapeAttr(h.title)}" tabindex="0">${checked?ICONS.check:skipped?ICONS.close:''}</div>
       <p class="item-title" data-action="view-item" data-type="habit" data-id="${h.id}" style="cursor:pointer;">${escapeHtml(h.title)}${groupRowBadge(h, key)}</p>
+      ${trackerHtml(h, key)}
     </div>
   </div>`;
 }
@@ -343,7 +344,7 @@ function syncTaskDom(task){
 const LONG_PRESS_MS = 450;
 
 function selectableFrom(target){
-  if(target.closest('.star-mini, .subtask-toggle, .row-context-menu, .group-add-item')) return null;
+  if(target.closest('.star-mini, .subtask-toggle, .row-context-menu, .group-add-item, .habit-tracker')) return null;
   return target.closest('[data-select-type]');
 }
 
@@ -384,6 +385,7 @@ function showRowContextMenu(el, point){
     : `
     <button type="button" role="menuitem" data-ctx="done">${ICONS.check}${t('qsDone')}</button>
     <button type="button" role="menuitem" data-ctx="undone">${ICONS.close}${t('qsUndone')}</button>
+    ${type === 'habit' && habitTracker(owner) ? `<button type="button" role="menuitem" data-ctx="reset">${ICONS.repeatIcon}${t('trackerReset')}</button>` : ''}
     ${editable ? `<button type="button" role="menuitem" data-ctx="edit">${ICONS.pencilIcon}${t('editBtn')}</button>
     <button type="button" role="menuitem" data-ctx="delete" class="danger">${ICONS.trash}${t('deleteBtn')}</button>` : ''}
   `;
@@ -417,6 +419,7 @@ function runItemMenuAction(el, action){
   clearSelection();
   if(action === 'done' && cb) applyQuicksetState(cb, true);
   else if(action === 'undone' && cb) applyQuicksetState(cb, false, true);
+  else if(action === 'reset' && cb) habitTrackerReset(id, cb.dataset.date); // counter / timer back to zero (js/core/trackers.js)
   else if(action === 'edit'){
     if(type === 'habit') openPopup('habit', el, findItem('habit', id));
     else openPopup('task', el, findTaskOrSub(id).item);

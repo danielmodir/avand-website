@@ -215,6 +215,9 @@ class Habit(UserOwnedSyncModel, Recurrence, Reminder):
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     sort_order = models.IntegerField(default=0)
+    # Counter or timer (the app's habit form): {"kind": "counter", "target": N | null}
+    # or {"kind": "timer", "mode": "up" | "down", "minutes": N}; null = a plain tick.
+    tracker = models.JSONField(null=True, blank=True)
 
     class Meta(UserOwnedSyncModel.Meta):
         constraints = _common_checks("planning_habit", allow_none_recurrence=False) + [
@@ -236,6 +239,7 @@ class HabitLog(models.Model):
     log_date = models.DateField()
     user_id = models.UUIDField()
     status = models.CharField(max_length=10, choices=Status.choices)
+    value = models.PositiveIntegerField(null=True, blank=True)  # counter: times; timer: seconds
     version = models.PositiveIntegerField(default=1)
     updated_at = models.DateTimeField(auto_now=True)
 

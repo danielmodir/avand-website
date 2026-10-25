@@ -70,7 +70,7 @@ class SyncView(APIView):
             "task_occurrences": plain(TaskOccurrence, ["task_id", "occurrence_date", "status", "completed_at", "version", "updated_at"], soft_deleted=False),
             "task_exceptions": plain(TaskException, ["task_id", "occurrence_date", "deleted_at", "updated_at"]),
             "task_attachments": plain(TaskAttachment, ["task_id", "file_id", "sort_order", "deleted_at", "updated_at"]),
-            "habit_logs": plain(HabitLog, ["habit_id", "log_date", "status", "version", "updated_at"], soft_deleted=False),
+            "habit_logs": plain(HabitLog, ["habit_id", "log_date", "status", "value", "version", "updated_at"], soft_deleted=False),
             "event_exceptions": plain(EventException, ["event_id", "occurrence_date", "deleted_at", "updated_at"]),
         })
 
@@ -104,12 +104,24 @@ class TaskOccurrenceView(APIView):
         return Response(s.OccurrenceSerializer(row).data)
 
 
+def habit_log_value(data):
+    """A counter's count or a timer's seconds for the day (absent = unchanged)."""
+    if "value" not in data:
+        return services.UNCHANGED
+    v = data["value"]
+    if v is None:
+        return None
+    if not isinstance(v, int) or isinstance(v, bool) or not 0 <= v <= 999_999:
+        raise ApiError("invalid_value")
+    return v
+
+
 class HabitLogView(APIView):
     def put(self, request, habit_id, day):
         habit = services.owned_or_404(Habit, request.user.id, habit_id)
         row = services.set_status(
             HabitLog, "habit", habit, parse_day(day), request.data.get("status"), request.user.id,
-            HabitLog.Status.values, HabitLog.Status.DONE,
+            HabitLog.Status.values, HabitLog.Status.DONE, value=habit_log_value(request.data),
         )
         return Response(s.HabitLogSerializer(row).data)
 

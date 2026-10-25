@@ -125,3 +125,10 @@
 .details-subtasks li.done{ text-decoration:line-through; color:var(--text-muted); }
 .device.lang-fa .item-details .section-title{ direction:rtl; text-align:right; justify-content:flex-start; }
 .device.lang-fa .rec-every{ flex-direction:row-reverse; } /* reads «هر ۲ ماه» from the right */
+
+/* A habit's counter / timer pages. */
+.rec-stepper .tracker-num{ width:58px; border:none; background:transparent; color:var(--text); font:inherit; font-weight:800; font-size:16px; text-align:center; -moz-appearance:textfield; }
+.rec-stepper .tracker-num::-webkit-inner-spin-button, .rec-stepper .tracker-num::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
+.tracker-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.tracker-chip{ border:1px solid var(--border); background:var(--bg-soft); color:var(--text); font:inherit; font-size:12.5px; font-weight:700; padding:6px 12px; border-radius:999px; cursor:pointer; }
+.tracker-chip.active{ background:var(--primary); color:var(--on-primary); border-color:var(--primary); }

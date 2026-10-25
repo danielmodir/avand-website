@@ -34,6 +34,22 @@ class PlanningTests(ApiTestCase):
         no_time = self.put("habits", new_id(), {"title": "Read", "start_date": "2026-10-15", "reminder_type": "at_time"})
         self.assertEqual(no_time.json()["error"], "reminder_time_required")
 
+    def test_habit_counter_and_timer(self):
+        hid = new_id()
+        r = self.put("habits", hid, {"title": "Water", "start_date": "2026-10-15", "tracker": {"kind": "counter", "target": 8}})
+        self.assertEqual(r.json()["tracker"], {"kind": "counter", "target": 8})
+        bad = self.put("habits", new_id(), {"title": "x", "start_date": "2026-10-15", "tracker": {"kind": "timer", "mode": "down", "minutes": 0}})
+        self.assertEqual(bad.json()["error"], "invalid_tracker")
+        up = self.put("habits", new_id(), {"title": "Read", "start_date": "2026-10-15", "tracker": {"kind": "timer", "mode": "up", "minutes": 9}})
+        self.assertEqual(up.json()["tracker"], {"kind": "timer", "mode": "up", "minutes": None})
+        log = self.client.put(f"/api/v1/planning/habits/{hid}/logs/2026-10-16", {"status": "pending", "value": 3}, format="json")
+        self.assertEqual((log.json()["status"], log.json()["value"]), ("pending", 3))
+        log = self.client.put(f"/api/v1/planning/habits/{hid}/logs/2026-10-16", {"status": "done"}, format="json")
+        self.assertEqual(log.json()["value"], 3)  # no value sent: kept
+        self.assertEqual(self.client.put(f"/api/v1/planning/habits/{hid}/logs/2026-10-16", {"status": "done", "value": -1}, format="json").json()["error"], "invalid_value")
+        logs = self.client.get("/api/v1/planning/sync").json()["habit_logs"]
+        self.assertEqual([(l["log_date"], l["value"]) for l in logs], [("2026-10-16", 3)])
+
     def test_subtasks_are_one_level_and_do_not_repeat(self):
         parent, child = new_id(), new_id()
         self.put("tasks", parent, {"title": "Parent", "start_date": "2026-10-15"})

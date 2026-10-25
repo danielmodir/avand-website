@@ -156,3 +156,16 @@
 .swipe-bg-icon{ display:flex; width:30px; height:30px; border-radius:50%; align-items:center; justify-content:center;
   background:rgba(255,255,255,.18); transform:scale(calc(.6 + .4 * var(--swipe-p, 0))); transition:transform .08s linear; }
 .swipe-bg-icon svg{ width:17px; height:17px; fill:#fff; }
+
+/* A habit's counter (− 3/8 +) or timer (12:05 ▶), js/core/trackers.js. */
+.habit-tracker{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
+.ht-btn{
+  width:30px; height:30px; border-radius:50%; border:none; cursor:pointer; padding:0; font-family:inherit; font-size:18px; font-weight:800; line-height:1;
+  display:flex; align-items:center; justify-content:center; color:var(--text);
+  background:color-mix(in srgb, var(--habit-color) 18%, transparent); transition:transform .12s ease, background .2s ease;
+}
+.ht-btn:active{ transform:scale(.88); }
+.ht-btn svg{ width:16px; height:16px; }
+.ht-value{ min-width:36px; text-align:center; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.habit-tracker.running .ht-play{ background:var(--habit-color); color:var(--habit-on, #fff); }
+.habit-tracker.running .ht-value{ color:var(--habit-color); }

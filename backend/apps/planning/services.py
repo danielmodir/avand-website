@@ -62,12 +62,18 @@ def owned_or_404(model, user_id, item_id):
     return instance
 
 
-def set_status(row_model, parent_field, parent, day, status, user_id, allowed, done_value):
-    """Upsert one day's status (task occurrence or habit log)."""
+UNCHANGED = object()
+
+
+def set_status(row_model, parent_field, parent, day, status, user_id, allowed, done_value, value=UNCHANGED):
+    """Upsert one day's status (task occurrence or habit log; a habit log
+    also keeps its counter / timer value)."""
     if status not in allowed:
         raise ApiError("invalid_status")
     date_field = "occurrence_date" if row_model is TaskOccurrence else "log_date"
     values = {"status": status}
+    if value is not UNCHANGED:
+        values["value"] = value
     if row_model is TaskOccurrence:
         values["completed_at"] = timezone.now() if status == done_value else None
     with transaction.atomic(using=DB):

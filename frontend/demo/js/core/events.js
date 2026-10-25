@@ -57,6 +57,9 @@ document.getElementById('device').addEventListener('click', (e) => {
     render(); return;
   }
   // Group planning (components/groups/groups.js).
+  // A habit's counter and timer (js/core/trackers.js).
+  if(action === 'habit-inc' || action === 'habit-dec'){ habitCount(el.dataset.id, el.dataset.date, action === 'habit-inc' ? 1 : -1); return; }
+  if(action === 'habit-timer'){ habitTimerToggle(el.dataset.id, el.dataset.date); return; }
   if(action === 'group-new'){ openGroupDialog(null); return; }
   if(action === 'group-open'){ openGroupDialog(el.dataset.id); return; }
   if(action === 'group-view'){ openGroupView(el.dataset.id); return; }
@@ -125,9 +128,10 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-subview'){
     if(el.dataset.sub === 'repeat') startRepeatDraft(); // edited as a draft until "Confirm" (popup.js)
     if(el.dataset.sub === 'notification') startReminderDraft();
+    if(el.dataset.sub === 'counter' || el.dataset.sub === 'timer') startTrackerDraft(el.dataset.sub); // a habit's counter / timer (popup.js)
     state.popupSubView = el.dataset.sub; renderPopupBody(); return;
   }
-  if(action === 'close-subview'){ repeatDraft = null; reminderDraft = null; state.popupSubView = null; renderPopupBody(); return; }
+  if(action === 'close-subview'){ repeatDraft = null; reminderDraft = null; trackerDraft = null; state.popupSubView = null; renderPopupBody(); return; }
 
   if(action === 'pick-month'){ state.calCursor = setMonthOf(state.calCursor, Number(el.dataset.month)); state.monthDropdownOpen=false; render(); return; }
   if(action === 'pick-year'){ state.calCursor = setYearOf(state.calCursor, Number(el.dataset.year)); state.yearDropdownOpen=false; render(); return; }

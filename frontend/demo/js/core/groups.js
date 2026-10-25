@@ -11,7 +11,7 @@
    own mark is my tick; 'shared': anyone's mark is everybody's tick. */
 const GROUP_KIND_KEY = { task: 'tasks', habit: 'habits', event: 'events' };
 const GROUP_CACHE_KEY = 'toojibee-groups-v1';
-const GROUP_LOCAL_FIELDS = ['groupId', 'doneMode', 'groupMine', 'groupBy', 'groupMarks', 'pinned',
+const GROUP_LOCAL_FIELDS = ['groupId', 'doneMode', 'groupMine', 'groupBy', 'groupMarks', 'pinned', 'progress',
   'done', 'skipped', 'statusByDate', 'completedDates', 'skippedDates'];
 
 function groupsAvailable(){ return !!Cloud.supportsGroups && !REAL_LOGIN_DISABLED && !state.guest && Cloud.hasSession(); }

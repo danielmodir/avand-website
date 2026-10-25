@@ -138,11 +138,29 @@ class HabitSerializer(OwnedSerializer):
 
     class Meta:
         model = Habit
-        fields = SYNC_FIELDS + ["category_id", "title", "start_date", "end_date", "sort_order"] + RECURRENCE_FIELDS + REMINDER_FIELDS
+        fields = SYNC_FIELDS + ["category_id", "title", "start_date", "end_date", "sort_order", "tracker"] + RECURRENCE_FIELDS + REMINDER_FIELDS
         read_only_fields = READ_ONLY
 
     def validate_category_id(self, category):
         return self.validate_category(category)
+
+    def validate_tracker(self, t):
+        """None, a counter (target 1-999 or none) or a timer (up, or down from 1-600 minutes)."""
+        if t is None:
+            return None
+        if not isinstance(t, dict):
+            raise ApiError("invalid_tracker")
+        if t.get("kind") == "counter":
+            target = t.get("target")
+            if target is not None and not (isinstance(target, int) and 1 <= target <= 999):
+                raise ApiError("invalid_tracker")
+            return {"kind": "counter", "target": target}
+        if t.get("kind") == "timer" and t.get("mode") in ("up", "down"):
+            minutes = t.get("minutes")
+            if t["mode"] == "down" and not (isinstance(minutes, int) and 1 <= minutes <= 600):
+                raise ApiError("invalid_tracker")
+            return {"kind": "timer", "mode": t["mode"], "minutes": minutes if t["mode"] == "down" else None}
+        raise ApiError("invalid_tracker")
 
     def validate(self, attrs):
         if self.instance is None and "rec_mode" not in attrs:
@@ -202,7 +220,7 @@ class HabitLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HabitLog
-        fields = ["habit_id", "log_date", "status", "version", "updated_at"]
+        fields = ["habit_id", "log_date", "status", "value", "version", "updated_at"]
 
 
 class StatusSerializer(serializers.Serializer):

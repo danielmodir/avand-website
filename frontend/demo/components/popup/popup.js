@@ -48,6 +48,8 @@ function resetFormDraft(type, existing){
     // Group planning: which group (none = just me) and how it's ticked.
     groupId: existing ? (existing.groupId || '') : (popupPresetGroup || ''),
     doneMode: existing?.doneMode === 'shared' ? 'shared' : 'each',
+    // A habit's counter or timer (js/core/trackers.js); null = a plain tick.
+    tracker: existing && habitTracker(existing) ? Object.assign({}, existing.tracker) : null,
   };
   popupPresetGroup = null;
   formPhotos = existing ? [...(existing.photos||[])] : [];
@@ -126,6 +128,8 @@ function itemDetailsHtml(type, item, day){
   if(n.type === 'time') rows.push([ICONS.bellIcon, t('reminderAt') + ' ' + `<span dir="ltr">${dig(n.time)}</span>`]);
   if(n.type === 'repeat') rows.push([ICONS.bellIcon, t('reminderEveryNHours').replace('{n}', dig(n.repeatHours || 1))]);
   if(n.type === 'before') rows.push([ICONS.bellIcon, t('reminderMinutesBefore').replace('{n}', dig(n.minutesBefore || 15))]);
+  if(type === 'habit' && habitTracker(item)) rows.push([item.tracker.kind === 'counter' ? ICONS.counterIcon : ICONS.timerIcon,
+    trackerSummary(item) + ' · ' + t('trackerToday').replace('{v}', trackerLabel(item, dateKey(state.homeDate || today)))]);
   if(n.type === 'countdown') rows.push([ICONS.bellIcon, t('countdownSummary').replace('{lead}', durationLabel(n.leadMinutes || 1440)).replace('{every}', durationLabel(n.everyMinutes || 60))]);
   const g = item.groupId ? groupById(item.groupId) : null;
   if(g){
@@ -179,7 +183,11 @@ function popupIconRow(type){
   if(type !== 'habit') icons.push({ key:'calendar', icon:ICONS.calendarIcon, set: formDraft.timeMode==='range' || formDraft.date !== dateKey(today) || !!formDraft.startTime || !!formDraft.endTime });
   if(!state.editingParentId) icons.push({ key:'repeat', icon:ICONS.repeatIcon, set: !!formDraft.recurrence.mode });
   icons.push({ key:'notification', icon:ICONS.bellIcon, set: !!formDraft.notification.type });
-  return `<div class="popup-icon-row">${icons.map(i => `<div class="popup-icon-btn ${i.set?'set':''} ${i.disabled?'disabled':''}" data-action="${i.disabled?'notification-coming-soon':'open-subview'}" data-sub="${i.key}">${i.icon}</div>`).join('')}</div>`;
+  if(type === 'habit'){
+    icons.push({ key:'counter', icon:ICONS.counterIcon, set: formDraft.tracker?.kind === 'counter', label: t('trackerCounter') });
+    icons.push({ key:'timer', icon:ICONS.timerIcon, set: formDraft.tracker?.kind === 'timer', label: t('trackerTimer') });
+  }
+  return `<div class="popup-icon-row">${icons.map(i => `<div class="popup-icon-btn ${i.set?'set':''} ${i.disabled?'disabled':''}" data-action="${i.disabled?'notification-coming-soon':'open-subview'}" data-sub="${i.key}"${i.label ? ` title="${escapeAttr(i.label)}" aria-label="${escapeAttr(i.label)}" role="button"` : ''}>${i.icon}</div>`).join('')}</div>`;
 }
 
 function descriptionBlock(withPhotos = true){
@@ -222,6 +230,8 @@ function renderPopupSubView(){
   let title = '', content = '';
   if(sub === 'repeat'){ title = t('repeatTitle'); content = repeatSubviewHtml(type); }
   else if(sub === 'notification'){ title = t('reminderTitle'); content = notificationSubviewHtml(); }
+  else if(sub === 'counter'){ title = t('trackerCounter'); content = counterSubviewHtml(); }
+  else if(sub === 'timer'){ title = t('trackerTimer'); content = timerSubviewHtml(); }
   return `
     <div class="popup-subview-header">
       <div class="popup-back" data-action="close-subview">${ICONS.arrowBack}</div>
@@ -364,6 +374,95 @@ function notificationSubviewHtml(){
   `;
 }
 
+/* ---- a habit's counter / timer: a draft until "Confirm", like the
+   repeat page. Only one of the two at a time. ---- */
+let trackerDraft = null;
+const TIMER_QUICK_MINUTES = [5, 10, 15, 20, 30, 45, 60];
+
+function startTrackerDraft(kind){
+  const cur = formDraft.tracker && formDraft.tracker.kind === kind ? formDraft.tracker : null;
+  trackerDraft = kind === 'counter'
+    ? { kind, withTarget: !!(cur && cur.target), target: (cur && cur.target) || 8 }
+    : { kind, mode: (cur && cur.mode) || 'up', minutes: (cur && cur.minutes) || 20 };
+}
+
+function counterSubviewHtml(){
+  const d = trackerDraft || (startTrackerDraft('counter'), trackerDraft);
+  return `
+    <select class="settings-select" id="ctr-mode" style="width:100%;">
+      <option value="free" ${!d.withTarget ? 'selected' : ''}>${t('trackerFree')}</option>
+      <option value="target" ${d.withTarget ? 'selected' : ''}>${t('trackerWithTarget')}</option>
+    </select>
+    ${d.withTarget ? `
+      <div class="rec-block rec-every">
+        <span>${t('trackerTargetLabel')}</span>
+        <div class="rec-stepper" dir="ltr">
+          <button type="button" data-tstep="-1" ${d.target <= 1 ? 'disabled' : ''}>−</button>
+          <input type="number" id="ctr-target" class="tracker-num" min="1" max="${COUNTER_MAX_TARGET}" value="${d.target}" inputmode="numeric">
+          <button type="button" data-tstep="1" ${d.target >= COUNTER_MAX_TARGET ? 'disabled' : ''}>+</button>
+        </div>
+        <span>${t('trackerTimes')}</span>
+      </div>` : ''}
+    <div class="profile-hint">${t(d.withTarget ? 'trackerTargetHint' : 'trackerFreeHint')}</div>
+    <button type="button" class="btn btn-primary rec-confirm" id="tracker-confirm">${t('dpDone')}</button>
+    ${formDraft.tracker?.kind === 'counter' ? `<button type="button" class="btn btn-outline rec-remove" id="tracker-remove">${t('trackerNoCounter')}</button>` : ''}
+  `;
+}
+
+function timerSubviewHtml(){
+  const d = trackerDraft || (startTrackerDraft('timer'), trackerDraft);
+  return `
+    <select class="settings-select" id="tmr-mode" style="width:100%;">
+      <option value="up" ${d.mode === 'up' ? 'selected' : ''}>${t('trackerUp')}</option>
+      <option value="down" ${d.mode === 'down' ? 'selected' : ''}>${t('trackerDown')}</option>
+    </select>
+    ${d.mode === 'down' ? `
+      <div class="rec-block rec-every">
+        <span>${t('trackerFor')}</span>
+        <div class="rec-stepper" dir="ltr">
+          <button type="button" data-mstep="-5" ${d.minutes <= 1 ? 'disabled' : ''}>−</button>
+          <input type="number" id="tmr-minutes" class="tracker-num" min="1" max="${TIMER_MAX_MINUTES}" value="${d.minutes}" inputmode="numeric">
+          <button type="button" data-mstep="5" ${d.minutes >= TIMER_MAX_MINUTES ? 'disabled' : ''}>+</button>
+        </div>
+        <span>${t('trackerMinutes')}</span>
+      </div>
+      <div class="tracker-chips">${TIMER_QUICK_MINUTES.map(m => `<button type="button" class="tracker-chip ${d.minutes === m ? 'active' : ''}" data-mins="${m}">${dig(m)}</button>`).join('')}</div>` : ''}
+    <div class="profile-hint">${t(d.mode === 'down' ? 'trackerDownHint' : 'trackerUpHint')}</div>
+    <button type="button" class="btn btn-primary rec-confirm" id="tracker-confirm">${t('dpDone')}</button>
+    ${formDraft.tracker?.kind === 'timer' ? `<button type="button" class="btn btn-outline rec-remove" id="tracker-remove">${t('trackerNoTimer')}</button>` : ''}
+  `;
+}
+
+function wireTrackerSubview(){
+  const d = trackerDraft;
+  const num = (v, max) => Math.min(max, Math.max(1, Math.round(Number(v) || 1)));
+  document.getElementById('ctr-mode')?.addEventListener('change', e => { d.withTarget = e.target.value === 'target'; renderPopupBody(); });
+  document.getElementById('tmr-mode')?.addEventListener('change', e => { d.mode = e.target.value === 'down' ? 'down' : 'up'; renderPopupBody(); });
+  document.getElementById('ctr-target')?.addEventListener('change', e => { d.target = num(e.target.value, COUNTER_MAX_TARGET); renderPopupBody(); });
+  document.getElementById('tmr-minutes')?.addEventListener('change', e => { d.minutes = num(e.target.value, TIMER_MAX_MINUTES); renderPopupBody(); });
+  document.querySelectorAll('[data-tstep]').forEach(b => b.addEventListener('click', () => { d.target = num(d.target + Number(b.dataset.tstep), COUNTER_MAX_TARGET); renderPopupBody(); }));
+  document.querySelectorAll('[data-mstep]').forEach(b => b.addEventListener('click', () => {
+    const step = Number(b.dataset.mstep);
+    d.minutes = num(d.minutes <= 5 && step < 0 ? d.minutes - 1 : d.minutes + step, TIMER_MAX_MINUTES); renderPopupBody();
+  }));
+  document.querySelectorAll('[data-mins]').forEach(b => b.addEventListener('click', () => { d.minutes = Number(b.dataset.mins); renderPopupBody(); }));
+  document.getElementById('tracker-confirm')?.addEventListener('click', () => {
+    // The typed number counts even if the field wasn't left first.
+    const ti = document.getElementById('ctr-target'), mi = document.getElementById('tmr-minutes');
+    if(ti) d.target = num(ti.value, COUNTER_MAX_TARGET);
+    if(mi) d.minutes = num(mi.value, TIMER_MAX_MINUTES);
+    formDraft.tracker = d.kind === 'counter'
+      ? { kind: 'counter', target: d.withTarget ? d.target : null }
+      : { kind: 'timer', mode: d.mode, minutes: d.mode === 'down' ? d.minutes : null };
+    trackerDraft = null; state.popupSubView = null;
+    renderPopupBody();
+  });
+  document.getElementById('tracker-remove')?.addEventListener('click', () => {
+    formDraft.tracker = null; trackerDraft = null; state.popupSubView = null;
+    renderPopupBody();
+  });
+}
+
 /* ---- master body renderer + wiring ---- */
 function renderPopupBody(){
   const body = document.querySelector('#add-popup .popup-body');
@@ -478,6 +577,8 @@ function wireSubviewInteractivity(){
       repeatDraft = null; state.popupSubView = null;
       renderPopupBody();
     });
+  } else if(sub === 'counter' || sub === 'timer'){
+    wireTrackerSubview();
   } else if(sub === 'notification'){
     const n = reminderDraft;
     document.getElementById('notif-type-select')?.addEventListener('change', e => { n.type = e.target.value; renderPopupBody(); });
@@ -590,7 +691,10 @@ function submitPopup(){
       recurrence, notification,
       // A new habit starts on the day picked in the calendar.
       startDate: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(state.homeDate || today),
-      completedDates: state.editingId ? findItem('habit', state.editingId).completedDates : []
+      completedDates: state.editingId ? findItem('habit', state.editingId).completedDates : [],
+      skippedDates: state.editingId ? (findItem('habit', state.editingId).skippedDates || []) : [],
+      tracker: formDraft.tracker || null,
+      progress: state.editingId ? (findItem('habit', state.editingId).progress || {}) : {},
     };
     upsert('habits', obj);
   } else if(type === 'event'){
