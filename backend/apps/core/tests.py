@@ -58,7 +58,7 @@ class AuthFlowTests(ApiTestCase):
         self.assertEqual(User.objects.get(email="user@example.com").id.version, 4)  # random, not time-ordered
         self.assertEqual(me["settings"]["calendar_primary"], "jalali")
         self.assertEqual([m["key"] for m in me["modules"]], ["occasions", "planning", "social", "notifications"])
-        self.assertFalse(EmailOutbox.objects.exists())  # no email at sign-up any more
+        self.assertEqual(EmailOutbox.objects.filter(template="verify_email").count(), 1)  # the sign-up code
 
     def test_duplicate_email_and_weak_password_are_rejected(self):
         self.register()
@@ -88,8 +88,10 @@ class AuthFlowTests(ApiTestCase):
         self.assertEqual(letters_only.json()["error"], "weak_password")
         ok = attempt(username="Sara_95")
         self.assertEqual(ok.status_code, 201, ok.content)
+        code = EmailOutbox.objects.get(template="verify_email").payload["code"]
+        tokens = APIClient().post("/api/v1/auth/email/code", {"email": "c@example.com", "code": code}, format="json").json()
         client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION=f"Bearer {ok.json()['access_token']}")
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access_token']}")
         profile = client.get("/api/v1/me").json()["profile"]
         self.assertEqual((profile["username"], profile["gender"], profile["birth_date"]), ("sara_95", "female", "1995-05-20"))
         taken = attempt(email="d@example.com", username="SARA_95")
@@ -164,9 +166,25 @@ class AuthFlowTests(ApiTestCase):
         right = APIClient().post("/api/v1/auth/password/code", {"email": "user@example.com", "code": code}, format="json")
         self.assertEqual(right.json()["error"], "code_expired")
 
-    def test_signup_sends_no_email(self):
-        self.register()
-        self.assertFalse(EmailOutbox.objects.filter(template="verify_email").exists())
+    def test_signup_needs_the_email_code(self):
+        body = {"email": "new@example.com", "password": PASSWORD, "username": "new_one", "gender": "female", "birth_date": "1995-05-20"}
+        signup = APIClient().post("/api/v1/auth/register", body, format="json")
+        self.assertEqual(signup.status_code, 201)
+        self.assertNotIn("access_token", signup.json())
+        # Not confirmed: signing in sends no session (the code was just sent, not again within a minute).
+        login = APIClient().post("/api/v1/auth/login", {"email": "new@example.com", "password": PASSWORD}, format="json")
+        self.assertEqual((login.status_code, login.json()["error"]), (403, "email_not_verified"))
+        self.assertEqual(EmailOutbox.objects.filter(template="verify_email").count(), 1)
+        code = EmailOutbox.objects.get(template="verify_email").payload["code"]
+        wrong = APIClient().post("/api/v1/auth/email/code", {"email": "new@example.com", "code": "000000" if code != "000000" else "111111"}, format="json")
+        self.assertEqual(wrong.json()["error"], "invalid_code")
+        ok = APIClient().post("/api/v1/auth/email/code", {"email": "new@example.com", "code": code}, format="json")
+        self.assertEqual(ok.status_code, 200)
+        self.assertIn("access_token", ok.json())
+        login = APIClient().post("/api/v1/auth/login", {"email": "new@example.com", "password": PASSWORD}, format="json")
+        self.assertEqual(login.status_code, 200)
+        # Resending never reveals whether an address exists.
+        self.assertEqual(APIClient().post("/api/v1/auth/email/code/resend", {"email": "ghost@example.com"}, format="json").status_code, 204)
 
     def test_unknown_email_reset_request_looks_identical(self):
         response = APIClient().post("/api/v1/auth/password/forgot", {"email": "ghost@example.com"}, format="json")

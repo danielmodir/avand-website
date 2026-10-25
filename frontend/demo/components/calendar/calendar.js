@@ -97,10 +97,9 @@ function refreshCalendarRanges(){
    Collapsed: this week as a 7-day strip. Expanded: full month grid.
    Toggle via the handle (tap or drag) — see attachHomeCalDrag(). Picking
    a date in the expanded grid also collapses back to the strip. */
-/* Whether a day gets the small "has plans" dot (Planning settings). */
-/* One dot per kind the day has, in that kind's color (Settings → Planning). */
+/* One dot per kind the day has, in that kind's color (Settings → Planning).
+   Always on (its setting was removed, 2026-10-25). */
 function dayDotsHtml(day){
-  if(!pref('planningCalendarDots') || !state.settings.planningEnabled) return '';
   const {tasks, events} = itemsForDate(day);
   return (tasks.length ? '<span class="dot-task"></span>' : '') + (events.length ? '<span class="dot-event"></span>' : '');
 }

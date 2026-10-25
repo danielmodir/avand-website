@@ -52,9 +52,11 @@ function renderArticleStrip(place){
 /* Which desks show, in order (also used to jump to one: search, a group link). */
 function deskKeys(){
   const keys = [];
+  /* Planning is the main desk: always there for an account and always
+     first, so signing in or opening the app lands on it (the owner's
+     request, 2026-10-25). Guests only browse the calendar and occasions. */
+  if(!state.guest) keys.push('planning');
   if(pref('occasionsEnabled')) keys.push('occasionsDesktop');
-  // Guests only browse the calendar and occasions; planning needs an account.
-  if(state.settings.planningEnabled && !state.guest) keys.push('planning');
   if(pref('groupsEnabled') && groupsAvailable()) keys.push('groupsDesktop'); // needs our API and an account
   if(periodViews().length) keys.push('periodDesktop'); // her own cycle and/or ones friends share with this person
   return keys;
@@ -67,7 +69,7 @@ function renderDesktops(d, data){
     if(key === 'planning') return { key, html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
       ${pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
-      ${renderItemSections(tasks,pref('planningShowHabits') ? habits : [], pref('planningShowEvents') ? events : [], d)}
+      ${renderItemSections(tasks, habits, events, d)}
     ` };
     if(key === 'groupsDesktop') return { key, html: renderGroupsPane(d) };
     return { key, html: renderPeriodPage('') + renderArticleStrip('app_period') };

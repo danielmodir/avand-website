@@ -34,11 +34,16 @@
   var ACCOUNT_CACHE_KEY = 'toojibee-account-cache-v1';
   var base = global.Cloud; // the Django client: reuse uuid(), takeEmailLink()
 
-  function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; } }
+  // In a browser the sign-in lasts until the tab or the browser is closed
+  // (sessionStorage); the Android app keeps it (localStorage). See api.js.
+  var SESSION_STORE = base && base.sessionStore ? base.sessionStore() : localStorage;
+  function loadSession() { try { return JSON.parse(SESSION_STORE.getItem(SESSION_KEY)); } catch (e) { return null; } }
   function storeSession(t) {
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify({ access_token: t.access_token, refresh_token: t.refresh_token, user_id: t.user_id })); } catch (e) { /* private mode */ }
+    try { SESSION_STORE.setItem(SESSION_KEY, JSON.stringify({ access_token: t.access_token, refresh_token: t.refresh_token, user_id: t.user_id })); } catch (e) { /* private mode */ }
   }
-  function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ } }
+  function clearSession() { try { SESSION_STORE.removeItem(SESSION_KEY); } catch (e) { /* ignore */ } }
+  // Signed out by closing the browser: the account's copy goes too.
+  if (SESSION_STORE !== localStorage && !loadSession()) clearCache();
   function hasSession() { return !!loadSession(); }
 
   var api = {
@@ -91,8 +96,14 @@
 
   // ── auth ──────────────────────────────────────────────────────────────
   // f: { email, password, username, gender, dob } — all required (auth.js).
+  // Same as api.js: { verify_required, email }, then verifyEmailCode().
   async function signUp(f) {
-    storeSession(await request('POST', '/auth/register', { email: f.email, password: f.password, username: f.username, gender: f.gender, birth_date: f.dob }, { auth: false }));
+    var r = await request('POST', '/auth/register', { email: f.email, password: f.password, username: f.username, gender: f.gender, birth_date: f.dob }, { auth: false });
+    if (r && r.access_token) storeSession(r);
+    return r;
+  }
+  async function verifyEmailCode(email, code) {
+    storeSession(await request('POST', '/auth/email/code', { email: email, code: code }, { auth: false }));
   }
   async function signIn(email, password) {
     storeSession(await request('POST', '/auth/login', { email: email, password: password }, { auth: false }));
@@ -288,7 +299,8 @@
 
   Object.assign(api, {
     uuid: base.uuid, isConfigured: function () { return true; }, hasSession: hasSession,
-    signUp: signUp, signIn: signIn, signOut: signOut,
+    signUp: signUp, signIn: signIn, signOut: signOut, verifyEmailCode: verifyEmailCode,
+    resendVerifyCode: function (email) { return request('POST', '/auth/email/code/resend', { email: email }, { auth: false }); },
     signInWithGoogle: function () { /* not on this backend */ },
     consumeOAuthRedirect: function () { return Promise.resolve(false); },
     authProviders: function () { return Promise.resolve({ password: true, google: false }); },

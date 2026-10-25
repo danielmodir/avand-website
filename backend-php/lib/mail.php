@@ -15,11 +15,17 @@ function tj_mail(string $to, string $subject, string $text, string $html = ''): 
     $from = $cfg['mail_from'];
     $envelope = preg_match('/<([^>]+)>/', $from, $m) ? $m[1] : $from;
     $name = trim(preg_replace('/<[^>]+>/', '', $from));
+    // Date and a Message-ID on our own domain: mail without them scores as
+    // spam (SPF, DKIM and DMARC for toojibee.ir are set in the host's DNS).
+    $domain = substr(strrchr($envelope, '@') ?: '@toojibee.ir', 1);
     $headers = [
         'From: ' . ($name !== '' ? '=?UTF-8?B?' . base64_encode($name) . "?= <$envelope>" : $envelope),
         'Reply-To: ' . $envelope,
+        'Date: ' . date('r'),
+        'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . $domain . '>',
         'MIME-Version: 1.0',
         'Auto-Submitted: auto-generated',
+        'X-Auto-Response-Suppress: All',
     ];
     if ($html === '') {
         $headers[] = 'Content-Type: text/plain; charset=UTF-8';
@@ -53,6 +59,12 @@ function tj_code_email(string $to, string $subject, string $faLead, string $enLe
         . '<p style="margin:22px 0 0;text-align:center;font-size:12px;color:#6b6440">توجیبی · Toojibee · <a href="https://toojibee.ir/" style="color:#EB7D00">toojibee.ir</a></p>'
         . '</div></body></html>';
     tj_mail($to, $subject, $text, $html);
+}
+
+function tj_send_signup_code(string $to, string $code): void {
+    tj_code_email($to, 'کد تأیید ایمیل توجیبی · Toojibee email code',
+        'سلام! برای تأیید ایمیلت و ورود به توجیبی این کد رو وارد کن:',
+        'Hi! Enter this code in Toojibee to confirm your email and sign in (the code is above too).', $code);
 }
 
 function tj_send_reset_code(string $to, string $code): void {

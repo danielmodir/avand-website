@@ -15,6 +15,12 @@ class ApiTestCase(APITestCase):
         }
         response = client.post("/api/v1/auth/register", body, format="json")
         self.assertEqual(response.status_code, 201, response.content)
+        self.assertTrue(response.json()["verify_required"])
+        # The code from the sign-up email signs in.
+        from apps.core.models import EmailOutbox
+        code = EmailOutbox.objects.filter(to_email=email.lower(), template="verify_email").latest("created_at").payload["code"]
+        response = client.post("/api/v1/auth/email/code", {"email": email, "code": code}, format="json")
+        self.assertEqual(response.status_code, 200, response.content)
         tokens = response.json()
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access_token']}")
         client.tokens = tokens

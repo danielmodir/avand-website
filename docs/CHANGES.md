@@ -48,15 +48,45 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-26.4 (working copy)
+- Demo asset version: 2026-10-26.5
 - PHP schema: v23
-- Django latest migrations: core 0008, planning 0005, social 0003,
+- Django latest migrations: core 0008, planning 0006, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.1.0 (versionCode 2)
 
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-26.5 — web app (so Android too), PHP, Django — 
+  * Time picker (js/core/dropdown.js enhanceTime): every minute, hour and
+    minute columns loop. A one-time task's "at a time" reminder (input
+    data-base/data-span, popup.js reminderSpans) lists hours from now only,
+    on past midnight up to 7 days (day labels); a later day is saved as
+    notification.date and stretches the task to a range up to that day, so
+    it isn't overdue first. notify.js fires it only on that day. Django
+    Task.reminder_date (planning 0006 + check constraint + test); PHP keeps
+    it in the synced document.
+  * Browser sign-in lasts until the tab/browser closes: session in
+    sessionStorage (api.js sessionStore(), also used by api-php.js; an old
+    localStorage session moves over once; account cache cleared when
+    signed out that way). Android app keeps localStorage.
+    assets/js/buttons.js reads both.
+  * Email confirmation is back: register returns {verify_required, email}
+    and emails a code; login of an unconfirmed account → 403
+    email_not_verified + a code (old accounts too, once). POST
+    /auth/email/code → tokens, /auth/email/code/resend. PHP lib/auth.php +
+    v1/index.php, Django services/accounts.py + views/urls + tests (test
+    helper signs up through the code). auth.js verify-code view with a
+    spam-folder note. PHP mail gets Date/Message-ID headers (SPF, DKIM,
+    DMARC already in DNS).
+  * Classic palette, day mode: white header, navy logo
+    (assets/icons/logo-navy.svg from deploy/make-logo.js; theme.css).
+  * Planning is always the first desk for an account (workspace.js
+    deskKeys); its on/off switch and the settings rows for calendar dots,
+    events and habits in the day plan were removed (always on).
+  * Photos picked in the app become WebP (util.js imageToWebp: 1280 px,
+    avatar 512 px). Site images were already WebP; only icons stay PNG.
 
 - 2026-10-26.4 — web app, Android 1.1.0, download pages — speed: render()
   rebuilds only pages whose HTML changed (render.js setPageHtml), no blur on

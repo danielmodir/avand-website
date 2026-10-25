@@ -73,7 +73,8 @@ function reminderSlots(day){
     const n = item.notification || {};
     if(!n.type || done) return;
     const text = n.text || '';
-    if(n.type === 'time') push(kind, item, 'time', atTimeOn(day, n.time), text || dig(n.time));
+    // A one-time task's reminder may sit on a later day of its range (n.date).
+    if(n.type === 'time' && (!n.date || n.date === key)) push(kind, item, 'time', atTimeOn(day, n.time), text || dig(n.time));
     if(n.type === 'repeat'){
       const start = atTimeOn(day, item.startTime || n.time);
       const step = Math.max(1, Number(n.repeatHours) || 1) * 3600000;

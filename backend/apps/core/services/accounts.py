@@ -182,8 +182,47 @@ def register(request, email, password, first_name="", last_name="", consents=Non
         raise ApiError("email_taken", 409)
     provision_user(user, first_name, last_name, username, gender, birth_date)
     record_consents(user, consents, request)
-    # No email at sign-up (the owner dropped the confirmation step, 2026-10-22).
+    # The email is confirmed with a code before the first sign-in (the
+    # owner brought the step back, 2026-10-25): no session until then.
+    send_verify_code(user)
     log_event(request, AuthEvent.Event.REGISTER, True, user)
+    return user
+
+
+def send_verify_code(user):
+    """A 6-digit code to confirm the address; at most one a minute."""
+    recent = AuthToken.objects.filter(user=user, purpose=AuthToken.Purpose.VERIFY_CODE, used_at__isnull=True,
+                                      created_at__gt=timezone.now() - timedelta(minutes=1)).exists()
+    if not recent:
+        code = _issue_code(user, AuthToken.Purpose.VERIFY_CODE)
+        queue_email(user, EmailOutbox.Template.VERIFY_EMAIL, _lang(user), {"code": code})
+
+
+def resend_verify_code(request, email):
+    """Always succeeds from the caller's point of view (no account probing)."""
+    user = User.objects.filter(email=(email or "").strip().lower()).first()
+    if user and user.email_verified_at is None and user.status != User.Status.SUSPENDED:
+        send_verify_code(user)
+
+
+def verify_email_code(request, email, code):
+    """The code from the sign-up email: confirms the address and returns the
+    user to start a session for. A wrong try is counted even though it fails
+    (raised outside the transaction, like exchange_reset_code)."""
+    user = User.objects.filter(email=(email or "").strip().lower()).first()
+    if user is None or user.status == User.Status.SUSPENDED or user.email_verified_at is not None:
+        raise ApiError("code_expired", 400)  # same as an address with no live code
+    with transaction.atomic():
+        try:
+            _check_code(user, AuthToken.Purpose.VERIFY_CODE, clean_code(code))
+        except ApiError as e:
+            error = e
+        else:
+            error = None
+            User.objects.filter(pk=user.pk).update(email_verified_at=timezone.now())
+            log_event(request, AuthEvent.Event.EMAIL_VERIFY, True, user)
+    if error:
+        raise error
     return user
 
 
@@ -198,6 +237,11 @@ def authenticate_password(request, email, password):
     if user.status == User.Status.SUSPENDED:
         log_event(request, AuthEvent.Event.LOGIN, False, user)
         raise ApiError("account_suspended", 403)
+    # Not confirmed yet (also accounts from before 2026-10-25): a code
+    # goes out and the app asks for it.
+    if user.email_verified_at is None:
+        send_verify_code(user)
+        raise ApiError("email_not_verified", 403)
     log_event(request, AuthEvent.Event.LOGIN, True, user)
     _cancel_deletion_on_sign_in(request, user)
     return user

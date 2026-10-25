@@ -36,13 +36,26 @@
   }
 
   // ── session ───────────────────────────────────────────────────────────
-  function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; } }
+  // In a browser the sign-in ends when the tab or the browser is closed
+  // (sessionStorage, the owner's request 2026-10-25); the Android app
+  // (window.ToojibeeAndroid) stays signed in (localStorage). A sign-in
+  // kept in localStorage by an older version moves over once.
+  function sessionStore() {
+    try {
+      if (global.ToojibeeAndroid) return localStorage;
+      var old = localStorage.getItem(SESSION_KEY);
+      if (old) { sessionStorage.setItem(SESSION_KEY, old); localStorage.removeItem(SESSION_KEY); }
+      return sessionStorage;
+    } catch (e) { return localStorage; }
+  }
+  var SESSION_STORE = sessionStore();
+  function loadSession() { try { return JSON.parse(SESSION_STORE.getItem(SESSION_KEY)); } catch (e) { return null; } }
   function storeSession(t) {
     var s = { access_token: t.access_token, refresh_token: t.refresh_token, user_id: t.user_id };
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) { /* private mode */ }
+    try { SESSION_STORE.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) { /* private mode */ }
     return s;
   }
-  function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ } }
+  function clearSession() { try { SESSION_STORE.removeItem(SESSION_KEY); } catch (e) { /* ignore */ } }
   function hasSession() { return !!(BASE && loadSession()); }
   function isConfigured() { return !!BASE; }
 
@@ -104,12 +117,20 @@
 
   // ── auth ──────────────────────────────────────────────────────────────
   // f: { email, password, username, gender, dob } — all required (auth.js).
+  /* Sign-up sends a code to the email and returns { verify_required, email };
+     verifyEmailCode() with that code signs in. (A server without the step
+     answers with tokens straight away.) */
   async function signUp(f) {
-    var tokens = await request('POST', '/auth/register', Object.assign({
+    var r = await request('POST', '/auth/register', Object.assign({
       email: f.email, password: f.password, username: f.username, gender: f.gender, birth_date: f.dob,
     }, deviceMeta()), { auth: false });
-    storeSession(tokens);
+    if (r && r.access_token) storeSession(r);
+    return r;
   }
+  async function verifyEmailCode(email, code) {
+    storeSession(await request('POST', '/auth/email/code', Object.assign({ email: email, code: code }, deviceMeta()), { auth: false }));
+  }
+  function resendVerifyCode(email) { return request('POST', '/auth/email/code/resend', { email: email }, { auth: false }); }
 
   async function signIn(email, password) {
     storeSession(await request('POST', '/auth/login', Object.assign({ email: email, password: password }, deviceMeta()), { auth: false }));
@@ -218,6 +239,8 @@
       reminder_type: type,
       // "N minutes before" an event counts from its start time, not a clock time.
       reminder_time: type === 'none' || type === 'before_start' || type === 'countdown' ? null : (n.time || '09:00'),
+      // A one-time task's reminder on a later day of its range.
+      reminder_date: type === 'at_time' && n.date ? n.date : null,
       reminder_every_hours: type === 'repeating' ? Math.min(24, Math.max(1, Number(n.repeatHours) || 1)) : null,
       reminder_text: (n && n.text) || '',
       // "Over and over until it starts": from N minutes before, every M minutes.
@@ -229,6 +252,7 @@
     return {
       type: NOTIF_FROM_API[row.reminder_type] || null,
       time: row.reminder_time ? row.reminder_time.slice(0, 5) : '09:00',
+      date: row.reminder_date || null,
       repeatHours: row.reminder_every_hours || 1,
       minutesBefore: row.reminder_minutes_before || 15,
       leadMinutes: row.reminder_lead_minutes || 1440,
@@ -687,10 +711,10 @@
     sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread, notices: notices, noticesSeen: noticesSeen, savePeriod: savePeriod,
     pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,
     changePassword: changePassword, deleteAccount: deleteAccount, usernameAvailable: usernameAvailable,
-    uuid: uuid, isConfigured: isConfigured, hasSession: hasSession,
+    uuid: uuid, isConfigured: isConfigured, hasSession: hasSession, sessionStore: sessionStore,
     signUp: signUp, signIn: signIn, signInWithGoogle: signInWithGoogle, consumeOAuthRedirect: consumeOAuthRedirect, signOut: signOut,
     authProviders: authProviders, forgotPassword: forgotPassword, resetPassword: resetPassword, verifyEmail: verifyEmail, takeEmailLink: takeEmailLink,
-    checkResetCode: checkResetCode,
+    checkResetCode: checkResetCode, verifyEmailCode: verifyEmailCode, resendVerifyCode: resendVerifyCode,
     loadAll: loadAll,
     saveTask: saveTask, deleteTask: deleteTask, saveHabit: saveHabit, deleteHabit: deleteHabit,
     saveEvent: saveEvent, deleteEvent: deleteEvent, saveProfile: saveProfile, saveSettings: saveSettings,

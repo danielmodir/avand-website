@@ -112,3 +112,13 @@ class PlanningTests(ApiTestCase):
         self.assertEqual(ok.status_code, 201, ok.content)
         bad = self.put("events", new_id(), {"title": "Class", "start_date": "2026-10-15", "all_day": False, "start_time": "21:00", "end_time": "19:30"})
         self.assertEqual(bad.json()["error"], "end_before_start")
+
+    def test_task_reminder_on_a_later_day(self):
+        # Past midnight in the picker: the reminder is on the range's last day.
+        ok = self.put("tasks", new_id(), {"title": "Pack", "start_date": "2026-10-20", "end_date": "2026-10-21",
+                                          "reminder_type": "at_time", "reminder_time": "00:30", "reminder_date": "2026-10-21"})
+        self.assertEqual(ok.status_code, 201, ok.content)
+        self.assertEqual(ok.json()["reminder_date"], "2026-10-21")
+        outside = self.put("tasks", new_id(), {"title": "Pack", "start_date": "2026-10-20",
+                                               "reminder_type": "at_time", "reminder_time": "00:30", "reminder_date": "2026-10-21"})
+        self.assertEqual(outside.json()["error"], "invalid_reminder_date")

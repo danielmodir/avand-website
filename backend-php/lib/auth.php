@@ -169,8 +169,47 @@ function tj_register(): void {
                    tj_new_public_id(), tj_new_display_id($db), tj_now(), tj_now()]);
     $userId = (int)$db->lastInsertId();
 
-    // No email at sign-up (the owner dropped the confirmation step, 2026-10-22).
-    tj_json(tj_new_session($userId), 201);
+    // The email is confirmed with a code before the first sign-in (the owner
+    // brought the step back, 2026-10-25): no session until then.
+    tj_send_verify_code($userId, $email);
+    tj_json(['verify_required' => true, 'email' => $email], 201);
+}
+
+/* A 6-digit code to confirm the address; at most one a minute. */
+function tj_send_verify_code(int $userId, string $email): void {
+    $q = tj_db()->prepare('SELECT 1 FROM tj_tokens WHERE user_id = ? AND purpose = ? AND used_at IS NULL AND created_at > ?');
+    $q->execute([$userId, 'verify_code', tj_now(-60)]);
+    if ($q->fetch()) return;
+    tj_send_signup_code($email, tj_issue_code($userId, 'verify_code'));
+}
+
+/* POST /auth/email/code {email, code} — the sign-up code: confirms the
+ * address and signs in (same answer as /auth/login). */
+function tj_email_code(): void {
+    $b = tj_body();
+    $email = strtolower(tj_str($b, 'email', 254));
+    tj_throttle('verify_code', $email . '|' . tj_client_ip(), 10, 900);
+    tj_throttle('verify_code_ip', tj_client_ip(), 30, 900);
+    $q = tj_db()->prepare('SELECT id, status, email_verified_at FROM tj_users WHERE email = ?');
+    $q->execute([$email]);
+    $user = $q->fetch();
+    // Same as an address with no live code.
+    if (!$user || $user['status'] !== 'active' || $user['email_verified_at'] !== null) tj_fail(400, 'code_expired');
+    tj_check_code((int)$user['id'], 'verify_code', tj_clean_code(tj_str($b, 'code', 40)));
+    tj_db()->prepare('UPDATE tj_users SET email_verified_at = ?, updated_at = ? WHERE id = ?')->execute([tj_now(), tj_now(), $user['id']]);
+    tj_json(tj_new_session((int)$user['id']));
+}
+
+/* POST /auth/email/code/resend {email} — always ok (no account probing). */
+function tj_email_code_resend(): void {
+    $b = tj_body();
+    $email = strtolower(tj_str($b, 'email', 254));
+    tj_throttle('verify_resend', $email . '|' . tj_client_ip(), 5, 3600);
+    $q = tj_db()->prepare('SELECT id, email FROM tj_users WHERE email = ? AND status = ? AND email_verified_at IS NULL');
+    $q->execute([$email, 'active']);
+    $user = $q->fetch();
+    if ($user) tj_send_verify_code((int)$user['id'], $user['email']);
+    tj_json(['ok' => true]);
 }
 
 function tj_login(): void {
@@ -189,6 +228,12 @@ function tj_login(): void {
     $hash = $user ? $user['password_hash'] : tj_dummy_hash();
     if (!password_verify($password, $hash) || !$user) tj_fail(401, 'invalid_credentials');
     if ($user['status'] !== 'active') tj_fail(403, 'account_suspended');
+    // Not confirmed yet (also accounts from before 2026-10-25): a code goes
+    // out and the app asks for it.
+    if ($user['email_verified_at'] === null) {
+        tj_send_verify_code((int)$user['id'], $user['email']);
+        tj_fail(403, 'email_not_verified', ['email' => $user['email']]);
+    }
     if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
         tj_db()->prepare('UPDATE tj_users SET password_hash = ? WHERE id = ?')->execute([password_hash($password, PASSWORD_DEFAULT), $user['id']]);
     }

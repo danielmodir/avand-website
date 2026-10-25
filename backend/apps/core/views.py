@@ -34,7 +34,8 @@ class RegisterView(PublicView):
             request, v["email"], v["password"], v.get("first_name", ""), v.get("last_name", ""), v.get("consents"),
             username=v["username"], gender=v["gender"], birth_date=v["birth_date"],
         )
-        return Response(accounts.start_session(user, request, v), status=status.HTTP_201_CREATED)
+        # No session yet: the code from the email comes first (EmailCodeView).
+        return Response({"verify_required": True, "email": user.email}, status=status.HTTP_201_CREATED)
 
 
 class LoginView(PublicView):
@@ -147,6 +148,28 @@ class VerifyEmailView(PublicView):
         data = s.TokenSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         accounts.verify_email(request, data.validated_data["token"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class EmailCodeView(PublicView):
+    """{email, code} from the sign-up email -> the address is confirmed and
+    the person is signed in (same answer as /auth/login)."""
+    throttle_scope = "login"
+
+    def post(self, request):
+        data = s.EmailSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        user = accounts.verify_email_code(request, data.validated_data["email"], request.data.get("code"))
+        return Response(accounts.start_session(user, request, request.data))
+
+
+class EmailCodeResendView(PublicView):
+    throttle_scope = "password_reset"
+
+    def post(self, request):
+        data = s.EmailSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        accounts.resend_verify_code(request, data.validated_data["email"])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

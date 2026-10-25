@@ -12,8 +12,10 @@ client: `frontend/demo/js/services/api-php.js`).
 |---|---|---|
 | GET | /health | DB reachable |
 | GET | /auth/providers | `{password:true, google:false}` |
-| POST | /auth/register | all required: email, password (8+, a letter and a digit/symbol), username (`a-z 0-9 _ .`, 3-30, unique), gender (`female`/`male`), birth_date (at least 9 years ago) → tokens; sends a verify email |
-| POST | /auth/login | → tokens |
+| POST | /auth/register | all required: email, password (8+, a letter and a digit/symbol), username (`a-z 0-9 _ .`, 3-30, unique), gender (`female`/`male`), birth_date (at least 9 years ago) → `{verify_required, email}`; emails a 6-digit code (no tokens yet) |
+| POST | /auth/email/code | email, code → tokens (confirms the email) |
+| POST | /auth/email/code/resend | email → always ok; a new code if unconfirmed (one a minute) |
+| POST | /auth/login | → tokens; an unconfirmed email → 403 `email_not_verified` and a code is sent |
 | POST | /auth/refresh | rotates the refresh token |
 | POST | /auth/logout | |
 | POST | /auth/password/forgot | always 200; mails a 1-hour reset link if the address exists |

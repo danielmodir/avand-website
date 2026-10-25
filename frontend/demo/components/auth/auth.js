@@ -3,10 +3,12 @@
    occasions freely; anything that needs an account opens this popup
    instead (see requireAccount / GUEST_ACTIONS in js/core/events.js).
    Views: login · signup · forgot (email a one-time code) · forgot-code
-   (type it) · reset (choose a new password). Codes are 6 digits, from
-   support@toojibee.ir, valid 10 minutes. Sign-up sends no email (the
-   owner dropped the confirmation step, 2026-10-22). Everything talks to
-   the real API through Cloud.*; nothing here is simulated. */
+   (type it) · reset (choose a new password) · verify-code (confirm the
+   email). Codes are 6 digits, from support@toojibee.ir, valid 10 minutes.
+   Sign-up, and signing in to an account whose email isn't confirmed yet,
+   go to verify-code first: the code signs in (the owner's request,
+   2026-10-25). Everything talks to the real API through Cloud.*; nothing
+   here is simulated. */
 /* Sign-up asks for a username (not a real name), email, password, gender
    and date of birth — all required. The API checks the same rules. */
 const EMPTY_AUTH_DRAFT = { username:'', email:'', password:'', gender:'', dob:'' };
@@ -26,7 +28,7 @@ let authCodeEmail = '';         // where the code went (shown in the view)
 let authResendAt = 0;           // "send again" waits until then (ms)
 let authResendTimer = null;
 const AUTH_RESEND_WAIT = 60000;
-const CODE_TABS = ['forgot-code'];
+const CODE_TABS = ['forgot-code', 'verify-code'];
 let authProviders = null;       // { google: bool } from the server, fetched once
 
 const MIN_PASSWORD = 8;         // same rule as the API's validators
@@ -49,7 +51,7 @@ function closeAuth(){
   if(authBusy) return;
   state.authOpen = false;
   authResetToken = null;
-  if(['reset', 'forgot', 'forgot-code'].includes(state.authTab)) state.authTab = 'login';
+  if(['reset', 'forgot', 'forgot-code', 'verify-code'].includes(state.authTab)) state.authTab = 'login';
   render();
 }
 
@@ -71,7 +73,8 @@ async function resendAuthCode(){
   if(authBusy || Date.now() < authResendAt) return;
   authErrors = { ...EMPTY_AUTH_ERRORS }; authNotice = '';
   try{
-    await Cloud.forgotPassword(authCodeEmail);
+    if(state.authTab === 'verify-code') await Cloud.resendVerifyCode(authCodeEmail);
+    else await Cloud.forgotPassword(authCodeEmail);
     authNotice = t('codeResent');
     startResendWait();
   }catch(err){ authErrors.general = authErrorMessage(err); }
@@ -145,9 +148,10 @@ function renderAuthScreen(){
       : `<button type="button" class="auth-link" data-action="auth-resend">${t('resendCode')}</button>`;
     body = `
       <div class="auth-icon-badge" aria-hidden="true">${ICONS.mail || '✉'}</div>
-      <div class="auth-title">${t('codeTitle')}</div>
+      <div class="auth-title">${t(tab === 'verify-code' ? 'verifyEmailTitle' : 'codeTitle')}</div>
       <div class="auth-sub">${escapeHtml(t('codeSub')).replace('{email}', `<b dir="ltr">${escapeHtml(authCodeEmail)}</b>`)}</div>
       ${general}${notice}
+      <div class="auth-spam-note" role="note">${t('checkSpamLong')}</div>
       <div class="auth-form">
         <div class="${errClass('code')}">
           <input type="text" id="auth-code" class="auth-code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" dir="ltr"
@@ -156,7 +160,6 @@ function renderAuthScreen(){
         ${submit('confirmCodeBtn')}
       </div>
       ${resend}
-      <div class="auth-hint auth-center">${t('checkSpam')}</div>
       <button type="button" class="auth-link" data-action="auth-tab" data-val="login">${t('backToLogin')}</button>`;
   } else if(tab === 'forgot'){
     body = `
@@ -269,6 +272,10 @@ async function submitAuth(){
       authResetToken = await Cloud.checkResetCode(authCodeEmail, cleanCode(authCode));
       authCode = ''; authDraft.password = '';
       state.authTab = 'reset';
+    } else if(tab === 'verify-code'){
+      await Cloud.verifyEmailCode(authCodeEmail, cleanCode(authCode));
+      authCode = '';
+      await enterSignedIn();
     } else if(tab === 'reset'){
       await Cloud.resetPassword(authResetToken, password);
       authResetToken = null;
@@ -276,9 +283,19 @@ async function submitAuth(){
       authDraft.password = '';
       authNotice = t('passwordChanged');
     } else {
-      if(tab === 'login') await Cloud.signIn(email, password);
-      else await Cloud.signUp({ email, password, username: authDraft.username.trim().toLowerCase(), gender: authDraft.gender, dob: authDraft.dob });
-      await enterSignedIn();
+      if(tab === 'login'){
+        try{ await Cloud.signIn(email, password); }
+        catch(err){
+          // Email not confirmed yet: the server just sent a code.
+          if(err && err.code === 'email_not_verified'){ goVerifyCode(err.body?.email || email); return; }
+          throw err;
+        }
+        await enterSignedIn();
+      } else {
+        const r = await Cloud.signUp({ email, password, username: authDraft.username.trim().toLowerCase(), gender: authDraft.gender, dob: authDraft.dob });
+        if(r && r.verify_required){ goVerifyCode(r.email || email); return; }
+        await enterSignedIn();
+      }
     }
   }catch(err){
     // Field rules the server rejected (PHP: fields, Django: detail).
@@ -291,6 +308,16 @@ async function submitAuth(){
     authBusy = false;
     render();
   }
+}
+
+/* The code to confirm `email` is on its way: ask for it. */
+function goVerifyCode(email){
+  authCodeEmail = email; authCode = '';
+  authDraft.password = '';
+  state.authTab = 'verify-code';
+  authNotice = t('verifyCodeSent');
+  startResendWait();
+  setTimeout(() => document.getElementById('auth-code')?.focus(), 80);
 }
 
 /* After any successful sign-in: load the account and leave guest mode. */

@@ -97,7 +97,7 @@ class TaskSerializer(OwnedSerializer):
         model = Task
         fields = SYNC_FIELDS + ["parent_id", "category_id", "title", "description", "pinned", "sort_order", "start_date", "end_date",
                                 "start_time", "end_time"] \
-            + RECURRENCE_FIELDS + REMINDER_FIELDS + ["origin_task_id", "origin_date"]
+            + RECURRENCE_FIELDS + REMINDER_FIELDS + ["reminder_date", "origin_task_id", "origin_date"]
         read_only_fields = READ_ONLY
 
     def validate_category_id(self, category):
@@ -107,6 +107,13 @@ class TaskSerializer(OwnedSerializer):
         self.check_schedule(attrs)
         if merged(attrs, self.instance, "reminder_type") == "before_start":
             raise ApiError("invalid_reminder_type")
+        # A one-time task's reminder on a later day of its range.
+        reminder_date = merged(attrs, self.instance, "reminder_date")
+        if reminder_date is not None:
+            end_date = merged(attrs, self.instance, "end_date")
+            if (merged(attrs, self.instance, "reminder_type") != "at_time" or merged(attrs, self.instance, "rec_mode", "none") != "none"
+                    or end_date is None or not merged(attrs, self.instance, "start_date") < reminder_date <= end_date):
+                raise ApiError("invalid_reminder_date")
         if merged(attrs, self.instance, "reminder_type") == "countdown" and merged(attrs, self.instance, "start_time") is None:
             raise ApiError("start_time_required")
         # Same day: the end time can't come before the start time.

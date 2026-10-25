@@ -141,6 +141,33 @@ function showLanguageLoading(newLang){
   }, 1100);
 }
 
+/* A picked photo as a WebP data URL (every image is WebP, the owner's
+   request 2026-10-25), at most `maxSide` px on its long side — lighter on
+   a slow network too. Calls back with the original if the browser can't
+   read it or can't write WebP. */
+function imageToWebp(file, maxSide, done){
+  const reader = new FileReader();
+  reader.onload = () => {
+    const original = reader.result;
+    const img = new Image();
+    img.onload = () => {
+      try{
+        const k = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * k));
+        c.height = Math.max(1, Math.round(img.naturalHeight * k));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        const webp = c.toDataURL('image/webp', 0.82);
+        done(webp.startsWith('data:image/webp') ? webp : original);
+      }catch(e){ done(original); }
+    };
+    img.onerror = () => done(original);
+    img.src = original;
+  };
+  reader.onerror = () => done(null);
+  reader.readAsDataURL(file);
+}
+
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function escapeAttr(s){ return escapeHtml(s); }

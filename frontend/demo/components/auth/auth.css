@@ -23,6 +23,8 @@
 .auth-alert.error{ color:var(--danger); background:var(--danger-soft); }
 .auth-alert.ok{ color:var(--text); background:var(--primary-soft); }
 .auth-hint{ font-size:11.5px; color:var(--text-muted); margin:-4px 2px 6px; }
+/* Under the code field's heading: where the email may have gone. */
+.auth-spam-note{ font-size:12px; line-height:1.7; color:var(--text); background:var(--pms-soft); border:1px dashed var(--pms); border-radius:12px; padding:9px 12px; margin-bottom:12px; }
 .auth-link{ align-self:center; margin-top:14px; border:none; background:none; color:var(--primary); font-size:13px; font-weight:700; font-family:inherit; cursor:pointer; padding:4px; }
 .auth-link:hover{ text-decoration:underline; }
 .device.lang-fa .auth-card{ text-align:right; }

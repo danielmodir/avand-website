@@ -17,6 +17,8 @@ urlpatterns = [
     path("auth/sessions", v.SessionListView.as_view()),
     path("auth/sessions/<uuid:session_id>", v.SessionDetailView.as_view()),
     path("auth/email/verify", v.VerifyEmailView.as_view()),
+    path("auth/email/code", v.EmailCodeView.as_view()),  # the sign-up code -> signed in
+    path("auth/email/code/resend", v.EmailCodeResendView.as_view()),
     path("support/messages", v.SupportMessagesView.as_view()),
     path("support/unread", v.SupportUnreadView.as_view()),
     path("auth/password/code", v.PasswordCodeView.as_view()),

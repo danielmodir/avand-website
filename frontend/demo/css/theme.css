@@ -77,6 +77,25 @@ body{
 .app-banner.has-image{ background:var(--card); }
 .app-banner-title{ color:var(--on-banner); letter-spacing:-0.01em; }
 .app-banner-mark{ box-shadow:var(--glow-mark); }
+.app-banner-mark .logo-navy{ display:none; }
+
+/* Classic palette, day mode: a white header with the navy logo and navy
+   text (the owner's request, 2026-10-25), instead of a navy slab on the
+   light page. */
+:root[data-palette="classic"][data-theme="light"]{
+  --banner-bg:
+    radial-gradient(120% 180% at 100% 0%, rgba(252,163,17,0.14) 0%, transparent 55%),
+    linear-gradient(135deg, #FFFFFF 0%, #F7F8FB 100%);
+  --banner-edge:rgba(20,33,61,0.10);
+  --on-banner:#14213D;
+  --banner-btn-bg:rgba(20,33,61,0.06);
+  --banner-btn-bg-hover:rgba(20,33,61,0.12);
+  --banner-btn-border:rgba(20,33,61,0.22);
+  --glow-mark:0 0 0 3px rgba(20,33,61,0.10), 0 8px 18px -8px rgba(20,33,61,0.45);
+}
+:root[data-palette="classic"][data-theme="light"] .app-banner{ box-shadow:var(--shadow-soft-sm), inset 0 1px 0 #FFFFFF; }
+:root[data-palette="classic"][data-theme="light"] .app-banner-mark .logo-std{ display:none; }
+:root[data-palette="classic"][data-theme="light"] .app-banner-mark .logo-navy{ display:block; }
 
 /* ---- big panels (desktop calendar box, workspace box, menu, sheets) ---- */
 #page-calendar.page,

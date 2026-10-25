@@ -129,12 +129,21 @@ class Task(UserOwnedSyncModel, Recurrence, Reminder):
     end_time = models.TimeField(null=True, blank=True)
     origin_task = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     origin_date = models.DateField(null=True, blank=True)
+    # An "at a time" reminder on a later day of a one-time task's range
+    # (the app's time picker runs on past midnight); empty = every day.
+    reminder_date = models.DateField(null=True, blank=True)
 
     class Meta(UserOwnedSyncModel.Meta):
         indexes = UserOwnedSyncModel.Meta.indexes + [models.Index(fields=["user_id", "start_date"], name="planning_task_date_idx")]
         constraints = _common_checks("planning_task") + [
             models.CheckConstraint(condition=~Q(reminder_type="before_start"), name="planning_task_reminder_kind_ck"),
             models.CheckConstraint(condition=~Q(reminder_type="countdown") | Q(start_time__isnull=False), name="planning_task_countdown_ck"),
+            models.CheckConstraint(
+                condition=Q(reminder_date__isnull=True)
+                | Q(reminder_type="at_time", rec_mode="none", end_date__isnull=False,
+                    reminder_date__gt=F("start_date"), reminder_date__lte=F("end_date")),
+                name="planning_task_reminder_date_ck",
+            ),
         ]
 
     def __str__(self):

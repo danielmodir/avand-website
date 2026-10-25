@@ -12,7 +12,8 @@
   function signedInNote() {
     try {
       var me = JSON.parse(localStorage.getItem('toojibee-me') || 'null');
-      return me && localStorage.getItem('toojibee_session') ? me : null;
+      // The sign-in lives in sessionStorage in a browser (ends with the tab).
+      return me && (sessionStorage.getItem('toojibee_session') || localStorage.getItem('toojibee_session')) ? me : null;
     } catch (e) { return null; }
   }
 

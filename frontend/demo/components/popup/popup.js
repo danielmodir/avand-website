@@ -39,6 +39,7 @@ function resetFormDraft(type, existing){
     notification: {
       type: existing ? (existing.notification?.type || null) : null,
       time: existing ? (existing.notification?.time || '09:00') : '09:00',
+      date: existing ? (existing.notification?.date || null) : null,
       repeatHours: existing ? (existing.notification?.repeatHours || 1) : 1,
       minutesBefore: existing ? (existing.notification?.minutesBefore || 15) : 15,
       leadMinutes: existing ? (existing.notification?.leadMinutes || 1440) : 1440,
@@ -317,11 +318,17 @@ function durationLabel(m){
   return m % 1440 === 0 ? t('durDays').replace('{n}', dig(m / 1440)) : m % 60 === 0 ? t('durHours').replace('{n}', dig(m / 60)) : t('durMinutes').replace('{n}', dig(m));
 }
 let reminderDraft = null;
+/* A one-time task's reminder is a real moment: never in the past, and it
+   may fall up to 7 days after the task's day (the hours run on past
+   midnight, js/core/dropdown.js). A later day stretches the task into a
+   range up to that day, so it isn't overdue before its reminder. */
+const REMINDER_MAX_DAYS = 7;
+const reminderSpans = () => state.popupType === 'task' && !formDraft.recurrence.mode;
 
 function startReminderDraft(){
   const n = formDraft.notification;
   reminderDraft = {
-    type: n.type || 'time', time: n.time || formDraft.startTime || '09:00',
+    type: n.type || 'time', time: n.time || formDraft.startTime || '09:00', date: n.date || null,
     repeatHours: Math.min(12, Math.max(1, Number(n.repeatHours) || 1)),
     minutesBefore: n.minutesBefore || 15, text: n.text || '',
     leadMinutes: Math.min(COUNTDOWN_MAX_LEAD, Math.max(15, Number(n.leadMinutes) || 1440)),
@@ -341,7 +348,9 @@ function notificationSubviewHtml(){
     <select class="settings-select" id="notif-type-select" style="width:100%;">
       ${types.map(o => `<option value="${o}" ${n.type === o ? 'selected' : ''}>${label[o]}</option>`).join('')}
     </select>
-    ${n.type === 'time' ? `<div class="rec-block rec-every"><span>${t('reminderAt')}</span><input type="time" id="f-notif-time" value="${n.time}"></div>` : ''}
+    ${n.type === 'time' ? `<div class="rec-block rec-every"><span>${t('reminderAt')}</span><input type="time" id="f-notif-time" value="${n.time}"
+      ${reminderSpans() ? `data-base="${formDraft.date}" data-span="${REMINDER_MAX_DAYS}" data-date="${n.date || formDraft.date}"` : ''}></div>
+      ${reminderSpans() && n.date && n.date > formDraft.date ? `<div class="profile-hint">${t('reminderNextDayHint').replace('{d}', tjDayLabel(n.date))}</div>` : ''}` : ''}
     ${n.type === 'repeat' ? `
       <div class="rec-block rec-every">
         <span>${t('repeatEvery')}</span>
@@ -524,11 +533,10 @@ function wireMainFormInteractivity(){
     if(oversized) showToast(t('fileTooLarge'));
     let remaining = files.length;
     if(remaining === 0) return;
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = () => { formPhotos.push(reader.result); remaining--; if(remaining===0) renderPopupBody(); };
-      reader.readAsDataURL(file);
-    });
+    files.forEach(file => imageToWebp(file, 1280, url => {
+      if(url) formPhotos.push(url);
+      remaining--; if(remaining===0) renderPopupBody();
+    }));
   });
   document.querySelectorAll('[data-rmphoto]').forEach(b => b.addEventListener('click', () => { formPhotos.splice(Number(b.dataset.rmphoto),1); renderPopupBody(); }));
   document.getElementById('add-subtask-btn')?.addEventListener('click', () => { if(formSubtasks.length>=3) return; formSubtasks.push(newSubtask({ date: formDraft.date }, '')); renderPopupBody(); });
@@ -582,7 +590,11 @@ function wireSubviewInteractivity(){
   } else if(sub === 'notification'){
     const n = reminderDraft;
     document.getElementById('notif-type-select')?.addEventListener('change', e => { n.type = e.target.value; renderPopupBody(); });
-    document.getElementById('f-notif-time')?.addEventListener('input', e => { n.time = e.target.value; });
+    document.getElementById('f-notif-time')?.addEventListener('input', e => {
+      const had = n.date;
+      n.time = e.target.value; n.date = e.target.dataset.date || null;
+      if(reminderSpans() && (had || formDraft.date) !== (n.date || formDraft.date)) renderPopupBody(); // the day hint
+    });
     document.querySelectorAll('[data-hstep]').forEach(b => b.addEventListener('click', () => {
       n.repeatHours = Math.min(12, Math.max(1, n.repeatHours + Number(b.dataset.hstep))); renderPopupBody();
     }));
@@ -610,7 +622,16 @@ function wireSubviewInteractivity(){
     document.getElementById('notif-confirm')?.addEventListener('click', () => {
       if(n.type === 'time' && !n.time){ showToast(t('reminderTimeRequired')); return; }
       if((n.type === 'before' || n.type === 'countdown') && !formDraft.startTime){ showToast(t('reminderNeedsStart')); return; }
-      formDraft.notification = { type: n.type, time: n.time || '09:00', repeatHours: n.repeatHours, minutesBefore: n.minutesBefore,
+      let day = null;
+      if(n.type === 'time' && reminderSpans()){
+        day = n.date || formDraft.date;
+        if(new Date(day + 'T' + n.time + ':00').getTime() <= Date.now()){ showToast(t('reminderInPast')); return; }
+        // On a later day: the task runs until then (a range), else it'd be overdue first.
+        if(day > formDraft.date){
+          if(formDraft.timeMode !== 'range' || !formDraft.endDate || formDraft.endDate < day){ formDraft.timeMode = 'range'; formDraft.endDate = day; }
+        }
+      }
+      formDraft.notification = { type: n.type, time: n.time || '09:00', date: day && day > formDraft.date ? day : null, repeatHours: n.repeatHours, minutesBefore: n.minutesBefore,
         leadMinutes: n.leadMinutes, everyMinutes: n.everyMinutes, text: n.text.trim() };
       reminderDraft = null; state.popupSubView = null;
       askNotificationPermission(); // the first reminder asks the browser once (js/core/notify.js)
@@ -644,6 +665,9 @@ function submitPopup(){
   // A new task or event can't be put on a day that has already passed.
   if(!state.editingId && (type === 'task' || type === 'event') && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
   const notification = { ...formDraft.notification };
+  // A reminder's own day only for a one-time task, and only inside its days.
+  if(notification.date && (type !== 'task' || recurrence.mode || notification.type !== 'time' || notification.date <= formDraft.date
+    || notification.date > (formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date))) notification.date = null;
   const times = { startTime: formDraft.startTime || null, endTime: formDraft.endTime || null };
   if(type === 'task' && state.editingParentId){
     // Editing a subtask: update it inside its parent and save the parent.

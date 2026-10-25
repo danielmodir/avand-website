@@ -427,7 +427,6 @@ function renderAdminPanel(){
       <button type="button" class="desktop-manage-gear" data-action="open-desktop-settings" data-sub="settings-planning" aria-label="${t('planningSettings')}">${ICONS.gearIcon}</button>
       <div class="desktop-manage-title">${t('planning')}</div>
       <div class="desktop-manage-desc">${t('planningDesktopSub')}</div>
-      <div class="switch ${state.settings.planningEnabled?'on':''}" data-action="toggle-planning-enabled"><div class="knob"></div></div>
     </div>
     ${Cloud.supportsGroups && !REAL_LOGIN_DISABLED ? `
       <div class="desktop-manage-card">
@@ -564,9 +563,6 @@ function renderPlanningSettings(){
   return `
     ${subHeader(t('planningSettings'))}
     ${prefRow('planningDaySummary', 'prefDaySummary', 'prefDaySummarySub')}
-    ${prefRow('planningCalendarDots', 'prefCalendarDots', 'prefCalendarDotsSub')}
-    ${prefRow('planningShowEvents', 'prefPlanningEvents', 'prefPlanningEventsSub')}
-    ${prefRow('planningShowHabits', 'prefPlanningHabits', 'prefPlanningHabitsSub')}
     <div class="section-title">${t('itemColors')}</div>
     <div class="sub" style="margin:-6px 2px 10px 2px;">${t('itemColorsSub')}</div>
     ${[['task','tasks'], ['habit','habits'], ['event','events']].map(([kind, label]) => {
@@ -729,14 +725,13 @@ function wireMenuInteractivity(){
     const file = e.target.files && e.target.files[0];
     if(!file) return;
     if(file.size > MAX_UPLOAD_BYTES){ showToast(t('fileTooLarge')); e.target.value = ''; return; }
-    const reader = new FileReader();
     // On the edit page the new photo waits for "Save changes" like the rest.
-    reader.onload = () => {
-      if(profileDraft) profileDraft.photo = reader.result;
-      else { state.profile.photo = reader.result; cloudSync(() => Cloud.saveProfile(state.profile)); }
+    imageToWebp(file, 512, url => {
+      if(!url) return;
+      if(profileDraft) profileDraft.photo = url;
+      else { state.profile.photo = url; cloudSync(() => Cloud.saveProfile(state.profile)); }
       render();
-    };
-    reader.readAsDataURL(file);
+    });
   });
   document.getElementById('friend-search')?.addEventListener('input', e => {
     state.friendSearch = e.target.value;
@@ -776,10 +771,6 @@ function updateNav(){
   // A resize while the page is still loading (a phone's address bar
   // sliding away) can land before the partials are injected.
   if(!document.getElementById('fab-add')) return;
-  /* The add menu only makes sense when the Planning desktop is on —
-     there'd be nowhere for a new task/habit/event to show up otherwise
-     (see Management's "Workspace desktops" toggles). */
-  document.getElementById('fab-add').classList.toggle('hidden', !state.settings.planningEnabled);
   // Signed-out guests: no profile or management until there's an account;
   // the header shows a sign-in button instead.
   document.getElementById('toolbar-pill').classList.toggle('hidden', !!state.guest);
