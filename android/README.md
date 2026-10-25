@@ -62,3 +62,9 @@ password**: an update signed with any other key won't install over the app.
 Bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts` only when
 the native side changed; web-only changes reach installed apps by themselves
 after the site deploy.
+
+To publish an APK: copy `dist/toojibee-<version>.apk` to
+`frontend/download/`, point both download pages (`frontend/fa|en/download/`)
+at it and update their version, build date, size and SHA-256 line, then
+deploy the site. The same APK goes to Bazaar / Myket (uploaded by the repo
+owner with their developer account).

@@ -18,6 +18,6 @@ window.AVAND_CONFIG = {
     appUrl: '' /* fill in once the real web app has a URL */
   },
   download: {
-    ready: false
+    ready: true
   }
 };

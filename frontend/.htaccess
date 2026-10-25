@@ -50,6 +50,8 @@ ErrorDocument 404 /404.html
   AddType image/svg+xml .svg
   AddType application/json .json
   AddType text/javascript .js
+  # The Android app (frontend/download/, deploy/build-android.ps1).
+  AddType application/vnd.android.package-archive .apk
 </IfModule>
 
 # --- Caching (docs/DEPLOY.md §5) ---
