@@ -69,19 +69,40 @@ function isHolidayOn(d){
   return (visibleOccasionsForDate(d) || []).some(o => o.is_holiday);
 }
 
+/* The dataset indexed once by "type|month|day", and each day's answer kept
+   (per date key): every calendar cell asks for its holiday and occasions
+   on every render, and scanning all 238 entries per cell was most of a
+   month change's time on a phone. Both are rebuilt when the data or the
+   Hijri month starts change. */
+let occIndex = null, occIndexOf = null, occDayCache = {}, occHijriSig = null;
+function occasionsIndex(){
+  if(occIndexOf !== OCCASIONS_DATA){
+    occIndex = {}; occIndexOf = OCCASIONS_DATA; occDayCache = {};
+    const MONTHS = { shamsi: OCC_SHAMSI_MONTH, gregorian: OCC_GREGORIAN_MONTH, hijri: OCC_HIJRI_MONTH };
+    OCCASIONS_DATA.forEach(item => {
+      const [dayStr, ...monthWords] = item.date.date;
+      const month = (MONTHS[item.date.type] || {})[monthWords.join(' ')];
+      if(!month) return;
+      const k = `${item.date.type}|${month}|${Number(dayStr)}`;
+      (occIndex[k] = occIndex[k] || []).push(item);
+    });
+  }
+  // The Hijri dates of every day move when the official month starts do.
+  // (setHijriMonthStarts() always assigns a new array.)
+  if(HIJRI_MONTH_STARTS !== occHijriSig){ occHijriSig = HIJRI_MONTH_STARTS; occDayCache = {}; }
+  return occIndex;
+}
+
 function occasionsForDate(d){
   if(OCCASIONS_BY_DATE) return OCCASIONS_BY_DATE[dateKey(d)] || [];
   if(!OCCASIONS_DATA) return null;
+  const idx = occasionsIndex();
+  const key = dateKey(d);
+  if(occDayCache[key]) return occDayCache[key];
   const j = toJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
   const h = toHijri(d.getFullYear(), d.getMonth()+1, d.getDate());
-  const gm = d.getMonth()+1, gd = d.getDate();
-  return OCCASIONS_DATA.filter(item => {
-    const [dayStr, ...monthWords] = item.date.date;
-    const monthStr = monthWords.join(' ');
-    const day = Number(dayStr);
-    if(item.date.type === 'shamsi') return OCC_SHAMSI_MONTH[monthStr]===j.jm && day===j.jd;
-    if(item.date.type === 'gregorian') return OCC_GREGORIAN_MONTH[monthStr]===gm && day===gd;
-    if(item.date.type === 'hijri') return OCC_HIJRI_MONTH[monthStr]===h.hm && day===h.hd;
-    return false;
-  });
+  return occDayCache[key] = [].concat(
+    idx[`shamsi|${j.jm}|${j.jd}`] || [],
+    idx[`gregorian|${d.getMonth()+1}|${d.getDate()}`] || [],
+    idx[`hijri|${h.hm}|${h.hd}`] || []);
 }

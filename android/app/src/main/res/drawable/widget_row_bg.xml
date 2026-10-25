@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A row's card on the desk widget (the app's .item-card): a faint
+     light layer over the widget's own color, so it suits both themes. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#14FFFFFF" />
+    <corners android:radius="12dp" />
+</shape>

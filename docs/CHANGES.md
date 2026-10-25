@@ -48,15 +48,39 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-26.5
+- Demo asset version: 2026-10-26.6
 - PHP schema: v23
 - Django latest migrations: core 0008, planning 0006, social 0003,
   notifications 0003, calendar_data 0002, period 0001
-- Android: 1.1.0 (versionCode 2)
+- Android: 1.2.0 (versionCode 3)
 
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-26.6 — web app, Android 1.2.0, Django (one preference) —
+  * Smoother: occasions indexed once and kept per day (occasions.js
+    occasionsIndex/occDayCache: same 713 results over 3 years, a month
+    change ~12 → ~7 ms on a PC); no backdrop blur on any phone or in the
+    app (index.html data-lite: Android app, pointer:coarse); the calendar
+    drag draws once per frame (calendar-gestures.js attachHomeCalDrag).
+  * Widgets (Widgets.kt): the period widget is offered only when the
+    account has the period desk (widgetData periodDesk → component
+    enabled/disabled; a placed one stays); preview pictures in the widget
+    list (res/drawable-nodpi/widget_preview_*.webp from
+    deploy/make-widget-previews.js + webp-widgets.py, android:previewImage);
+    the calendar widget shows 1, 2 or 4 weeks by its height, the month when
+    tall (widgetData weeks, weeksView; arrows move by its weeks); the
+    planning widget is drawn like the app's desk (widgetData plan: events,
+    tasks pinned-first/done-last, habits; section headings with counts;
+    round/square boxes, ✓/✗, struck-through titles, time under the title,
+    star; as many rows as fit, "+N" for the rest). Old `desk` data kept
+    for APK 1.1.0.
+  * Always-there notification (Ongoing.kt, channel "today", low/silent):
+    today's date, what's left (tasks · habits · events) and the other
+    calendars/occasions; redrawn with the widgets, at midnight and on boot.
+    Settings → General "Date in the notifications" (app only; pref
+    ongoingNotification, Django PREFERENCE_DEFAULTS ongoing_notification).
 
 - 2026-10-26.5 — web app (so Android too), PHP, Django — 
   * Time picker (js/core/dropdown.js enhanceTime): every minute, hour and

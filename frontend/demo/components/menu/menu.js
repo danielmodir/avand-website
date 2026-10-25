@@ -521,6 +521,7 @@ function renderGeneralSettings(){
         <div class="switch ${on ? 'on' : ''}" data-action="toggle-notifications" role="switch" aria-checked="${on}"><div class="knob"></div></div></div>
         ${on ? prefRow('notifyOverdue', 'prefNotifyOverdue', 'prefNotifyOverdueSub') : ''}`;
     })()}
+    ${androidApp && typeof androidApp.setWidgets === 'function' ? prefRow('ongoingNotification', 'prefOngoing', 'prefOngoingSub') : ''}
   `;
 }
 

@@ -7,13 +7,17 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.text.SpannableString
+import android.text.style.StrikethroughSpan
 import android.view.View
 import android.widget.RemoteViews
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
@@ -37,26 +41,28 @@ object Widgets {
     const val PREV = "ir.toojibee.app.WIDGET_PREV"
     const val NEXT = "ir.toojibee.app.WIDGET_NEXT"
     const val ADD = "ir.toojibee.app.ADD"
-    private const val MAX_ROWS = 7
 
     fun save(c: Context, json: String) {
-        JSONObject(json) // only valid data is kept
+        val d = JSONObject(json) // only valid data is kept
         File(c.filesDir, FILE).writeText(json)
+        syncPeriodWidget(c, d)
         updateAll(c)
         scheduleMidnight(c)
     }
 
-    private fun load(c: Context): JSONObject? =
+    fun load(c: Context): JSONObject? =
         try { JSONObject(File(c.filesDir, FILE).readText()) } catch (e: Exception) { null }
 
-    private fun todayKey() = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+    fun todayKey() = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
+    /** Also redraws the always-there date notification (Ongoing.kt). */
     fun updateAll(c: Context) {
         val m = AppWidgetManager.getInstance(c)
         for (cls in listOf(DateWidget::class.java, MonthWidget::class.java, DeskWidget::class.java, PeriodWidget::class.java)) {
             val ids = m.getAppWidgetIds(ComponentName(c, cls))
             if (ids.isNotEmpty()) update(c, m, cls, ids)
         }
+        Ongoing.update(c, load(c))
     }
 
     fun update(c: Context, m: AppWidgetManager, cls: Class<*>, ids: IntArray) {
@@ -64,12 +70,30 @@ object Widgets {
         for (id in ids) {
             val views = when (cls) {
                 DateWidget::class.java -> date(c, d)
-                MonthWidget::class.java -> month(c, d, id)
-                DeskWidget::class.java -> desk(c, d)
+                MonthWidget::class.java -> month(c, d, id, heightDp(m, id))
+                DeskWidget::class.java -> desk(c, d, heightDp(m, id))
                 else -> period(c, d)
             }
             m.updateAppWidget(id, framed(c, views, Look(d)))
         }
+    }
+
+    /** The widget's height on the home screen, in dp (portrait: the larger of the two the launcher gives). */
+    private fun heightDp(m: AppWidgetManager, id: Int): Int {
+        val o = m.getAppWidgetOptions(id)
+        val h = maxOf(o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT), o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT))
+        return if (h > 0) h else 0
+    }
+
+    /** The period widget is offered (in the launcher's widget list) only to an
+     *  account with the period desk; one already on the home screen stays. */
+    private fun syncPeriodWidget(c: Context, d: JSONObject) {
+        val cn = ComponentName(c, PeriodWidget::class.java)
+        val placed = AppWidgetManager.getInstance(c).getAppWidgetIds(cn).isNotEmpty()
+        val want = !d.has("periodDesk") || d.optBoolean("periodDesk") || placed
+        val pm = c.packageManager
+        val state = if (want) PackageManager.COMPONENT_ENABLED_STATE_DEFAULT else PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        if (pm.getComponentEnabledSetting(cn) != state) pm.setComponentEnabledSetting(cn, state, PackageManager.DONT_KILL_APP)
     }
 
     /** Redraw just after midnight: the data already has the new day. */
@@ -83,7 +107,7 @@ object Widgets {
     }
 
     // ── shared bits ─────────────────────────────────────────────────────
-    private class Look(d: JSONObject?) {
+    class Look(d: JSONObject?) {
         val fa = d?.optString("lang") != "en"
         private val colors = d?.optJSONObject("colors")
         private fun color(name: String, fallback: Int) = try { Color.parseColor(colors!!.getString(name)) } catch (e: Exception) { fallback }
@@ -95,6 +119,9 @@ object Widgets {
         val holiday = color("holiday", Color.parseColor("#F0937A"))
         /** Days of the months around this one, faded like the app's .other-month. */
         val faded = (muted and 0x00FFFFFF) or (0x55 shl 24)
+        /** Day mode: a light widget (rows get a dark layer, not a light one). */
+        val light = (Color.red(card) * 299 + Color.green(card) * 587 + Color.blue(card) * 114) / 1000 > 150
+        val danger = Color.parseColor("#E5484D")
         fun digits(s: String) = if (fa) s.map { if (it in '0'..'9') '۰' + (it - '0') else it }.joinToString("") else s
     }
 
@@ -113,7 +140,7 @@ object Widgets {
     }
 
     /** The app, on a day (and an item's details), like a tapped reminder. */
-    private fun openApp(c: Context, req: Int, date: String, kind: String = "", id: String = "", action: String = MainActivity.ACTION_REMINDER): PendingIntent {
+    fun openApp(c: Context, req: Int, date: String, kind: String = "", id: String = "", action: String = MainActivity.ACTION_REMINDER): PendingIntent {
         val i = Intent(c, MainActivity::class.java).setAction(action)
             .putExtra("kind", kind).putExtra("id", id).putExtra("date", date)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -149,12 +176,28 @@ object Widgets {
 
     // ── the month ───────────────────────────────────────────────────────
     private fun monthOffsetKey(id: Int) = "month_off_$id"
-    fun shiftMonth(c: Context, id: Int, by: Int) {
+    /** The arrows: by a month, or by the widget's weeks when it's small. */
+    fun shiftCalendar(c: Context, id: Int, by: Int) {
+        if (weeksFor(heightDp(AppWidgetManager.getInstance(c), id)) > 0) shiftWeeks(c, id, by) else shiftMonth(c, id, by)
+    }
+    private fun shiftMonth(c: Context, id: Int, by: Int) {
         val p = c.getSharedPreferences("widgets", Context.MODE_PRIVATE)
         p.edit().putInt(monthOffsetKey(id), p.getInt(monthOffsetKey(id), 0) + by).apply()
     }
 
-    private fun month(c: Context, d: JSONObject?, widgetId: Int): RemoteViews {
+    /** How many weeks fit the widget's height: 1, 2, 4, or 0 = the whole month. */
+    private fun weeksFor(heightDp: Int) = when {
+        heightDp == 0 -> 0 // the launcher didn't say: the month, as before
+        heightDp < 150 -> 1
+        heightDp < 240 -> 2
+        heightDp < 340 -> 4
+        else -> 0
+    }
+
+    private fun month(c: Context, d: JSONObject?, widgetId: Int, heightDp: Int): RemoteViews {
+        val n = weeksFor(heightDp)
+        val weeks = d?.optJSONObject("weeks")
+        if (n > 0 && weeks != null) return weeksView(c, d, widgetId, n, weeks)
         val look = Look(d)
         val key = todayKey()
         val months = d?.optJSONArray("months") ?: return noData(c, R.layout.widget_month, look, R.id.title)
@@ -185,48 +228,99 @@ object Widgets {
         v.setOnClickPendingIntent(R.id.left, nav(PREV, widgetId * 2))
         v.setOnClickPendingIntent(R.id.right, nav(NEXT, widgetId * 2 + 1))
 
+        weekdayRow(c, v, look, m.getJSONArray("weekdays"))
+        v.removeAllViews(R.id.rows)
+        val cells = m.getJSONArray("cells")
+        for (r in 0 until cells.length() / 7) v.addView(R.id.rows, dayRow(c, look, cells, r * 7, key))
+        return v
+    }
+
+    private fun weekdayRow(c: Context, v: RemoteViews, look: Look, wds: JSONArray) {
         v.removeAllViews(R.id.weekdays)
-        val wds = m.getJSONArray("weekdays")
         for (i in 0 until wds.length()) {
             val w = RemoteViews(c.packageName, R.layout.widget_month_weekday)
             w.setTextViewText(R.id.wd, wds.getString(i)); w.setTextColor(R.id.wd, look.muted)
             v.addView(R.id.weekdays, w)
         }
-        v.removeAllViews(R.id.rows)
-        val cells = m.getJSONArray("cells")
-        for (r in 0 until cells.length() / 7) {
-            val row = RemoteViews(c.packageName, R.layout.widget_month_row)
-            for (k in 0 until 7) {
-                val cell = cells.getJSONArray(r * 7 + k)
-                val date = cell.getString(0)
-                val flags = cell.getInt(3)
-                val inMonth = flags and 1 == 1
-                val isToday = date == key
-                val cv = RemoteViews(c.packageName, R.layout.widget_month_cell)
-                cv.setTextViewText(R.id.num, cell.getString(1))
-                cv.setTextViewText(R.id.sub, cell.getString(2))
-                val numColor = when {
-                    isToday -> look.onPrimary
-                    !inMonth -> look.faded
-                    flags and 2 == 2 -> look.holiday
-                    else -> look.text
-                }
-                cv.setTextColor(R.id.num, numColor)
-                cv.setTextColor(R.id.sub, if (isToday) look.onPrimary else if (inMonth) look.muted else look.faded)
-                if (isToday) { cv.setViewVisibility(R.id.today, View.VISIBLE); cv.setInt(R.id.today, "setColorFilter", look.primary) }
-                cv.setOnClickPendingIntent(R.id.cell, openApp(c, date.hashCode(), date))
-                row.addView(R.id.row, cv)
+    }
+
+    /** Seven days from cells[from]: [date, number, other calendars, flags (1 this month, 2 holiday)]. */
+    private fun dayRow(c: Context, look: Look, cells: JSONArray, from: Int, key: String): RemoteViews {
+        val row = RemoteViews(c.packageName, R.layout.widget_month_row)
+        for (k in 0 until 7) {
+            val cell = cells.getJSONArray(from + k)
+            val date = cell.getString(0)
+            val flags = cell.getInt(3)
+            val inMonth = flags and 1 == 1
+            val isToday = date == key
+            val cv = RemoteViews(c.packageName, R.layout.widget_month_cell)
+            cv.setTextViewText(R.id.num, cell.getString(1))
+            cv.setTextViewText(R.id.sub, cell.getString(2))
+            val numColor = when {
+                isToday -> look.onPrimary
+                !inMonth -> look.faded
+                flags and 2 == 2 -> look.holiday
+                else -> look.text
             }
-            v.addView(R.id.rows, row)
+            cv.setTextColor(R.id.num, numColor)
+            cv.setTextColor(R.id.sub, if (isToday) look.onPrimary else if (inMonth) look.muted else look.faded)
+            if (isToday) { cv.setViewVisibility(R.id.today, View.VISIBLE); cv.setInt(R.id.today, "setColorFilter", look.primary) }
+            cv.setOnClickPendingIntent(R.id.cell, openApp(c, date.hashCode(), date))
+            row.addView(R.id.row, cv)
         }
+        return row
+    }
+
+    // ── the calendar made small: 1, 2 or 4 weeks from this one ──────────
+    private fun weekOffsetKey(id: Int) = "week_off_$id"
+    fun shiftWeeks(c: Context, id: Int, by: Int) {
+        val p = c.getSharedPreferences("widgets", Context.MODE_PRIVATE)
+        p.edit().putInt(weekOffsetKey(id), p.getInt(weekOffsetKey(id), 0) + by).apply()
+    }
+
+    private fun weeksView(c: Context, d: JSONObject, widgetId: Int, n: Int, weeks: JSONObject): RemoteViews {
+        val look = Look(d)
+        val key = todayKey()
+        val list = weeks.getJSONArray("list")
+        // This week = the one with today in it (the data may be a day or two old).
+        var now = weeks.optInt("now")
+        for (i in 0 until list.length()) {
+            val cells = list.getJSONObject(i).getJSONArray("cells")
+            for (k in 0 until 7) if (cells.getJSONArray(k).getString(0) == key) now = i
+        }
+        val p = c.getSharedPreferences("widgets", Context.MODE_PRIVATE)
+        // The arrows move by the widget's own size (n weeks).
+        val first = (now + p.getInt(weekOffsetKey(widgetId), 0) * n).coerceIn(0, maxOf(0, list.length() - n))
+        val v = base(c, R.layout.widget_month, look)
+        val week = list.getJSONObject(first)
+        v.setTextViewText(R.id.title, week.optString("title")); v.setTextColor(R.id.title, look.text)
+        v.setOnClickPendingIntent(R.id.title, openApp(c, 3, week.optString("first")))
+        v.setImageViewResource(R.id.left, if (look.fa) R.drawable.widget_arrow else R.drawable.widget_arrow_left)
+        v.setImageViewResource(R.id.right, if (look.fa) R.drawable.widget_arrow_left else R.drawable.widget_arrow)
+        v.setInt(R.id.left, "setColorFilter", if (first > 0) look.text else look.muted)
+        v.setInt(R.id.right, "setColorFilter", if (first < list.length() - n) look.text else look.muted)
+        val nav = { action: String, req: Int ->
+            PendingIntent.getBroadcast(c, req, Intent(c, MonthWidget::class.java).setAction(action).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
+        v.setOnClickPendingIntent(R.id.left, nav(PREV, widgetId * 2))
+        v.setOnClickPendingIntent(R.id.right, nav(NEXT, widgetId * 2 + 1))
+        // One week only: no room for the title bar, just the days' names and the days.
+        v.setViewVisibility(R.id.head, if (n == 1) View.GONE else View.VISIBLE)
+        weekdayRow(c, v, look, weeks.getJSONArray("weekdays"))
+        v.removeAllViews(R.id.rows)
+        for (w in first until minOf(first + n, list.length())) v.addView(R.id.rows, dayRow(c, look, list.getJSONObject(w).getJSONArray("cells"), 0, key))
         return v
     }
 
     // ── the planning desk ───────────────────────────────────────────────
-    private fun desk(c: Context, d: JSONObject?): RemoteViews {
+    /** The day's plan as the app's planning desk shows it (items.js
+     *  renderItemSections): Events, Tasks, Habits, each under its heading
+     *  with its count; as many rows as the widget's height has room for. */
+    private fun desk(c: Context, d: JSONObject?, heightDp: Int): RemoteViews {
         val look = Look(d)
         val key = todayKey()
-        val items = d?.optJSONObject("desk")?.optJSONArray(key) ?: return noData(c, R.layout.widget_desk, look, R.id.title)
+        val plan = d?.optJSONObject("plan")?.optJSONObject(key) ?: return noData(c, R.layout.widget_desk, look, R.id.title)
         val labels = d.optJSONObject("labels")
         val day = d.optJSONObject("days")?.optJSONObject(key)
         val v = base(c, R.layout.widget_desk, look)
@@ -237,44 +331,113 @@ object Widgets {
         v.setInt(R.id.add_icon, "setColorFilter", look.onPrimary)
         v.setOnClickPendingIntent(R.id.add, openApp(c, 5, key, action = ADD))
         v.removeAllViews(R.id.list)
-        val n = minOf(items.length(), MAX_ROWS)
-        for (i in 0 until n) {
-            val it = items.getJSONObject(i)
-            val kind = it.optString("kind"); val id = it.optString("id"); val done = it.optBoolean("done")
-            val row = RemoteViews(c.packageName, R.layout.widget_desk_row)
-            val color = try { Color.parseColor(it.optString("color")) } catch (e: Exception) { look.primary }
-            row.setInt(R.id.mark, "setColorFilter", color)
-            row.setTextViewText(R.id.title, it.optString("title"))
-            row.setTextColor(R.id.title, if (done) look.muted else look.text)
-            row.setTextViewText(R.id.time, look.digits(it.optString("time")))
-            row.setTextColor(R.id.time, look.muted)
-            if ((kind == "task" || kind == "habit") && it.optBoolean("tick", true)) {
-                row.setImageViewResource(R.id.check_box, if (done) R.drawable.widget_dot else R.drawable.widget_ring)
-                row.setInt(R.id.check_box, "setColorFilter", if (done) look.primary else look.muted)
-                row.setViewVisibility(R.id.check_mark, if (done) View.VISIBLE else View.GONE)
-                row.setInt(R.id.check_mark, "setColorFilter", look.onPrimary)
-                val tick = Intent(c, ActionReceiver::class.java).setAction(TOGGLE)
-                    .putExtra("kind", kind).putExtra("id", id).putExtra("date", key).putExtra("done", !done)
-                row.setOnClickPendingIntent(R.id.check, PendingIntent.getBroadcast(c, ("$kind|$id|$key").hashCode(), tick,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
-            } else row.setViewVisibility(R.id.check, View.GONE)
-            row.setOnClickPendingIntent(R.id.row, openApp(c, ("open|$kind|$id").hashCode(), key, kind, id))
-            v.addView(R.id.list, row)
+        val rowBg = if (look.light) R.drawable.widget_row_bg_light else R.drawable.widget_row_bg
+        var room = (if (heightDp > 0) heightDp else 250) - 70 // the padding and the title bar
+        var hidden = 0
+        val colors = d.optJSONObject("itemColors")
+        val kindColor = { kind: String -> try { Color.parseColor(colors!!.getString(kind)) } catch (e: Exception) { look.primary } }
+        fun section(label: String, count: Int): Boolean {
+            if (count == 0) return false
+            if (room < 26 + 42) { hidden += count; return false }
+            room -= 26
+            val s = RemoteViews(c.packageName, R.layout.widget_desk_section)
+            s.setTextViewText(R.id.label, label); s.setTextColor(R.id.label, look.text)
+            s.setTextViewText(R.id.count, look.digits(count.toString())); s.setTextColor(R.id.count, look.primary)
+            s.setInt(R.id.count_bg, "setColorFilter", (look.primary and 0x00FFFFFF) or (0x29 shl 24))
+            v.addView(R.id.list, s)
+            return true
         }
-        v.setViewVisibility(R.id.empty, if (n == 0) View.VISIBLE else View.GONE)
-        v.setTextViewText(R.id.empty, labels?.optString("nothing") ?: "")
+        val events = plan.optJSONArray("events") ?: JSONArray()
+        if (section(labels?.optString("events") ?: "", events.length())) {
+            for (i in 0 until events.length()) {
+                if (room < 42) { hidden += events.length() - i; break }
+                room -= 42
+                val e = events.getJSONObject(i)
+                val row = RemoteViews(c.packageName, R.layout.widget_desk_event)
+                row.setInt(R.id.row, "setBackgroundResource", rowBg)
+                row.setInt(R.id.mark, "setColorFilter", kindColor("event"))
+                row.setTextViewText(R.id.title, e.optString("title")); row.setTextColor(R.id.title, look.text)
+                val time = e.optString("time")
+                row.setViewVisibility(R.id.time, if (time.isEmpty()) View.GONE else View.VISIBLE)
+                row.setTextViewText(R.id.time, time); row.setTextColor(R.id.time, look.primary)
+                row.setOnClickPendingIntent(R.id.row, openApp(c, ("open|event|${e.optString("id")}").hashCode(), key, "event", e.optString("id")))
+                v.addView(R.id.list, row)
+            }
+        }
+        for ((kind, label) in listOf("task" to "tasks", "habit" to "habits")) {
+            val items = plan.optJSONArray(label) ?: JSONArray()
+            if (!section(labels?.optString(label) ?: "", items.length())) continue
+            for (i in 0 until items.length()) {
+                if (room < 46) { hidden += items.length() - i; break }
+                room -= 46
+                v.addView(R.id.list, itemRow(c, look, rowBg, kind, items.getJSONObject(i), key, kindColor(kind)))
+            }
+        }
+        val any = events.length() + (plan.optJSONArray("tasks")?.length() ?: 0) + (plan.optJSONArray("habits")?.length() ?: 0) > 0
+        v.setViewVisibility(R.id.empty, if (!any || hidden > 0) View.VISIBLE else View.GONE)
+        v.setTextViewText(R.id.empty, if (!any) labels?.optString("nothing") ?: "" else "+" + look.digits(hidden.toString()))
         v.setTextColor(R.id.empty, look.muted)
+        if (hidden > 0) v.setOnClickPendingIntent(R.id.empty, openApp(c, 4, key))
         return v
     }
+
+    /** A task or habit row: the app's checkbox (✓ done in the kind's color, ✗ not done in red, struck-through title). */
+    private fun itemRow(c: Context, look: Look, rowBg: Int, kind: String, it: JSONObject, key: String, color: Int): RemoteViews {
+        val id = it.optString("id")
+        val state = it.optString("state")
+        val done = state == "done"; val notDone = state == "not_done"
+        val row = RemoteViews(c.packageName, R.layout.widget_desk_row)
+        row.setInt(R.id.row, "setBackgroundResource", rowBg)
+        val title = SpannableString(it.optString("title"))
+        if (done || notDone) title.setSpan(StrikethroughSpan(), 0, title.length, 0)
+        row.setTextViewText(R.id.title, title)
+        row.setTextColor(R.id.title, if (done || notDone) look.muted else look.text)
+        val time = it.optString("time")
+        row.setViewVisibility(R.id.time, if (time.isEmpty()) View.GONE else View.VISIBLE)
+        row.setTextViewText(R.id.time, time); row.setTextColor(R.id.time, look.muted)
+        row.setViewVisibility(R.id.star, if (it.optBoolean("pinned")) View.VISIBLE else View.GONE)
+        row.setInt(R.id.star, "setColorFilter", look.primary)
+        if (it.optBoolean("tick", true)) {
+            val square = kind == "habit"
+            val filled = done || notDone
+            row.setImageViewResource(R.id.check_box, when {
+                square && filled -> R.drawable.widget_square_fill
+                square -> R.drawable.widget_square
+                filled -> R.drawable.widget_dot
+                else -> R.drawable.widget_ring
+            })
+            row.setInt(R.id.check_box, "setColorFilter", if (done) color else if (notDone) look.danger else look.muted)
+            row.setViewVisibility(R.id.check_mark, if (filled) View.VISIBLE else View.GONE)
+            row.setImageViewResource(R.id.check_mark, if (notDone) R.drawable.widget_x else R.drawable.widget_check)
+            row.setInt(R.id.check_mark, "setColorFilter", if (notDone) Color.WHITE else contrastOn(color))
+            val tick = Intent(c, ActionReceiver::class.java).setAction(TOGGLE)
+                .putExtra("kind", kind).putExtra("id", id).putExtra("date", key).putExtra("done", !done)
+            row.setOnClickPendingIntent(R.id.check, PendingIntent.getBroadcast(c, ("$kind|$id|$key").hashCode(), tick,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+        } else row.setViewVisibility(R.id.check, View.GONE) // a counting/timed habit ticks itself in the app
+        row.setOnClickPendingIntent(R.id.row, openApp(c, ("open|$kind|$id").hashCode(), key, kind, id))
+        return row
+    }
+
+    /** Dark on a light color, white on a dark one (items.js colorIsLight). */
+    private fun contrastOn(color: Int) =
+        if ((Color.red(color) * 299 + Color.green(color) * 587 + Color.blue(color) * 114) / 1000 > 160) Color.parseColor("#1A1708") else Color.WHITE
 
     /** A tick on the desk widget: shown at once, then applied by the app (PhoneActions). */
     fun toggle(c: Context, kind: String, id: String, date: String, done: Boolean) {
         val d = load(c)
-        val items = d?.optJSONObject("desk")?.optJSONArray(date)
-        if (items != null) {
-            for (i in 0 until items.length()) {
-                val it = items.getJSONObject(i)
-                if (it.optString("kind") == kind && it.optString("id") == id) it.put("done", done)
+        if (d != null) {
+            d.optJSONObject("desk")?.optJSONArray(date)?.let { items ->
+                for (i in 0 until items.length()) {
+                    val it = items.getJSONObject(i)
+                    if (it.optString("kind") == kind && it.optString("id") == id) it.put("done", done)
+                }
+            }
+            d.optJSONObject("plan")?.optJSONObject(date)?.optJSONArray(if (kind == "task") "tasks" else "habits")?.let { items ->
+                for (i in 0 until items.length()) {
+                    val it = items.getJSONObject(i)
+                    if (it.optString("id") == id) it.put("state", if (done) "done" else "")
+                }
             }
             File(c.filesDir, FILE).writeText(d.toString())
             updateAll(c)
@@ -336,6 +499,10 @@ open class BaseWidget : AppWidgetProvider() {
         Widgets.update(c, m, javaClass, ids)
         Widgets.scheduleMidnight(c)
     }
+    /** Resized on the home screen: the calendar picks its weeks, the desk its rows. */
+    override fun onAppWidgetOptionsChanged(c: Context, m: AppWidgetManager, id: Int, options: android.os.Bundle) {
+        Widgets.update(c, m, javaClass, intArrayOf(id))
+    }
     override fun onReceive(c: Context, intent: Intent) {
         if (intent.action == Widgets.MIDNIGHT) { Widgets.updateAll(c); Widgets.scheduleMidnight(c); return }
         super.onReceive(c, intent)
@@ -349,7 +516,7 @@ class MonthWidget : BaseWidget() {
         val id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
         when (intent.action) {
             Widgets.PREV, Widgets.NEXT -> {
-                Widgets.shiftMonth(c, id, if (intent.action == Widgets.NEXT) 1 else -1)
+                Widgets.shiftCalendar(c, id, if (intent.action == Widgets.NEXT) 1 else -1)
                 Widgets.update(c, AppWidgetManager.getInstance(c), MonthWidget::class.java, intArrayOf(id))
             }
             else -> super.onReceive(c, intent)

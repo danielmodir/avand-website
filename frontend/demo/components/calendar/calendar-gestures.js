@@ -391,6 +391,8 @@ function attachHomeCalDrag(){
   if(!surface || document.querySelector('.home-cal-full')) return;
   let startX = null, startY = null, moved = false, axis = null, m = null, startRows = 1;
   let lastY = 0, lastT = 0, velocity = 0, fromHandle = false;
+  let drawFrame = 0, pendingRows = null;
+  const stopDrawing = () => { if(drawFrame) cancelAnimationFrame(drawFrame); drawFrame = 0; pendingRows = null; };
 
   const rowsFor = d => d === 'compact' ? 1 : d === 'mid' ? Math.min(2, m.total) : m.total;
 
@@ -421,10 +423,14 @@ function attachHomeCalDrag(){
     let rows = startRows + dy / (m.rowH + m.rowGap);
     if(rows < 1) rows = 1 - (1 - rows) * 0.25;
     if(rows > m.total) rows = m.total + (rows - m.total) * 0.25;
-    drawHomeCalAt(m, rows);
+    // Once per frame: a phone sends touch moves faster than it can lay
+    // the page out, and each draw moves everything under the calendar.
+    pendingRows = rows;
+    if(!drawFrame) drawFrame = requestAnimationFrame(() => { drawFrame = 0; if(m && pendingRows != null) drawHomeCalAt(m, pendingRows); });
   }
   function onUp(e){
     if(startY === null) return;
+    stopDrawing();
     const dx = e.clientX - startX, dy = e.clientY - startY;
     if(axis === 'x' && Math.abs(dx) > 50){
       // Horizontal: previous/next week (collapsed) or month (expanded),
@@ -449,6 +455,7 @@ function attachHomeCalDrag(){
   function onCancel(){
     if(startY === null) return;
     startY = null;
+    stopDrawing();
     if(m){ m.clip.style.transition = ''; m.grid.style.transition = ''; }
     positionHomeCalGrid(); // back to the size it had
   }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- widget_row_bg for day mode: a faint dark layer instead (a light one
+     wouldn't show on a light widget). Picked by Widgets.kt. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#0F000000" />
+    <corners android:radius="12dp" />
+</shape>

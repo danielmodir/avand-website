@@ -9,6 +9,7 @@ const DEFAULT_PREFS = {
   occasionsHolidaysOnly: false, occasionsMarkHolidays: true, occasionsShowEvents: true,
   notifyOverdue: true, // one reminder when a task turns "not done" (js/core/notify.js)
   groupsEnabled: true, // the Group planning desk (components/groups)
+  ongoingNotification: true, // Android app: the always-there date notification (Widgets.kt)
 };
 function pref(key){
   const p = state.settings.prefs || {};

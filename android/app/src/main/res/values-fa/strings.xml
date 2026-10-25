@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">توجیبی</string>
     <string name="channel_reminders">یادآوری‌ها</string>
+    <string name="channel_today">تاریخ امروز</string>
     <string name="share_title">اشتراک‌گذاری</string>
     <string name="action_done">انجام شد</string>
     <string name="action_later">بعداً یادم بنداز</string>

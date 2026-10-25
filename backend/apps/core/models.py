@@ -335,6 +335,7 @@ class UserSettings(models.Model):
         "occasions_show_events": True,      # my events under the occasions
         "notify_overdue": True,             # a reminder when a task turns "not done"
         "groups_enabled": True,             # the Group planning desktop
+        "ongoing_notification": True,       # Android app: today's date and what's left, always in the notification shade
         # Tutorials already seen (finished or skipped), so signing in again
         # doesn't repeat them (frontend/demo/components/tour/tour.js).
         "tour_general": False, "tour_calendar": False, "tour_planning": False,

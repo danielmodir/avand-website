@@ -4,5 +4,5 @@
     android:targetCellWidth="2" android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical" android:widgetCategory="home_screen"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/widget_period" android:previewLayout="@layout/widget_period"
+    android:initialLayout="@layout/widget_period" android:previewImage="@drawable/widget_preview_period"
     android:description="@string/widget_period_desc" />

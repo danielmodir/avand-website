@@ -117,7 +117,7 @@ function widgetData(){
   const color = name => cssColorHex(`var(${name})`);
   const keyOf = d => dateKey(d);
   const data = {
-    v: 1, lang: lang(), built: keyOf(today),
+    v: 1, lang: lang(), built: keyOf(today), weeks: null,
     colors: {
       bg: color('--bg'), card: color('--card'), text: color('--text'), muted: color('--text-muted'),
       primary: color('--primary'), onPrimary: color('--on-primary'), border: color('--border'),
@@ -125,14 +125,15 @@ function widgetData(){
     },
     labels: { today: t('today'), planning: t('planning'), tasks: t('tasks'), habits: t('habits'), events: t('events'),
       nothing: t('nothingPlanned'), period: t('periodDesktop'), calendar: t('calendar') },
-    days: {}, months: [], desk: {}, period: null,
+    days: {}, months: [], desk: {}, plan: {}, period: null,
+    ongoing: { on: pref('ongoingNotification') && !state.guest, days: {} },
   };
   const occ = d => (typeof occasionsForDate === 'function' ? occasionsForDate(d) : []) || [];
   const s = state.settings;
   const sig = [keyOf(today), lang(), s.calendarSystem, s.weekStartDay, JSON.stringify(s.calendarEnabled), occ(today).length, occ(addDays(today, 1)).length,
     OCCASIONS_DATA || OCCASIONS_BY_DATE ? 1 : 0].join('|'); // occasions.js: loaded or not yet
   if(widgetCalCache.sig === sig){
-    data.days = widgetCalCache.days; data.months = widgetCalCache.months;
+    data.days = widgetCalCache.days; data.months = widgetCalCache.months; data.weeks = widgetCalCache.weeks;
   } else {
   // Today's date widget: every calendar's date, and the day's occasions.
   for(let i = -1; i <= 60; i++){
@@ -173,7 +174,22 @@ function widgetData(){
     data.months.push({ title: `${my.monthLabel} ${my.yearLabel}`, first: keyOf(first), weekdays, cells });
     cursor = stepMonth(first, 1);
   }
-  widgetCalCache = { sig, days: data.days, months: data.months };
+  // APK 1.2+: the calendar widget made small shows 1, 2 or 4 weeks from
+  // this one; weeks from 8 back to 20 ahead, `now` = this week's index.
+  // Each week's title is its middle day's month.
+  const thisWeek = startOfWeek(today), weekList = [];
+  for(let w = -8; w <= 20; w++){
+    const start = addDays(thisWeek, w * 7), cells = [];
+    for(let i = 0; i < 7; i++){
+      const d = addDays(start, i);
+      const sub = dayCellDateHtml(d).match(/day-cell-sub">([^<]*)</);
+      cells.push([keyOf(d), displayDayNum(d), sub ? sub[1] : '', 1 | (isHolidayOn(d) ? 2 : 0)]);
+    }
+    const my = displayMonthYear(addDays(start, 3));
+    weekList.push({ title: `${my.monthLabel} ${my.yearLabel}`, first: keyOf(start), cells });
+  }
+  data.weeks = { now: 8, weekdays, list: weekList };
+  widgetCalCache = { sig, days: data.days, months: data.months, weeks: data.weeks };
   }
   // The planning desk: a week of days, each with its tasks, habits, events.
   for(let i = 0; i < 7; i++){
@@ -184,8 +200,33 @@ function widgetData(){
     state.habits.filter(x => habitOccursOnDate(x, d)).forEach(x => items.push({ kind: 'habit', id: x.id, title: x.title, time: x.startTime || '', color: cssColorHex(x.color || itemColor('habit')), done: x.completedDates.includes(key), tick: !habitTracker(x) }));
     state.events.filter(x => occursOnDate(x, d)).forEach(x => items.push({ kind: 'event', id: x.id, title: x.title, time: x.startTime || '', color: cssColorHex(x.color || itemColor('event')), done: false }));
     items.sort((a, b) => (a.time || '99') < (b.time || '99') ? -1 : 1);
-    data.desk[key] = items.slice(0, 12);
+    data.desk[key] = items.slice(0, 12); // APK 1.1.0's desk widget
+    // APK 1.2+: the desk as the app shows it (items.js renderItemSections):
+    // events, then tasks (pinned first, done last), then habits, with each
+    // row's state ('done' / 'not_done' / '') and its time label.
+    const tasks = state.tasks.filter(x => occursOnDate(x, d));
+    const habits = state.habits.filter(x => habitOccursOnDate(x, d));
+    const events = state.events.filter(x => occursOnDate(x, d));
+    const isDone = x => taskStatusOn(x, key) === 'done';
+    data.plan[key] = {
+      events: sortEvents(events).map(x => ({ id: x.id, title: x.title, time: x.startTime ? itemTimeLabel(x) : (eventTime(x) ? dig(eventTime(x)) : '') })),
+      tasks: [...tasks].sort((a, b) => (b.pinned - a.pinned) || (isDone(a) - isDone(b))).map(x => ({ id: x.id, title: x.title, time: itemTimeLabel(x),
+        state: taskStatusOn(x, key) || '', pinned: !!x.pinned })),
+      habits: habits.map(x => ({ id: x.id, title: x.title,
+        state: x.completedDates.includes(key) ? 'done' : (x.skippedDates || []).includes(key) ? 'not_done' : '', tick: !habitTracker(x) })),
+    };
+    // The always-there notification: the day's date and what's left.
+    const left = { t: tasks.filter(x => !taskStatusOn(x, key)).length, h: habits.filter(x => !x.completedDates.includes(key) && !(x.skippedDates || []).includes(key)).length,
+      e: events.filter(x => i > 0 || !x.startTime || atTimeOn(d, x.startTime) > Date.now()).length };
+    data.ongoing.days[key] = left.t + left.h + left.e
+      ? t('ongoingLeft').replace('{t}', dig(left.t)).replace('{h}', dig(left.h)).replace('{e}', dig(left.e))
+      : t('ongoingAllDone');
   }
+  data.labels.pinned = t('pinBtn');
+  // Each kind's color (Settings → Planning), for the desk widget's ticks.
+  data.itemColors = { task: cssColorHex(itemColor('task') || 'var(--primary)'), habit: cssColorHex(itemColor('habit')), event: cssColorHex(itemColor('event')) };
+  // Only offered when the account has the period desk (Widgets.kt hides it otherwise).
+  data.periodDesk = !state.guest && deskKeys().includes('periodDesktop');
   // The period ring (her own cycle), worked out for each of the next days
   // by the desk's own code (it reads `today`, set for each day in turn).
   const pd = state.period;
