@@ -13,6 +13,14 @@ app. The native side only adds what a WebView can't do:
 | Updates of those files without a new APK (only changed files) | `WebFiles.kt` + `demo/app-files.json` |
 | Reminders as phone notifications, offline, app closed, after a restart | `Reminders.kt` + `js/core/notify.js` |
 | Back button, share sheet, clipboard, status bar colors, file picker | `MainActivity.kt` + `js/core/android.js` |
+| «انجام شد» / «بعداً یادم بنداز» on reminders; ticks applied while the app is closed (hidden page run as a job) | `PhoneActions.kt` + `applyPhoneActions` in `js/core/android.js` |
+| Home-screen widgets: today's date, month, planning desk (tickable), period ring | `Widgets.kt` + `widgetData` in `js/core/android.js` |
+| Smoothness: splash, WebView pre-raster, lighter effects on weak phones (`html[data-lite]`) | `MainActivity.kt`, `css/theme.css`, `index.html` |
+
+Widgets and notification buttons never compute dates or items natively: the
+web app hands over ready data (days ahead), so they always agree with it.
+New bridge methods are only called when they exist (`typeof … === 'function'`),
+so app-file updates keep working on older APKs.
 
 ## How it fits together
 

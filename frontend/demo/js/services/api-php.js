@@ -307,6 +307,9 @@
     articles: function (lang) { return request('GET', '/articles?lang=' + (lang === 'en' ? 'en' : 'fa'), undefined, { auth: false }); },
     featuredArticles: function () { return request('GET', '/articles/featured', undefined, { auth: false }); },
     loadAll: loadAll,
+    // Send pending changes now instead of after the usual short wait (the
+    // Android app's hidden page closes a few seconds after a tick).
+    syncNow: function () { clearTimeout(pushTimer); if (dirty) saveCache(true); return flush(); },
     onStateChanged: schedulePush,
     saveTask: queued, deleteTask: queuedDelete, saveHabit: queued, deleteHabit: queuedDelete,
     saveEvent: queued, deleteEvent: queuedDelete, saveProfile: saveProfile, saveSettings: queued,

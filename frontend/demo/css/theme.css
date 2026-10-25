@@ -237,3 +237,14 @@ body{
 .theme-switching, .theme-switching *, .theme-switching *::before, .theme-switching *::after{ transition:none !important; }
 .theme-veil{ position:fixed; inset:0; z-index:10000; pointer-events:none; opacity:1; transition:opacity .42s cubic-bezier(.4,0,.2,1) !important; }
 .theme-veil.out{ opacity:0; }
+
+/* ---- smoothness on phones ---- */
+/* The panels that slide in and out get their own layer up front, so the
+   first frame of the slide isn't spent creating it. */
+#page-menu, .day-sheet, .add-popup{ will-change:transform; }
+/* Phones with little memory or few cores (html[data-lite], set in
+   index.html): no backdrop blur. Redrawing the blur under every frame of a
+   scroll or a slide is what made them stutter; the panels look almost the
+   same without it, and the floating glass bits use the solid surface. */
+html[data-lite] *, html[data-lite] *::before, html[data-lite] *::after{ -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
+html[data-lite] .toolbar-pill, html[data-lite] .fab-menu .nav-add-item{ background:var(--surface-solid); }

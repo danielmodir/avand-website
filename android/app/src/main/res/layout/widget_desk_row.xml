@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One item: its color, title, time, and its checkbox. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/row" android:layout_width="match_parent" android:layout_height="38dp"
+    android:orientation="horizontal" android:gravity="center_vertical">
+    <ImageView android:id="@+id/mark" android:layout_width="8dp" android:layout_height="8dp"
+        android:src="@drawable/widget_dot" android:importantForAccessibility="no" />
+    <TextView android:id="@+id/title" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+        android:layout_marginStart="10dp" android:layout_marginEnd="8dp" android:textSize="14sp" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/time" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp" android:textSize="12sp" />
+    <FrameLayout android:id="@+id/check" android:layout_width="30dp" android:layout_height="30dp" android:padding="3dp">
+        <ImageView android:id="@+id/check_box" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:importantForAccessibility="no" />
+        <ImageView android:id="@+id/check_mark" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:src="@drawable/widget_check" android:visibility="gone" android:importantForAccessibility="no" />
+    </FrameLayout>
+</LinearLayout>

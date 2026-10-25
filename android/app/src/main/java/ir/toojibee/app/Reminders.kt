@@ -128,7 +128,49 @@ object Reminders {
             .setCategory(Notification.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(pi)
+        // «انجام شد» for a task or habit whose day has come (the app doesn't
+        // tick days ahead); «بعداً یادم بنداز» for everything with an item.
+        val words = localized(c)
+        val extras = { action: String ->
+            Intent(c, ActionReceiver::class.java).setAction(action)
+                .putExtra("tag", tag).putExtra("kind", kind).putExtra("id", id).putExtra("date", date)
+                .putExtra("title", title).putExtra("body", body)
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        if ((kind == "task" || kind == "habit") && id.isNotEmpty() && date.isNotEmpty() && date <= today && canTick(c, tag)) {
+            @Suppress("DEPRECATION")
+            b.addAction(Notification.Action.Builder(0, words.getString(R.string.action_done),
+                PendingIntent.getBroadcast(c, (tag + "|done").hashCode(), extras(ActionReceiver.DONE), flags)).build())
+        }
+        if (id.isNotEmpty()) {
+            @Suppress("DEPRECATION")
+            b.addAction(Notification.Action.Builder(0, words.getString(R.string.action_later),
+                PendingIntent.getBroadcast(c, (tag + "|later").hashCode(), extras(ActionReceiver.LATER), flags)).build())
+        }
         nm.notify(tag, 1, b.build())
+    }
+
+    /** False for a habit that counts or times itself (the list says tick: false). */
+    private fun canTick(c: Context, slot: String): Boolean {
+        val items = load(c)
+        for (i in 0 until items.length()) {
+            val r = items.getJSONObject(i)
+            if (r.optString("slot") == slot) return r.optBoolean("tick", true)
+        }
+        return true
+    }
+
+    /** The app's language (the web app tells it, setLang), for the buttons' words. */
+    fun setLang(c: Context, lang: String) {
+        if (lang == "fa" || lang == "en") c.getSharedPreferences("app", Context.MODE_PRIVATE).edit().putString("lang", lang).apply()
+    }
+
+    private fun localized(c: Context): Context {
+        val lang = c.getSharedPreferences("app", Context.MODE_PRIVATE).getString("lang", null) ?: return c
+        val conf = android.content.res.Configuration(c.resources.configuration)
+        conf.setLocale(java.util.Locale(lang))
+        return c.createConfigurationContext(conf)
     }
 }
 
@@ -138,5 +180,9 @@ class ReminderReceiver : BroadcastReceiver() {
 
 /** Alarms don't survive a restart, and a clock/time-zone change moves them. */
 class BootReceiver : BroadcastReceiver() {
-    override fun onReceive(c: Context, intent: Intent) = Reminders.fire(c)
+    override fun onReceive(c: Context, intent: Intent) {
+        Reminders.fire(c)
+        Widgets.updateAll(c) // a new day, or a changed clock
+        Widgets.scheduleMidnight(c)
+    }
 }

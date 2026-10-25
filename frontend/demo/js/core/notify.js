@@ -210,6 +210,7 @@ function startReminders(){
   clearInterval(notifyTimer);
   notifyTimer = setInterval(reminderTick, 30000);
   setTimeout(reminderTick, 1500); // right after opening: anything that came due meanwhile
+  applyPhoneActions(); // ticks made from a notification or a widget meanwhile (js/core/android.js)
 }
 
 if('serviceWorker' in navigator){
@@ -377,9 +378,13 @@ let androidSent = null;
 function syncAndroidSchedule(force){
   if(!androidApp || state.booting) return;
   const on = state.settings.notifications && !state.guest && notifyAllowed();
-  const items = on ? pushScheduleItems() : [];
+  // tick: false — a counting/timed habit ticks itself (trackers.js), so its
+  // notification gets no «انجام شد» button (APK 1.1+ reads it).
+  const items = (on ? pushScheduleItems() : []).map(r => r.kind === 'habit' && habitTracker(state.habits.find(h => h.id === r.id)) ? Object.assign({}, r, { tick: false }) : r);
   const json = JSON.stringify(items);
   if(!force && json === androidSent) return;
   androidSent = json;
+  // The notification's buttons speak the app's language (APK 1.1+).
+  try{ if(androidApp.setLang) androidApp.setLang(lang()); }catch(e){}
   try{ androidApp.schedule(json); }catch(e){ androidSent = null; }
 }

@@ -38,6 +38,28 @@
         </activity>
 
         <receiver android:name=".ReminderReceiver" android:exported="false" />
+        <receiver android:name=".ActionReceiver" android:exported="false" />
+        <!-- The hidden page that applies ticks made while the app is closed (PhoneActions.kt). -->
+        <service android:name=".ActionJob" android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Home-screen widgets (Widgets.kt). -->
+        <receiver android:name=".DateWidget" android:exported="true" android:label="@string/widget_date">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_date" />
+        </receiver>
+        <receiver android:name=".MonthWidget" android:exported="true" android:label="@string/widget_month">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_month" />
+        </receiver>
+        <receiver android:name=".DeskWidget" android:exported="true" android:label="@string/widget_desk">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_desk" />
+        </receiver>
+        <receiver android:name=".PeriodWidget" android:exported="true" android:label="@string/widget_period">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_period" />
+        </receiver>
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

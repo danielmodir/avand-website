@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The planning desk: today's tasks, habits and events (rows added by
+     Widgets.kt), ticked from here; + opens the app's add menu. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent">
+    <ImageView android:id="@+id/bg" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:src="@drawable/widget_bg" android:scaleType="fitXY" android:importantForAccessibility="no" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:padding="12dp">
+        <LinearLayout android:id="@+id/head" android:layout_width="match_parent" android:layout_height="36dp"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:id="@+id/title" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                android:textSize="15sp" android:textStyle="bold" android:maxLines="1" />
+            <FrameLayout android:id="@+id/add" android:layout_width="32dp" android:layout_height="32dp">
+                <ImageView android:id="@+id/add_bg" android:layout_width="match_parent" android:layout_height="match_parent"
+                    android:src="@drawable/widget_dot" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/add_icon" android:layout_width="match_parent" android:layout_height="match_parent"
+                    android:padding="7dp" android:src="@drawable/widget_plus" />
+            </FrameLayout>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/list" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" />
+        <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:gravity="center" android:textSize="13sp" android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

@@ -3,4 +3,14 @@
     <string name="app_name">Toojibee</string>
     <string name="channel_reminders">Reminders</string>
     <string name="share_title">Share</string>
+    <string name="action_done">Done</string>
+    <string name="action_later">Remind me later</string>
+    <string name="widget_date">Today\'s date</string>
+    <string name="widget_month">Calendar</string>
+    <string name="widget_desk">Planning desk</string>
+    <string name="widget_period">Period</string>
+    <string name="widget_date_desc">Today in every calendar, with its occasion</string>
+    <string name="widget_month_desc">The month, holidays in red</string>
+    <string name="widget_desk_desc">Today\'s tasks, habits and events; tick them here</string>
+    <string name="widget_period_desc">Your cycle ring and the days to your next period</string>
 </resources>

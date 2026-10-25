@@ -14,6 +14,12 @@
       "port": 8090
     },
     {
+      "name": "site-py",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8081", "--directory", "frontend"],
+      "port": 8081
+    },
+    {
       "name": "toojibee-api",
       "runtimeExecutable": "backend/.venv/Scripts/python.exe",
       "runtimeArgs": ["backend/manage.py", "runserver", "127.0.0.1:8000", "--noreload"],

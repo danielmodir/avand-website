@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The window's background while the app starts (themes.xml): the canvas
+     color with the logo. MainActivity swaps in the app's own theme color. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/canvas" />
+    <item android:drawable="@drawable/splash_logo" />
+</layer-list>

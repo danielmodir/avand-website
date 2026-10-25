@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Her cycle: the period desk's ring (drawn by Widgets.kt) with today's
+     place on it, and the same words in the middle. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent">
+    <ImageView android:id="@+id/bg" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:src="@drawable/widget_bg" android:scaleType="fitXY" android:importantForAccessibility="no" />
+    <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:padding="10dp">
+        <ImageView android:id="@+id/ring" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:scaleType="fitCenter" android:importantForAccessibility="no" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_gravity="center" android:orientation="vertical" android:gravity="center"
+            android:paddingStart="30dp" android:paddingEnd="30dp">
+            <TextView android:id="@+id/main" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:gravity="center" android:textSize="13sp" android:textStyle="bold" android:maxLines="3" />
+            <TextView android:id="@+id/sub" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="2dp" android:gravity="center" android:textSize="11sp" android:maxLines="1" />
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>

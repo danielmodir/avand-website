@@ -3,4 +3,14 @@
     <string name="app_name">توجیبی</string>
     <string name="channel_reminders">یادآوری‌ها</string>
     <string name="share_title">اشتراک‌گذاری</string>
+    <string name="action_done">انجام شد</string>
+    <string name="action_later">بعداً یادم بنداز</string>
+    <string name="widget_date">تاریخ امروز</string>
+    <string name="widget_month">تقویم</string>
+    <string name="widget_desk">میزکار برنامه‌ریزی</string>
+    <string name="widget_period">عادت ماهانه</string>
+    <string name="widget_date_desc">امروز در هر سه تقویم، با مناسبتش</string>
+    <string name="widget_month_desc">ماه، با تعطیلی‌ها به رنگ قرمز</string>
+    <string name="widget_desk_desc">کارها، عادت‌ها و رویدادهای امروز؛ از همین‌جا تیک بزن</string>
+    <string name="widget_period_desc">دایره‌ی چرخه و چند روز تا پریود بعدی</string>
 </resources>

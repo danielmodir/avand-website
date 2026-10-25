@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.LayerDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -38,12 +39,16 @@ class MainActivity : Activity() {
         private const val REQ_FILE = 1
         private const val REQ_NOTIFY = 2
         private const val RELOAD_AFTER_MS = 10 * 60_000L
+        /** The open app, if any (PhoneActions applies ticks through it). */
+        @Volatile var current: java.lang.ref.WeakReference<MainActivity>? = null
     }
 
     private lateinit var web: WebView
     private val ui = Handler(Looper.getMainLooper())
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pageReady = false
+    private var pageVisible = false
+    private var canvas = 0 // the theme's background color (status bar, splash, behind the page)
     private var leftAt = 0L
     private val prefs by lazy { getSharedPreferences("app", Context.MODE_PRIVATE) }
 
@@ -51,27 +56,30 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WebFiles.init(this)
+        // Splash: the logo on the app's last theme color (the theme's own
+        // splash, drawable/splash.xml, covers the moment before this), shown
+        // through the WebView until the page paints its first frame.
         val saved = prefs.getString("barColor", null)
         if (saved != null) setBars(saved, prefs.getBoolean("barLight", false))
+        canvas = saved?.let { Color.parseColor(it) } ?: getColor(R.color.canvas)
+        window.setBackgroundDrawable(LayerDrawable(arrayOf(ColorDrawable(canvas), getDrawable(R.drawable.splash_logo))))
 
         if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true) // chrome://inspect
         web = WebView(this)
-        web.setBackgroundColor(saved?.let { Color.parseColor(it) } ?: getColor(R.color.canvas))
-        web.settings.apply {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-            textZoom = 100 // the layout is the web app's; the phone's font size doesn't stretch it
-            setSupportZoom(false)
-            allowFileAccess = false
-            allowContentAccess = false
-            mediaPlaybackRequiresUserGesture = true
-            userAgentString = "$userAgentString ToojibeeAndroid/${BuildConfig.VERSION_NAME}"
-        }
+        web.setBackgroundColor(Color.TRANSPARENT)
+        // Smoothness: tiles just outside the screen are drawn ahead, so a
+        // scroll or a sliding panel doesn't show blank tiles; and the page's
+        // renderer keeps a high priority while the app is on screen.
+        web.settings.offscreenPreRaster = true
+        if (Build.VERSION.SDK_INT >= 26) web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true)
+        AppWeb.setup(web)
         web.addJavascriptInterface(Bridge(), "ToojibeeAndroid")
+        current = java.lang.ref.WeakReference(this)
         web.webViewClient = Client()
         web.webChromeClient = Chrome()
         setContentView(web)
 
+        if (intent?.action == Widgets.ADD) pendingJs = openAddJs
         if (savedInstanceState == null || web.restoreState(savedInstanceState) == null) web.loadUrl(startUrl(intent))
     }
 
@@ -91,10 +99,16 @@ class MainActivity : Activity() {
         return WebFiles.START
     }
 
+    /** The desk widget's +: today, with the add menu open (once the app has booted). */
+    private val openAddJs = "(function go(){if(typeof state==='undefined'||state.booting||!document.getElementById('page-home'))return setTimeout(go,300);" +
+        "state.homeDate=new Date(today);state.selectedDate=new Date(today);state.menuPanelOpen=false;state.navExpanded=true;render();})()"
+    private var pendingJs: String? = null
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val data = intent.data
         when {
+            intent.action == Widgets.ADD -> if (pageReady) web.evaluateJavascript(openAddJs, null) else pendingJs = openAddJs
             data != null && WebFiles.isAppPage(data) -> web.loadUrl(data.toString())
             intent.action == ACTION_REMINDER && pageReady -> {
                 val d = JSONObject()
@@ -132,8 +146,18 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        if (current?.get() === this) current = null
         web.destroy()
         super.onDestroy()
+    }
+
+    /** Ticks from a notification or a widget (PhoneActions): the page applies them now. */
+    fun applyPhoneActions() {
+        if (!pageReady) return // the page applies them itself once it has booted (startReminders)
+        web.resumeTimers()
+        web.evaluateJavascript("typeof applyPhoneActions==='function'&&applyPhoneActions()", null)
+        // In the background, the timers stop again once the save has had time to go out.
+        if (!Reminders.appOnScreen) ui.postDelayed({ if (!Reminders.appOnScreen) web.pauseTimers() }, 8000)
     }
 
     @Deprecated("Still the way to handle Back on Android 7–12")
@@ -144,9 +168,10 @@ class MainActivity : Activity() {
 
     private fun setBars(color: String, light: Boolean) {
         val c = try { Color.parseColor(color) } catch (e: IllegalArgumentException) { return }
+        canvas = c
         window.statusBarColor = c
         window.navigationBarColor = c
-        window.setBackgroundDrawable(ColorDrawable(c))
+        if (pageVisible) { window.setBackgroundDrawable(ColorDrawable(c)); web.setBackgroundColor(c) }
         var flags = window.decorView.systemUiVisibility
         flags = if (light) flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR else flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
         if (Build.VERSION.SDK_INT >= 26) {
@@ -161,8 +186,7 @@ class MainActivity : Activity() {
     }
 
     private inner class Client : WebViewClient() {
-        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
-            if (request.method == "GET") WebFiles.response(request.url) else null
+        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? = AppWeb.intercept(request)
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             if (WebFiles.isAppPage(request.url)) return false
@@ -170,7 +194,19 @@ class MainActivity : Activity() {
             return true
         }
 
-        override fun onPageFinished(view: WebView, url: String) { pageReady = true }
+        override fun onPageFinished(view: WebView, url: String) {
+            pageReady = true
+            pendingJs?.let { web.evaluateJavascript(it, null); pendingJs = null }
+        }
+
+        // The page's first frame is on screen: the splash goes, and the
+        // WebView takes the theme color (no see-through while it reloads).
+        override fun onPageCommitVisible(view: WebView, url: String) {
+            if (pageVisible) return
+            pageVisible = true
+            window.setBackgroundDrawable(ColorDrawable(canvas))
+            web.setBackgroundColor(canvas)
+        }
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
             recreate()
@@ -248,5 +284,11 @@ class MainActivity : Activity() {
             prefs.edit().putString("barColor", color).putBoolean("barLight", light).apply()
             this@MainActivity.setBars(color, light)
         }.let { }
+
+        // APK 1.1: the notification buttons' language, and ticks made outside the app.
+        @JavascriptInterface fun setLang(lang: String) = Reminders.setLang(this@MainActivity, lang)
+        @JavascriptInterface fun takeActions(): String = PhoneActions.take(this@MainActivity)
+        @JavascriptInterface fun actionsApplied() {}
+        @JavascriptInterface fun setWidgets(json: String) = Widgets.save(this@MainActivity, json)
     }
 }

@@ -52,17 +52,24 @@ Update these with every change.
 - PHP schema: v23
 - Django latest migrations: core 0008, planning 0005, social 0003,
   notifications 0003, calendar_data 0002, period 0001
-- Android: 1.0.0
+- Android: 1.1.0 (versionCode 2)
 
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
 
+- 2026-10-26.4 — web app, Android 1.1.0, download pages — speed: render()
+  rebuilds only pages whose HTML changed (render.js setPageHtml), no blur on
+  weak phones (html[data-lite], theme.css), splash + WebView pre-raster;
+  reminder buttons «انجام شد» / «بعداً یادم بنداز» with ticks applied while
+  the app is closed (PhoneActions.kt: hidden page as a JobService;
+  applyPhoneActions in android.js; api-php.js syncNow); four home-screen
+  widgets: date, month, planning desk (tickable), period ring (Widgets.kt,
+  widgetData in android.js). No PHP/Django change (ticks go through the
+  synced document as usual).
 - 2026-10-25 — docs — this file started.
 - Uncommitted in the working copy at that time (not written by this entry):
-  Android widgets, splash, AppWeb.kt, PhoneActions.kt; demo android.js,
-  notify.js, render.js, api-php.js; backend-php/mcp.php and .htaccess;
-  download pages and frontend/download/.
+  backend-php/mcp.php and .htaccess (MCP probe, another session).
 - 2026-10-26.3 — web app, PHP, Django — habit counter and timer
   (trackers.js; Habit.tracker + HabitLog.value, planning 0005).
 - Android 1.0.0 — signed APK on the download page.
