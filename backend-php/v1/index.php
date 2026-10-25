@@ -20,7 +20,6 @@ require __DIR__ . '/../lib/push.php';
 require __DIR__ . '/../lib/support.php';
 require __DIR__ . '/../lib/notices.php';
 require __DIR__ . '/../lib/groups.php';
-require __DIR__ . '/../lib/mcp.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -178,9 +177,6 @@ if (preg_match('#^/notifications/subscriptions/([a-f0-9]{32})$#', $path, $m)) {
     if ($method === 'DELETE') tj_push_unsubscribe($m[1]);
     tj_fail(405, 'method_not_allowed');
 }
-
-// MCP server for Claude connectors (lib/mcp.php): one URL, every method.
-if ($path === '/mcp') tj_mcp_handle();
 
 $handler = $routes["$method $path"] ?? null;
 if ($handler === null) {
