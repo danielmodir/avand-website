@@ -7,6 +7,11 @@ a time-based personal-development app.
 Two primary CTAs: web app and "Download for Android". Project docs are in /docs.
 Read the relevant doc before any big change.
 
+**Start every change request with docs/CHANGES.md** (code map, which
+surfaces a request must reach — site, web app, Android, PHP API, Django,
+DB — current versions, and a change log). After each change, add a log entry
+there and update the versions/map, so later sessions don't re-read the code.
+
 ## Repo layout (2026-10-15)
 - frontend/ — everything that is published (GitHub Pages deploys only this
   folder via .github/workflows/pages.yml). Site-root paths below such as
