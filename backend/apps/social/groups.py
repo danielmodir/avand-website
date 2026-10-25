@@ -1,7 +1,8 @@
 """Group planning: a group has a name, an owner and members (friends the
 owner ticked, or anyone who opened its link). Members share the group's
 tasks, habits and events; each item is ticked by each member on their own
-("each") or once for everybody ("shared"). Every member picks the group's
+("each") or once for everybody ("shared"). The owner and the admins add
+items; everyone ticks. Every member picks the group's
 color for themselves. Only the owner deletes the group or edits its name
 and members; the others can leave. Same paths and shapes as the PHP API."""
 import json
@@ -83,6 +84,18 @@ def _mine(me, group_id):
     return member.group, member
 
 
+def _set_admins(group, ids):
+    """These members are admins, the others (and never the owner) not."""
+    if not isinstance(ids, list):
+        raise ApiError("validation_error", extra={"fields": {"admins": ["invalid"]}})
+    keep = {str(i) for i in ids if isinstance(i, str)} - {str(group.owner_user_id)}
+    for m in group.members.all():
+        role = "admin" if str(m.user_id) in keep else "member"
+        if m.role != role:
+            m.role = role
+            m.save(update_fields=["role"])
+
+
 def _drop_member(group, user_id):
     """Their own ticks go with them; items they made stay."""
     GroupMark.objects.filter(item__group=group, user_id=user_id).delete()
@@ -104,8 +117,10 @@ def payload(me):
     for gid, m in groups.items():
         g = m.group
         out.append({
-            "id": str(g.id), "name": g.name, "color": m.color, "owner": str(g.owner_user_id) == str(me), "token": g.invite_token,
-            "members": [{**people[str(x.user_id)], "status": "member", "owner": str(x.user_id) == str(g.owner_user_id), "me": str(x.user_id) == str(me)}
+            "id": str(g.id), "name": g.name, "color": m.color, "owner": str(g.owner_user_id) == str(me), "admin": m.role == "admin",
+            "token": g.invite_token,
+            "members": [{**people[str(x.user_id)], "status": "member", "owner": str(x.user_id) == str(g.owner_user_id),
+                         "admin": x.role == "admin", "me": str(x.user_id) == str(me)}
                         for x in members if x.group_id == gid and str(x.user_id) in people],
         })
     by_item = {}
@@ -140,6 +155,8 @@ class GroupListView(APIView):
             for f in friends:  # same color to start with; each can change their own
                 if _groups_count(f) < GROUPS_MAX:
                     _add_member(group, f, color)
+            if "admins" in request.data:
+                _set_admins(group, request.data["admins"])
         return Response({**payload(me), "created": str(group.id)}, status=201)
 
 
@@ -151,7 +168,7 @@ class GroupDetailView(APIView):
         if "color" in data:
             member.color = _color(data["color"])
             member.save(update_fields=["color"])
-        if "name" in data or "members" in data:
+        if "name" in data or "members" in data or "admins" in data:
             if str(group.owner_user_id) != str(me):
                 raise ApiError("not_owner", 403)
             if "name" in data:
@@ -172,6 +189,8 @@ class GroupDetailView(APIView):
                     for f in add:
                         if _groups_count(f) < GROUPS_MAX:
                             _add_member(group, f, member.color)
+            if "admins" in data:
+                _set_admins(group, data["admins"])
         return Response(payload(me))
 
     def delete(self, request, group_id):
@@ -239,7 +258,7 @@ def _may_edit(group, item, me):
 class GroupItemView(APIView):
     def put(self, request, group_id, item_id):
         me = request.user.id
-        group, _ = _mine(me, group_id)
+        group, member = _mine(me, group_id)
         row = _item(group, item_id)
         kind, data = request.data.get("kind"), request.data.get("data")
         if kind not in GroupItem.Kind.values:
@@ -257,6 +276,8 @@ class GroupItemView(APIView):
             row.data, row.done_mode = data, mode
             row.save(update_fields=["data", "done_mode", "updated_at"])
         else:
+            if str(group.owner_user_id) != str(me) and member.role != "admin":
+                raise ApiError("not_admin", 403)
             if GroupItem.objects.filter(item_id=item_id).exists():
                 raise ApiError("id_taken", 409)
             if group.items.count() >= ITEMS_MAX:

@@ -2,7 +2,8 @@
 /* Group planning: a group has a name, an owner and members (friends the
  * owner ticked, or anyone who opened its link). Members share the group's
  * tasks, habits and events; each item is ticked either by each person on
- * their own ("each") or once for everybody ("shared"). Every member picks
+ * their own ("each") or once for everybody ("shared"). Admins (members
+ * the owner marked) and the owner add items; everyone ticks. Every member picks
  * the group's color for themselves; nobody else sees it. Only the owner
  * deletes the group (or edits its name and members); the others can leave.
  * Same paths and shapes as the Django API's social module. */
@@ -21,7 +22,7 @@ function tj_group_color($c): ?string {
 /* The group by public id, with my membership row; 404 if I'm not in it. */
 function tj_group_mine(array $me, string $publicId): array {
     if (!preg_match('/^[a-f0-9]{32}$/', $publicId)) tj_fail(404, 'not_found');
-    $q = tj_db()->prepare('SELECT g.*, m.color AS my_color FROM tj_groups g JOIN tj_group_members m ON m.group_id = g.id AND m.user_id = ? WHERE g.public_id = ?');
+    $q = tj_db()->prepare('SELECT g.*, m.color AS my_color, m.role AS my_role FROM tj_groups g JOIN tj_group_members m ON m.group_id = g.id AND m.user_id = ? WHERE g.public_id = ?');
     $q->execute([$me['id'], $publicId]);
     $g = $q->fetch();
     if (!$g) tj_fail(404, 'not_found');
@@ -29,6 +30,20 @@ function tj_group_mine(array $me, string $publicId): array {
 }
 
 function tj_group_is_owner(array $g, array $me): bool { return (int)$g['owner_id'] === (int)$me['id']; }
+/* Adds tasks, habits and events: the owner and the admins. */
+function tj_group_can_add(array $g, array $me): bool { return tj_group_is_owner($g, $me) || ($g['my_role'] ?? '') === 'admin'; }
+
+/* {admins: [public ids]}: these members are admins, the others not. */
+function tj_group_set_admins(int $groupId, $ids): void {
+    if (!is_array($ids)) tj_fail(400, 'validation_error', ['fields' => ['admins' => ['invalid']]]);
+    $ids = array_values(array_filter($ids, 'is_string'));
+    $db = tj_db();
+    $db->prepare("UPDATE tj_group_members SET role = 'member' WHERE group_id = ?")->execute([$groupId]);
+    if (!$ids) return;
+    $in = implode(',', array_fill(0, count($ids), '?'));
+    $db->prepare("UPDATE tj_group_members SET role = 'admin' WHERE group_id = ? AND user_id IN (SELECT id FROM tj_users WHERE public_id IN ($in))
+                   AND user_id <> (SELECT owner_id FROM tj_groups WHERE id = ?)")->execute(array_merge([$groupId], $ids, [$groupId]));
+}
 
 function tj_group_count_for(int $userId): int {
     $q = tj_db()->prepare('SELECT COUNT(*) AS n FROM tj_group_members WHERE user_id = ?');
@@ -68,7 +83,7 @@ function tj_group_add_member(int $groupId, int $userId, string $color): void {
 function tj_groups_payload(array $me): array {
     $db = tj_db();
     $uid = (int)$me['id'];
-    $q = $db->prepare('SELECT g.*, m.color AS my_color FROM tj_groups g JOIN tj_group_members m ON m.group_id = g.id WHERE m.user_id = ? ORDER BY m.joined_at');
+    $q = $db->prepare('SELECT g.*, m.color AS my_color, m.role AS my_role FROM tj_groups g JOIN tj_group_members m ON m.group_id = g.id WHERE m.user_id = ? ORDER BY m.joined_at');
     $q->execute([$uid]);
     $groups = [];
     $byId = [];
@@ -77,12 +92,12 @@ function tj_groups_payload(array $me): array {
         $byId[(int)$g['id']] = $g['public_id'];
         $groups[(int)$g['id']] = [
             'id' => $g['public_id'], 'name' => $g['name'], 'color' => $g['my_color'],
-            'owner' => $owner, 'token' => $g['invite_token'], 'members' => [],
+            'owner' => $owner, 'admin' => $g['my_role'] === 'admin', 'token' => $g['invite_token'], 'members' => [],
         ];
     }
     if (!$groups) return ['groups' => [], 'items' => []];
     $in = implode(',', array_keys($groups));
-    $mq = $db->query("SELECT m.group_id, u.id, u.public_id, u.display_id, u.username FROM tj_group_members m JOIN tj_users u ON u.id = m.user_id
+    $mq = $db->query("SELECT m.group_id, m.role, u.id, u.public_id, u.display_id, u.username FROM tj_group_members m JOIN tj_users u ON u.id = m.user_id
                       WHERE m.group_id IN ($in) AND u.status = 'active' ORDER BY m.joined_at");
     $owners = [];
     foreach ($groups as $gid => $g) $owners[$gid] = null;
@@ -90,7 +105,7 @@ function tj_groups_payload(array $me): array {
     foreach ($ownerQ->fetchAll() as $r) $owners[(int)$r['id']] = (int)$r['owner_id'];
     foreach ($mq->fetchAll() as $m) {
         $groups[(int)$m['group_id']]['members'][] = tj_social_card($m, 'member') + [
-            'owner' => (int)$m['id'] === $owners[(int)$m['group_id']], 'me' => (int)$m['id'] === $uid,
+            'owner' => (int)$m['id'] === $owners[(int)$m['group_id']], 'admin' => $m['role'] === 'admin', 'me' => (int)$m['id'] === $uid,
         ];
     }
     $items = [];
@@ -122,7 +137,7 @@ function tj_groups_list(): void {
     tj_json(tj_groups_payload(tj_require_user()));
 }
 
-/* POST /groups {name, color, members: [friend public ids]} */
+/* POST /groups {name, color, members: [friend public ids], admins: [some of them]} */
 function tj_group_create(): void {
     $me = tj_require_user();
     tj_throttle('group_create', (string)$me['id'], 20, 3600);
@@ -144,6 +159,7 @@ function tj_group_create(): void {
         tj_group_add_member($gid, (int)$me['id'], $color);
         // Friends start with the same color; each can change their own.
         foreach ($friends as $f) if (tj_group_count_for($f) < TJ_GROUPS_MAX) tj_group_add_member($gid, $f, $color);
+        if (array_key_exists('admins', $b)) tj_group_set_admins($gid, $b['admins']);
         tj_tx_commit($db);
     } catch (Throwable $e) {
         tj_tx_rollback($db);
@@ -152,7 +168,7 @@ function tj_group_create(): void {
     tj_json(tj_groups_payload($me) + ['created' => $pid], 201);
 }
 
-/* PATCH /groups/<id> {color} anyone (their own color); {name, members} owner only. */
+/* PATCH /groups/<id> {color} anyone (their own color); {name, members, admins} owner only. */
 function tj_group_update(string $publicId): void {
     $me = tj_require_user();
     $g = tj_group_mine($me, $publicId);
@@ -163,7 +179,7 @@ function tj_group_update(string $publicId): void {
         if (!$color) tj_fail(400, 'validation_error', ['fields' => ['color' => ['invalid']]]);
         $db->prepare('UPDATE tj_group_members SET color = ? WHERE group_id = ? AND user_id = ?')->execute([$color, $g['id'], $me['id']]);
     }
-    if (array_key_exists('name', $b) || array_key_exists('members', $b)) {
+    if (array_key_exists('name', $b) || array_key_exists('members', $b) || array_key_exists('admins', $b)) {
         if (!tj_group_is_owner($g, $me)) tj_fail(403, 'not_owner');
         if (array_key_exists('name', $b)) {
             $name = tj_str($b, 'name', 60);
@@ -200,6 +216,7 @@ function tj_group_update(string $publicId): void {
                 throw $e;
             }
         }
+        if (array_key_exists('admins', $b)) tj_group_set_admins((int)$g['id'], $b['admins']);
     }
     tj_json(tj_groups_payload($me));
 }
@@ -306,6 +323,7 @@ function tj_group_item_put(string $publicId, string $itemId): void {
         if ($row['kind'] !== $kind) tj_fail(400, 'validation_error', ['fields' => ['kind' => ['invalid']]]);
         $db->prepare('UPDATE tj_group_items SET data = ?, done_mode = ?, updated_at = ? WHERE id = ?')->execute([$json, $mode, tj_now(), $row['id']]);
     } else {
+        if (!tj_group_can_add($g, $me)) tj_fail(403, 'not_admin');
         $other = $db->prepare('SELECT 1 FROM tj_group_items WHERE item_id = ?');
         $other->execute([$itemId]);
         if ($other->fetch()) tj_fail(409, 'id_taken');

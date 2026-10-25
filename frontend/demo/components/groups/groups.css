@@ -52,7 +52,7 @@
 .group-select-wrap .settings-select{ flex:1; width:100%; }
 
 /* The dialog: centered, same look as the period questions. */
-.group-dialog-overlay{ position:absolute; inset:0; z-index:80; background:var(--overlay); display:flex; align-items:center; justify-content:center;
+.group-dialog-overlay{ position:absolute; inset:0; z-index:54; background:var(--overlay); display:flex; align-items:center; justify-content:center;
   opacity:0; transition:opacity .22s ease; padding:16px; }
 .group-dialog-overlay.show{ opacity:1; }
 .group-dialog{
@@ -74,7 +74,8 @@
 .group-friends-list{ border:1px solid var(--border); border-radius:14px; max-height:200px; overflow-y:auto; padding:4px; animation:stagger-in .2s ease both; }
 .group-friend{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:10px; cursor:pointer; }
 .group-friend:hover{ background:var(--bg-soft); }
-.group-friend input{ width:18px; height:18px; accent-color:var(--primary); flex:0 0 auto; }
+.group-role{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--text-muted); cursor:pointer; flex:0 0 auto; }
+.group-role input{ width:11px; height:11px; margin:0; accent-color:var(--primary); cursor:pointer; }
 .group-friend-name{ flex:1; font-weight:600; font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .group-friend-sub{ font-size:11px; color:var(--text-muted); }
 .group-member-list{ display:flex; flex-wrap:wrap; gap:6px; }
@@ -91,3 +92,52 @@
 @media (min-width:960px){
   .group-dialog-overlay{ position:fixed; }
 }
+
+/* The desk: square tiles, two to a row. */
+.groups-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+.group-tile{
+  aspect-ratio:1; min-width:0; display:flex; flex-direction:column; gap:4px; padding:14px; cursor:pointer; user-select:none; -webkit-user-select:none;
+  background:color-mix(in srgb, var(--group-c, var(--primary)) 12%, var(--card)); border:1px solid color-mix(in srgb, var(--group-c, var(--primary)) 35%, transparent);
+  border-radius:20px; transition:transform .15s ease;
+}
+.device.lang-fa .group-tile{ direction:rtl; }
+.group-tile:active{ transform:scale(.97); }
+.group-tile.is-selected{ box-shadow:0 0 0 3px color-mix(in srgb, var(--group-c, var(--primary)) 45%, transparent); }
+.group-tile-dot{ width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:auto;
+  background:var(--group-c, var(--primary)); color:var(--card); }
+.group-tile-dot svg{ width:20px; height:20px; }
+.group-tile-name{ font-size:15px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.group-tile-meta, .group-tile-count{ font-size:11.5px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* A group's own page. */
+.group-view .popup-topbar-title{ display:inline-flex; align-items:center; gap:8px; }
+.group-view-day{ font-size:12.5px; font-weight:700; color:var(--text-muted); margin:12px 0 2px; }
+.group-view-body .section-title{ margin-top:8px; }
+.group-view-body .group-tag{ display:none; }
+.group-view-actions{ flex-direction:row; }
+.group-view-actions .btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; width:auto; }
+.group-view-actions .btn svg{ width:16px; height:16px; }
+.group-member.lead{ font-weight:700; background:color-mix(in srgb, var(--group-c, var(--primary)) 20%, transparent); }
+.group-member svg{ width:12px; height:12px; vertical-align:-1px; margin-inline-end:3px; }
+
+/* Who did it (item details): a ring and names. */
+.group-done{ display:flex; align-items:center; gap:16px; padding:12px; border-radius:16px; background:var(--bg-soft); margin-bottom:6px; }
+.group-done-ring{ position:relative; width:84px; height:84px; flex:0 0 auto; }
+.group-done-ring svg{ width:100%; height:100%; transform:rotate(-90deg); }
+.group-done-ring circle{ fill:none; stroke-width:12; }
+.group-done-ring .track{ stroke:var(--border); }
+.group-done-ring .fill{ stroke:var(--group-c, var(--primary)); stroke-linecap:round; transition:stroke-dasharray .5s ease; }
+.group-done-ring span{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; }
+.group-done-names{ display:flex; flex-wrap:wrap; gap:6px; min-width:0; }
+.group-done-names .profile-hint{ flex-basis:100%; margin:2px 0 0; }
+.group-done-shared{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; padding:10px 12px; border-radius:12px; background:var(--bg-soft); margin-bottom:6px; }
+.group-done-shared svg{ width:16px; height:16px; color:var(--primary); }
+
+/* The app's own yes/no box. */
+.app-confirm-overlay{ position:absolute; inset:0; z-index:95; background:var(--overlay); display:flex; align-items:center; justify-content:center; padding:20px; }
+.app-confirm{ width:min(340px, 100%); background:var(--card); border-radius:20px; box-shadow:var(--shadow); padding:20px; }
+.app-confirm p{ margin:0 0 16px; font-size:14.5px; line-height:1.8; }
+.app-confirm-btns{ display:flex; gap:8px; }
+.app-confirm-btns .btn{ flex:1; width:auto; }
+.app-confirm .btn-danger{ background:var(--danger); color:var(--on-primary); }
+@media (min-width:960px){ .app-confirm-overlay{ position:fixed; } }

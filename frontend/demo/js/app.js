@@ -72,6 +72,7 @@ function enterGuestMode(){
   state.inviteToken = null;
   state.sharedPeriods = []; state.periodShares = null; state.periodViewIndex = 0;
   clearGroupsState();
+  tourAutoSession = null; // the next account decides its own (tour.js)
   state.profile = Object.assign({}, state.profile, { name:'', firstName:'', lastName:'', username:'', email:'', phone:'', gender:'', dob:'', photo:null });
   state.activeDesktopIndex = 0;
   state.selection = null;

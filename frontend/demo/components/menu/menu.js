@@ -416,6 +416,7 @@ function renderAdminPanel(){
     ${subHeader(t('adminPanel'))}
     <div class="section-title">${t('enabledDesktops')}</div>
     <div class="sub" style="margin:-6px 2px 10px 2px;">${t('enabledDesktopsSub')}</div>
+    <div class="desktop-manage-grid">
     <div class="desktop-manage-card">
       <button type="button" class="desktop-manage-gear" data-action="open-desktop-settings" data-sub="settings-occasions" aria-label="${t('occasionsSettings')}">${ICONS.gearIcon}</button>
       <div class="desktop-manage-title">${t('occasionsDesktop')}</div>
@@ -443,6 +444,7 @@ function renderAdminPanel(){
         <div class="switch ${state.period.enabled?'on':''}" data-action="toggle-period-enabled"><div class="knob"></div></div>
       </div>
     ` : ''}
+    </div>
     ${state.store.length
       ? `<div class="store-grid">${state.store.map(storeFeatureCard).join('')}</div>`
       : ''}

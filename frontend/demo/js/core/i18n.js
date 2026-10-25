@@ -271,6 +271,8 @@ const STRINGS = {
     groupDoneOf:'Members who did it', groupNotYours:'Only whoever added it (or the group\'s owner) can change it',
     groupErrNotFriend:'You can only add friends', groupErrTooMany:'You\'re in too many groups', groupErrFull:'This group is full',
     groupBy:'Added by {name}', groupSharedDoneBy:'Ticked by {name}',
+    groupAdmin:'admin', groupMember:'member', groupRolesHint:'Admins can also add tasks, habits and events; members see and tick them. Only you can edit or delete the group.',
+    groupMyColor:'My color', groupTodayN:'{n} for this day', groupDoneCount:'{done} of {total} members did it', groupCancel:'Cancel',
     tourGroups:'Group planning', tgrNewT:'Make a group', tgrNewX:'Give it a name, tick the friends who are in it and pick its color. You can also send its link to anyone.',
     tgrHoldT:'Press and hold a group', tgrHoldX:'For Edit, the group link, and Delete (if you made it) or Leave. Tap its name to see the members.',
     tgrAddT:'Plan together', tgrAddX:'Add a task, habit or event to the group: everyone in it sees it, in the group\'s color.'
@@ -545,6 +547,8 @@ const STRINGS = {
     groupDoneOf:'اعضایی که انجامش دادن', groupNotYours:'فقط کسی که اضافه‌اش کرده (یا سازنده‌ی گروه) می‌تونه تغییرش بده',
     groupErrNotFriend:'فقط دوستات رو می‌شه اضافه کرد', groupErrTooMany:'تو گروه‌های زیادی عضوی', groupErrFull:'این گروه پر شده',
     groupBy:'اضافه‌شده توسط {name}', groupSharedDoneBy:'تیک‌خورده توسط {name}',
+    groupAdmin:'مدیر', groupMember:'عضو', groupRolesHint:'مدیرها می‌تونن کار، عادت و رویداد هم اضافه کنن؛ عضوها می‌بینن و تیک می‌زنن. ویرایش و حذف گروه فقط با خودته.',
+    groupMyColor:'رنگ من', groupTodayN:'{n} مورد برای این روز', groupDoneCount:'{done} از {total} نفر انجامش دادن', groupCancel:'انصراف',
     tourGroups:'برنامه‌ریزی گروهی', tgrNewT:'یه گروه بساز', tgrNewX:'اسمش رو بنویس، دوستایی که توشن رو تیک بزن و رنگش رو انتخاب کن. لینکش رو هم می‌تونی برای هر کسی بفرستی.',
     tgrHoldT:'گروه رو نگه دار', tgrHoldX:'برای ویرایش، لینک گروه و حذف (اگه خودت ساختی) یا خروج. با زدن اسمش اعضا رو می‌بینی.',
     tgrAddT:'با هم برنامه بریزید', tgrAddX:'کار، عادت یا رویداد رو به گروه اضافه کن: همه‌ی اعضا با رنگ گروه می‌بیننش.'

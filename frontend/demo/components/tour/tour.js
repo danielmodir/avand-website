@@ -65,8 +65,8 @@ const TOURS = {
   ]},
   groups: { label: 'tourGroups', available: () => typeof groupsAvailable === 'function' && groupsAvailable() && pref('groupsEnabled'), steps: [
     { sel: '.group-new-btn', k: 'tgrNew', prep: () => tourGoToDesk('groupsDesktop') },
-    { sel: '.group-card-head', k: 'tgrHold' },
-    { sel: '.group-add-item', k: 'tgrAdd' },
+    { sel: '.group-tile', k: 'tgrHold' },
+    { sel: '.group-tile', k: 'tgrAdd' },
   ]},
   addTask: { label: 'tourAddTask', steps: tourAddSteps('task', [
     ['#add-popup .float-field', 'taTitle'], ['#add-subtask-btn', 'taSub'], ['#add-popup [data-sub="calendar"]', 'taDate'],
@@ -110,6 +110,18 @@ function markTourSeen(id){
   if(state.settings.prefs && state.settings.prefs[tourPrefKey(id)]) return;
   state.settings.prefs = Object.assign({}, state.settings.prefs, { [tourPrefKey(id)]: true });
   cloudSync(() => Cloud.saveSettings(state.settings));
+}
+/* Tours start by themselves only during the account's first session in
+   the app (repo owner, 2026-10-25): from the next sign-in on, only from
+   Profile → Tutorials. Remembered on the account (prefs.tourAutoUsed). */
+let tourAutoSession = null; // null until decided for this sign-in
+function tourAutoOk(){
+  if(tourAutoSession === null){
+    const p = state.settings.prefs || {};
+    tourAutoSession = !p.tourAutoUsed && !tourSeen('general');
+    if(!p.tourAutoUsed) setPref('tourAutoUsed', true);
+  }
+  return tourAutoSession;
 }
 /* A real user on a ready screen: no guests, no sign-in page, no boot screen. */
 function tourAllowed(){ return !state.guest && !state.authOpen && !state.authScreen && !state.booting && !state.bootError; }
@@ -229,14 +241,14 @@ function endTour(markDone){
 
 /* First visit: the general tour, once, after the app has drawn. */
 function maybeStartFirstTour(){
-  if(!tourAllowed() || tourSeen('general') || document.getElementById('bday-overlay')) return;
+  if(!tourAllowed() || tourSeen('general') || document.getElementById('bday-overlay') || !tourAutoOk()) return;
   setTimeout(() => { if(!tour && tourAllowed() && !tourSeen('general')) startTour('general'); }, 700);
 }
 
 /* The first time a part of the app is opened: its own tour (after the
    view has drawn). Not while another tour runs, nor before the general one. */
 function maybeFeatureTour(id){
-  if(tour || !tourAllowed() || !tourAvailable(id) || tourSeen(id) || !tourSeen('general')) return;
+  if(tour || !tourAllowed() || !tourAvailable(id) || tourSeen(id) || !tourSeen('general') || !tourAutoOk()) return;
   setTimeout(() => { if(!tour && tourAllowed() && !tourSeen(id)) startTour(id); }, 450);
 }
 

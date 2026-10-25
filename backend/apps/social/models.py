@@ -132,6 +132,7 @@ class GroupMember(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="members")
     user_id = models.UUIDField(db_index=True)
     color = models.CharField(max_length=7)
+    role = models.CharField(max_length=8, default="member")  # "admin": adds the group's tasks, habits, events
     joined_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

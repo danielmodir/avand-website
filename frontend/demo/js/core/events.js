@@ -59,7 +59,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   // Group planning (components/groups/groups.js).
   if(action === 'group-new'){ openGroupDialog(null); return; }
   if(action === 'group-open'){ openGroupDialog(el.dataset.id); return; }
-  if(action === 'group-add-item'){ openGroupAddMenu(el); return; }
+  if(action === 'group-view'){ openGroupView(el.dataset.id); return; }
   if(action === 'toggle-groups-enabled'){ setPref('groupsEnabled', !pref('groupsEnabled')); render(); return; }
 
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }

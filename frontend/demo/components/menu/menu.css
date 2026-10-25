@@ -170,6 +170,13 @@
 .device.lang-fa .desktop-manage-gear{ right:auto; left:12px; }
 .desktop-manage-gear svg{ width:14px; height:14px; }
 .desktop-manage-gear:hover{ color:var(--primary); }
+/* Square tiles, two to a row: title and text at the top, switch at the bottom. */
+.desktop-manage-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-bottom:10px; }
+.desktop-manage-grid .desktop-manage-card{ aspect-ratio:1; margin:0; display:flex; flex-direction:column; padding:14px 14px 12px; min-width:0; }
+.device.lang-fa .desktop-manage-grid .desktop-manage-card{ padding:14px 14px 12px; }
+.desktop-manage-grid .desktop-manage-title{ padding-inline-end:34px; }
+.desktop-manage-grid .desktop-manage-desc{ flex:1; overflow:hidden; }
+.desktop-manage-grid .switch{ align-self:flex-start; }
 .profile-no-name{ color:var(--primary); cursor:pointer; text-decoration:underline; text-underline-offset:4px; }
 /* Persian sentences in these LTR-laid-out rows put the final period on
    the wrong end; plaintext picks each line's direction from its own text

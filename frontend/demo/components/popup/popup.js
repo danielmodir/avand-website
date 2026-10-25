@@ -112,7 +112,7 @@ function repeatSummary(rec){
   return '';
 }
 
-function itemDetailsHtml(type, item){
+function itemDetailsHtml(type, item, day){
   const rows = [];
   const date = type === 'habit' ? item.startDate : item.date;
   if(date){
@@ -136,6 +136,7 @@ function itemDetailsHtml(type, item){
   return `
     <h2 class="details-title">${escapeHtml(item.title || '')}</h2>
     ${rows.length ? `<div class="details-rows">${rows.map(([icon, text]) => `<div class="details-row">${icon}<span>${text}</span></div>`).join('')}</div>` : ''}
+    ${g ? groupDoneHtml(item, type, day || dateKey(state.homeDate || today)) : ''}
     <div class="section-title">${t('description')}</div>
     ${item.description ? `<p class="details-desc">${escapeHtml(item.description)}</p>` : `<p class="details-desc empty">${t('detailsNoDescription')}</p>`}
     ${(item.photos || []).length ? `<div class="photo-add-row">${item.photos.map(p => `<div class="photo-thumb"><img src="${p}" alt=""></div>`).join('')}</div>` : ''}
@@ -155,7 +156,7 @@ function openItemDetails(type, id, originEl){
       <span class="popup-topbar-title">${typeLabel(type)}</span>
       <button type="button" class="popup-close" data-action="close-popup" aria-label="${t('closeBtn')}">${ICONS.close}</button>
     </div>
-    <div class="popup-body item-details" dir="${lang() === 'fa' ? 'rtl' : 'ltr'}">${itemDetailsHtml(type, item)}</div>
+    <div class="popup-body item-details" dir="${lang() === 'fa' ? 'rtl' : 'ltr'}">${itemDetailsHtml(type, item, originEl?.closest('.swipe-wrap')?.querySelector('[data-date]')?.dataset.date)}</div>
     ${groupItemEditable(type === 'task' ? (findTaskOrSub(id).parent || item) : item) ? `<div class="pop-submit-bar"><button class="pop-submit" data-action="edit-item" data-type="${type}" data-id="${escapeAttr(id)}">${ICONS.pencilIcon}<span>${t('editBtn')}</span></button></div>` : ''}`;
   if(originEl){
     const dev = document.getElementById('device').getBoundingClientRect(), o = originEl.getBoundingClientRect();
@@ -392,7 +393,7 @@ function renderPopupBody(){
 /* The group drop-down (only with groups, never for a subtask) and, for a
    task or habit in a group, how it's ticked. */
 function groupFieldHtml(){
-  if(state.editingParentId || !groupsAvailable() || !state.groups.length) return '';
+  if(state.editingParentId || !groupsAvailable() || !state.groups.some(x => groupCanAdd(x) || x.id === formDraft.groupId)) return '';
   const g = formDraft.groupId ? groupById(formDraft.groupId) : null;
   return `
     <div class="field group-field"${g ? ` style="--group-c:${g.color}"` : ''}>
@@ -400,7 +401,7 @@ function groupFieldHtml(){
       <div class="group-select-wrap">${g ? '<span class="group-dot" aria-hidden="true"></span>' : ''}
         <select class="settings-select" id="f-group" style="width:100%;">
           <option value="">${t('groupNone')}</option>
-          ${state.groups.map(x => `<option value="${escapeAttr(x.id)}" ${x.id === formDraft.groupId ? 'selected' : ''}>${escapeHtml(x.name)}</option>`).join('')}
+          ${state.groups.filter(x => groupCanAdd(x) || x.id === formDraft.groupId).map(x => `<option value="${escapeAttr(x.id)}" ${x.id === formDraft.groupId ? 'selected' : ''}>${escapeHtml(x.name)}</option>`).join('')}
         </select>
       </div>
       ${g && state.popupType !== 'event' ? `

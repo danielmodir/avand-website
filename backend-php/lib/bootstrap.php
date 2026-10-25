@@ -462,6 +462,11 @@ function tj_migrate(PDO $db): void {
         try { $db->exec('CREATE INDEX tj_group_items_group ON tj_group_items (group_id)'); } catch (PDOException $e) { /* already there */ }
         $db->exec('INSERT INTO tj_schema (version) VALUES (22)');
     }
+    if ($v < 23) {
+        // Group admins: add the group's tasks, habits and events (lib/groups.php).
+        $db->exec("ALTER TABLE tj_group_members ADD COLUMN role VARCHAR(8) NOT NULL DEFAULT 'member'");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (23)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

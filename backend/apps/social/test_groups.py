@@ -60,6 +60,20 @@ class GroupTests(ApiTestCase):
         self.sara.delete(url)
         self.assertEqual(self.ali.get("/api/v1/groups").json()["items"], [])
 
+    def test_admins_add_items_members_only_tick(self):
+        gid, body = self.create()
+        url = f"/api/v1/groups/{gid}/items/0193e7a0-aaaa-7bbb-8ccc-000000000003"
+        self.assertEqual(self.ali.put(url, {"kind": "task", "data": {"title": "X"}}, format="json").json()["error"], "not_admin")
+        r = self.sara.patch(f"/api/v1/groups/{gid}", {"admins": [self.ids[self.ali]]}, format="json").json()
+        self.assertEqual([m["admin"] for m in r["groups"][0]["members"] if not m["me"]], [True])
+        self.assertEqual(self.ali.get("/api/v1/groups").json()["groups"][0]["admin"], True)
+        self.assertEqual(self.ali.put(url, {"kind": "task", "data": {"title": "X"}}, format="json").status_code, 200)
+        self.assertEqual(self.ali.patch(f"/api/v1/groups/{gid}", {"admins": []}, format="json").status_code, 403)  # owner's job
+        self.assertEqual(self.ali.delete(f"/api/v1/groups/{gid}").status_code, 403)
+        self.neda.post("/api/v1/groups/join", {"token": body["groups"][0]["token"]}, format="json")
+        url2 = url[:-1] + "4"
+        self.assertEqual(self.neda.put(url2, {"kind": "task", "data": {}}, format="json").status_code, 403)
+
     def test_outsiders_see_nothing(self):
         gid, _ = self.create()
         self.assertEqual(self.neda.patch(f"/api/v1/groups/{gid}", {"color": "#E5484D"}, format="json").status_code, 404)

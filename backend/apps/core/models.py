@@ -342,6 +342,7 @@ class UserSettings(models.Model):
         "tour_friends": False, "tour_period": False,
         "tour_add_task": False, "tour_add_habit": False, "tour_add_event": False,
         "tour_repeat": False, "tour_reminder": False, "tour_groups": False,
+        "tour_auto_used": False,  # tours start by themselves only in the first session
     }
 
     user = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE, related_name="settings")

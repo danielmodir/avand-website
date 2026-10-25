@@ -111,6 +111,7 @@ function render(){
   } else {
     stopPeriodTipsRotator();
   }
+  refreshGroupView(); // an open group page follows the changes (components/groups)
   syncBackSteps(); // Back closes what's open (js/core/back-nav.js)
   tourWatch(); // a part opened for the first time: its tutorial (tour.js)
 }
