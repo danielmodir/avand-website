@@ -35,9 +35,13 @@ Get-ChildItem $stage -Recurse -Force -File | Where-Object { $_.Name -eq 'config.
 # 2. Minify JS and CSS in place (stage only).
 Push-Location $stage
 try {
-  & npx -y esbuild@0.24.0 'demo/**/*.js' 'assets/**/*.js' --minify-whitespace --outbase=. --outdir=. --allow-overwrite --log-level=warning
+  # Full minify (whitespace, syntax, local names). Each file is a classic
+  # script, not a bundle: esbuild leaves every top-level name as it is, so the
+  # globals shared between files (and called from the Android app, e.g.
+  # applyPhoneActions) keep their names. Less to download and parse on phones.
+  & npx -y esbuild@0.24.0 'demo/**/*.js' 'assets/**/*.js' --minify --outbase=. --outdir=. --allow-overwrite --log-level=warning
   if ($LASTEXITCODE) { throw 'esbuild (js) failed' }
-  & npx -y esbuild@0.24.0 'demo/**/*.css' 'assets/**/*.css' --minify-whitespace --outbase=. --outdir=. --allow-overwrite --log-level=warning
+  & npx -y esbuild@0.24.0 'demo/**/*.css' 'assets/**/*.css' --minify --outbase=. --outdir=. --allow-overwrite --log-level=warning
   if ($LASTEXITCODE) { throw 'esbuild (css) failed' }
 } finally { Pop-Location }
 

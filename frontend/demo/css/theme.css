@@ -267,3 +267,7 @@ body{
    same without it, and the floating glass bits use the solid surface. */
 html[data-lite] *, html[data-lite] *::before, html[data-lite] *::after{ -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
 html[data-lite] .toolbar-pill, html[data-lite] .fab-menu .nav-add-item{ background:var(--surface-solid); }
+/* ...and the rows get a flat edge instead of a soft shadow: big blurred
+   shadows on every card are repainted with each frame of a scroll. */
+html[data-lite] .item-card, html[data-lite] .event-card, html[data-lite] .stat-card,
+html[data-lite] .settings-row, html[data-lite] .desktop-manage-card{ box-shadow:none; }

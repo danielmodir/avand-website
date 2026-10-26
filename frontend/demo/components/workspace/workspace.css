@@ -56,7 +56,10 @@
 .desktop-wrap{ flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
 .desktop-wrap::-webkit-scrollbar{ display:none; }
 .desktop-track{ display:flex; height:100%; }
-.desktop-pane{ flex:0 0 100%; min-width:100%; height:100%; overflow-y:auto; scroll-snap-align:start; padding:16px; scrollbar-width:none; }
+.desktop-pane{ flex:0 0 100%; min-width:100%; height:100%; overflow-y:auto; scroll-snap-align:start; padding:16px; scrollbar-width:none;
+  /* The desks beside the one on screen aren't laid out or painted until
+     they scroll into view (a phone does the work only for what it shows). */
+  content-visibility:auto; contain-intrinsic-size:auto 100% auto 600px; }
 .desktop-pane::-webkit-scrollbar{ display:none; }
 .desktop-dots{ flex:0 0 auto; display:flex; justify-content:center; align-items:center; gap:6px; padding:10px 0; border-top:1px solid var(--border); }
 .desktop-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); cursor:pointer; transition:background .2s ease, width .2s ease; }
