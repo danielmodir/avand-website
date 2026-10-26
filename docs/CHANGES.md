@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.14
+- Demo asset version: 2026-10-27.15
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0008, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -60,7 +60,8 @@ Format: `date — surfaces — what changed (key files)`.
 
 - 2026-10-27 — web app, Django — prayer times off by default (owner): pref
   prayerShow false (util.js DEFAULT_PREFS, Django prayer_show False); turned
-  on in Settings of the Occasions desk.
+  on in Settings of the Occasions desk. The «به روش مؤسسه‌ی ژئوفیزیک…» note under
+  the prayer settings removed too (owner).
 
 - 2026-10-27 — web app — the «این روز رو بفرست» (text) button removed from the
   Occasions desk at the owner's request; the picture card «عکس این روز» stays

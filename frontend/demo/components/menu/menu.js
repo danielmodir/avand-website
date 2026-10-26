@@ -733,8 +733,7 @@ function renderOccasionsSettings(){
         ${PRAYER_CITIES.map(c => `<option value="${c[0]}" ${prayerCityId() === c[0] ? 'selected' : ''}>${lang() === 'fa' ? c[1] : c[2]}</option>`).join('')}
       </select>
     </div>
-    ${prefRow('prayerNotify', 'prefPrayerNotify', 'prefPrayerNotifySub')}
-    <div class="sub" style="margin:6px 2px 0;">${t('prayerMethodNote')}</div>` : ''}
+    ${prefRow('prayerNotify', 'prefPrayerNotify', 'prefPrayerNotifySub')}` : ''}
   `;
 }
 
