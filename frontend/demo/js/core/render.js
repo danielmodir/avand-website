@@ -178,6 +178,7 @@ function render(){
   tourWatch(); // a part opened for the first time: its tutorial (tour.js)
   scheduleWidgetData(); // the Android app's home-screen widgets (js/core/android.js)
   labelControls();
+  onboardResume(); maybeOfferInstall(); // quick start after a form it opened; the install offer (js/core/onboarding.js)
   // What render() itself just changed matches pageHtml: not a reason to rebuild.
   if(pageObserver) pageObserver.takeRecords();
 }

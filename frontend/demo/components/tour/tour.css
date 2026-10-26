@@ -18,3 +18,18 @@
 .tour-skip:hover{ color:var(--primary-text); }
 @keyframes tour-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
 @media (prefers-reduced-motion:reduce){ .tour-hole, .tour-card{ transition:none; animation:none; } }
+
+/* Quick start (js/core/onboarding.js) and the install offer. */
+.onboard-root{ position:absolute; inset:0; z-index:400; display:flex; align-items:flex-end; justify-content:center; background:var(--overlay); padding:16px; }
+.onboard-card{ width:100%; max-width:440px; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:20px; padding:18px; box-shadow:var(--shadow); margin-bottom:max(16px, env(safe-area-inset-bottom)); }
+.onboard-card h3{ margin:10px 0 4px; font-size:17px; }
+.onboard-text{ margin:0 0 12px; font-size:13px; color:var(--text-muted); line-height:1.8; }
+.onboard-steps{ display:flex; gap:6px; }
+.onboard-steps i{ flex:1; height:4px; border-radius:999px; background:var(--border); }
+.onboard-steps i.on{ background:var(--primary); }
+.onboard-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.onboard-chips .tracker-chip{ min-height:44px; padding:0 14px; }
+.onboard-actions{ display:flex; justify-content:space-between; gap:8px; }
+.onboard-actions .btn, .onboard-card > .btn{ min-height:44px; }
+.install-bar{ position:absolute; inset-inline:12px; bottom:96px; z-index:300; display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:16px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow); font-size:13px; }
+.install-bar span{ flex:1; }

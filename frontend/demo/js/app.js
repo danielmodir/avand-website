@@ -173,6 +173,8 @@ async function boot(){
   if(!state.guest && !state.bootError){ acceptPendingInvite(); loadGroups().then(joinPendingGroup); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); welcomeChain(); }
   else if(state.guest && (pendingInvite() || pendingGroup()) && !state.authOpen) openAuth('signup', pendingInvite() ? 'inviteSignInFirst' : 'groupSignInFirst');
   trackReturn(); // opt-in anonymous "came back on day 1/7/30" (js/core/stats.js)
+  // The installable web app's offline copy (sw.js); the Android app has its own files.
+  if(!androidApp && location.protocol === 'https:') registerReminderWorker();
 }
 
 /* A friend's invite link (/demo/#invite=CODE): remembered until the person

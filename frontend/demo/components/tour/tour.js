@@ -243,12 +243,14 @@ function endTour(markDone){
 /* First visit: the general tour, once, after the app has drawn. */
 function maybeStartFirstTour(){
   if(!tourAllowed() || tourSeen('general') || document.getElementById('bday-overlay') || !tourAutoOk()) return;
-  setTimeout(() => { if(!tour && tourAllowed() && !tourSeen('general')) startTour('general'); }, 700);
+  // The three-step quick start instead of the long tour (js/core/onboarding.js).
+  setTimeout(() => { if(!tour && tourAllowed() && !tourSeen('general')) startQuickStart(); }, 700);
 }
 
 /* The first time a part of the app is opened: its own tour (after the
    view has drawn). Not while another tour runs, nor before the general one. */
 function maybeFeatureTour(id){
+  return; // since the quick start (Phase 3.9) part tours no longer start by themselves: Profile → Tutorials
   if(tour || !tourAllowed() || !tourAvailable(id) || tourSeen(id) || !tourSeen('general') || !tourAutoOk()) return;
   setTimeout(() => { if(!tour && tourAllowed() && !tourSeen(id)) startTour(id); }, 450);
 }
@@ -287,5 +289,5 @@ function renderToursPage(){
     <div class="menu-item-row" data-action="start-tour" data-tour-id="${id}">
       <div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t(TOURS[id].label)}</div>${ICONS.chevronRightSmall}
     </div>`).join('');
-  return `${subHeader(t('tutorials'))}<div class="empty-hint" style="margin-bottom:12px;">${t('tutorialsSub')}</div><div class="menu-list">${rows}</div>`;
+  return `${subHeader(t('tutorials'))}<div class="empty-hint" style="margin-bottom:12px;">${t('tutorialsSub')}</div><div class="menu-list"><div class="menu-item-row" data-action="start-quickstart"><div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t('obQuickStart')}</div>${ICONS.chevronRightSmall}</div>${rows}</div>`;
 }

@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.8
+- Demo asset version: 2026-10-27.9
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0007, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -57,6 +57,15 @@ Update these with every change.
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — Phase 3.9–3.10 (web app) — quick start (js/core/onboarding.js):
+  3 steps (picks → first item → widget/install), skippable, resumable
+  (localStorage toojibee-onboard-v1), replaces the auto general tour; part
+  tours no longer auto-start (maybeFeatureTour returns), all still in Profile
+  → Tutorials (+ a Quick start row). PWA: sw.js offline shell (network first,
+  copy when offline; never /api/, other sites or inside the Android app),
+  registered at boot on https (app.js); install offer only after something
+  was made (maybeOfferInstall), 'not now' remembered. Next: 3.11 articles.
 
 - 2026-10-27 — Phase 3.8 (web app, Django client) — Profile → Ready-made
   plans (menu sub 'templates', js/core/templates.js): weekly study plan,
