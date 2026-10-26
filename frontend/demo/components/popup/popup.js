@@ -382,7 +382,7 @@ function notificationSubviewHtml(){
   const label = { time: t('atATime'), repeat: t('repeating'), before: t('reminderBefore'), countdown: t('reminderCountdown') };
   const beforeLabel = m => m % 1440 === 0 ? t('reminderDaysBefore').replace('{n}', dig(m / 1440))
     : m % 60 === 0 ? t('reminderHoursBefore').replace('{n}', dig(m / 60)) : t('reminderMinutesBefore').replace('{n}', dig(m));
-  const permission = !('Notification' in window) ? 'unsupported' : Notification.permission;
+  const permission = notifyPermission(); // js/core/notify.js (the app has no Notification object)
   return `
     <select class="settings-select" id="notif-type-select" style="width:100%;">
       ${types.map(o => `<option value="${o}" ${n.type === o ? 'selected' : ''}>${label[o]}</option>`).join('')}

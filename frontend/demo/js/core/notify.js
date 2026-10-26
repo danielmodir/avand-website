@@ -19,6 +19,12 @@ const NOTIFY_CATCHUP_MS = 12 * 3600 * 1000;
 let notifyReg = null, notifyTimer = null;
 
 function notifySupported(){ return !!androidApp || 'Notification' in window; }
+/* 'granted' | 'denied' | 'default' | 'unsupported'. The Android app's WebView has no
+   Notification object: reading it there threw and General settings never opened. */
+function notifyPermission(){
+  if(androidApp){ try{ return androidApp.permission() || 'default'; }catch(e){ return 'default'; } }
+  return typeof Notification === 'function' ? Notification.permission : 'unsupported';
+}
 function notifyAllowed(){
   if(androidApp) return androidApp.permission() === 'granted';
   return notifySupported() && Notification.permission === 'granted';

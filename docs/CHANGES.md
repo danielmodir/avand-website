@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.11
+- Demo asset version: 2026-10-27.12
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0008, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -57,6 +57,12 @@ Update these with every change.
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — web app (Android) — «تنظیمات عمومی» didn't open in the app: the
+  page read Notification.permission, and the WebView has no Notification
+  object (notifySupported() is true there because of the bridge). New
+  notifyPermission() in notify.js (bridge first, then a real Notification),
+  used by menu.js and popup.js (the reminder hint was wrong in the app too).
 
 - 2026-10-27 — the owner's earlier list (web app, Django) — event icons (cake for
   birthdays / «تولد», book for «کلاس»; cake on the day: birthday.js
@@ -68,7 +74,7 @@ Format: `date — surfaces — what changed (key files)`.
   takeItemFromLink, data in the link); main desk (pref mainDesk, deskKeys puts
   it first); group tour no longer half off screen (tour.js: vertical scroll
   inside desks only, waits for the slide); duplicate task names: confirm, then
-  #2, #3. Still open: «تنظیمات عمومی» button bug (needs details).
+  #2, #3.
 
 - 2026-10-27 — Phase 3.12 + wrap-up — accent colours unlocked by friends
   (css/palette-accents.css, util.js ACCENTS/currentAccent, Settings > General

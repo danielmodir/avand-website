@@ -634,7 +634,7 @@ function renderGeneralSettings(){
     ${(() => {
       // Reminders (js/core/notify.js): the switch, what the browser allows, and overdue tasks.
       const on = !!state.settings.notifications;
-      const perm = !notifySupported() ? 'unsupported' : Notification.permission;
+      const perm = notifyPermission(); // js/core/notify.js
       const sub = !on ? t('notificationsSub') : perm === 'granted' ? t('notifOnSub') : perm === 'denied' ? t('notifBlockedHint') : perm === 'unsupported' ? t('notifUnsupportedHint') : t('notifAskHint');
       return `<div class="settings-row"><div><div class="lbl">${t('notifications')}</div><div class="sub">${sub}</div></div>
         <div class="switch ${on ? 'on' : ''}" data-action="toggle-notifications" role="switch" aria-checked="${on}"><div class="knob"></div></div></div>
