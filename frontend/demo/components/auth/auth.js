@@ -191,7 +191,6 @@ function renderAuthScreen(){
         ${!isLogin ? input('auth-username', 'text', 'username', 'username', 'username') : ''}
         ${input('auth-email', 'email', 'email', 'email', 'email')}
         ${input('auth-password', 'password', 'password', 'password', isLogin ? 'current-password' : 'new-password')}
-        ${!isLogin ? `<div class="auth-hint">${t('passwordHint')}</div>` : ''}
         ${!isLogin ? `
           <div class="${errClass('gender')}">
             <div class="auth-choice" role="radiogroup" aria-label="${t('gender')}">
@@ -214,9 +213,49 @@ function renderAuthScreen(){
     </div>`;
 }
 
+/* The password field: a show/hide button inside it, and on sign-up / a new
+   password the three rules (passwordProblem) ticked off while typing,
+   instead of only failing after "Create account". Added to the field once
+   it's on the page (renderAuth keeps the same field while the HTML stays). */
+function enhancePasswordField(){
+  const inp = document.getElementById('auth-password');
+  if(!inp || inp.dataset.enhanced) return;
+  inp.dataset.enhanced = '1';
+  const field = inp.closest('.field');
+  field.classList.add('pw-field');
+  const eye = document.createElement('button');
+  eye.type = 'button';
+  eye.className = 'pw-eye';
+  const paintEye = () => {
+    const shown = inp.type === 'text';
+    eye.innerHTML = shown ? ICONS.eyeOff : ICONS.eye;
+    eye.setAttribute('aria-label', t(shown ? 'hidePassword' : 'showPassword'));
+    eye.setAttribute('aria-pressed', String(shown));
+  };
+  paintEye();
+  eye.addEventListener('click', () => { inp.type = inp.type === 'password' ? 'text' : 'password'; paintEye(); inp.focus(); });
+  inp.after(eye);
+  if(state.authTab !== 'signup' && state.authTab !== 'reset') return;
+  const rules = document.createElement('ul');
+  rules.className = 'pw-rules';
+  rules.setAttribute('aria-live', 'polite');
+  const RULES = [
+    ['pwRuleLength', pw => [...pw].length >= MIN_PASSWORD],
+    ['pwRuleLetter', pw => /\p{L}/u.test(pw)],
+    ['pwRuleOther', pw => /[^\p{L}]/u.test(pw)],
+  ];
+  const paint = () => {
+    rules.innerHTML = RULES.map(([k, ok]) => `<li class="${ok(inp.value) ? 'ok' : ''}">${ok(inp.value) ? '✓' : '○'} ${t(k)}</li>`).join('');
+  };
+  paint();
+  inp.addEventListener('input', paint);
+  field.after(rules);
+}
+
 function wireAuthInteractivity(){
   const bind = (id, field) => document.getElementById(id)?.addEventListener('input', e => { authDraft[field] = e.target.value; });
   bind('auth-username', 'username'); bind('auth-email', 'email'); bind('auth-password', 'password');
+  enhancePasswordField();
   const code = document.getElementById('auth-code');
   code?.addEventListener('input', () => {
     const clean = cleanCode(code.value);

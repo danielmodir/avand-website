@@ -23,6 +23,13 @@
 .auth-alert.error{ color:var(--danger); background:var(--danger-soft); }
 .auth-alert.ok{ color:var(--text); background:var(--primary-soft); }
 .auth-hint{ font-size:11.5px; color:var(--text-muted); margin:-4px 2px 6px; }
+/* Password: the show/hide eye inside the field, and the rules ticked off while typing. */
+.pw-field{ position:relative; }
+.pw-field input{ padding-inline-end:48px; }
+.pw-eye{ position:absolute; inset-inline-end:4px; top:0; width:44px; height:44px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.pw-eye svg{ width:20px; height:20px; }
+.pw-rules{ list-style:none; margin:-4px 2px 8px; padding:0; display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; color:var(--text-muted); }
+.pw-rules li.ok{ color:var(--text); font-weight:700; }
 /* Under the code field's heading: where the email may have gone. */
 .auth-spam-note{ font-size:12px; line-height:1.7; color:var(--text); background:var(--pms-soft); border:1px dashed var(--pms); border-radius:12px; padding:9px 12px; margin-bottom:12px; }
 .auth-link{ align-self:center; margin-top:14px; border:none; background:none; color:var(--primary); font-size:13px; font-weight:700; font-family:inherit; cursor:pointer; padding:4px; }
