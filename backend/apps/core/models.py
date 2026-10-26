@@ -341,6 +341,7 @@ class UserSettings(models.Model):
         "prayer_show": True,                # prayer times on the Occasions desk and the date widget
         "prayer_notify": False,             # adhan reminders (dawn, noon, maghrib)
         "prayer_city": "tehran",            # text: a city id from the app's list (js/core/prayer.js)
+        "main_desk": "planning",            # text: the desk the app opens on (planning, occasions, groups, period)
         "accent": "orange",                 # text: accent colour, others unlocked by friends (css/palette-accents.css)
         # Tutorials already seen (finished or skipped), so signing in again
         # doesn't repeat them (frontend/demo/components/tour/tour.js).

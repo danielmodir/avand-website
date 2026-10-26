@@ -98,8 +98,13 @@ function deskKeys(){
   if(pref('occasionsEnabled')) keys.push('occasionsDesktop');
   if(pref('groupsEnabled') && groupsAvailable()) keys.push('groupsDesktop'); // needs our API and an account
   if(periodViews().length) keys.push('periodDesktop'); // her own cycle and/or ones friends share with this person
+  // The main desk (Settings > General) comes first, so the app opens on it.
+  const main = MAIN_DESKS[(state.settings.prefs || {}).mainDesk];
+  if(main && keys.includes(main)){ keys.splice(keys.indexOf(main), 1); keys.unshift(main); }
   return keys;
 }
+
+const MAIN_DESKS = { planning: 'planning', occasions: 'occasionsDesktop', groups: 'groupsDesktop', period: 'periodDesktop' };
 
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;

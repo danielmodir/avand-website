@@ -625,6 +625,8 @@ function renderGeneralSettings(){
         </button>`).join('')}
     </div>
     ${state.settings.palette !== 'classic' ? accentRowHtml() : ''}
+    ${state.guest ? '' : `<div class="settings-row"><div><div class="lbl">${t('mainDesk')}</div><div class="sub">${t('mainDeskSub')}</div></div>
+      <select class="settings-select" id="main-desk-select" aria-label="${escapeAttr(t('mainDesk'))}">${[['planning', 'planning'], ['occasions', 'occasionsDesktop'], ['groups', 'groupsDesktop'], ['period', 'periodDesktop']].map(([v, l]) => `<option value="${v}" ${((state.settings.prefs || {}).mainDesk || 'planning') === v ? 'selected' : ''}>${t(l)}</option>`).join('')}</select></div>`}
     <div class="settings-row">
       <div><div class="lbl">${t('darkMode')}</div><div class="sub">${t('darkModeSub')}</div></div>
       <div class="switch ${document.documentElement.getAttribute('data-theme')!=='light'?'on':''}" data-action="toggle-app-theme" role="switch" aria-checked="${document.documentElement.getAttribute('data-theme')!=='light'}"><div class="knob"></div></div>
@@ -697,7 +699,7 @@ function renderPlanningSettings(){
     ${prefRow('planningDaySummary', 'prefDaySummary', 'prefDaySummarySub')}
     <div class="section-title">${t('itemColors')}</div>
     <div class="sub" style="margin:-6px 2px 10px 2px;">${t('itemColorsSub')}</div>
-    ${[['task','tasks'], ['habit','habits'], ['event','events']].map(([kind, label]) => {
+    ${[['task','tasks'], ['habit','habits']].map(([kind, label]) => { // events: a colour per event, in its form
       const cur = state.settings.itemColors?.[kind] || null;
       const def = ITEM_COLOR_DEFAULTS[kind] || 'var(--primary)';
       return `<div class="color-row">
@@ -859,6 +861,7 @@ function wireMenuInteractivity(){
   });
   wireDateTools();
   wireBackupPage();
+  document.getElementById('main-desk-select')?.addEventListener('change', e => { setPref('mainDesk', e.target.value); state.activeDesktopIndex = 0; render(); });
   document.getElementById('prayer-city-select')?.addEventListener('change', e => { setPref('prayerCity', e.target.value); render(); });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; cloudSync(() => Cloud.saveSettings(state.settings)); render(); });
   document.getElementById('primary-calendar-select')?.addEventListener('change', e => {

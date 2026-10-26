@@ -23,6 +23,7 @@ function resetFormDraft(type, existing){
     title: existing ? existing.title : '',
     category: existing ? (existing.category || '') : '',
     kind: existing ? (existing.kind || '') : '', // an event's kind: '' | 'birthday' | 'countdown'
+    color: existing ? (existing.color || '') : '', // an event's own colour ('' = the default)
     description: existing ? (existing.description || '') : '',
     timeMode: existing ? (existing.timeMode || 'single') : 'single',
     // A new item goes on the day picked in the calendar (homeDate), not today.
@@ -145,7 +146,7 @@ function itemDetailsHtml(type, item, day){
     <h2 class="details-title">${escapeHtml(item.title || '')}</h2>
     ${rows.length ? `<div class="details-rows">${rows.map(([icon, text]) => `<div class="details-row">${icon}<span>${text}</span></div>`).join('')}</div>` : ''}
     ${g ? groupDoneHtml(item, type, day || dateKey(state.homeDate || today)) : ''}
-    ${!g && (type === 'habit' || (type === 'event' && item.kind)) ? `<div class="occ-share-row">${shareCardBtn(type, item.id)}</div>` : ''}
+    ${!g ? `<div class="occ-share-row">${type === 'habit' || (type === 'event' && item.kind) ? shareCardBtn(type, item.id) : ''}<button type="button" class="btn btn-outline btn-small share-card-btn" data-action="share-item-link" data-kind="${type}" data-id="${escapeAttr(item.id)}">${ICONS.shareIcon}<span>${t('itemShareLink')}</span></button></div>` : ''}
     <div class="section-title">${t('description')}</div>
     ${item.description ? `<p class="details-desc">${escapeHtml(item.description)}</p>` : `<p class="details-desc empty">${t('detailsNoDescription')}</p>`}
     ${(item.photos || []).length ? `<div class="photo-add-row">${item.photos.map(p => `<div class="photo-thumb"><img src="${p}" alt=""></div>`).join('')}</div>` : ''}
@@ -224,7 +225,7 @@ function subtasksListHtml(){
 function formBody(type){
   const parts = [popupIconRow(type)];
   if(type === 'task') parts.push(descriptionBlock());
-  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(descriptionBlock(false)); } // events: a kind, a description, no photos
+  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(eventColorRow(), descriptionBlock(false)); } // events: a kind, a description, no photos
   return parts.join('');
 }
 
@@ -237,6 +238,13 @@ function eventKindRow(){
     ${[['', 'kindEvent'], ['birthday', 'kindBirthday'], ['countdown', 'kindCountdown']].map(([v, l]) => `<button type="button" class="tracker-chip ${k === v ? 'active' : ''}" data-ekind="${v}" role="radio" aria-checked="${k === v}">${t(l)}</button>`).join('')}
   </div>
   ${k === 'countdown' && !state.editingId ? `<div class="event-kind-row">${EVENT_PRESETS.map(p => `<button type="button" class="tracker-chip" data-epreset="${p}">${t(p)}</button>`).join('')}</div>` : ''}`;
+}
+function eventColorRow(){
+  const cur = formDraft.color || '';
+  return `<div class="color-row"><div class="lbl">${t('eventColor')}</div><div class="color-swatches" role="radiogroup" aria-label="${t('eventColor')}">
+    <button type="button" class="color-swatch ${cur ? '' : 'active'}" data-ecolor="" style="--c:var(--event-color)" role="radio" aria-checked="${!cur}" aria-label="${t('defaultColor')}"></button>
+    ${ITEM_COLOR_CHOICES.map(c => `<button type="button" class="color-swatch ${cur === c ? 'active' : ''}" data-ecolor="${c}" style="--c:${c}" role="radio" aria-checked="${cur === c}" aria-label="${c}"></button>`).join('')}
+  </div></div>`;
 }
 function applyEventKind(k){
   formDraft.kind = k;
@@ -555,6 +563,7 @@ function groupFieldHtml(){
 
 function wireMainFormInteractivity(){
   document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; renderPopupBody(); });
+  document.querySelectorAll('[data-ecolor]').forEach(b => b.addEventListener('click', () => { formDraft.color = b.dataset.ecolor; renderPopupBody(); }));
   document.querySelectorAll('[data-ekind]').forEach(b => b.addEventListener('click', () => { applyEventKind(b.dataset.ekind); renderPopupBody(); }));
   document.querySelectorAll('[data-epreset]').forEach(b => b.addEventListener('click', () => { applyEventPreset(b.dataset.epreset); renderPopupBody(); }));
   document.getElementById('f-challenge')?.addEventListener('change', e => { formDraft.challenge = Number(e.target.value) || 0; });
@@ -725,9 +734,19 @@ function submitPopup(){
     }
   } else if(type === 'task'){
     const existing = state.editingId ? findItem('task', state.editingId) : null;
+    // The same name as a task you already have: ask, then number it (#2, #3 …).
+    let name = title;
+    if(!existing){
+      const base = s => s.trim().replace(/\s*#[0-9۰-۹]+$/, '').toLowerCase();
+      const same = state.tasks.filter(x => !x.groupId && base(x.title || '') === base(title));
+      if(same.length){
+        if(!confirm(t('dupTitleConfirm').replace('{title}', title))) return;
+        name = base(title) === title.toLowerCase() ? `${title} #${dig(same.length + 1)}` : title;
+      }
+    }
     const obj = {
       id: state.editingId || uid(),
-      title,
+      title: name,
       category: (formDraft.category||'').trim(),
       description: (formDraft.description||'').trim(),
       photos: [...formPhotos],
@@ -768,6 +787,7 @@ function submitPopup(){
       title,
       description: (formDraft.description||'').trim(),
       kind: formDraft.kind || '',
+      color: formDraft.color || '',
       timeMode: formDraft.timeMode,
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,

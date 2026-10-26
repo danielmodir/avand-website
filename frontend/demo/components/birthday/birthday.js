@@ -43,7 +43,15 @@ function isOwnBirthday(day){
   return bdayMemo.map[k];
 }
 const BDAY_CAKE_SVG = '<svg class="bday-cake" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2c.9 1 1.4 1.9 1.4 2.6a1.4 1.4 0 0 1-2.8 0C10.6 3.9 11.1 3 12 2zm-.8 4.6h1.6V9h-1.6zM5 10h14a2 2 0 0 1 2 2v2.2c-.9.6-1.6.6-2.5 0-1.1-.8-2.4-.8-3.5 0-.9.6-1.6.6-2.5 0-1.1-.8-2.4-.8-3.5 0-.9.6-1.6.6-2.5 0-.6-.4-1.2-.6-1.5-.6V12a2 2 0 0 1 2-2zm-2 6.5c.3 0 .6.1 1 .4 1.4 1 3 1 4.5 0 .6-.4 1.4-.4 2 0 1.4 1 3 1 4.5 0 .6-.4 1.4-.4 2 0 .9.6 1.9.8 3 .5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
-function birthdayMarkHtml(day){ return isOwnBirthday(day) ? BDAY_CAKE_SVG : ''; }
+/* A birthday event (its kind, or «تولد» in its title) also gets the cake on its day. */
+function isBirthdayEvent(e){ return e.kind === 'birthday' || /تولد|birthday/i.test(e.title || ''); }
+function birthdayMarkHtml(day){ return isOwnBirthday(day) || state.events.some(e => isBirthdayEvent(e) && occursOnDate(e, day)) ? BDAY_CAKE_SVG : ''; }
+/* The small icon before an event's title: a cake for a birthday, a book for a class. */
+function eventIconHtml(e){
+  if(isBirthdayEvent(e)) return `<span class="event-icon" aria-hidden="true">${BDAY_CAKE_SVG}</span>`;
+  if(/کلاس|class/i.test(e.title || '')) return `<span class="event-icon" aria-hidden="true">${ICONS.book}</span>`;
+  return '';
+}
 
 function birthdayAge(dob){
   const [by] = dob.split('-').map(Number);

@@ -360,6 +360,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     goToDesktopIndex(i);
     return;
   }
+  if(action === 'share-item-link'){ shareItemLink(el.dataset.kind, el.dataset.id); return; } // components/items
   if(action === 'set-accent'){ if(accentUnlocked(el.dataset.val)){ setPref('accent', el.dataset.val); applyAppearance(); scheduleWidgetData(); render(); } return; } // css/palette-accents.css
   if(action === 'start-quickstart'){ state.menuPanelOpen = false; render(); startQuickStart(true); return; } // js/core/onboarding.js
   // Ready-made plans and the focus timer (js/core/templates.js)

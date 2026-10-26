@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 """toojibee_planning: categories, tasks (one level of subtasks), habits,
 events, and one completion row per day.
 
@@ -274,6 +275,7 @@ class Event(UserOwnedSyncModel, Recurrence, Reminder):
     end_time = models.TimeField(null=True, blank=True)
     reminder_minutes_before = models.PositiveSmallIntegerField(null=True, blank=True)
     # '' a plain event, 'birthday' (repeats yearly), 'countdown' (days-left badge).
+    color = models.CharField(max_length=7, blank=True, default="", validators=[RegexValidator(r"^(#[0-9A-Fa-f]{6})?$")])  # the event's own colour
     kind = models.CharField(max_length=10, blank=True, default="", choices=[("", "event"), ("birthday", "birthday"), ("countdown", "countdown")])
     origin_event = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     origin_date = models.DateField(null=True, blank=True)

@@ -174,3 +174,5 @@
 .countdown-row{ justify-content:space-between; cursor:pointer; }
 .countdown-row .event-badge{ margin-top:0; }
 .event-kind-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+.event-icon{ display:inline-flex; vertical-align:-2px; margin-inline-end:4px; color:var(--primary-text); }
+.event-icon svg{ width:14px; height:14px; }

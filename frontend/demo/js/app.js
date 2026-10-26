@@ -170,7 +170,7 @@ async function boot(){
   }
   handleEmailLink();
   openAuthFromLink();
-  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadGroups().then(joinPendingGroup); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); welcomeChain(); }
+  if(!state.guest && !state.bootError){ acceptPendingInvite(); loadGroups().then(joinPendingGroup); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); welcomeChain(); takeItemFromLink(); }
   else if(state.guest && (pendingInvite() || pendingGroup()) && !state.authOpen) openAuth('signup', pendingInvite() ? 'inviteSignInFirst' : 'groupSignInFirst');
   trackReturn(); // opt-in anonymous "came back on day 1/7/30" (js/core/stats.js)
   // The installable web app's offline copy (sw.js); the Android app has its own files.

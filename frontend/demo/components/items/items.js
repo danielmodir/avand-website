@@ -199,12 +199,53 @@ function countdownsHtml(){
   return list.length ? `<div class="section-title">${t('countdowns')}</div>${list.map(x => `<div class="occasion-row countdown-row" data-action="view-item" data-type="event" data-id="${x.e.id}"><span>${escapeHtml(x.e.title)}</span>${eventBadgeHtml(x.e)}</div>`).join('')}` : '';
 }
 
+/* An event's menu (long press or right click on its card, instead of a
+   trash button): edit, share a copy, delete after a confirm. */
+function openEventMenu(card){
+  const id = card.dataset.id, e = state.events.find(x => x.id === id);
+  if(!e) return;
+  const editable = groupItemEditable(e);
+  const m = tjMenu(card, `
+    ${editable ? `<button type="button" class="tj-option" data-m="edit">${t('editBtn')}</button>` : ''}
+    <button type="button" class="tj-option" data-m="share">${t('itemShareLink')}</button>
+    ${editable ? `<button type="button" class="tj-option tj-danger" data-m="delete">${t('deleteBtn')}</button>` : ''}`, 'item-menu');
+  m.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-m]'); if(!b) return;
+    closeTjMenu();
+    if(b.dataset.m === 'edit') openPopup('event', null, e);
+    else if(b.dataset.m === 'share') shareItemLink('event', id);
+    else if(confirm(t('deleteEventConfirm').replace('{title}', e.title))) deleteEventById(id);
+  });
+  haptic(15);
+}
+function deleteEventById(id){
+  if(!deleteGroupAware('event', id)){ state.events = state.events.filter(x => x.id !== id); cloudSync(() => Cloud.deleteEvent(id)); }
+  forgetItemReminders('event', id); // its reminders go too (js/core/notify.js)
+  render();
+}
+/* Long press (450 ms without moving) or right click on an event card. */
+(function attachEventMenu(){
+  let timer = null, sx = 0, sy = 0, card = null;
+  document.addEventListener('contextmenu', ev => { const c = ev.target.closest('#device .event-card'); if(c){ ev.preventDefault(); openEventMenu(c); } });
+  document.addEventListener('pointerdown', ev => {
+    card = ev.target.closest('#device .event-card'); if(!card || ev.pointerType === 'mouse') return;
+    sx = ev.clientX; sy = ev.clientY;
+    clearTimeout(timer); timer = setTimeout(() => { const c = card; card = null; if(c){ c.dataset.longPressed = '1'; openEventMenu(c); } }, 450);
+  });
+  document.addEventListener('pointermove', ev => { if(card && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 10){ clearTimeout(timer); card = null; } });
+  ['pointerup', 'pointercancel'].forEach(n => document.addEventListener(n, () => { clearTimeout(timer); card = null; }));
+  // The tap that ends a long press doesn't also open the details.
+  document.addEventListener('click', ev => { const c = ev.target.closest('.event-card[data-long-pressed]'); if(c){ ev.stopPropagation(); ev.preventDefault(); delete c.dataset.longPressed; } }, true);
+})();
+
+/* An event's own colour (a #RRGGBB from the form; anything else is ignored). */
+function eventColor(e){ return e && /^#[0-9a-fA-F]{6}$/.test(e.color || '') ? e.color : ''; }
+
 function eventCard(e){
   const time = e.startTime ? itemTimeLabel(e) : (eventTime(e) || '');
-  return `<div class="event-card ${e.groupId ? 'in-group' : ''}" data-action="view-item" data-type="event" data-id="${e.id}"${groupStyleAttr(e)}>
-    ${groupItemEditable(e) ? `<button class="mini-btn event-del" data-action="delete-event" data-id="${e.id}" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>` : ''}
+  return `<div class="event-card ${e.groupId ? 'in-group' : ''}" data-action="view-item" data-type="event" data-id="${e.id}"${e.groupId ? groupStyleAttr(e) : eventColor(e) ? ` style="--event-color:${eventColor(e)}"` : ''}>
     ${time?`<span class="event-time">${time}</span>`:''}
-    <p class="event-title">${escapeHtml(e.title)}</p>${eventBadgeHtml(e)}
+    <p class="event-title">${eventIconHtml(e)}${escapeHtml(e.title)}</p>${eventBadgeHtml(e)}
   </div>`;
 }
 
@@ -520,4 +561,55 @@ function attachItemSelection(){
   document.addEventListener('keydown', e => { if(e.key === 'Escape') clearSelection(); });
   document.addEventListener('scroll', clearSelection, true);
   window.addEventListener('resize', clearSelection);
+}
+
+/* ============ SHARE A COPY (link) ============
+   A task, habit or event as a link (#add=… with its fields, never its
+   ticks, photos, group or reminders' own text); whoever opens it is asked,
+   and gets a copy of their own with a new id. Nothing goes through our
+   server: the data is in the link itself. */
+const SHARE_FIELDS = { task: ['title', 'description', 'timeMode', 'date', 'endDate', 'startTime', 'endTime', 'recurrence'],
+  habit: ['title', 'startDate', 'recurrence', 'tracker'], event: ['title', 'description', 'kind', 'color', 'timeMode', 'date', 'endDate', 'startTime', 'endTime', 'recurrence'] };
+function shareItemLink(kind, id){
+  const it = findItem(kind, id); if(!it) return;
+  const d = { k: kind };
+  SHARE_FIELDS[kind].forEach(f => { if(it[f] != null && it[f] !== '') d[f] = it[f]; });
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(d)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const url = 'https://toojibee.ir/demo/#add=' + b64, text = it.title;
+  trackEvent('share');
+  if(androidApp) androidApp.share(t('appName'), text + '\n' + url);
+  else if(navigator.share) navigator.share({ title: t('appName'), text, url }).catch(() => {});
+  else { copyText(url); showToast(t('itemLinkCopied')); }
+}
+function takeItemFromLink(){
+  const m = /[#&]add=([A-Za-z0-9_-]{4,6000})/.exec(location.hash);
+  if(!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let d; try{ d = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, '+').replace(/_/g, '/'))))); }catch(e){ return; }
+  const kind = d && d.k, fields = SHARE_FIELDS[kind];
+  if(!fields || typeof d.title !== 'string' || !d.title.trim()) return;
+  const key = /^\d{4}-\d{2}-\d{2}$/, hm = /^\d{2}:\d{2}$/;
+  const it = { id: uid(), title: d.title.trim().slice(0, 300), notification: { type: null } };
+  if(typeof d.description === 'string') it.description = d.description.slice(0, 5000);
+  ['date', 'endDate', 'startDate'].forEach(f => { if(key.test(d[f] || '')) it[f] = d[f]; });
+  ['startTime', 'endTime'].forEach(f => { it[f] = hm.test(d[f] || '') ? d[f] : null; });
+  const r = d.recurrence && typeof d.recurrence === 'object' ? d.recurrence : {};
+  it.recurrence = { mode: ['interval', 'weekdays', 'monthly', 'yearly'].includes(r.mode) ? r.mode : null, interval: Math.min(99, Math.max(1, Number(r.interval) || 1)),
+    weekdays: Array.isArray(r.weekdays) ? r.weekdays.filter(n => n >= 0 && n <= 6) : [], anchor: key.test(r.anchor || '') ? r.anchor : null, cal: ['jalali', 'gregorian', 'hijri'].includes(r.cal) ? r.cal : null };
+  if(!confirm(t('itemImportTitle') + '\n\n' + it.title)) return;
+  const today_ = dateKey(today);
+  if(kind === 'task'){
+    Object.assign(it, { category: '', photos: [], pinned: false, done: false, skipped: false, statusByDate: {}, subtasks: [], timeMode: d.timeMode === 'range' && it.endDate ? 'range' : 'single', date: it.date || today_ });
+    state.tasks.push(it); cloudSync(() => Cloud.saveTask(it));
+  } else if(kind === 'habit'){
+    const tr = d.tracker && (d.tracker.kind === 'counter' || d.tracker.kind === 'timer') ? d.tracker : null;
+    Object.assign(it, { startDate: today_, completedDates: [], skippedDates: [], progress: {}, tracker: tr });
+    if(!it.recurrence.mode) it.recurrence.mode = 'interval';
+    state.habits.push(it); cloudSync(() => Cloud.saveHabit(it));
+  } else {
+    Object.assign(it, { kind: ['birthday', 'countdown'].includes(d.kind) ? d.kind : '', color: /^#[0-9a-fA-F]{6}$/.test(d.color || '') ? d.color : '', timeMode: d.timeMode === 'range' && it.endDate ? 'range' : 'single', date: it.date || today_ });
+    state.events.push(it); cloudSync(() => Cloud.saveEvent(it));
+  }
+  render();
+  showToast(t('itemAdded'));
 }

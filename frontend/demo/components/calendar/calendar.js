@@ -101,7 +101,7 @@ function refreshCalendarRanges(){
    Always on (its setting was removed, 2026-10-25). */
 function dayDotsHtml(day){
   const {tasks, events} = itemsForDate(day);
-  return (tasks.length ? '<span class="dot-task"></span>' : '') + (events.length ? '<span class="dot-event"></span>' : '');
+  return (tasks.length ? '<span class="dot-task"></span>' : '') + (events.length ? `<span class="dot-event"${eventColor(events[0]) ? ` style="--event-color:${eventColor(events[0])}"` : ''}></span>` : '');
 }
 
 /* fullScreen: every workspace desktop is off (phone only) — the widget is
@@ -278,7 +278,7 @@ function calFullChips(day){
   const { tasks, events } = itemsForDate(day);
   sortEvents(events).forEach(e => {
     const time = eventTime(e);
-    chips.push(`<span class="cf-chip cf-event" data-action="view-item" data-type="event" data-id="${e.id}">${time ? `<b dir="ltr">${dig(time)}</b> ` : ''}${escapeHtml(e.title)}</span>`);
+    chips.push(`<span class="cf-chip cf-event"${eventColor(e) ? ` style="--event-color:${eventColor(e)};--event-on:${colorIsLight(eventColor(e)) ? '#1A1708' : '#FFFFFF'}"` : ''} data-action="view-item" data-type="event" data-id="${e.id}">${time ? `<b dir="ltr">${dig(time)}</b> ` : ''}${escapeHtml(e.title)}</span>`);
   });
   tasks.forEach(tk => {
     const st = taskStatusOn(tk, key);

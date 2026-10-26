@@ -347,7 +347,7 @@
     var events = sync.events.map(function (row) {
       versions['events:' + row.id] = row.version;
       return {
-        id: row.id, title: row.title, description: row.description || '', kind: row.kind || '', timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
+        id: row.id, title: row.title, description: row.description || '', kind: row.kind || '', color: row.color || '', timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
         startTime: row.start_time ? row.start_time.slice(0, 5) : null, endTime: row.end_time ? row.end_time.slice(0, 5) : null,
         recurrence: recurrenceFromApi(row), notification: reminderFromApi(row),
       };
@@ -533,7 +533,7 @@
       // A start time makes it a timed event (the API needs start_time then).
       var timed = !!evt.startTime;
       var before = timed && evt.notification && evt.notification.type === 'before';
-      return putVersioned('events', evt.id, Object.assign({ title: evt.title, description: evt.description || '', kind: evt.kind || '', all_day: !timed,
+      return putVersioned('events', evt.id, Object.assign({ title: evt.title, description: evt.description || '', kind: evt.kind || '', color: evt.color || '', all_day: !timed,
         start_time: timed ? evt.startTime : null, end_time: timed && evt.endTime ? evt.endTime : null },
         datesToApi(evt), recurrenceToApi(evt.recurrence, true),
         // "Minutes before" needs a start time; without one it isn't sent.

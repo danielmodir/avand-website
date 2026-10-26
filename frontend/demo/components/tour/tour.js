@@ -181,14 +181,20 @@ async function tourShow(dir = 1){
   if(!tour) return;
   const steps = TOURS[tour.id].steps;
   const step = steps[tour.i];
-  if(step.prep){ step.prep(); await new Promise(r => setTimeout(r, 380)); } // let the view open / desk slide in
+  if(step.prep){ step.prep(); await new Promise(r => setTimeout(r, 650)); } // let the view open / desk slide in (all the way)
   if(!tour) return;
   const el = tourTarget(step);
   if(!el && steps.length > 1){ // not on screen (e.g. that desk is off): go on
     const next = tour.i + (dir < 0 ? -1 : 1);
     if(next >= 0 && next < steps.length){ tour.i = next; return tourShow(dir); }
   }
-  el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  // Inside a desk only scroll up/down: scrollIntoView also moved the sideways
+  // desk pager, which left the desk (and the lit spot) cut in half.
+  const pane = el && el.closest('.desktop-pane');
+  if(pane){
+    const r = el.getBoundingClientRect(), pr = pane.getBoundingClientRect();
+    if(r.bottom > pr.bottom) pane.scrollTop += r.bottom - pr.bottom + 16; else if(r.top < pr.top) pane.scrollTop -= pr.top - r.top + 16;
+  } else el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   const last = tour.i === steps.length - 1;
   document.getElementById('tour-card').dir = lang() === 'fa' ? 'rtl' : 'ltr'; // the app is LTR outside the calendar
   document.getElementById('tour-card').innerHTML = `
@@ -204,6 +210,7 @@ async function tourShow(dir = 1){
     </div>`;
   tour.el = el;
   tourPlace();
+  setTimeout(tourPlace, 350); // again once any scrolling has settled
   document.querySelector('#tour-card [data-tour="next"]')?.focus({ preventScroll: true });
 }
 
