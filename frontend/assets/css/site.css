@@ -51,7 +51,7 @@ a { color: inherit; }
 .wrap {
   max-width: 960px;
   margin: 0 auto;
-  padding: 0 var(--space-5);
+  padding: 0 var(--space-6); /* text a little further from the screen's sides (was 24px) */
 }
 @media (min-width: 960px) {
   .wrap { max-width: 1120px; padding: 0 var(--space-6); }
@@ -190,6 +190,12 @@ a { color: inherit; }
 .hero {
   position: relative; padding: var(--space-7) 0 var(--space-8) 0; text-align: start;
   isolation: isolate;
+  /* Edge to edge: the glow used to stop at .wrap's side padding, leaving a
+     dark strip down each side (owner's request, 2026-10-26). The negative
+     margin reaches the screen's edges, the padding brings the text back in
+     line with the rest of the page. */
+  margin-inline: calc(50% - 50vw);
+  padding-inline: calc(50vw - 50%);
   /* The glow (::before) is wider than the page; clip it sideways only, or
      the page scrolls a few pixels on phones (RTL pages most visibly). */
   overflow-x: clip;
@@ -233,7 +239,7 @@ a { color: inherit; }
   .hero-actions { flex-direction: row; flex-wrap: wrap; max-width: none; }
 }
 @media (min-width: 960px) {
-  .hero { padding: var(--space-9) 0 var(--space-9) 0; }
+  .hero { padding-block: var(--space-9); } /* only top/bottom: the sides are the edge-to-edge padding above */
   .hero h1 { font-size: var(--font-size-3xl); max-width: 16ch; }
   .hero p { font-size: var(--font-size-lg); max-width: 56ch; }
   .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: var(--space-8); align-items: center; }
