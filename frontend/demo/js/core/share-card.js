@@ -46,7 +46,7 @@ function shareCardContent(kind, id){
 let brandMark = null;
 function loadBrandMark(){
   if(brandMark) return brandMark;
-  brandMark = new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = '../assets/icons/icon-192.png?v=tj5'; // the round icon: the mark on its circle });
+  brandMark = new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = '../assets/icons/icon-192.png?v=tj5'; }); // the round icon: the mark on its circle
   return brandMark;
 }
 
