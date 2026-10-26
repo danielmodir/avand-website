@@ -48,15 +48,21 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.9
+- Demo asset version: 2026-10-27.10
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0007, social 0003,
   notifications 0003, calendar_data 0002, period 0001
-- Android: 1.3.0 (versionCode 4)
+- Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — Phase 3.12 + wrap-up — accent colours unlocked by friends
+  (css/palette-accents.css, util.js ACCENTS/currentAccent, Settings > General
+  accentRowHtml, pref accent). 3.11 already done (33 articles live). Android
+  1.4.0 (5): prayer line on the date widget, saveFile, shareImage +
+  ShareFiles provider. Tests: node --test tests/*.test.js (14) + Django.
 
 - 2026-10-27 — Phase 3.9–3.10 (web app) — quick start (js/core/onboarding.js):
   3 steps (picks → first item → widget/install), skippable, resumable

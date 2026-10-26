@@ -58,3 +58,35 @@ Also at the owner's request: "Connect to AI" in Profile greyed out, last in the 
 - With *keep on this phone only*, period data lives only on that device: a lost phone or cleared app data loses it (the setting says so; export is next to it).
 - App lock needs a screen lock on the phone; without one the switch explains and stays off.
 - Usage counts are per IP-throttled (60/h) but anonymous, so numbers are estimates, not unique users.
+
+## Phase 3 — Features for installs and retention (2026-10-27) → app 1.4.0 (versionCode 5)
+
+| # | Task | Result | Commit |
+|---|------|--------|--------|
+| 3.1 | Prayer times | `js/core/prayer.js`: computed on the phone (sun position, Institute of Geophysics angles: dawn 17.7°, maghrib 4.5°, isha 14°, Jafari midnight), Iran time, 36 cities (default Tehran). On the Occasions desk and the desktop day sheet (next one marked), the Android date widget (APK 1.4), optional adhan reminders (dawn/noon/maghrib) through the normal reminder path. `tests/prayer-times.test.js`: Tehran, Mashhad, Tabriz 27 Oct 2026 match published times (±1 min). | def1f78 |
+| 3.2 | Hijri calendar | **[VERIFY] mostly already done**: Hijri layer, Hijri as main calendar, Hijri numbers in day cells, official month table with arithmetic fallback, admin-editable month starts in the panel, no "coming soon". Added: the day sheet shows every calendar's date. | 316ee77 |
+| 3.3 | Birthdays & countdowns | Event kind birthday (yearly in the main calendar, past days allowed) / countdown (Konkur, Exam, Nowruz presets); days-left badge; list on the Occasions desk; widget line; 09:00 reminder by default. Django `Event.kind` + migration 0007. | d247176 |
+| 3.4 | Date tools | Profile → Date tools: converter (3 calendars, impossible days rejected), days between dates, age + days to next birthday. `tests/date-tools.test.js`. | 44fe071 |
+| 3.5 | Import/export | Settings → Backup & transfer: .ics (no period) and JSON backup (period only when ticked, warned); import with preview and dedupe. Android `saveFile` (system Save screen). `tests/backup.test.js`. Also fixed: the Phase 2 period export was cut at 10k characters in the app. | a64861e |
+| 3.6 | Share cards | Canvas picture in the current palette/theme with the mark and toojibee.ir: habit streak, countdown/birthday, the day, my day. Android `shareImage` + `ShareFiles` provider (no library). | 7ea61f5 |
+| 3.7 | Challenges | A group habit as a 7/21/30-day challenge: per-member progress, nudge (share-sheet message), result card. Stored in the group item's data (no backend change). | 966b6dd |
+| 3.8 | Student pack | Profile → Ready-made plans: weekly study, Ramadan (official Hijri dates), 30-day challenge, as ordinary editable items; 25/5 focus timer; habits can have a last day. Exam countdown = 3.3 presets. | aa1f8cc |
+| 3.9 | Onboarding | 3-step quick start (what you want → first item → widget/install), skippable, resumable; tutorials kept in Profile; part tours no longer auto-start. | d854a7a |
+| 3.10 | PWA | `sw.js` offline shell (network first, copy used offline; never /api/, other sites or the Android app), registered at boot; install offer only after something was made. Verified live: 7 shell files cached, no API. | d854a7a |
+| 3.11 | Articles | **[VERIFY] already done**: 33 Persian articles live (server-rendered, canonical, description, OG, JSON-LD, sitemap). No change. | — |
+| 3.12 | Referral cosmetics | Accent colours: teal (1 friend), rose (3 friends), stay unlocked; Settings → General. No payments. | b22c8fc |
+
+### Backend work still needed
+- Django has no `POST /stats` (Phase 2) and no Google sign-in on PHP (Phase 1) — unchanged.
+- Challenges, accents and templates need nothing new on either backend.
+
+### Decisions for the owner
+- Prayer-time cities: 36 provincial capitals and large cities; say if one is missing.
+- Accent unlock thresholds (1 and 3 friends) and the two colours.
+- The Ramadan template uses the official Hijri table; months after the published year fall back to arithmetic (± 1 day).
+
+### Known risks
+- .ics monthly/yearly repeats are written in Gregorian (other apps don't know the Solar Hijri calendar): a Jalali yearly event can move by a day there.
+- The focus timer and its alerts work only while the app is open.
+- The offline copy keeps old versioned files until the cache name changes (`tj-shell-v1` in sw.js); bump it if storage grows.
+- Widget prayer line, file saving and picture sharing in the Android app need APK 1.4.0.
