@@ -360,6 +360,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     goToDesktopIndex(i);
     return;
   }
+  if(action === 'challenge-nudge'){ challengeNudge(el.dataset.name, el.dataset.title); return; } // js/core/challenge.js
   if(action === 'share-card'){ shareCard(el.dataset.kind, el.dataset.id); return; } // js/core/share-card.js
   // Backup & transfer (js/core/backup.js)
   if(action === 'backup-export-ics'){ exportIcs(); return; }

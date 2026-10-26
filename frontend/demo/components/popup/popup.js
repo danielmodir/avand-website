@@ -50,6 +50,8 @@ function resetFormDraft(type, existing){
     // Group planning: which group (none = just me) and how it's ticked.
     groupId: existing ? (existing.groupId || '') : (popupPresetGroup || ''),
     doneMode: existing?.doneMode === 'shared' ? 'shared' : 'each',
+    // A group habit as a challenge: 7, 21 or 30 days from its start (js/core/challenge.js).
+    challenge: existing && existing.challenge ? existing.challenge.days : 0,
     // A habit's counter or timer (js/core/trackers.js); null = a plain tick.
     tracker: existing && habitTracker(existing) ? Object.assign({}, existing.tracker) : null,
   };
@@ -547,6 +549,7 @@ function groupFieldHtml(){
           <option value="each" ${formDraft.doneMode !== 'shared' ? 'selected' : ''}>${t('groupDoneEach')}</option>
           <option value="shared" ${formDraft.doneMode === 'shared' ? 'selected' : ''}>${t('groupDoneShared')}</option>
         </select>` : ''}
+      ${g && state.popupType === 'habit' ? challengeFieldHtml() : ''}
     </div>`;
 }
 
@@ -554,6 +557,7 @@ function wireMainFormInteractivity(){
   document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; renderPopupBody(); });
   document.querySelectorAll('[data-ekind]').forEach(b => b.addEventListener('click', () => { applyEventKind(b.dataset.ekind); renderPopupBody(); }));
   document.querySelectorAll('[data-epreset]').forEach(b => b.addEventListener('click', () => { applyEventPreset(b.dataset.epreset); renderPopupBody(); }));
+  document.getElementById('f-challenge')?.addEventListener('change', e => { formDraft.challenge = Number(e.target.value) || 0; });
   document.getElementById('f-done-mode')?.addEventListener('change', e => { formDraft.doneMode = e.target.value === 'shared' ? 'shared' : 'each'; });
   document.getElementById('f-description')?.addEventListener('input', e => { formDraft.description = e.target.value; });
   document.getElementById('desc-clip-btn')?.addEventListener('click', () => document.getElementById('f-photo-input').click());
@@ -752,6 +756,7 @@ function submitPopup(){
       completedDates: state.editingId ? findItem('habit', state.editingId).completedDates : [],
       skippedDates: state.editingId ? (findItem('habit', state.editingId).skippedDates || []) : [],
       tracker: formDraft.tracker || null,
+      challenge: formDraft.groupId && formDraft.challenge ? { days: formDraft.challenge, start: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(state.homeDate || today) } : null,
       progress: state.editingId ? (findItem('habit', state.editingId).progress || {}) : {},
     };
     upsert('habits', obj);

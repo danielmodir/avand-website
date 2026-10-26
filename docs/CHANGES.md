@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.6
+- Demo asset version: 2026-10-27.7
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0007, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -57,6 +57,13 @@ Update these with every change.
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — Phase 3.7 (web app) — friendly challenges: a group habit's
+  data.challenge {days 7|21|30, start} (js/core/challenge.js; no backend
+  change, group item data is free JSON). Form field in groupFieldHtml;
+  habitOccursOnDate stops after challengeEnd; details (groupDoneHtml) show
+  each member's progress, a nudge (share sheet text) and at the end a share
+  card (kind 'challenge'). Next: 3.8 student pack.
 
 - 2026-10-27 — Phase 3.6 (web app, Android) — share cards: js/core/share-card.js
   (canvas 1080px in the current palette/theme: habit streak, countdown/

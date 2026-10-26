@@ -406,6 +406,7 @@ function saveGroupDialog(){
 function groupDoneHtml(item, type, day){
   const g = item.groupId ? groupById(item.groupId) : null;
   if(!g || type === 'event') return '';
+  if(type === 'habit' && item.challenge) return challengeHtml(item); // js/core/challenge.js
   const key = groupMarkKeyFor(item, day);
   const marks = (item.groupMarks || []).filter(m => m.key === key && m.status === 'done');
   const nameOf = m => { const mem = g.members.find(x => (m.me && x.me) || String(x.id) === String(m.user)); return mem ? mem.name : (m.name || ''); };

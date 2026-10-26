@@ -205,6 +205,7 @@ function monthlyRepeatMatches(rec, startKey, date){
 function habitOccursOnDate(habit, date){
   const dKey = dateKey(date);
   if(dKey < habit.startDate) return false;
+  if(habit.challenge && dKey > challengeEnd(habit)) return false; // a group challenge ends (js/core/challenge.js)
   const rec = habit.recurrence;
   if(rec.mode === 'weekdays') return (rec.weekdays||[]).length ? rec.weekdays.includes(date.getDay()) : dKey === habit.startDate;
   if(rec.mode === 'monthly' || rec.mode === 'yearly') return monthlyRepeatMatches(rec, habit.startDate, date);

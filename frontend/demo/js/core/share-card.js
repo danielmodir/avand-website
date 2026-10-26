@@ -21,6 +21,7 @@ function habitStreak(h){
 
 /* What goes on the card: { big, title, lines }. */
 function shareCardContent(kind, id){
+  if(kind === 'challenge'){ const h = state.habits.find(x => x.id === id); return h && h.challenge ? challengeCardContent(h) : null; } // js/core/challenge.js
   if(kind === 'habit'){
     const h = state.habits.find(x => x.id === id); if(!h) return null;
     const n = habitStreak(h);

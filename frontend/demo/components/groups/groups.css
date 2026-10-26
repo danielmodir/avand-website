@@ -141,3 +141,10 @@
 .app-confirm-btns .btn{ flex:1; width:auto; }
 .app-confirm .btn-danger{ background:var(--danger); color:var(--on-primary); }
 @media (min-width:960px){ .app-confirm-overlay{ position:fixed; } }
+/* A group habit's challenge (js/core/challenge.js): each member's progress. */
+.challenge-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+.challenge-row{ display:flex; align-items:center; gap:8px; font-size:13px; min-height:32px; }
+.challenge-row .name{ flex:0 0 30%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.challenge-bar{ flex:1; height:8px; border-radius:999px; background:var(--border); overflow:hidden; }
+.challenge-bar i{ display:block; height:100%; background:var(--primary); border-radius:inherit; }
+.challenge-row .num{ font-weight:700; min-width:44px; text-align:center; }
