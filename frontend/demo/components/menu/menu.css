@@ -332,3 +332,4 @@
 .dt-result .sub{ color:var(--text-muted); font-size:12px; }
 .dt-row .dob-field-btn{ display:flex; align-items:center; gap:8px; min-height:44px; padding:8px 12px; border-radius:12px; border:1px solid var(--border); background:var(--card); color:var(--text); font:inherit; cursor:pointer; }
 .dt-row .dob-field-btn svg{ width:16px; height:16px; flex:0 0 auto; color:var(--primary-text); }
+.backup-check{ display:flex; align-items:center; gap:8px; min-height:44px; font-size:13px; margin:4px 2px 10px; }

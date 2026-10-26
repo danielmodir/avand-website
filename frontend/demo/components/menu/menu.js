@@ -1,6 +1,6 @@
 const MENU_PARENT = {
   'profile': null, 'profile-edit': 'profile', 'ai-connect': 'profile', 'share': 'profile', 'about': 'profile', 'contact': 'profile', 'notices': 'profile', 'articles': 'profile', 'tutorials': 'profile', 'date-tools': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
-  'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings',
+  'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-backup': 'settings', 'settings-avandmenu': 'settings',
   // Monthly-cycle settings live with the desks in Management (its gear), not in Settings.
   'settings-period': 'admin',
   'settings-planning': 'admin', 'settings-occasions': 'admin'
@@ -37,6 +37,7 @@ function renderMenu(){
   if(sub === 'settings') return renderSettingsList();
   if(sub === 'settings-general') return renderGeneralSettings();
   if(sub === 'settings-calendar') return renderCalendarSettings();
+  if(sub === 'settings-backup') return renderBackupPage(); // js/core/backup.js
   if(sub === 'settings-avandmenu') return renderToojibeeMenuSettings();
   if(sub === 'settings-period') return `<div class="period-themed">${renderPeriodSettings()}</div>`;
   if(sub === 'settings-planning') return renderPlanningSettings();
@@ -594,6 +595,7 @@ function renderSettingsList(){
     <div class="menu-list">
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings-general"><div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('generalSettings')}</div>${ICONS.chevronRightSmall}</div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings-calendar"><div class="menu-item-icon">${ICONS.calendarIcon}</div><div class="menu-item-label">${t('calendarSettings')}</div>${ICONS.chevronRightSmall}</div>
+      <div class="menu-item-row" data-action="menu-nav" data-sub="settings-backup"><div class="menu-item-icon">${ICONS.shareIcon}</div><div class="menu-item-label">${t('backupTitle')}</div>${ICONS.chevronRightSmall}</div>
     </div>
   `;
 }
@@ -837,6 +839,7 @@ function wireMenuInteractivity(){
     }).catch(err => showToast(authErrorMessage(err)));
   });
   wireDateTools();
+  wireBackupPage();
   document.getElementById('prayer-city-select')?.addEventListener('change', e => { setPref('prayerCity', e.target.value); render(); });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; cloudSync(() => Cloud.saveSettings(state.settings)); render(); });
   document.getElementById('primary-calendar-select')?.addEventListener('change', e => {

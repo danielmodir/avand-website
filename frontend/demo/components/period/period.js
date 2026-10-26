@@ -235,12 +235,7 @@ function appLockOn(){ try{ return !!(androidApp && androidApp.lockOn && androidA
    share sheet in the Android app, which can save it to Files). */
 function exportPeriodData(){
   const data = JSON.stringify({ app: 'Toojibee', kind: 'period', exported: new Date().toISOString(), period: state.period }, null, 2);
-  if(androidApp){ androidApp.share('toojibee-period.json', data); return; }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
-  a.download = 'toojibee-period-' + dateKey(today) + '.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  saveTextFile('toojibee-period-' + dateKey(today) + '.json', data, 'application/json'); // js/core/backup.js
 }
 
 /* Deletes her whole cycle (answers, log, sharing) here and on the server; the desk turns off. */

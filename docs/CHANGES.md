@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.4
+- Demo asset version: 2026-10-27.5
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0007, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -57,6 +57,14 @@ Update these with every change.
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — Phase 3.5 (web app, Android) — Settings → Backup & transfer
+  (menu sub 'settings-backup'): js/core/backup.js buildIcs/parseIcs/
+  parseBackup/planImport, preview + dedupe, period only in the JSON backup
+  when ticked (warned). saveTextFile(): browser download, or the new Android
+  bridge saveFile(name, mime, text) (ACTION_CREATE_DOCUMENT, APK 1.4+; old
+  APKs share text under 10k chars). Period export uses it too.
+  tests/backup.test.js. Next: 3.6 share cards.
 
 - 2026-10-27 — Phase 3.4 (web app) — Profile → Date tools (menu sub
   'date-tools'): js/core/date-tools.js convertDate (any of the 3 calendars,

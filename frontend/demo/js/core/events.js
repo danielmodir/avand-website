@@ -360,6 +360,12 @@ document.getElementById('device').addEventListener('click', (e) => {
     goToDesktopIndex(i);
     return;
   }
+  // Backup & transfer (js/core/backup.js)
+  if(action === 'backup-export-ics'){ exportIcs(); return; }
+  if(action === 'backup-export-json'){ exportBackup(); return; }
+  if(action === 'backup-import-pick'){ document.getElementById('backup-file')?.click(); return; }
+  if(action === 'backup-import-apply'){ applyImport(!!document.getElementById('import-period')?.checked); return; }
+  if(action === 'backup-import-cancel'){ backupPlan = null; render(); return; }
   if(action === 'dt-pick'){ pickDateToolsDay(el.dataset.k); return; } // js/core/date-tools.js
   if(action === 'open-prayer-settings'){ state.menuPanelOpen = true; state.menuSubView = 'settings-occasions'; render(); return; }
   if(action === 'open-desktop-settings'){

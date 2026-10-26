@@ -40,7 +40,9 @@ class MainActivity : Activity() {
         private const val REQ_FILE = 1
         private const val REQ_NOTIFY = 2
         private const val REQ_LOCK = 3
+        private const val REQ_SAVE = 4
         private const val LOCK_AFTER_MS = 60_000L
+        private const val MAX_SAVE = 8_000_000 // characters of a saved file
         private const val RELOAD_AFTER_MS = 10 * 60_000L
         /** The open app, if any (PhoneActions applies ticks through it). */
         @Volatile var current: java.lang.ref.WeakReference<MainActivity>? = null
@@ -49,6 +51,8 @@ class MainActivity : Activity() {
     private lateinit var web: WebView
     private val ui = Handler(Looper.getMainLooper())
     private var fileCallback: ValueCallback<Array<Uri>>? = null
+    /** A file waiting for the Save screen's answer (saveFile). */
+    private var pendingSave: String? = null
     private var pageReady = false
     private var pageVisible = false
     private var canvas = 0 // the theme's background color (status bar, splash, behind the page)
@@ -259,6 +263,13 @@ class MainActivity : Activity() {
             fileCallback = null
         } else if (requestCode == REQ_LOCK) {
             if (resultCode == RESULT_OK) unlocked = true else finish()
+        } else if (requestCode == REQ_SAVE) {
+            // The place picked in the system's Save screen: write the file there.
+            val text = pendingSave; pendingSave = null
+            val uri = data?.data
+            if (resultCode == RESULT_OK && uri != null && text != null) try {
+                contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+            } catch (e: Exception) { }
         } else @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
     }
 
@@ -307,6 +318,14 @@ class MainActivity : Activity() {
         @JavascriptInterface fun share(title: String?, text: String?) { if (!ok) return; ui.post {
             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, AppWeb.text(title, 300)).putExtra(Intent.EXTRA_TEXT, AppWeb.text(text))
             try { startActivity(Intent.createChooser(send, getString(R.string.share_title))) } catch (e: ActivityNotFoundException) { }
+        } }
+
+        /** A backup or calendar file (APK 1.4+): the system's Save screen, no storage permission. */
+        @JavascriptInterface fun saveFile(name: String?, mime: String?, text: String?) { if (!ok) return; ui.post {
+            pendingSave = AppWeb.text(text, MAX_SAVE)
+            val i = Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+                .setType(if (mime == "text/calendar") "text/calendar" else "application/json").putExtra(Intent.EXTRA_TITLE, AppWeb.text(name, 100).replace(Regex("[^\\w.-]"), "_"))
+            try { @Suppress("DEPRECATION") startActivityForResult(i, REQ_SAVE) } catch (e: ActivityNotFoundException) { pendingSave = null }
         } }
 
         @JavascriptInterface fun copy(text: String?) { if (!ok) return; ui.post {
