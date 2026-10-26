@@ -524,6 +524,16 @@ function renderSharePage(){
   `;
 }
 
+/* The real version: the Android app's own (its WebView adds
+   "ToojibeeAndroid/1.2.0", android/.../AppWeb.kt), else the web app's
+   files version (include.js ASSET_VERSION). Never "beta". */
+function appVersionLabel(){
+  const m = /ToojibeeAndroid\/([\w.]+)/.exec(navigator.userAgent);
+  // Latin digits: in "۱.۳.۰" a Persian zero reads as one more dot.
+  if(m) return t('aboutVersion').replace('{v}', '⁦' + m[1] + '⁩');
+  return t('aboutWebVersion').replace('{v}', typeof ASSET_VERSION === 'string' ? ASSET_VERSION : '');
+}
+
 function renderAboutPage(){
   const customText = state.aboutText[lang()];
   return `
@@ -531,7 +541,7 @@ function renderAboutPage(){
     <div class="about-logo"><img class="brand-mark-img" src="../assets/icons/logo.svg?v=tj5" alt=""></div>
     <div class="about-name">${t('appName')}</div>
     <div class="about-tagline">${t('appTagline')}</div>
-    <div class="about-version">${t('aboutVersion')}</div>
+    <div class="about-version" dir="auto">${escapeHtml(appVersionLabel())}</div>
     <div class="empty-hint">${escapeHtml(customText || t('aboutDesc'))}</div>
     <div class="about-links">
       <div class="about-link-row">${t('privacyPolicy')}</div>
