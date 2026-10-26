@@ -320,6 +320,21 @@ class MainActivity : Activity() {
             try { startActivity(Intent.createChooser(send, getString(R.string.share_title))) } catch (e: ActivityNotFoundException) { }
         } }
 
+        /** A share card picture (APK 1.4+): a PNG in the cache, shared through ShareFiles. */
+        @JavascriptInterface fun shareImage(name: String?, base64: String?) { if (!ok) return
+            val bytes = try { android.util.Base64.decode(AppWeb.text(base64, 12_000_000), android.util.Base64.DEFAULT) } catch (e: Exception) { return }
+            if (bytes.size < 8 || bytes[1] != 'P'.code.toByte()) return // a PNG only
+            val file = java.io.File(ShareFiles.dir(this@MainActivity), AppWeb.text(name, 60).replace(Regex("[^\\w.-]"), "_").ifEmpty { "toojibee.png" })
+            try { file.writeBytes(bytes) } catch (e: Exception) { return }
+            ui.post {
+                val uri = ShareFiles.uri(file.name)
+                val send = Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uri)
+                    .putExtra(Intent.EXTRA_TEXT, "https://toojibee.ir/").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                send.clipData = android.content.ClipData.newRawUri("", uri)
+                try { startActivity(Intent.createChooser(send, getString(R.string.share_title))) } catch (e: ActivityNotFoundException) { }
+            }
+        }
+
         /** A backup or calendar file (APK 1.4+): the system's Save screen, no storage permission. */
         @JavascriptInterface fun saveFile(name: String?, mime: String?, text: String?) { if (!ok) return; ui.post {
             pendingSave = AppWeb.text(text, MAX_SAVE)

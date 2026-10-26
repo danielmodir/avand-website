@@ -143,6 +143,7 @@ function itemDetailsHtml(type, item, day){
     <h2 class="details-title">${escapeHtml(item.title || '')}</h2>
     ${rows.length ? `<div class="details-rows">${rows.map(([icon, text]) => `<div class="details-row">${icon}<span>${text}</span></div>`).join('')}</div>` : ''}
     ${g ? groupDoneHtml(item, type, day || dateKey(state.homeDate || today)) : ''}
+    ${!g && (type === 'habit' || (type === 'event' && item.kind)) ? `<div class="occ-share-row">${shareCardBtn(type, item.id)}</div>` : ''}
     <div class="section-title">${t('description')}</div>
     ${item.description ? `<p class="details-desc">${escapeHtml(item.description)}</p>` : `<p class="details-desc empty">${t('detailsNoDescription')}</p>`}
     ${(item.photos || []).length ? `<div class="photo-add-row">${item.photos.map(p => `<div class="photo-thumb"><img src="${p}" alt=""></div>`).join('')}</div>` : ''}

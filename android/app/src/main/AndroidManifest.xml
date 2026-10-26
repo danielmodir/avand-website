@@ -43,6 +43,8 @@
             </intent-filter>
         </activity>
 
+        <!-- A share card picture, readable only by the app it is shared with (ShareFiles.kt). -->
+        <provider android:name=".ShareFiles" android:authorities="ir.toojibee.app.share" android:exported="false" android:grantUriPermissions="true" />
         <receiver android:name=".ReminderReceiver" android:exported="false" />
         <receiver android:name=".ActionReceiver" android:exported="false" />
         <!-- The hidden page that applies ticks made while the app is closed (PhoneActions.kt). -->

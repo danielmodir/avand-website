@@ -138,3 +138,8 @@
 .device.lang-fa .stat-card{ flex-direction:row-reverse; }
 .device.lang-fa .stat-mini{ flex-direction:row-reverse; }
 .device.lang-fa .stat-mini b{ margin-inline-start:0; margin-right:auto; }
+
+/* Share-as-a-picture buttons (js/core/share-card.js). */
+.occ-share-row{ flex-wrap:wrap; gap:8px; }
+.share-card-btn{ display:inline-flex; align-items:center; gap:6px; min-height:44px; }
+.share-card-btn svg{ width:16px; height:16px; }

@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.5
+- Demo asset version: 2026-10-27.6
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0007, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -57,6 +57,14 @@ Update these with every change.
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — Phase 3.6 (web app, Android) — share cards: js/core/share-card.js
+  (canvas 1080px in the current palette/theme: habit streak, countdown/
+  birthday, the day + occasions, my day summary). Buttons: item details
+  (habit, event with kind), Occasions desk, Profile. Android: bridge
+  shareImage(name, base64) + ShareFiles.kt content provider (no library,
+  cacheDir/share, read-only grant), APK 1.4+; else Web Share files or .png.
+  Next: 3.7 challenges.
 
 - 2026-10-27 — Phase 3.5 (web app, Android) — Settings → Backup & transfer
   (menu sub 'settings-backup'): js/core/backup.js buildIcs/parseIcs/

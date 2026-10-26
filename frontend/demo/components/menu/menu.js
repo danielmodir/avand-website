@@ -89,6 +89,8 @@ function renderProfilePage(){
       <div class="profile-stat"><div class="num">${dig(remainingTasks)}</div><div class="lbl">${t('tasksLeftToday')}</div></div>
     </div>
 
+    <div class="occ-share-row">${shareCardBtn('summary', '', 'cardMyDayShare')}</div>
+
     <div class="section-title" style="margin-top:22px;">${t('accountInfo')}</div>
     <div class="menu-list">
       ${Cloud.supportsSocial === false || !Cloud.isConfigured() ? '' : `<div class="menu-item-row" data-action="menu-nav" data-sub="friends">
