@@ -337,6 +337,7 @@ class UserSettings(models.Model):
         "groups_enabled": True,             # the Group planning desktop
         "ongoing_notification": True,       # Android app: today's date and what's left, always in the notification shade
         "invite_approve": False,            # invite-link openers send a request instead of becoming friends at once
+        "stats_opt_in": False,              # "Help improve Toojibee": anonymous counts (the PHP backend keeps them; Django: none yet)
         # Tutorials already seen (finished or skipped), so signing in again
         # doesn't repeat them (frontend/demo/components/tour/tour.js).
         "tour_general": False, "tour_calendar": False, "tour_planning": False,
