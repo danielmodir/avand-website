@@ -35,7 +35,9 @@ button{ font:inherit; cursor:pointer; }
 .hint{ color:var(--color-text-muted); font-size:var(--font-size-xs); margin-top:6px; }
 .top{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
 .who{ color:var(--color-text-muted); font-size:var(--font-size-xs); }
-.tabs{ display:flex; gap:6px; background:var(--color-bg-soft); padding:4px; border-radius:var(--radius-md); margin-bottom:18px; overflow-x:auto; }
+/* Ten tabs don't fit one row (the last ones were cut off, with no visible
+   scrollbar): they wrap onto a second row instead. */
+.tabs{ display:flex; flex-wrap:wrap; gap:6px; background:var(--color-bg-soft); padding:4px; border-radius:var(--radius-md); margin-bottom:18px; }
 .tabs button{ flex:0 0 auto; border:none; background:transparent; padding:9px 16px; border-radius:var(--radius-sm); font-weight:700; color:var(--color-text-muted); }
 .tabs{ scrollbar-width:none; }
 .tabs::-webkit-scrollbar{ display:none; }
@@ -50,6 +52,12 @@ table{ width:100%; border-collapse:collapse; font-size:var(--font-size-xs); }
 th, td{ text-align:right; padding:9px 8px; border-bottom:1px solid var(--color-border); vertical-align:top; }
 th{ color:var(--color-text-muted); font-weight:700; white-space:nowrap; }
 td.ltr{ direction:ltr; text-align:right; white-space:nowrap; }
+td.when, td.nowrap{ white-space:nowrap; }
+/* A file field in Persian: the browser's own button says "Choose File" in
+   English; it's hidden inside a button-looking label instead. */
+.file-pick{ position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+.file-pick input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; }
+.file-pick .name{ font-size:var(--font-size-xs); color:var(--color-text-muted); font-weight:400; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tag{ display:inline-block; padding:2px 8px; border-radius:var(--radius-full); background:var(--color-bg-soft); white-space:nowrap; margin:1px; }
 .tag.bad{ background:var(--color-error-bg); color:var(--color-error); }
 .tag.good{ background:var(--color-success-bg); color:var(--color-success); }
@@ -85,9 +93,10 @@ tr.click:hover td{ background:var(--color-bg-soft); }
 .chart .bar{ flex:1; border-radius:3px 3px 0 0; min-height:2px; }
 .bar.views, .sw.views{ background:var(--color-primary); }
 .bar.visitors, .sw.visitors{ background:var(--color-secondary); }
-.legend{ font-size:var(--font-size-xs); color:var(--color-text-muted); font-weight:400; display:flex; align-items:center; gap:6px; }
+.legend{ font-size:var(--font-size-xs); color:var(--color-text-muted); font-weight:400; display:flex; align-items:center; gap:14px; }
+.legend span{ display:inline-flex; align-items:center; gap:5px; } /* each color next to its own label */
 .sw{ display:inline-block; width:10px; height:10px; border-radius:3px; }
-.two{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; }
+.two{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; align-items:end; }
 .num{ text-align:left; color:var(--color-text-muted); }
 .meter{ height:12px; border-radius:var(--radius-full); background:var(--color-bg-soft); overflow:hidden; margin:10px 0 6px; }
 .meter > i{ display:block; height:100%; background:var(--color-secondary); border-radius:var(--radius-full); }
@@ -204,7 +213,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     <section id="tab-visits" class="hidden stack">
       <div class="stats" id="v-stats"></div>
       <div class="card">
-        <h2>۳۰ روز اخیر <span class="legend"><i class="sw views"></i>بازدید صفحه <i class="sw visitors"></i>بازدیدکننده</span></h2>
+        <h2>۳۰ روز اخیر <span class="legend"><span><i class="sw views"></i>بازدید صفحه</span><span><i class="sw visitors"></i>بازدیدکننده</span></span></h2>
         <div class="chart" id="v-chart"></div>
         <p class="hint" id="v-note"></p>
       </div>
@@ -275,9 +284,9 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <div class="two">
           <div><label for="ar-lang">زبان</label><select id="ar-lang"><option value="fa">فارسی</option><option value="en">English</option></select></div>
           <div><label for="ar-cat">موضوع</label><select id="ar-cat"><option value="planning">برنامه‌ریزی</option><option value="habits">عادت‌ها</option><option value="calendar">تقویم و مناسبت</option><option value="health">سلامت</option><option value="other">سایر</option></select></div>
-          <div><label for="ar-slug">آدرس انگلیسی (برای گوگل مهمه؛ اگه خالی بمونه یه آدرس بی‌معنی می‌گیره)</label><input id="ar-slug" type="text" dir="ltr" placeholder="jalali-calendar" autocomplete="off"></div>
+          <div><label for="ar-slug">آدرس انگلیسی</label><input id="ar-slug" type="text" dir="ltr" placeholder="jalali-calendar" autocomplete="off"></div>
         </div>
-        <div class="hint">آدرس فقط حروف کوچیک انگلیسی، عدد و خط تیره. خالی بذاری خودش یکی می‌سازه.</div>
+        <div class="hint">آدرس برای گوگل مهمه: فقط حروف کوچیک انگلیسی، عدد و خط تیره. خالی بذاری خودش یکی می‌سازه.</div>
         <label for="ar-title">عنوان</label><input id="ar-title" type="text" maxlength="160">
         <label for="ar-summary">خلاصه (زیر عنوان تو لیست، و برای گوگل)</label><input id="ar-summary" type="text" maxlength="300">
         <label>نمایش در</label>
@@ -288,7 +297,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <div class="hint">قالب ساده: خط خالی = پاراگراف جدید · <span dir="ltr">## عنوان</span> = زیرعنوان · خط‌هایی که با <span dir="ltr">-</span> شروع بشن = فهرست · <span dir="ltr">**پررنگ**</span> · <span dir="ltr">[متن](https://...)</span> = لینک</div>
         <div id="ar-cover-box" class="hidden">
           <label>عکس کاور (۱۶ به ۹)</label>
-          <div class="slot"><div class="thumb" id="ar-cover-thumb"></div><input type="file" id="ar-cover" accept="image/jpeg,image/png,image/webp"><button class="btn ghost hidden" id="ar-cover-remove" type="button">حذف کاور</button></div>
+          <div class="slot"><div class="thumb" id="ar-cover-thumb"></div><label class="btn ghost file-pick"><span>انتخاب کاور</span><input type="file" id="ar-cover" accept="image/jpeg,image/png,image/webp"></label><button class="btn ghost hidden" id="ar-cover-remove" type="button">حذف کاور</button></div>
         </div>
         <div class="actions mt" id="ar-actions"></div>
         <div class="alert error hidden" role="alert"></div>
@@ -463,6 +472,9 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   var allPerms = [];
   var $ = function (id) { return document.getElementById(id); };
   var fa = function (n) { return Number(n).toLocaleString('fa-IR'); };
+  // An app version as it's written ("1.2.0"): fa() made it "ناعدد", and Persian digits
+  // read wrong here (a Persian zero is a dot too). Latin digits, kept left-to-right.
+  var ver = function (s) { return '⁦' + String(s) + '⁩'; }; // left-to-right isolate
   /* "1378-05-12" -> "۱۲ مرداد ۱۳۷۸ (۳ اوت ۱۹۹۹) · ۲۷ ساله": the exact birth day, solar and Gregorian. */
   function birthLabel(iso) {
     var p = String(iso).split('-').map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
@@ -471,7 +483,10 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     var now = new Date(), age = now.getFullYear() - p[0] - ((now.getMonth() + 1 < p[1] || (now.getMonth() + 1 === p[1] && now.getDate() < p[2])) ? 1 : 0);
     return d.toLocaleDateString('fa-IR-u-ca-persian', opt) + ' (' + d.toLocaleDateString('fa-IR-u-ca-gregory', opt) + ') · ' + fa(age) + ' ساله';
   }
-  var when = function (s) { return s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('fa-IR') : '—'; };
+  // A moment from the server (UTC) in Tehran time, without seconds: "۱۴۰۵/۸/۴، ۱۵:۵۰".
+  var when = function (s) {
+    return s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('fa-IR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+  };
   var can = function (p) { return me.permissions.indexOf(p) !== -1; };
 
   var PERMS = {
@@ -549,7 +564,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   /* A user's device (lib/admin_users.php tj_device_of): the Android app
      with its version, a phone's browser, or a computer. */
   function deviceLabel(kind, version) {
-    if (kind === 'app') return 'اپ اندروید' + (version ? ' ' + fa(version) : '');
+    if (kind === 'app') return 'اپ اندروید' + (version ? ' ' + ver(version) : '');
     return kind === 'phone' ? 'مرورگر گوشی' : kind === 'desktop' ? 'کامپیوتر' : '—';
   }
   function userFilters() {
@@ -652,7 +667,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   function openTab(name) {
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
     ['overview', 'visits', 'users', 'notices', 'messages', 'content', 'articles', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
-    ({ overview: loadOverview, visits: loadVisits, messages: function () { msgs.offset = 0; return loadMessages(); }, notices: loadNotices, content: loadContent, articles: loadArticles, system: loadSystem, users: function () { users.offset = 0; return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
+    ({ overview: loadOverview, visits: loadVisits, messages: function () { msgs.offset = 0; return loadMessages(); }, notices: loadNotices, content: loadContent, articles: loadArticles, system: loadSystem, users: function () { users.offset = 0; $('user-detail').classList.add('hidden'); return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
       .catch(onAuthError).catch(function (err) { alert(errorText(err)); });
   }
 
@@ -714,7 +729,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     var kv = el('div', 'kv');
     [['کاربر', (m.user.username ? '@' + m.user.username + ' · ' : '') + m.user.code], ['ایمیل', m.user.email + (m.user.verified ? '' : ' (تأییدنشده)')],
      ['زمان پیام', when(m.created_at)], ['عضو از', when(m.user.joined)], ['زبان برنامه', m.lang === 'en' ? 'انگلیسی' : 'فارسی'], ['دستگاه', m.app_info || '—']]
-      .forEach(function (p) { var d = el('div'); d.appendChild(el('b', '', p[0])); d.appendChild(document.createTextNode(p[1])); kv.appendChild(d); });
+      // <bdi>: "@user_1 · TJ-…" keeps its own left-to-right order inside the Persian page.
+      .forEach(function (p) { var d = el('div'); d.appendChild(el('b', '', p[0])); d.appendChild(el('bdi', '', p[1])); kv.appendChild(d); });
     box.appendChild(kv);
     box.appendChild(el('div', 'msg-body', m.body));
     if (m.reply) {
@@ -836,7 +852,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       };
       fill('v-pages', v.pages, function (p) { return PAGE_NAMES[p] || p; }, '');
       fill('v-refs', v.referrers, function (h) { return h; }, 'ltr');
-      fill('v-apk', v.apk_versions || [], function (n) { return 'نسخه‌ی ' + fa(n); }, '');
+      fill('v-apk', v.apk_versions || [], function (n) { return 'نسخه‌ی ' + ver(n); }, '');
     });
   }
 
@@ -927,7 +943,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       card.appendChild(el('span', custom ? 'custom' : 'hint', custom ? 'عکس جدید (از پنل)' : 'عکس پیش‌فرض سایت · ' + info[1]));
       var file = el('input'); file.type = 'file'; file.accept = 'image/jpeg,image/png,image/webp' + (slot.indexOf('banner') === 0 ? ',image/gif' : '');
       file.addEventListener('change', function () { if (file.files[0]) uploadImage(slot, file.files[0], card); });
-      card.appendChild(file);
+      card.appendChild(filePick(file, custom ? 'عوض کردن عکس' : 'انتخاب عکس'));
       if (custom) {
         var reset = el('button', 'btn ghost', 'برگشت به پیش‌فرض'); reset.type = 'button';
         reset.addEventListener('click', function () {
@@ -937,6 +953,17 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       }
       box.appendChild(card);
     });
+  }
+
+  /* A file field as a Persian button (.file-pick): the real input sits
+     invisibly on top, and the chosen file's name shows beside it. */
+  function filePick(input, label) {
+    var pick = el('label', 'btn ghost file-pick');
+    pick.appendChild(el('span', '', label));
+    var name = el('span', 'name');
+    input.addEventListener('change', function () { name.textContent = input.files[0] ? input.files[0].name : ''; });
+    pick.appendChild(input); pick.appendChild(name);
+    return pick;
   }
 
   function uploadImage(slot, f, card) {
@@ -968,7 +995,13 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       tr.appendChild(el('td', '', HIJRI_NAMES[m.hijri_month - 1] + ' ' + fa(m.hijri_year).replace(/٬/g, '')));
       var td = el('td'), inp = el('input'); inp.type = 'date'; inp.value = m.starts_on; inp.dir = 'ltr';
       inp.addEventListener('change', function () { m.starts_on = inp.value; renderHijri(); });
-      td.appendChild(inp); tr.appendChild(td);
+      td.appendChild(inp);
+      // The browser writes the date in its own (often American) order: the solar date beside it.
+      if (m.starts_on) {
+        var sd = new Date(m.starts_on + 'T12:00:00Z');
+        td.appendChild(el('div', 'hint', sd.toLocaleDateString('fa-IR', { weekday: 'long', timeZone: 'UTC' }) + ' ' + sd.toLocaleDateString('fa-IR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })));
+      }
+      tr.appendChild(td);
       var next = hijriRows[i + 1];
       var len = next ? dayDiff(m.starts_on, next.starts_on) : null;
       tr.appendChild(el('td', len === null ? 'hint' : (len === 29 || len === 30 ? '' : 'tag bad'), len === null ? '—' : fa(len) + ' روز'));
@@ -1177,7 +1210,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       stats.textContent = '';
       [[size(dbBytes), 'حجم دیتابیس'], [fa(s.tables.length), 'تعداد جدول‌ها'], [fa(rows), 'کل ردیف‌ها'],
        [size(used), 'فضای استفاده‌شده‌ی هاست'], [s.memory ? size(s.memory.used) : '—', 'رم در حال استفاده'],
-       [s.load ? s.load.map(function (x) { return x.toLocaleString('fa-IR'); }).join(' · ') : '—', 'بار سرور (۱، ۵، ۱۵ دقیقه)']].forEach(function (x) {
+       // " / " between them: a "·" next to Persian digits looked like one more zero.
+       [s.load ? s.load.map(function (x) { return x.toLocaleString('fa-IR'); }).join(' / ') : '—', 'بار سرور (۱، ۵، ۱۵ دقیقه)']].forEach(function (x) {
         var c = el('div', 'card stat'); c.appendChild(el('div', 'n', x[0])); c.appendChild(el('div', 'l', x[1])); stats.appendChild(c);
       });
 
@@ -1304,7 +1338,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         tr.appendChild(el('td', 'ltr', u.username || '—'));
         tr.appendChild(el('td', 'ltr', u.email));
         var st = USTATUS[u.status] || [u.status, ''];
-        var tdS = el('td');
+        var tdS = el('td', 'nowrap'); // the online dot stays on its label's line
         if (u.online) tdS.appendChild(el('span', 'dot'));
         tdS.appendChild(el('span', 'tag ' + st[1], u.online ? 'آنلاین' : st[0]));
         tr.appendChild(tdS);
@@ -1315,8 +1349,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         if (u.ai_linked) tdD.appendChild(el('span', 'tag', u.ai_last_used_at ? '+ AI' : '+ AI (استفاده نشده)'));
         tr.appendChild(tdD);
         if (res.personal) tr.appendChild(el('td', '', u.birth_date ? birthLabel(u.birth_date) : '—'));
-        tr.appendChild(el('td', '', when(u.created_at)));
-        tr.appendChild(el('td', '', when(u.last_seen_at)));
+        tr.appendChild(el('td', 'when', when(u.created_at)));
+        tr.appendChild(el('td', 'when', when(u.last_seen_at)));
         tr.addEventListener('click', function () { openUser(u.id); });
         body.appendChild(tr);
       });
@@ -1339,9 +1373,9 @@ textarea.tall{ min-height:340px; line-height:1.9; }
        ['ثبت‌نام', when(u.created_at)], ['آخرین حضور', when(u.last_seen_at)], ['زمان استفاده از برنامه', dur(u.active_seconds)],
        ['تعداد ذخیره‌ها', fa(u.saves)], ['آخرین ذخیره', when(u.last_save_at)], ['حجم داده', kb(u.data_bytes)],
        ['دستگاه‌های وارد‌شده', fa(u.devices.length)], ['آخرین دستگاه', deviceLabel(u.device, u.device === 'app' ? u.app_version : null)],
-       ['اپ اندروید', u.uses_app ? 'استفاده می‌کنه' + (u.app_version ? ' (نسخه‌ی ' + fa(u.app_version) + ')' : '') : 'تو ۳۰ روز اخیر نه'],
+       ['اپ اندروید', u.uses_app ? 'استفاده می‌کنه' + (u.app_version ? ' (نسخه‌ی ' + ver(u.app_version) + ')' : '') : 'تو ۳۰ روز اخیر نه'],
        ['اتصال به هوش مصنوعی (MCP)', u.ai_linked ? 'لینک ساخته: ' + when(u.ai_linked_at) + ' · آخرین استفاده: ' + (u.ai_last_used_at ? when(u.ai_last_used_at) : 'هنوز نه') : 'لینک نداره']].forEach(function (p) {
-        var d = el('div'); d.appendChild(el('b', '', p[0])); d.appendChild(document.createTextNode(p[1])); kv.appendChild(d);
+        var d = el('div'); d.appendChild(el('b', '', p[0])); d.appendChild(el('bdi', '', p[1])); kv.appendChild(d);
       });
       box.appendChild(kv);
       if (u.devices.length) {
@@ -1404,7 +1438,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       vs.textContent = '';
       (o.app_versions || []).forEach(function (v) {
         var tr = el('tr');
-        tr.appendChild(el('td', '', 'نسخه‌ی ' + fa(v.version)));
+        tr.appendChild(el('td', '', 'نسخه‌ی ' + ver(v.version)));
         tr.appendChild(el('td', 'num', fa(v.users) + ' نفر'));
         vs.appendChild(tr);
       });

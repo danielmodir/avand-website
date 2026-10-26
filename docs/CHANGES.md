@@ -58,6 +58,20 @@ Update these with every change.
 
 Format: `date — surfaces — what changed (key files)`.
 
+- 2026-10-26 — admin panel (panel/panel.html only) — fixes found by
+  opening every tab with a local mock of /api/v1/admin (example data,
+  not committed): tabs wrap instead of cutting off the last ones; app
+  versions showed «ناعدد» (fa() on "1.2.0") — now ver(), Latin digits;
+  dates without seconds and kept on one line in the users list; the
+  online dot stays beside its label; the visits legend pairs each color
+  with its label; server load joined with " / " (a "·" beside Persian
+  digits read as another zero); image/cover file fields are Persian
+  buttons (.file-pick, filePick()) instead of the browser's English
+  "Choose File"; the Hijri calendar shows the solar date beside each
+  date field; article form fields aligned (short slug label); user
+  handles/emails in detail views isolated (<bdi>); the users tab closes
+  a previously opened user.
+
 - 2026-10-26 — admin panel (PHP), Django admin, api.js — mobile and app
   users: each sign-in's device comes from its session's browser string
   (the app's WebView adds "ToojibeeAndroid/<version>"; no schema change).
