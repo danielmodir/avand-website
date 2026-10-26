@@ -1,5 +1,5 @@
 const MENU_PARENT = {
-  'profile': null, 'profile-edit': 'profile', 'ai-connect': 'profile', 'share': 'profile', 'about': 'profile', 'contact': 'profile', 'notices': 'profile', 'articles': 'profile', 'tutorials': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
+  'profile': null, 'profile-edit': 'profile', 'ai-connect': 'profile', 'share': 'profile', 'about': 'profile', 'contact': 'profile', 'notices': 'profile', 'articles': 'profile', 'tutorials': 'profile', 'date-tools': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings',
   // Monthly-cycle settings live with the desks in Management (its gear), not in Settings.
   'settings-period': 'admin',
@@ -33,6 +33,7 @@ function renderMenu(){
   if(sub === 'notices') return renderNoticesPage();
   if(sub === 'articles') return renderArticlesPage();
   if(sub === 'tutorials') return renderToursPage();
+  if(sub === 'date-tools') return renderDateToolsPage(); // js/core/date-tools.js
   if(sub === 'settings') return renderSettingsList();
   if(sub === 'settings-general') return renderGeneralSettings();
   if(sub === 'settings-calendar') return renderCalendarSettings();
@@ -96,6 +97,9 @@ function renderProfilePage(){
       </div>`}
       <div class="menu-item-row" data-action="menu-nav" data-sub="share">
         <div class="menu-item-icon">${ICONS.shareIcon}</div><div class="menu-item-label">${t('shareApp')}</div>${ICONS.chevronRightSmall}
+      </div>
+      <div class="menu-item-row" data-action="menu-nav" data-sub="date-tools">
+        <div class="menu-item-icon">${ICONS.calendarIcon}</div><div class="menu-item-label">${t('dateTools')}</div>${ICONS.chevronRightSmall}
       </div>
       <div class="menu-item-row" data-action="menu-nav" data-sub="about">
         <div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t('aboutUs')}</div>${ICONS.chevronRightSmall}
@@ -832,6 +836,7 @@ function wireMenuInteractivity(){
       showToast(t('accountDeleted'));
     }).catch(err => showToast(authErrorMessage(err)));
   });
+  wireDateTools();
   document.getElementById('prayer-city-select')?.addEventListener('change', e => { setPref('prayerCity', e.target.value); render(); });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; cloudSync(() => Cloud.saveSettings(state.settings)); render(); });
   document.getElementById('primary-calendar-select')?.addEventListener('change', e => {

@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.3
+- Demo asset version: 2026-10-27.4
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0007, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -57,6 +57,12 @@ Update these with every change.
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — Phase 3.4 (web app) — Profile → Date tools (menu sub
+  'date-tools'): js/core/date-tools.js convertDate (any of the 3 calendars,
+  round-trip checked), dateSpan (days + y/m/d), age with days to the next
+  birthday; tests/date-tools.test.js runs calendars.js in node:vm. Next: 3.5
+  import/export.
 
 - 2026-10-27 — Phase 3.3 (web app, Django, both clients) — event.kind
   '' | 'birthday' (yearly, past date allowed) | 'countdown' (presets

@@ -360,6 +360,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     goToDesktopIndex(i);
     return;
   }
+  if(action === 'dt-pick'){ pickDateToolsDay(el.dataset.k); return; } // js/core/date-tools.js
   if(action === 'open-prayer-settings'){ state.menuPanelOpen = true; state.menuSubView = 'settings-occasions'; render(); return; }
   if(action === 'open-desktop-settings'){
     state.menuSubView = el.dataset.sub;
