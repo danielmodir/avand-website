@@ -306,6 +306,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'ai-link-copy'){ if(state.mcpLink?.url){ copyText(state.mcpLink.url); showToast(t('aiCopied')); } return; }
   if(action === 'ai-cmd-copy'){ if(state.mcpLink?.url){ copyText(mcpCommand(state.mcpLink.url)); showToast(t('aiCmdCopied')); } return; }
+  if(action === 'ai-desktop-copy'){ if(state.mcpLink?.url){ copyText(mcpDesktopConfig(state.mcpLink.url)); showToast(t('aiCmdCopied')); } return; }
   if(action === 'ai-link-remove'){
     appConfirm(t('aiRemoveConfirm'), t('aiRemove'), true).then(yes => {
       if(!yes) return;

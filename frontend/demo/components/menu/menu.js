@@ -145,6 +145,9 @@ async function refreshMcpLink(){
 }
 
 function mcpCommand(url){ return `claude mcp add --transport http toojibee "${url}"`; }
+/* Claude Desktop: its own connectors go through Anthropic's servers, which
+   don't reach the host; mcp-remote runs on the person's computer instead. */
+function mcpDesktopConfig(url){ return JSON.stringify({ mcpServers: { toojibee: { command: 'npx', args: ['-y', 'mcp-remote', url] } } }, null, 2); }
 
 function renderAiConnectPage(){
   const s = state.mcpLink;
@@ -175,6 +178,12 @@ function renderAiConnectPage(){
       <div class="lbl">${t('aiCmdTitle')}</div>
       <div class="invite-link-box" dir="ltr">${escapeHtml(mcpCommand(s.url))}</div>
       <div class="invite-actions"><button type="button" class="btn btn-outline btn-small" data-action="ai-cmd-copy">${ICONS.copyIcon}<span>${t('aiCmdCopy')}</span></button></div>
+    </div>
+    <div class="invite-card">
+      <div class="lbl">${t('aiDesktopTitle')}</div>
+      <div class="sub">${t('aiDesktopHow')}</div>
+      <pre class="invite-link-box" dir="ltr" style="white-space:pre; overflow-x:auto; margin:0;">${escapeHtml(mcpDesktopConfig(s.url))}</pre>
+      <div class="invite-actions"><button type="button" class="btn btn-outline btn-small" data-action="ai-desktop-copy">${ICONS.copyIcon}<span>${t('aiCmdCopy')}</span></button></div>
     </div>
     <div class="invite-card">
       <div class="lbl">${t('aiOtherTitle')}</div>
