@@ -58,6 +58,26 @@ function selectDay(d){
   syncBackSteps();
 }
 
+/* Screen readers and keyboards: every on/off switch and back arrow is a
+   div, so it gets its role, state, a name (the row's label) and a tab stop
+   here instead of in each template. Enter/Space press them (events.js). */
+function labelControls(){
+  document.querySelectorAll('#device .switch').forEach(sw => {
+    if(sw.getAttribute('role') !== 'switch') sw.setAttribute('role', 'switch');
+    sw.setAttribute('aria-checked', sw.classList.contains('on') ? 'true' : 'false');
+    if(!sw.hasAttribute('tabindex')) sw.tabIndex = 0;
+    if(!sw.hasAttribute('aria-label')){
+      const lbl = sw.parentElement && sw.parentElement.querySelector('.lbl, .store-item-name, .menu-item-label');
+      if(lbl) sw.setAttribute('aria-label', lbl.textContent.trim());
+    }
+  });
+  document.querySelectorAll('#device .popup-back:not([role])').forEach(b => {
+    b.setAttribute('role', 'button');
+    b.tabIndex = 0;
+    b.setAttribute('aria-label', t('quizBack'));
+  });
+}
+
 function render(){
   scheduleLocalSave(); // no-backend mode: keep this device's data (local-store.js)
   if(Cloud.onStateChanged) Cloud.onStateChanged(); // PHP backend: debounced account sync (api-php.js)
@@ -157,6 +177,7 @@ function render(){
   syncBackSteps(); // Back closes what's open (js/core/back-nav.js)
   tourWatch(); // a part opened for the first time: its tutorial (tour.js)
   scheduleWidgetData(); // the Android app's home-screen widgets (js/core/android.js)
+  labelControls();
   // What render() itself just changed matches pageHtml: not a reason to rebuild.
   if(pageObserver) pageObserver.takeRecords();
 }

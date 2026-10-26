@@ -31,7 +31,7 @@
 .tip-slide{ flex:0 0 100%; display:flex; align-items:flex-start; gap:12px; padding:0 4px; user-select:none; }
 .tips-carousel.is-rtl .tip-slide{ flex-direction:row-reverse; text-align:right; }
 .tip-slide p{ margin:0; font-size:13.5px; line-height:1.85; color:var(--text); }
-.tip-slide-icon{ flex:0 0 auto; width:30px; height:30px; border-radius:10px; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; }
+.tip-slide-icon{ flex:0 0 auto; width:30px; height:30px; border-radius:10px; background:var(--primary-soft); color:var(--primary-text); display:flex; align-items:center; justify-content:center; }
 .tip-slide-icon svg{ width:16px; height:16px; }
 @media (prefers-reduced-motion:reduce){ .tips-track, .period-arc{ transition:none; } }
 
@@ -118,7 +118,7 @@
 .desktop-pane.period-pane{ background:var(--surface-panel); }
 .desktop-box.period-mode{ transition:border-color .25s ease, box-shadow .25s ease; }
 .period-themed .switch.on{ box-shadow:0 0 0 3px var(--primary-soft), var(--glow-switch); }
-.period-themed .section-title .count{ color:var(--primary); }
+.period-themed .section-title .count{ color:var(--primary-text); }
 /* ===== period setup quiz: a centered dialog (not a bottom sheet) ===== */
 .period-quiz-overlay{ position:absolute; inset:0; background:var(--overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .25s ease; }
 .period-quiz-overlay.show{ opacity:1; pointer-events:auto; }
@@ -206,7 +206,7 @@
   cursor:pointer; z-index:2; transition:color .2s ease, border-color .2s ease, transform .15s ease;
 }
 .period-view-arrow svg{ width:15px; height:15px; }
-.period-view-arrow:hover{ color:var(--primary); border-color:var(--primary); }
+.period-view-arrow:hover{ color:var(--primary-text); border-color:var(--primary); }
 .period-view-arrow:active{ transform:translateY(-50%) scale(.9); }
 /* Out at the card's inner edges, not hugging the ring: the card is the
    container, the ring (at most 240px) sits in its middle, so each arrow

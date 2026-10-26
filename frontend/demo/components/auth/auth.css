@@ -32,7 +32,7 @@
 .pw-rules li.ok{ color:var(--text); font-weight:700; }
 /* Under the code field's heading: where the email may have gone. */
 .auth-spam-note{ font-size:12px; line-height:1.7; color:var(--text); background:var(--pms-soft); border:1px dashed var(--pms); border-radius:12px; padding:9px 12px; margin-bottom:12px; }
-.auth-link{ align-self:center; margin-top:14px; border:none; background:none; color:var(--primary); font-size:13px; font-weight:700; font-family:inherit; cursor:pointer; padding:4px; }
+.auth-link{ align-self:center; margin-top:14px; border:none; background:none; color:var(--primary-text); font-size:13px; font-weight:700; font-family:inherit; cursor:pointer; padding:4px; }
 .auth-link:hover{ text-decoration:underline; }
 .device.lang-fa .auth-card{ text-align:right; }
 /* The email field is LTR; while empty, keep its Persian placeholder on the right. */
@@ -58,7 +58,7 @@
 .auth-sub{ text-align:center; font-size:13px; color:var(--text-muted); margin-top:4px; margin-bottom:26px; }
 .auth-tabs{ display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:14px; margin-bottom:22px; }
 .auth-tabs button{ flex:1; border:none; background:transparent; padding:11px; border-radius:11px; font-size:13px; font-weight:700; color:var(--text-muted); cursor:pointer; font-family:inherit; }
-.auth-tabs button.active{ background:var(--card); color:var(--primary); }
+.auth-tabs button.active{ background:var(--card); color:var(--primary-text); }
 .auth-form .field{ margin-bottom:12px; }
 .auth-form input{ width:100%; border:2px solid transparent; background:var(--bg-soft); border-radius:14px; padding:14px 16px; font-size:14px; color:var(--text); font-family:inherit; transition:border-color .2s ease, box-shadow .2s ease; }
 .auth-form input::placeholder{ color:var(--text-muted); }
@@ -85,7 +85,7 @@
 
 /* One-time code views (forgot-code, verify): an envelope badge, one big
    LTR code field, "send again" with its countdown. */
-.auth-icon-badge{ width:58px; height:58px; margin:0 auto 12px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--primary-soft, var(--bg-soft)); color:var(--primary); }
+.auth-icon-badge{ width:58px; height:58px; margin:0 auto 12px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--primary-soft, var(--bg-soft)); color:var(--primary-text); }
 .auth-icon-badge svg{ width:28px; height:28px; }
 .auth-sub b{ color:var(--text); font-weight:700; unicode-bidi:isolate; }
 .auth-code-input{ text-align:center; font-size:26px !important; font-weight:800; letter-spacing:10px; padding-inline-start:20px; font-variant-numeric:tabular-nums; }

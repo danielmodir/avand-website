@@ -7,7 +7,7 @@
   background:var(--card); box-shadow:var(--shadow); text-align:center; transform:scale(.95); transition:transform .22s cubic-bezier(.4,0,.2,1); }
 .notice-overlay.show .notice-dialog{ transform:scale(1); }
 .notice-icon{ width:46px; height:46px; margin:0 auto 8px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  color:var(--primary); background:var(--primary-soft, color-mix(in srgb, var(--primary) 16%, transparent)); }
+  color:var(--primary-text); background:var(--primary-soft, color-mix(in srgb, var(--primary) 16%, transparent)); }
 .notice-icon svg{ width:24px; height:24px; }
 .notice-from{ font-size:12px; color:var(--text-muted); }
 .notice-dialog h2{ font-size:17px; margin:6px 0 8px; }

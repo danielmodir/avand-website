@@ -14,8 +14,8 @@
 .contact-msg-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); }
 .contact-kind{ font-weight:800; color:var(--text); }
 .contact-state{ margin-inline-start:auto; padding:2px 9px; border-radius:999px; background:var(--bg-soft); font-weight:700; }
-.contact-state.answered{ background:var(--primary-soft); color:var(--primary); }
+.contact-state.answered{ background:var(--primary-soft); color:var(--primary-text); }
 .contact-msg-body{ margin-top:6px; font-size:13.5px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere; }
 .contact-reply{ margin-top:10px; padding:10px 12px; border-radius:12px; background:var(--primary-soft); font-size:13.5px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere; }
-.contact-reply b{ display:block; font-size:12px; color:var(--primary); margin-bottom:2px; }
+.contact-reply b{ display:block; font-size:12px; color:var(--primary-text); margin-bottom:2px; }
 .count.contact-unread{ background:var(--primary); color:var(--on-primary); }

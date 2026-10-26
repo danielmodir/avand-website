@@ -103,7 +103,7 @@
 .menu-item-row{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:13px 15px; cursor:pointer; transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
 .device.lang-fa .menu-item-row{ flex-direction:row-reverse; }
 .menu-item-row:not(.disabled):hover{ transform:translateY(-3px); box-shadow:var(--shadow); border-color:var(--primary); }
-.menu-item-icon{ width:32px; height:32px; border-radius:10px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
+.menu-item-icon{ width:32px; height:32px; border-radius:10px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary-text); flex:0 0 auto; }
 .menu-item-icon svg{ width:16px; height:16px; }
 .menu-item-label{ flex:1; font-size:14px; font-weight:600; unicode-bidi:plaintext; }
 .menu-item-label .count{ background:var(--bg-soft); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; margin-inline-start:6px; }
@@ -111,10 +111,10 @@
 .store-card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; }
 .store-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .device.lang-fa .store-card-top{ flex-direction:row-reverse; }
-.store-card-icon{ width:40px; height:40px; border-radius:12px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }
+.store-card-icon{ width:40px; height:40px; border-radius:12px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; color:var(--primary-text); flex:0 0 auto; }
 .store-card-icon svg{ width:20px; height:20px; }
 .store-badge{ font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap; }
-.store-badge-enabled{ background:var(--primary-soft); color:var(--primary); }
+.store-badge-enabled{ background:var(--primary-soft); color:var(--primary-text); }
 .store-badge-available, .store-badge-locked{ background:var(--bg-soft); color:var(--text-muted); }
 .store-badge-premium{ background:var(--primary); color:var(--on-primary); }
 .store-card-name{ font-size:14px; font-weight:700; margin-bottom:3px; }
@@ -139,7 +139,7 @@
 .profile-field-row .field{ flex:1; }
 .profile-stats{ display:flex; gap:10px; margin-top:16px; }
 .profile-stat{ flex:1; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center; }
-.profile-stat .num{ font-size:18px; font-weight:800; color:var(--primary); }
+.profile-stat .num{ font-size:18px; font-weight:800; color:var(--primary-text); }
 .profile-stat .lbl{ font-size:11px; color:var(--text-muted); margin-top:2px; }
 .share-hero{ text-align:center; margin:10px 0 22px 0; }
 .share-app-icon{ width:64px; height:64px; border-radius:50%; background:none; color:var(--on-primary); font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 10px auto; }
@@ -152,7 +152,7 @@
 .share-app-desc{ font-size:12px; color:var(--text-muted); margin-top:2px; }
 .share-options{ display:flex; gap:10px; }
 .share-option{ flex:1; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px 8px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; }
-.share-opt-icon{ width:36px; height:36px; border-radius:50%; background:var(--bg-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; }
+.share-opt-icon{ width:36px; height:36px; border-radius:50%; background:var(--bg-soft); color:var(--primary-text); display:flex; align-items:center; justify-content:center; }
 .share-opt-icon svg{ width:16px; height:16px; }
 .share-option span{ font-size:12px; font-weight:600; }
 .about-logo{ width:64px; height:64px; border-radius:50%; background:none; color:var(--on-primary); font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:6px auto 10px auto; }
@@ -170,7 +170,7 @@
 .desktop-manage-gear{ position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; border:none; background:var(--bg-soft); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .device.lang-fa .desktop-manage-gear{ right:auto; left:12px; }
 .desktop-manage-gear svg{ width:14px; height:14px; }
-.desktop-manage-gear:hover{ color:var(--primary); }
+.desktop-manage-gear:hover{ color:var(--primary-text); }
 /* Square tiles, two to a row: title and text at the top, switch at the bottom. */
 .desktop-manage-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-bottom:10px; }
 .desktop-manage-grid .desktop-manage-card{ aspect-ratio:1; margin:0; display:flex; flex-direction:column; padding:14px 14px 12px; min-width:0; }
@@ -178,7 +178,7 @@
 .desktop-manage-grid .desktop-manage-title{ padding-inline-end:34px; }
 .desktop-manage-grid .desktop-manage-desc{ flex:1; overflow:hidden; }
 .desktop-manage-grid .switch{ align-self:flex-start; }
-.profile-no-name{ color:var(--primary); cursor:pointer; text-decoration:underline; text-underline-offset:4px; }
+.profile-no-name{ color:var(--primary-text); cursor:pointer; text-decoration:underline; text-underline-offset:4px; }
 /* Persian sentences in these LTR-laid-out rows put the final period on
    the wrong end; plaintext picks each line's direction from its own text
    without touching the row's flex layout. */
@@ -236,7 +236,7 @@
 /* Settings → General: reminders on time (reminderHealthHtml). */
 .health-row{ display:flex; align-items:center; gap:10px; min-height:44px; padding:4px 2px; font-size:13px; }
 .health-mark{ width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex-shrink:0; }
-.health-row.ok .health-mark{ background:var(--primary-soft); color:var(--primary); }
+.health-row.ok .health-mark{ background:var(--primary-soft); color:var(--primary-text); }
 .health-row.bad .health-mark{ background:var(--danger-soft); color:var(--danger); }
 .health-label{ flex:1; }
 .health-row .btn, .health-test{ min-height:44px; }

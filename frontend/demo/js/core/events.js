@@ -480,7 +480,7 @@ document.getElementById('device').addEventListener('click', (e) => {
    buttons, and a <button> can't contain interactive children. */
 document.getElementById('device').addEventListener('keydown', (e) => {
   if(e.key !== 'Enter' && e.key !== ' ') return;
-  const cb = e.target.closest('[role="checkbox"]');
+  const cb = e.target.closest('[role="checkbox"], div[role="switch"], div[role="button"]');
   if(!cb) return;
   e.preventDefault();
   cb.click();

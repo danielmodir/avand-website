@@ -241,7 +241,7 @@ body{
 
 /* ---- section titles: small accent bar like the landing's eyebrows ---- */
 .section-title{ letter-spacing:-0.01em; }
-.section-title .count{ background:var(--primary-soft); color:var(--primary); }
+.section-title .count{ background:var(--primary-soft); color:var(--primary-text); }
 
 /* No entrance animation on panels: render() rebuilds them on every click,
    so it replayed each time and the workspace looked like it reloaded. */

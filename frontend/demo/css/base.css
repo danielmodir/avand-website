@@ -37,6 +37,9 @@
   --card:#14213D;
   --primary:#FCA311;
   --primary-soft:rgba(252,163,17,0.16);
+  /* Primary used as text or a small icon; a palette whose primary is too
+     light for its canvas sets a darker one (4.5:1). */
+  --primary-text:var(--primary);
   --on-primary:#000000;
   --secondary:#FFFFFF;
   --text:#FFFFFF;

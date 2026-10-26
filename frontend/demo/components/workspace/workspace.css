@@ -23,7 +23,7 @@
   transition:color .2s ease, background-color .2s ease, transform .2s cubic-bezier(.34,1.56,.64,1);
 }
 .desk-full-btn svg{ width:16px; height:16px; }
-.desk-full-btn:hover{ color:var(--primary); background:var(--primary-soft); }
+.desk-full-btn:hover{ color:var(--primary-text); background:var(--primary-soft); }
 .desk-full-btn:active{ transform:scale(.9); }
 .desktop-box-topbar{ align-items:center; }
 /* English: the title sits at the left, so the button goes to the right. */
@@ -51,7 +51,7 @@
 .device.lang-fa .desktop-box-title{ text-align:right; }
 .desktop-nav-arrow{ flex:0 0 auto; width:24px; height:24px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:color .2s ease; }
 .desktop-nav-arrow svg{ width:14px; height:14px; }
-.desktop-nav-arrow:hover{ color:var(--primary); }
+.desktop-nav-arrow:hover{ color:var(--primary-text); }
 .desktop-nav-arrow.disabled{ opacity:.3; pointer-events:none; }
 .desktop-wrap{ flex:1 1 auto; min-height:0; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
 .desktop-wrap::-webkit-scrollbar{ display:none; }

@@ -77,6 +77,7 @@
   --card:#FFFDF3;
   --primary:#EB7D00;
   --primary-soft:rgba(235,125,0,0.14);
+  --primary-text:#9A4F00; /* the orange as text: 5.4:1 on the cream (2.5 before) */
   --on-primary:#2E2910;
   --secondary:#2C5745;
   --text:#2E2910;

@@ -18,7 +18,7 @@
 .dp-x{ flex:0 0 auto; }
 .dp-topbar{ margin-bottom:8px; }
 .dp-topbar .cal-label{ font-size:17px; border:none; background:none; color:var(--text); font-family:inherit; touch-action:manipulation; }
-.dp-topbar .cal-label.on{ background:var(--primary-soft); color:var(--primary); }
+.dp-topbar .cal-label.on{ background:var(--primary-soft); color:var(--primary-text); }
 .dp-topbar .cal-corner-arrow{ padding:0; }
 .dp-topbar .cal-corner-arrow:disabled{ opacity:.25; cursor:default; }
 .dp-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; touch-action:none; }

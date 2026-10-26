@@ -39,7 +39,7 @@
    place with a transition instead of just appearing/disappearing. */
 .back-today-btn{
   position:absolute; bottom:84px; left:50%; z-index:49;
-  background:var(--bg-soft); border:1px solid var(--border); color:var(--primary);
+  background:var(--bg-soft); border:1px solid var(--border); color:var(--primary-text);
   font-size:12px; font-weight:700; font-family:inherit; border-radius:999px;
   padding:8px 16px; cursor:pointer; box-shadow:var(--shadow);
   transform:translate(-50%, 20px); opacity:0; pointer-events:none;
@@ -51,7 +51,7 @@
 #cal-month-label, #home-cal-month-label{ min-width:130px; }
 #cal-year-label, #home-cal-year-label{ min-width:64px; }
 .cal-corner-arrow{ position:absolute; top:2px; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; color:var(--text); cursor:pointer; transition:color .2s ease; }
-.cal-corner-arrow:hover{ color:var(--primary); }
+.cal-corner-arrow:hover{ color:var(--primary-text); }
 .cal-corner-arrow.left{ left:0; }
 .cal-corner-arrow.right{ right:0; }
 .cal-corner-arrow svg{width:16px;height:16px;}
@@ -66,11 +66,11 @@
 .cal-subrow-sep{ padding:0 2px; }
 .cal-mode-tabs{display:flex; gap:6px; background:var(--bg-soft); padding:4px; border-radius:12px; margin-bottom:16px;}
 .cal-mode-tabs button{flex:1; border:none; background:transparent; padding:8px; border-radius:9px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; font-family:inherit;}
-.cal-mode-tabs button.active{background:var(--card); color:var(--primary);}
+.cal-mode-tabs button.active{background:var(--card); color:var(--primary-text);}
 .cal-dropdown{ position:absolute; top:110%; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); z-index:20; max-height:220px; overflow-y:auto; width:150px; scrollbar-width:none; }
 .cal-dropdown::-webkit-scrollbar{ display:none; }
 .cal-dropdown-item{ padding:10px 14px; font-size:14px; cursor:pointer; text-align:center; }
-.cal-dropdown-item.active{ color:var(--primary); font-weight:700; }
+.cal-dropdown-item.active{ color:var(--primary-text); font-weight:700; }
 .cal-dropdown-item:active{ background:var(--bg-soft); }
 .weekday-header{display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:6px;}
 .weekday-header span{font-size:10px; color:var(--text-muted); font-weight:700;}
@@ -93,7 +93,7 @@
   opacity:1; transform:translate(-50%,-50%) scale(1);
   box-shadow:inset 0 0 0 2px var(--primary); background:var(--primary-soft);
 }
-.day-cell.today:not(.selected){ color:var(--primary); }
+.day-cell.today:not(.selected){ color:var(--primary-text); }
 .day-cell.selected{ color:var(--on-primary); }
 .day-cell.selected .day-cell-bg{
   opacity:1; transform:translate(-50%,-50%) scale(1);
@@ -109,9 +109,9 @@
 .day-cell.holiday:not(.selected) .day-cell-num{ color:var(--holiday, var(--danger)); }
 /* The person's own birthday (birthday.js): bold, with a small cake. */
 .day-cell.birthday .day-cell-num, .cf-cell.birthday .day-cell-num{ font-weight:900; }
-.day-cell .bday-cake{ position:absolute; top:1px; inset-inline-end:2px; width:13px; height:13px; color:var(--primary); z-index:2; pointer-events:none; }
+.day-cell .bday-cake{ position:absolute; top:1px; inset-inline-end:2px; width:13px; height:13px; color:var(--primary-text); z-index:2; pointer-events:none; }
 .day-cell.birthday.selected .bday-cake, .day-cell.birthday.today .bday-cake{ color:var(--text); }
-.cf-head .bday-cake{ width:13px; height:13px; color:var(--primary); flex:0 0 auto; }
+.cf-head .bday-cake{ width:13px; height:13px; color:var(--primary-text); flex:0 0 auto; }
 /* Press feedback: only the circle shrinks (the cell stays put, see theme.css). */
 .day-cell.press .day-cell-bg{ opacity:1; transform:translate(-50%,-50%) scale(.88); }
 .day-cell.press:not(.selected) .day-cell-bg{ background:var(--primary-soft); }
@@ -252,7 +252,7 @@
   transition:color .2s ease, background-color .2s ease, transform .2s cubic-bezier(.34,1.56,.64,1);
 }
 .cal-full-btn svg{ width:16px; height:16px; }
-.cal-full-btn:hover{ color:var(--primary); background:var(--primary-soft); }
+.cal-full-btn:hover{ color:var(--primary-text); background:var(--primary-soft); }
 .cal-full-btn:active{ transform:scale(.9); }
 #cal-full-root{ position:absolute; inset:0; z-index:34; }
 #cal-full-root.cf-enter .cal-full{ animation:cal-full-in .3s cubic-bezier(.22,1,.36,1); }
@@ -267,10 +267,10 @@
 .cf-nav{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; }
 .cf-title{ margin:0; font-size:19px; font-weight:800; white-space:nowrap; min-width:150px; text-align:center; }
 .cf-arrow{ width:34px; height:34px; border-radius:10px; border:none; background:transparent; color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; }
-.cf-arrow:hover{ color:var(--primary); background:var(--primary-soft); }
+.cf-arrow:hover{ color:var(--primary-text); background:var(--primary-soft); }
 .cf-arrow svg{ width:16px; height:16px; }
 .cf-today{ flex:0 0 auto; border:1px solid var(--border); background:var(--bg-soft); color:var(--text); font:inherit; font-size:12px; font-weight:700; border-radius:999px; padding:6px 14px; cursor:pointer; }
-.cf-today:hover{ color:var(--primary); border-color:var(--primary); }
+.cf-today:hover{ color:var(--primary-text); border-color:var(--primary); }
 .cf-weekdays{ margin:0; }
 .cf-grid{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:4px; touch-action:pan-y; }
 .cf-cell{

@@ -11,7 +11,7 @@
 .groups-empty{ text-align:center; padding:26px 12px; color:var(--text-muted); font-size:13.5px; line-height:1.8; }
 .groups-empty p{ margin:8px 0 16px; }
 .groups-empty-icon{ width:52px; height:52px; margin:0 auto; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  background:color-mix(in srgb, var(--primary) 14%, transparent); color:var(--primary); }
+  background:color-mix(in srgb, var(--primary) 14%, transparent); color:var(--primary-text); }
 .groups-empty-icon svg{ width:26px; height:26px; }
 
 .group-card{
@@ -131,7 +131,7 @@
 .group-done-names{ display:flex; flex-wrap:wrap; gap:6px; min-width:0; }
 .group-done-names .profile-hint{ flex-basis:100%; margin:2px 0 0; }
 .group-done-shared{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; padding:10px 12px; border-radius:12px; background:var(--bg-soft); margin-bottom:6px; }
-.group-done-shared svg{ width:16px; height:16px; color:var(--primary); }
+.group-done-shared svg{ width:16px; height:16px; color:var(--primary-text); }
 
 /* The app's own yes/no box. */
 .app-confirm-overlay{ position:absolute; inset:0; z-index:95; background:var(--overlay); display:flex; align-items:center; justify-content:center; padding:20px; }

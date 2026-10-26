@@ -15,6 +15,6 @@
 .tour-actions{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:12px; }
 .tour-nav{ display:flex; gap:6px; }
 .tour-skip{ border:none; background:none; color:var(--text-muted); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; padding:6px 2px; }
-.tour-skip:hover{ color:var(--primary); }
+.tour-skip:hover{ color:var(--primary-text); }
 @keyframes tour-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
 @media (prefers-reduced-motion:reduce){ .tour-hole, .tour-card{ transition:none; animation:none; } }

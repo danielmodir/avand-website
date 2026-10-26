@@ -13,6 +13,6 @@
 .art-cover{ width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; display:block; }
 .art-body{ display:flex; flex-direction:column; gap:6px; padding:12px 14px 14px; }
 .art-meta{ display:flex; gap:8px; align-items:center; font-size:11.5px; color:var(--text-muted); }
-.art-tag{ padding:2px 9px; border-radius:999px; background:var(--primary-soft); color:var(--primary); font-weight:700; }
+.art-tag{ padding:2px 9px; border-radius:999px; background:var(--primary-soft); color:var(--primary-text); font-weight:700; }
 .art-title{ font-size:15px; font-weight:800; line-height:1.6; }
 .art-summary{ font-size:13px; color:var(--text-muted); line-height:1.8; }
