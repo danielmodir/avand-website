@@ -624,6 +624,7 @@ function renderGeneralSettings(){
           <span class="palette-name">${t(p==='toojibee'?'paletteToojibee':'paletteClassic')}</span>
         </button>`).join('')}
     </div>
+    ${state.settings.palette !== 'classic' ? accentRowHtml() : ''}
     <div class="settings-row">
       <div><div class="lbl">${t('darkMode')}</div><div class="sub">${t('darkModeSub')}</div></div>
       <div class="switch ${document.documentElement.getAttribute('data-theme')!=='light'?'on':''}" data-action="toggle-app-theme" role="switch" aria-checked="${document.documentElement.getAttribute('data-theme')!=='light'}"><div class="knob"></div></div>
@@ -668,6 +669,18 @@ function renderCalendarSettings(){
       </select>
     </div>
   `;
+}
+
+/* Accent colours, unlocked by friends (js/core/util.js ACCENTS; Phase 3.12). */
+function accentRowHtml(){
+  rememberUnlockedAccents();
+  const cur = (state.settings.prefs || {}).accent || 'orange';
+  return `<div class="section-title">${t('accentTitle')}</div><div class="sub" style="margin:-6px 2px 10px;">${t('accentSub')}</div>
+    <div class="accent-row" role="radiogroup" aria-label="${escapeAttr(t('accentTitle'))}">${ACCENTS.map(([id, need]) => {
+      const open = accentUnlocked(id);
+      return `<button type="button" class="accent-opt ${cur === id ? 'active' : ''}" data-action="set-accent" data-val="${id}" role="radio" aria-checked="${cur === id}" ${open ? '' : 'disabled'}>
+        <span class="accent-dot ${id}"></span><span>${t('accent_' + id)}${open ? '' : ' · ' + t('accentLocked').replace('{n}', dig(need))}</span></button>`;
+    }).join('')}</div>`;
 }
 
 function prefRow(key, label, sub){

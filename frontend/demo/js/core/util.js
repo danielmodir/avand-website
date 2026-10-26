@@ -16,6 +16,7 @@ const DEFAULT_PREFS = {
   prayerNotify: false, // a reminder at dawn, noon and maghrib adhan
 };
 /* The one text preference: the prayer-times city (an id in PRAYER_CITIES). */
+/* The other text preferences: prayer city, accent colour. */
 function prayerCityId(){ return (state.settings.prefs || {}).prayerCity || 'tehran'; }
 function pref(key){
   const p = state.settings.prefs || {};
@@ -40,11 +41,28 @@ const THEME_COLOR = {
   toojibee: { dark:'#1A1708', light:'#F7F3DA' },
   classic:  { dark:'#000000', light:'#E5E5E5' },
 };
+/* Accent colours unlocked by friends (Phase 3.12): orange always, teal with
+   the first friend, rose with the third; once unlocked they stay (this device). */
+const ACCENTS = [['orange', 0], ['teal', 1], ['rose', 3]];
+const ACCENT_KEY = 'toojibee-accents-v1';
+function friendCount(){ return (state.connections || []).filter(c => c.status === 'accepted').length; }
+function accentUnlocked(id){
+  const need = (ACCENTS.find(a => a[0] === id) || [0, 99])[1];
+  if(friendCount() >= need) return true;
+  try{ return (JSON.parse(localStorage.getItem(ACCENT_KEY)) || []).includes(id); }catch(e){ return false; }
+}
+function rememberUnlockedAccents(){
+  const open = ACCENTS.filter(a => friendCount() >= a[1]).map(a => a[0]);
+  try{ const had = JSON.parse(localStorage.getItem(ACCENT_KEY)) || []; localStorage.setItem(ACCENT_KEY, JSON.stringify([...new Set(had.concat(open))])); }catch(e){}
+}
+function currentAccent(){ const a = (state.settings.prefs || {}).accent || 'orange'; return a !== 'orange' && accentUnlocked(a) ? a : ''; }
+
 function applyAppearance(){
   const root = document.documentElement;
   const palette = state.settings.palette === 'classic' ? 'classic' : 'toojibee';
   if(state.settings.theme === 'light' || state.settings.theme === 'dark') root.setAttribute('data-theme', state.settings.theme);
   root.setAttribute('data-palette', palette);
+  root.setAttribute('data-accent', palette === 'toojibee' ? currentAccent() : ''); // css/palette-accents.css
   const mode = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
   try{ localStorage.setItem('toojibee-palette', palette); localStorage.setItem('toojibee-theme', mode); }catch(e){}
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[palette][mode]);

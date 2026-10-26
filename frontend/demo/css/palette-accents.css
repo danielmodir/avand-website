@@ -1,0 +1,26 @@
+/* Accent colours for the Toojibee palette, unlocked by inviting friends
+   (Settings > General; js/core/util.js applyTheme sets data-accent).
+   Only the orange's roles change; the canvas, text and forest stay.
+   Checked: olive text on the buttons ≥ 5:1, --primary-text on the light
+   cream ≥ 5:1. */
+:root[data-palette="toojibee"][data-accent="teal"]{
+  --primary:#33B3A3; --primary-soft:rgba(51,179,163,0.16); --primary-text:#33B3A3;
+  --select-ring:rgba(51,179,163,0.85); --select-glow:rgba(51,179,163,0.36); --range-band:rgba(51,179,163,0.16); --glow-orange:rgba(51,179,163,0.18);
+  --glow-accent:0 4px 12px -2px rgba(51,179,163,0.55); --glow-today:0 0 0 1px rgba(51,179,163,0.38), 0 10px 24px -10px rgba(51,179,163,0.75);
+  --glow-switch:0 6px 16px -6px rgba(51,179,163,0.7); --glow-mark:0 0 0 3px rgba(51,179,163,0.35), 0 8px 20px -6px rgba(51,179,163,0.55);
+}
+:root[data-palette="toojibee"][data-accent="teal"][data-theme="light"]{ --primary-text:#1D6E64; --primary-soft:rgba(51,179,163,0.14); }
+:root[data-palette="toojibee"][data-accent="rose"]{
+  --primary:#E76F51; --primary-soft:rgba(231,111,81,0.16); --primary-text:#E76F51;
+  --select-ring:rgba(231,111,81,0.85); --select-glow:rgba(231,111,81,0.36); --range-band:rgba(231,111,81,0.16); --glow-orange:rgba(231,111,81,0.18);
+  --glow-accent:0 4px 12px -2px rgba(231,111,81,0.55); --glow-today:0 0 0 1px rgba(231,111,81,0.38), 0 10px 24px -10px rgba(231,111,81,0.75);
+  --glow-switch:0 6px 16px -6px rgba(231,111,81,0.7); --glow-mark:0 0 0 3px rgba(231,111,81,0.35), 0 8px 20px -6px rgba(231,111,81,0.55);
+}
+:root[data-palette="toojibee"][data-accent="rose"][data-theme="light"]{ --primary-text:#A8452B; --primary-soft:rgba(231,111,81,0.14); }
+/* The choice in Settings: a dot of each colour. */
+.accent-dot{ width:18px; height:18px; border-radius:50%; display:inline-block; flex:0 0 auto; }
+.accent-dot.orange{ background:#EB7D00; } .accent-dot.teal{ background:#33B3A3; } .accent-dot.rose{ background:#E76F51; }
+.accent-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+.accent-opt{ display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 12px; border-radius:12px; border:1px solid var(--border); background:var(--card); color:var(--text); font:inherit; font-size:13px; cursor:pointer; }
+.accent-opt.active{ border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+.accent-opt[disabled]{ opacity:.55; cursor:default; }

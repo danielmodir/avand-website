@@ -340,7 +340,8 @@ class UserSettings(models.Model):
         "stats_opt_in": False,              # "Help improve Toojibee": anonymous counts (the PHP backend keeps them; Django: none yet)
         "prayer_show": True,                # prayer times on the Occasions desk and the date widget
         "prayer_notify": False,             # adhan reminders (dawn, noon, maghrib)
-        "prayer_city": "tehran",            # the one text value: a city id from the app's list (js/core/prayer.js)
+        "prayer_city": "tehran",            # text: a city id from the app's list (js/core/prayer.js)
+        "accent": "orange",                 # text: accent colour, others unlocked by friends (css/palette-accents.css)
         # Tutorials already seen (finished or skipped), so signing in again
         # doesn't repeat them (frontend/demo/components/tour/tour.js).
         "tour_general": False, "tour_calendar": False, "tour_planning": False,
