@@ -14,7 +14,8 @@ function renderDaySheet(){
   title.setAttribute('dir', lang() === 'fa' ? 'rtl' : 'ltr');
   sheet.querySelector('[data-action="close-day-sheet"]').setAttribute('aria-label', t('close'));
   // Empty sections are hidden, so a free day said nothing at all.
-  document.getElementById('day-sheet-body').innerHTML = ((tasks.length || habits.length || events.length)
+  // The day in every enabled calendar (Hijri from the official month table, components/workspace).
+  document.getElementById('day-sheet-body').innerHTML = `<div class="day-sheet-cals">${escapeHtml(dayAllCalendarsLine(d))}</div>` + ((tasks.length || habits.length || events.length)
     ? renderItemSections(tasks, habits, events, d)
     : `<div class="empty-hint">${t('nothingPlanned')}</div>`) + prayerBlockHtml(d); // the day's prayer times (components/workspace)
   attachSwipeToDelete(document.getElementById('day-sheet-body'));
