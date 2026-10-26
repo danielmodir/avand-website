@@ -28,8 +28,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- App links (invites, email links) can open here instead of the browser. -->
-            <intent-filter>
+            <!-- App links open here instead of the browser: the app itself, a
+                 friend's invite (/demo/#invite=…), a group (/demo/#group=…),
+                 email links. autoVerify: the site vouches for this app in
+                 /.well-known/assetlinks.json (the release key's SHA-256),
+                 so Android opens them here without asking. -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
