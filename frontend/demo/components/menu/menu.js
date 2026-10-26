@@ -530,6 +530,7 @@ function renderAboutPage(){
     ${subHeader(t('aboutUs'))}
     <div class="about-logo"><img class="brand-mark-img" src="../assets/icons/logo.svg?v=tj5" alt=""></div>
     <div class="about-name">${t('appName')}</div>
+    <div class="about-tagline">${t('appTagline')}</div>
     <div class="about-version">${t('aboutVersion')}</div>
     <div class="empty-hint">${escapeHtml(customText || t('aboutDesc'))}</div>
     <div class="about-links">

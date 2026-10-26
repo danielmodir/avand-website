@@ -2,7 +2,7 @@ function lang(){ return state.settings.language; }
 
 const STRINGS = {
   en: {
-    appName:'Toojibee', subtasksLabel:'Subtasks', saveFailed:"Couldn't save — check your connection",
+    appName:'Toojibee', appTagline:'Calendar and planner', subtasksLabel:'Subtasks', saveFailed:"Couldn't save — check your connection",
     today:'Today', calendar:'Calendar', planning:'Planning', occasionsDesktop:'Occasions', periodDesktop:'Period', occasionsComingSoon:"Today's and this month's occasions are coming here soon.", menu:'Menu', backToToday:'Back to today', workspace:'Workspace',
     events:'Events', tasks:'Tasks', habits:'Habits',
     noEventsToday:'No events today', noTasksToday:'No tasks today', noHabitsYet:'No habits yet',
@@ -301,7 +301,7 @@ const STRINGS = {
     tgrAddT:'Plan together', tgrAddX:'Add a task, habit or event to the group: everyone in it sees it, in the group\'s color.'
   },
   fa: {
-    appName:'توجیبی', subtasksLabel:'ریزتسک‌ها', saveFailed:'ذخیره نشد — اتصالت رو چک کن',
+    appName:'توجیبی', appTagline:'تقویم و برنامه‌ریز', subtasksLabel:'ریزتسک‌ها', saveFailed:'ذخیره نشد — اتصالت رو چک کن',
     today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', occasionsDesktop:'مناسبت‌ها', periodDesktop:'عادت ماهانه', occasionsComingSoon:'مناسبت‌های امروز و این ماه به‌زودی اینجا اضافه می‌شن.', menu:'منو', backToToday:'بازگشت به امروز', workspace:'میزکار',
     events:'رویدادها', tasks:'کارها', habits:'عادت‌ها',
     noEventsToday:'رویدادی برای امروز نیست', noTasksToday:'کاری برای امروز نیست', noHabitsYet:'هنوز عادتی نیست',

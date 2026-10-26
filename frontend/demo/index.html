@@ -13,6 +13,7 @@
    Android app (its WebView redraws the blur under each frame of an animation,
    which made the app stutter), on weaker computers (<= 4 GB or <= 4 cores),
    or with ?lite to try it. */
+if(window.ToojibeeAndroid)document.documentElement.classList.add('in-app'); // the Android app (still splash, below)
 var n=navigator,m=window.matchMedia;if(/[?&]lite\b/.test(location.search)||window.ToojibeeAndroid||(m&&m('(pointer:coarse)').matches)||(n.deviceMemory&&n.deviceMemory<=4)||(n.hardwareConcurrency&&n.hardwareConcurrency<=4))document.documentElement.setAttribute('data-lite','');})();</script>
 <style>
 /* Splash: inline so it paints before any stylesheet or script arrives
@@ -42,6 +43,13 @@ var n=navigator,m=window.matchMedia;if(/[?&]lite\b/.test(location.search)||windo
 @keyframes splash-dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
 @keyframes splash-slow{to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#app-splash *{animation:none!important}.splash-slow{opacity:1;animation:none}}
+.splash-name{font:800 22px/1.3 'Baloo Bhaijaan 2',Tahoma,system-ui,sans-serif;color:var(--s-text);text-align:center;margin-top:-6px}
+.splash-name small{display:block;font-weight:600;font-size:13px;opacity:.8}
+/* In the Android app its own splash (the logo) comes first: this one carries
+   on from it as the same still logo with the name, no spinning ring or dots
+   (a second, moving loader looked like starting twice). */
+html.in-app .splash-mark svg,html.in-app .splash-dots{display:none}
+html.in-app .splash-mark img{animation:none}
 </style>
 <!-- Fetched alongside the CSS/JS instead of after it (slow networks):
      the font, the occasions data, and the HTML partials include.js loads
@@ -83,6 +91,7 @@ var n=navigator,m=window.matchMedia;if(/[?&]lite\b/.test(location.search)||windo
     <svg viewBox="0 0 112 112" aria-hidden="true"><circle class="track" cx="56" cy="56" r="50"/><circle class="arc" cx="56" cy="56" r="50"/></svg>
     <img src="../assets/icons/logo.svg?v=tj5" alt="">
   </div>
+  <div class="splash-name" lang="fa" dir="rtl">توجیبی<small>تقویم و برنامه‌ریز</small></div>
   <div class="splash-dots" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="splash-slow" id="splash-slow">بیشتر از همیشه طول کشید… <a href="">دوباره بارگذاری کن</a><br>Taking longer than usual… <a href="">Reload</a></div>
 </div>
