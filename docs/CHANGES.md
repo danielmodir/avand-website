@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.12
+- Demo asset version: 2026-10-27.13
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0008, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -57,6 +57,10 @@ Update these with every change.
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — web app — the «این روز رو بفرست» (text) button removed from the
+  Occasions desk at the owner's request; the picture card «عکس این روز» stays
+  (workspace.js renderOccasionsPane; shareDay() kept, unused).
 
 - 2026-10-27 — PHP API, admin panel — Users tab switch «ثبت‌نام بدون کد تأیید ایمیل»
   (owner's request): lib/auth.php tj_auth_settings() reads

@@ -19,7 +19,7 @@ function renderOccasionsPane(d, events){
     <div class="section-title">${t('events')} <span class="count">${dig(dayEvents.length)}</span></div>
     <div class="events-scroll">${sortEvents(dayEvents).map(e=>eventCard(e)).join('')}</div>
   ` : '';
-  const share = `<div class="occ-share-row"><button type="button" class="btn btn-outline btn-small" data-action="share-day">${ICONS.shareIcon}<span>${t('shareDay')}</span></button>${shareCardBtn('day', '', 'cardDay')}</div>`;
+  const share = `<div class="occ-share-row">${shareCardBtn('day', '', 'cardDay')}</div>`;
   if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>` + countdownsHtml() + prayerBlockHtml(d) + share;
   return occasionsHtml + eventsHtml + countdownsHtml() + prayerBlockHtml(d) + share;
 }
