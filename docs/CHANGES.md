@@ -48,15 +48,22 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.2
+- Demo asset version: 2026-10-27.3
 - PHP schema: v24
-- Django latest migrations: core 0008, planning 0006, social 0003,
+- Django latest migrations: core 0008, planning 0007, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.3.0 (versionCode 4)
 
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — Phase 3.3 (web app, Django, both clients) — event.kind
+  '' | 'birthday' (yearly, past date allowed) | 'countdown' (presets
+  Konkur/Exam/Nowruz): popup.js eventKindRow/applyEventKind; items.js
+  eventDaysLeft/eventBadgeHtml/countdownsHtml (Occasions desk); date widget
+  occ line gets the next countdowns (android.js); reminder 09:00 by default.
+  Django planning 0007_event_kind. Next: 3.4 date tools.
 
 - 2026-10-27 — Phase 3.1–3.2 (web app, Django pref, Android widget layout) —
   prayer times: js/core/prayer.js (offline, Tehran Geophysics angles, 36
@@ -146,7 +153,7 @@ Format: `date — surfaces — what changed (key files)`.
     on past midnight up to 7 days (day labels); a later day is saved as
     notification.date and stretches the task to a range up to that day, so
     it isn't overdue first. notify.js fires it only on that day. Django
-    Task.reminder_date (planning 0006 + check constraint + test); PHP keeps
+    Task.reminder_date (planning 0007 + check constraint + test); PHP keeps
     it in the synced document.
   * Browser sign-in lasts until the tab/browser closes: session in
     sessionStorage (api.js sessionStore(), also used by api-php.js; an old

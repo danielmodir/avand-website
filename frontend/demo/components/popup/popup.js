@@ -22,6 +22,7 @@ function resetFormDraft(type, existing){
   formDraft = {
     title: existing ? existing.title : '',
     category: existing ? (existing.category || '') : '',
+    kind: existing ? (existing.kind || '') : '', // an event's kind: '' | 'birthday' | 'countdown'
     description: existing ? (existing.description || '') : '',
     timeMode: existing ? (existing.timeMode || 'single') : 'single',
     // A new item goes on the day picked in the calendar (homeDate), not today.
@@ -220,8 +221,35 @@ function subtasksListHtml(){
 function formBody(type){
   const parts = [popupIconRow(type)];
   if(type === 'task') parts.push(descriptionBlock());
-  if(type === 'event') parts.push(descriptionBlock(false)); // events: a description, no photos
+  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(descriptionBlock(false)); } // events: a kind, a description, no photos
   return parts.join('');
+}
+
+/* An event's kind (birthday: repeats every year; countdown: a days-left
+   badge) and, for a countdown, quick presets. */
+const EVENT_PRESETS = ['presetKonkur', 'presetExam', 'presetNowruz'];
+function eventKindRow(){
+  const k = formDraft.kind || '';
+  return `<div class="event-kind-row" role="radiogroup" aria-label="${t('eventKind')}">
+    ${[['', 'kindEvent'], ['birthday', 'kindBirthday'], ['countdown', 'kindCountdown']].map(([v, l]) => `<button type="button" class="tracker-chip ${k === v ? 'active' : ''}" data-ekind="${v}" role="radio" aria-checked="${k === v}">${t(l)}</button>`).join('')}
+  </div>
+  ${k === 'countdown' && !state.editingId ? `<div class="event-kind-row">${EVENT_PRESETS.map(p => `<button type="button" class="tracker-chip" data-epreset="${p}">${t(p)}</button>`).join('')}</div>` : ''}`;
+}
+function applyEventKind(k){
+  formDraft.kind = k;
+  if(k === 'birthday'){
+    formDraft.timeMode = 'single';
+    formDraft.recurrence = { mode: 'yearly', interval: 1, anchor: formDraft.date, cal: isHijriPrimary() ? 'jalali' : primarySystem() };
+  } else if(formDraft.recurrence.mode === 'yearly' && k === 'countdown') formDraft.recurrence = { mode: null, interval: 1, anchor: null, cal: null };
+  if(k && !formDraft.notification.type) formDraft.notification = Object.assign({}, formDraft.notification, { type: 'time', time: '09:00' });
+}
+function applyEventPreset(p){
+  formDraft.title = t(p);
+  if(p === 'presetNowruz'){ // the next 1 Farvardin
+    const j = toJalali(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    const g = toGregorian(j.jy + 1, 1, 1);
+    formDraft.date = formDraft.endDate = dateKey(new Date(g.gy, g.gm - 1, g.gd));
+  }
 }
 
 /* ---- subviews ---- */
@@ -523,6 +551,8 @@ function groupFieldHtml(){
 
 function wireMainFormInteractivity(){
   document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; renderPopupBody(); });
+  document.querySelectorAll('[data-ekind]').forEach(b => b.addEventListener('click', () => { applyEventKind(b.dataset.ekind); renderPopupBody(); }));
+  document.querySelectorAll('[data-epreset]').forEach(b => b.addEventListener('click', () => { applyEventPreset(b.dataset.epreset); renderPopupBody(); }));
   document.getElementById('f-done-mode')?.addEventListener('change', e => { formDraft.doneMode = e.target.value === 'shared' ? 'shared' : 'each'; });
   document.getElementById('f-description')?.addEventListener('input', e => { formDraft.description = e.target.value; });
   document.getElementById('desc-clip-btn')?.addEventListener('click', () => document.getElementById('f-photo-input').click());
@@ -663,7 +693,9 @@ function submitPopup(){
   }
   if(type !== 'habit' && recurrence.mode && formDraft.timeMode === 'range' && formDraft.endDate !== formDraft.date){ showToast(t('rangeNoRepeat')); return; }
   // A new task or event can't be put on a day that has already passed.
-  if(!state.editingId && (type === 'task' || type === 'event') && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
+  // (A birthday is the day someone was born: any past day.)
+  if(type === 'event' && formDraft.kind === 'birthday'){ recurrence.mode = 'yearly'; recurrence.interval = 1; recurrence.anchor = formDraft.date; recurrence.cal = recurrence.cal || (isHijriPrimary() ? 'jalali' : primarySystem()); }
+  if(!state.editingId && (type === 'task' || (type === 'event' && formDraft.kind !== 'birthday')) && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
   const notification = { ...formDraft.notification };
   // A reminder's own day only for a one-time task, and only inside its days.
   if(notification.date && (type !== 'task' || recurrence.mode || notification.type !== 'time' || notification.date <= formDraft.date
@@ -728,6 +760,7 @@ function submitPopup(){
       id: state.editingId || uid(),
       title,
       description: (formDraft.description||'').trim(),
+      kind: formDraft.kind || '',
       timeMode: formDraft.timeMode,
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,

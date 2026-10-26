@@ -180,12 +180,31 @@ function sortEvents(events){
   });
 }
 
+/* Days until a countdown's day or a birthday's next one (0 = today); null
+   for a plain event or a countdown that's over. */
+function eventDaysLeft(e, from){
+  const day = new Date(from || today); day.setHours(0, 0, 0, 0);
+  if(e.kind === 'countdown'){ const n = Math.round((parseDateKey(e.date) - day) / 86400000); return n >= 0 ? n : null; }
+  if(e.kind === 'birthday'){ for(let k = 0; k <= 366; k++) if(occursOnDate(e, addDays(day, k))) return k; }
+  return null;
+}
+function daysLeftLabel(n){ return n === 0 ? t('today') : t('daysLeft').replace('{n}', dig(n)); }
+function eventBadgeHtml(e){
+  const n = eventDaysLeft(e);
+  return n == null ? '' : `<span class="event-badge">${e.kind === 'birthday' ? '🎂 ' : ''}${daysLeftLabel(n)}</span>`;
+}
+/* The Occasions desk's coming countdowns and birthdays (next 60 days). */
+function countdownsHtml(){
+  const list = state.events.filter(e => e.kind).map(e => ({ e, n: eventDaysLeft(e) })).filter(x => x.n != null && x.n <= 60).sort((a, b) => a.n - b.n).slice(0, 4);
+  return list.length ? `<div class="section-title">${t('countdowns')}</div>${list.map(x => `<div class="occasion-row countdown-row" data-action="view-item" data-type="event" data-id="${x.e.id}"><span>${escapeHtml(x.e.title)}</span>${eventBadgeHtml(x.e)}</div>`).join('')}` : '';
+}
+
 function eventCard(e){
   const time = e.startTime ? itemTimeLabel(e) : (eventTime(e) || '');
   return `<div class="event-card ${e.groupId ? 'in-group' : ''}" data-action="view-item" data-type="event" data-id="${e.id}"${groupStyleAttr(e)}>
     ${groupItemEditable(e) ? `<button class="mini-btn event-del" data-action="delete-event" data-id="${e.id}" aria-label="${t('deleteBtn')}">${ICONS.trash}</button>` : ''}
     ${time?`<span class="event-time">${time}</span>`:''}
-    <p class="event-title">${escapeHtml(e.title)}</p>
+    <p class="event-title">${escapeHtml(e.title)}</p>${eventBadgeHtml(e)}
   </div>`;
 }
 

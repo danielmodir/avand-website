@@ -185,7 +185,7 @@ class EventSerializer(OwnedSerializer):
     class Meta:
         model = Event
         fields = SYNC_FIELDS + ["category_id", "title", "description", "start_date", "end_date", "all_day", "start_time", "end_time"] \
-            + RECURRENCE_FIELDS + REMINDER_FIELDS + ["reminder_minutes_before", "origin_event_id", "origin_date"]
+            + RECURRENCE_FIELDS + REMINDER_FIELDS + ["reminder_minutes_before", "kind", "origin_event_id", "origin_date"]
         read_only_fields = READ_ONLY
 
     def validate_category_id(self, category):

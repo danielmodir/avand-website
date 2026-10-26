@@ -169,3 +169,8 @@
 .ht-value{ min-width:36px; text-align:center; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .habit-tracker.running .ht-play{ background:var(--habit-color); color:var(--habit-on, #fff); }
 .habit-tracker.running .ht-value{ color:var(--habit-color); }
+/* Countdown / birthday: days left (eventBadgeHtml), and the event form's kind chips (popup.js). */
+.event-badge{ display:inline-block; margin-top:4px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--primary-soft); color:var(--primary-text); }
+.countdown-row{ justify-content:space-between; cursor:pointer; }
+.countdown-row .event-badge{ margin-top:0; }
+.event-kind-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }

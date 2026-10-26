@@ -132,7 +132,7 @@ function widgetData(){
   const prayOn = featureOn('prayer') && pref('prayerShow');
   const s = state.settings;
   const sig = [keyOf(today), lang(), s.calendarSystem, s.weekStartDay, JSON.stringify(s.calendarEnabled), occ(today).length, occ(addDays(today, 1)).length,
-    OCCASIONS_DATA || OCCASIONS_BY_DATE ? 1 : 0, prayOn ? prayerCityId() : ''].join('|'); // occasions.js: loaded or not yet
+    OCCASIONS_DATA || OCCASIONS_BY_DATE ? 1 : 0, prayOn ? prayerCityId() : '', JSON.stringify(state.events.filter(e => e.kind).map(e => [e.title, e.date, e.kind]))].join('|'); // occasions.js: loaded or not yet
   if(widgetCalCache.sig === sig){
     data.days = widgetCalCache.days; data.months = widgetCalCache.months; data.weeks = widgetCalCache.weeks;
   } else {
@@ -152,7 +152,9 @@ function widgetData(){
       wd: weekdayFull(d.getDay()),
       big: displayDayNum(d),
       month: displayMonthYear(d).monthLabel + ' ' + displayMonthYear(d).yearLabel,
-      occ: occ(d).map(o => o.event_name).filter(Boolean).slice(0, 3),
+      // Countdowns and birthdays first ("کنکور · ۱۲ روز مونده"), then the occasions.
+      occ: state.events.filter(e => e.kind).map(e => [e, eventDaysLeft(e, d)]).filter(x => x[1] != null && x[1] <= 60).sort((a, b) => a[1] - b[1]).slice(0, 2)
+        .map(([e, n]) => e.title + ' · ' + daysLeftLabel(n)).concat(occ(d).map(o => o.event_name).filter(Boolean)).slice(0, 3),
       holiday: isHolidayOn(d),
       // Dawn, noon and maghrib adhan for the chosen city (APK 1.4+ shows it).
       pray: prayOn ? (() => { const p = prayerTimesFor(d, prayerCityId()); return [['fajr', 'prFajr'], ['dhuhr', 'prDhuhr'], ['maghrib', 'prMaghrib']].map(([k, l]) => t(l) + ' ' + dig(p[k].hm)).join('  ·  '); })() : '',

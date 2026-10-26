@@ -273,6 +273,8 @@ class Event(UserOwnedSyncModel, Recurrence, Reminder):
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
     reminder_minutes_before = models.PositiveSmallIntegerField(null=True, blank=True)
+    # '' a plain event, 'birthday' (repeats yearly), 'countdown' (days-left badge).
+    kind = models.CharField(max_length=10, blank=True, default="", choices=[("", "event"), ("birthday", "birthday"), ("countdown", "countdown")])
     origin_event = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     origin_date = models.DateField(null=True, blank=True)
 

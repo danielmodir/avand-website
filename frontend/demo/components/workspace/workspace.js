@@ -20,8 +20,8 @@ function renderOccasionsPane(d, events){
     <div class="events-scroll">${sortEvents(dayEvents).map(e=>eventCard(e)).join('')}</div>
   ` : '';
   const share = `<div class="occ-share-row"><button type="button" class="btn btn-outline btn-small" data-action="share-day">${ICONS.shareIcon}<span>${t('shareDay')}</span></button></div>`;
-  if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>` + prayerBlockHtml(d) + share;
-  return occasionsHtml + eventsHtml + prayerBlockHtml(d) + share;
+  if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>` + countdownsHtml() + prayerBlockHtml(d) + share;
+  return occasionsHtml + eventsHtml + countdownsHtml() + prayerBlockHtml(d) + share;
 }
 
 /* The day's prayer times (js/core/prayer.js) for the chosen city; on today
