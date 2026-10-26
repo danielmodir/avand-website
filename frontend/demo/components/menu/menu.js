@@ -103,13 +103,13 @@ function renderProfilePage(){
       <div class="menu-item-row" data-action="menu-nav" data-sub="about">
         <div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t('aboutUs')}</div>${ICONS.chevronRightSmall}
       </div>
-      <div class="menu-item-row" data-action="menu-nav" data-sub="articles">
+      ${featureOn('articles') ? `<div class="menu-item-row" data-action="menu-nav" data-sub="articles">
         <div class="menu-item-icon">${ICONS.book}</div><div class="menu-item-label">${t('articles')}</div>${ICONS.chevronRightSmall}
-      </div>
+      </div>` : ''}
       <div class="menu-item-row" data-action="menu-nav" data-sub="tutorials">
         <div class="menu-item-icon">${ICONS.infoIcon}</div><div class="menu-item-label">${t('tutorials')}</div>${ICONS.chevronRightSmall}
       </div>
-      ${noticesAvailable() ? `<div class="menu-item-row" data-action="menu-nav" data-sub="notices">
+      ${featureOn('notices') ? `<div class="menu-item-row" data-action="menu-nav" data-sub="notices">
         <div class="menu-item-icon">${ICONS.mail}</div><div class="menu-item-label">${t('notices')} ${noticeRowBadge()}</div>${ICONS.chevronRightSmall}
       </div>` : ''}
       <div class="menu-item-row" data-action="menu-nav" data-sub="contact">
@@ -118,11 +118,10 @@ function renderProfilePage(){
       <div class="menu-item-row" data-action="menu-nav" data-sub="settings">
         <div class="menu-item-icon">${ICONS.gearIcon}</div><div class="menu-item-label">${t('settings')}</div>${ICONS.chevronRightSmall}
       </div>
-      <div class="menu-item-row disabled" aria-disabled="true">
+      ${/* The store is all locked/upgrade cards: hidden until it has something real (js/core/features.js). */ featureOn('store') ? `<div class="menu-item-row" data-action="menu-nav" data-sub="store">
         <div class="menu-item-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg></div>
-        <div class="menu-item-label">${t('store')}</div>
-        <span class="soon-badge">${t('comingSoon')}</span>
-      </div>
+        <div class="menu-item-label">${t('store')}</div>${ICONS.chevronRightSmall}
+      </div>` : ''}
     </div>
     ${/* No backend = no account: nothing to log out of (it used to wipe
          this device's data). */ REAL_LOGIN_DISABLED ? '' : `
