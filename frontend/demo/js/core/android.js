@@ -124,7 +124,7 @@ function widgetData(){
       holiday: cssColorHex('var(--holiday, var(--danger))'),
     },
     labels: { today: t('today'), planning: t('planning'), tasks: t('tasks'), habits: t('habits'), events: t('events'),
-      nothing: t('nothingPlanned'), period: t('periodDesktop'), calendar: t('calendar') },
+      nothing: t('nothingPlanned'), period: state.period && state.period.discreet ? t('discreetCycle') : t('periodDesktop'), calendar: t('calendar') },
     days: {}, months: [], desk: {}, plan: {}, period: null,
     ongoing: { on: pref('ongoingNotification') && !state.guest, days: {} },
   };
@@ -241,10 +241,13 @@ function widgetData(){
         const idx = Math.min(len - 1, Math.max(0, daysBetween(computePeriodCycleStart(pd), today)));
         const tmp = document.createElement('div');
         tmp.innerHTML = periodCenterDefault(periodDayCategories(pd), pd, true);
-        days[keyOf(today)] = { idx, main: tmp.querySelector('.period-center-main')?.textContent || '', sub: tmp.querySelector('.period-center-sub')?.textContent || '' };
+        // Discreet mode: the widget shows only "day 12 of 28", nothing about the period.
+        days[keyOf(today)] = pd.discreet
+          ? { idx, main: t('discreetDay').replace('{n}', dig(idx + 1)).replace('{len}', dig(len)), sub: '' }
+          : { idx, main: tmp.querySelector('.period-center-main')?.textContent || '', sub: tmp.querySelector('.period-center-sub')?.textContent || '' };
       }
     } finally { today.setTime(real); }
-    data.period = { len, arcs, days, title: t('periodDesktop') };
+    data.period = { len, arcs, days, title: pd.discreet ? t('discreetCycle') : t('periodDesktop') };
   }
   return data;
 }

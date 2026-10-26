@@ -179,7 +179,23 @@
     startHeartbeat();
     if (adopt || pending) { dirty = true; schedulePush(); }
     else saveCache(false, data);
-    return { profile: profile, settings: data.settings || {}, tasks: data.tasks || [], habits: data.habits || [], events: data.events || [], period: data.period || null };
+    // "Keep period data only on this device": this device's copy wins (the server has only the marker).
+    var sess = loadSession();
+    var period = periodLocal(sess && sess.user_id) || data.period || null;
+    if (period && period.localOnly && !period.lastStart && !periodLocal(sess && sess.user_id)) period = null; // marker only, no copy here (another device)
+    return { profile: profile, settings: data.settings || {}, tasks: data.tasks || [], habits: data.habits || [], events: data.events || [], period: period };
+  }
+
+  /* Period data kept only on this device (Settings → Period, state.period.localOnly):
+     it stays in this browser/app under the account's id, and the synced
+     document carries just { localOnly: true }, so the server's copy is gone
+     and friends it was shared with see nothing. */
+  var PERIOD_LOCAL_KEY = 'toojibee-period-local-v1';
+  function periodLocal(uid) {
+    try { var o = JSON.parse(localStorage.getItem(PERIOD_LOCAL_KEY) || 'null'); return o && o.uid === uid ? o.period : null; } catch (e) { return null; }
+  }
+  function keepPeriodLocal(uid, p) {
+    try { if (p) localStorage.setItem(PERIOD_LOCAL_KEY, JSON.stringify({ uid: uid, period: p })); else localStorage.removeItem(PERIOD_LOCAL_KEY); } catch (e) { /* private mode */ }
   }
 
   function snapshot() {
@@ -187,7 +203,11 @@
     /* global state */
     // A group's items live with the group (js/core/groups.js), not here.
     var own = function (x) { return !x.groupId; };
-    return { profile: state.profile, settings: state.settings, tasks: state.tasks.filter(own), habits: state.habits.filter(own), events: state.events.filter(own), period: state.period };
+    var s = loadSession(), uid = s && s.user_id;
+    var period = state.period;
+    if (period && period.localOnly) { keepPeriodLocal(uid, period); period = { localOnly: true }; }
+    else keepPeriodLocal(uid, null);
+    return { profile: state.profile, settings: state.settings, tasks: state.tasks.filter(own), habits: state.habits.filter(own), events: state.events.filter(own), period: period };
   }
 
   function schedulePush() {

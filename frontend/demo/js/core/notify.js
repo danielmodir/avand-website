@@ -119,9 +119,11 @@ function reminderSlots(day){
     let start = computePeriodCycleStart(pd);
     while(dateKey(start) < key) start = addDays(start, cycle);
     if(dateKey(addDays(start, -ahead)) === key){
-      const title = ahead === 1 ? t('periodRemindTomorrow') : t('periodRemindTitle').replace('{n}', lang() === 'fa' ? `${dig(ahead)} روز` : `${ahead} days`);
+      // Discreet mode: a neutral "reminder" on the lock screen, nothing about the period.
+      const title = pd.discreet ? t('discreetTitle')
+        : ahead === 1 ? t('periodRemindTomorrow') : t('periodRemindTitle').replace('{n}', lang() === 'fa' ? `${dig(ahead)} روز` : `${ahead} days`);
       const item = { id: 'period', title };
-      out.push({ slot: `period|period|${dateKey(start)}|${key}`, kind: '', id: '', date: dateKey(start), title, body: t('periodRemindBody'), at: atTimeOn(day, '09:00'), item });
+      out.push({ slot: `period|period|${dateKey(start)}|${key}`, kind: '', id: '', date: dateKey(start), title, body: pd.discreet ? t('discreetBody') : t('periodRemindBody'), at: atTimeOn(day, '09:00'), item });
     }
   }
   return out;

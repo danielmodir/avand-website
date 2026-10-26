@@ -361,7 +361,8 @@
     // women; nothing stored yet = version 0, the app's defaults.
     var period = null;
     if (p.gender === 'female') {
-      try { period = periodFromApi(await request('GET', '/period/profile')); } catch (e) { period = null; }
+      period = periodLocal(); // kept only on this device
+      if (!period) { try { period = periodFromApi(await request('GET', '/period/profile')); } catch (e) { period = null; } }
     }
     return {
       period: period,
@@ -687,7 +688,22 @@
              regular: r.regular || '', remindDays: r.remind_days || 0, quizCycle: r.quiz_cycle || null, quizPeriod: r.quiz_period || null,
              log: Array.isArray(r.log) ? r.log : [], asked: r.asked || {} };
   }
+  /* "Keep period data only on this device" (state.period.localOnly): kept
+     here under the account's id; the server's copy is erased once through
+     the module's own purge (/me/modules/period/purge) and nothing is sent. */
+  var PERIOD_LOCAL_KEY = 'toojibee-period-local-v1';
+  function periodLocal() {
+    var s = loadSession();
+    try { var o = JSON.parse(localStorage.getItem(PERIOD_LOCAL_KEY) || 'null'); return o && s && o.uid === s.user_id ? o.period : null; } catch (e) { return null; }
+  }
   async function savePeriod(pd) {
+    if (pd && pd.localOnly) {
+      var s = loadSession(), first = !periodLocal();
+      try { localStorage.setItem(PERIOD_LOCAL_KEY, JSON.stringify({ uid: s && s.user_id, period: pd })); } catch (e) { /* private mode */ }
+      if (first) { try { await request('POST', '/me/modules/period/purge'); } catch (e) { /* tried; the next save tries again */ localStorage.removeItem(PERIOD_LOCAL_KEY); } }
+      return;
+    }
+    try { localStorage.removeItem(PERIOD_LOCAL_KEY); } catch (e) { /* ignore */ }
     var body = { enabled: !!pd.enabled, last_start: pd.lastStart || null, cycle_length: Number(pd.cycleLength) || 28,
                  period_length: Number(pd.periodLength) || 5, quiz_step: pd.step === 'done' ? 4 : (Number(pd.step) || 0),
                  show_on_calendar: !!pd.calendarReminder, regular: pd.regular || '',

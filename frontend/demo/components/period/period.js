@@ -203,9 +203,56 @@ function renderPeriodSettings(){
         <div class="lbl">${t('editAnswers')}</div>
         ${ICONS.chevronRightSmall}
       </div>
-      ${Cloud.periodShares && Cloud.hasSession() ? periodShareRowHtml() : ''}
+      ${Cloud.periodShares && Cloud.hasSession() && !p.localOnly ? periodShareRowHtml() : ''}
+      <div class="section-title">${t('periodPrivacyTitle')}</div>
+      ${Cloud.hasSession && Cloud.hasSession() ? `<div class="settings-row">
+        <div><div class="lbl">${t('periodLocalOnly')}</div><div class="sub">${t('periodLocalOnlySub')}</div></div>
+        <div class="switch ${p.localOnly?'on':''}" data-action="toggle-period-local" role="switch" aria-checked="${!!p.localOnly}" aria-label="${escapeAttr(t('periodLocalOnly'))}"><div class="knob"></div></div>
+      </div>` : ''}
+      <div class="settings-row">
+        <div><div class="lbl">${t('periodDiscreet')}</div><div class="sub">${t('periodDiscreetSub')}</div></div>
+        <div class="switch ${p.discreet?'on':''}" data-action="toggle-period-discreet" role="switch" aria-checked="${!!p.discreet}" aria-label="${escapeAttr(t('periodDiscreet'))}"><div class="knob"></div></div>
+      </div>
+      ${androidApp && typeof androidApp.setLock === 'function' ? `<div class="settings-row">
+        <div><div class="lbl">${t('appLock')}</div><div class="sub">${t('appLockSub')}</div></div>
+        <div class="switch ${appLockOn()?'on':''}" data-action="toggle-app-lock" role="switch" aria-checked="${appLockOn()}" aria-label="${escapeAttr(t('appLock'))}"><div class="knob"></div></div>
+      </div>` : ''}
+      <div class="period-data-actions">
+        <button type="button" class="btn btn-outline btn-small" data-action="period-export">${t('periodExport')}</button>
+        <button type="button" class="btn btn-outline btn-small period-delete-btn" data-action="period-delete-all">${t('periodDeleteAll')}</button>
+      </div>
+      <div class="profile-hint">${t('periodPrivacyNote')} <a href="${lang() === 'fa' ? '/fa/privacy/#period' : '/en/privacy/#period'}" target="_blank" rel="noopener">${t('periodPrivacyMore')}</a></div>
     ` : ''}
   `;
+}
+
+/* ---- her period data: privacy controls (Settings → Period) ---- */
+
+// App lock: the phone's own screen lock (PIN, pattern or fingerprint) when the app opens. APK 1.3+.
+function appLockOn(){ try{ return !!(androidApp && androidApp.lockOn && androidApp.lockOn()); }catch(e){ return false; } }
+
+/* Everything about her cycle as a JSON file (download in a browser; the
+   share sheet in the Android app, which can save it to Files). */
+function exportPeriodData(){
+  const data = JSON.stringify({ app: 'Toojibee', kind: 'period', exported: new Date().toISOString(), period: state.period }, null, 2);
+  if(androidApp){ androidApp.share('toojibee-period.json', data); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = 'toojibee-period-' + dateKey(today) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* Deletes her whole cycle (answers, log, sharing) here and on the server; the desk turns off. */
+function deleteAllPeriodData(){
+  if(!confirm(t('periodDeleteConfirm'))) return;
+  const keepLocal = !!state.period.localOnly;
+  state.period = { enabled: false, calendarReminder: false, step: 0, lastStart: null, cycleLength: 28, periodLength: 5, log: [], asked: {}, remindDays: 0, localOnly: keepLocal, discreet: !!state.period.discreet };
+  if(Cloud.savePeriodShares && Cloud.hasSession() && (state.periodShares || []).length) Cloud.savePeriodShares([]).catch(() => {});
+  state.periodShares = [];
+  savePeriodSetup();
+  render();
+  showToast(t('periodDeleted'));
 }
 
 /* ---- sharing my cycle with friends (up to PERIOD_SHARE_MAX) ----
@@ -308,7 +355,7 @@ function savePeriodSetup(){
 
 function periodViews(){
   const views = [];
-  if(state.profile.gender === 'female' && state.period.enabled) views.push({ own: true, p: state.period });
+  if(state.profile.gender === 'female' && state.period.enabled && periodAgeOk()) views.push({ own: true, p: state.period });
   (state.sharedPeriods || []).forEach(s => views.push({
     own: false, name: s.name, userId: s.userId,
     p: Object.assign({ enabled: true, step: 'done' }, s.period),

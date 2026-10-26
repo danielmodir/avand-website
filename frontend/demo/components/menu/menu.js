@@ -502,7 +502,7 @@ function renderAdminPanel(){
         <div class="switch ${pref('groupsEnabled')?'on':''}" data-action="toggle-groups-enabled"><div class="knob"></div></div>
       </div>
     ` : ''}
-    ${state.profile.gender === 'female' ? `
+    ${state.profile.gender === 'female' && periodAgeOk() ? `
       <div class="desktop-manage-card">
         <button type="button" class="desktop-manage-gear" data-action="open-desktop-settings" data-sub="settings-period" aria-label="${t('settings')}">${ICONS.gearIcon}</button>
         <div class="desktop-manage-title">${t('periodDesktop')}</div>

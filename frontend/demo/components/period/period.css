@@ -230,3 +230,7 @@
 .period-share-row .period-share-btn{ flex:0 0 auto; max-width:46%; }
 .period-share-names{ font-size:12px; color:var(--text-muted); margin:-4px 4px 10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .device.lang-fa .period-share-names{ text-align:right; }
+/* Settings → Period: export / delete-all buttons. */
+.period-data-actions{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 10px; }
+.period-data-actions .btn{ min-height:44px; }
+.period-delete-btn{ color:var(--danger); border-color:var(--danger); }

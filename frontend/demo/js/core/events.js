@@ -356,6 +356,23 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'toggle-period-enabled'){ state.period.enabled = !state.period.enabled; savePeriodSetup(); render(); return; }
   if(action === 'toggle-planning-enabled'){ state.settings.planningEnabled = !state.settings.planningEnabled; cloudSync(() => Cloud.saveSettings(state.settings)); render(); return; }
   if(action === 'toggle-calendar-reminder'){ state.period.calendarReminder = !state.period.calendarReminder; savePeriodSetup(); render(); return; }
+  // Her period data's privacy controls (components/period/period.js).
+  if(action === 'toggle-period-local'){
+    const on = !state.period.localOnly;
+    if(on && !confirm(t('periodLocalOnlyConfirm'))) return;
+    state.period.localOnly = on;
+    if(on){ state.periodShares = []; if(Cloud.savePeriodShares) Cloud.savePeriodShares([]).catch(() => {}); }
+    savePeriodSetup(); render(); return;
+  }
+  if(action === 'toggle-period-discreet'){ state.period.discreet = !state.period.discreet; savePeriodSetup(); scheduleWidgetData(); startReminders(); render(); return; }
+  if(action === 'toggle-app-lock'){
+    const want = !appLockOn();
+    const res = androidApp.setLock(want); // 'ok', or 'no_lock' when the phone has no screen lock
+    if(res === 'no_lock') showToast(t('appLockNoScreenLock'));
+    render(); return;
+  }
+  if(action === 'period-export'){ exportPeriodData(); return; }
+  if(action === 'period-delete-all'){ deleteAllPeriodData(); return; }
   if(action === 'period-settings' || action === 'period-quiz-start'){
     state.menuSubView = 'settings-period';
     render();
