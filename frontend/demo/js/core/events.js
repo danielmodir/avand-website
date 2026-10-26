@@ -360,6 +360,10 @@ document.getElementById('device').addEventListener('click', (e) => {
     goToDesktopIndex(i);
     return;
   }
+  // Ready-made plans and the focus timer (js/core/templates.js)
+  if(action === 'apply-template'){ applyTemplate(el.dataset.key); return; }
+  if(action === 'focus-toggle'){ focusToggle(); return; }
+  if(action === 'focus-reset'){ focusReset(); return; }
   if(action === 'challenge-nudge'){ challengeNudge(el.dataset.name, el.dataset.title); return; } // js/core/challenge.js
   if(action === 'share-card'){ shareCard(el.dataset.kind, el.dataset.id); return; } // js/core/share-card.js
   // Backup & transfer (js/core/backup.js)

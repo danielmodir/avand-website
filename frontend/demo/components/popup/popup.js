@@ -753,6 +753,7 @@ function submitPopup(){
       recurrence, notification,
       // A new habit starts on the day picked in the calendar.
       startDate: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(state.homeDate || today),
+      endDate: state.editingId ? (findItem('habit', state.editingId).endDate || null) : null, // kept when edited (a template's last day)
       completedDates: state.editingId ? findItem('habit', state.editingId).completedDates : [],
       skippedDates: state.editingId ? (findItem('habit', state.editingId).skippedDates || []) : [],
       tracker: formDraft.tracker || null,

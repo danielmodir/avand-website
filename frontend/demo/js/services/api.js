@@ -336,7 +336,7 @@
       versions['habits:' + row.id] = row.version;
       var own = logs[row.id] || [];
       return {
-        id: row.id, title: row.title, startDate: row.start_date,
+        id: row.id, title: row.title, startDate: row.start_date, endDate: row.end_date || null,
         recurrence: recurrenceFromApi(row), notification: reminderFromApi(row),
         tracker: row.tracker || null, progress: progress[row.id] || {},
         completedDates: own.filter(function (l) { return l.status === 'done'; }).map(function (l) { return l.log_date; }),
@@ -501,7 +501,7 @@
 
   function saveHabit(habit) {
     return enqueue('habit:' + habit.id, async function () {
-      await putVersioned('habits', habit.id, Object.assign({ title: habit.title, start_date: habit.startDate, tracker: habit.tracker || null },
+      await putVersioned('habits', habit.id, Object.assign({ title: habit.title, start_date: habit.startDate, end_date: habit.endDate || null, tracker: habit.tracker || null },
         recurrenceToApi(habit.recurrence, false), reminderToApi(habit.notification)));
       var values = habit.progress || {};
       var want = {};
