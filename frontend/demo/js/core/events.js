@@ -55,6 +55,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'delete-event'){
     if(!deleteGroupAware('event', el.dataset.id)){ state.events = state.events.filter(x=>x.id!==el.dataset.id); cloudSync(() => Cloud.deleteEvent(el.dataset.id)); }
+    forgetItemReminders('event', el.dataset.id); // its reminders go too (js/core/notify.js)
     render(); return;
   }
   // Group planning (components/groups/groups.js).
@@ -372,6 +373,9 @@ document.getElementById('device').addEventListener('click', (e) => {
     render(); return;
   }
   if(action === 'period-export'){ exportPeriodData(); return; }
+  // Settings → General: reminders on time (menu.js reminderHealthHtml, APK 1.3+).
+  if(action === 'reminder-fix'){ androidApp.openReminderSettings(el.dataset.val); return; }
+  if(action === 'reminder-test'){ androidApp.testReminder(); showToast(t('testReminderSet')); return; }
   if(action === 'period-delete-all'){ deleteAllPeriodData(); return; }
   if(action === 'period-settings' || action === 'period-quiz-start'){
     state.menuSubView = 'settings-period';

@@ -391,3 +391,19 @@ function syncAndroidSchedule(force){
   try{ if(androidApp.setLang) androidApp.setLang(lang()); }catch(e){}
   try{ androidApp.schedule(json); }catch(e){ androidSent = null; }
 }
+
+/* A task, habit or event was deleted: its reminders go at once, not at the
+   next tick (they kept coming when the app was closed right after): the
+   phone's list and the server's push queue are replaced now, and any of its
+   notifications already in the notification shade are taken away. The tag
+   of every reminder is its slot, "type|kind|id|date|at" (reminderSlots). */
+function forgetItemReminders(kind, id){
+  if(!id) return;
+  const mine = tag => String(tag || '').indexOf(`|${kind}|${id}|`) !== -1;
+  setTimeout(() => {
+    syncAndroidSchedule(true);
+    syncPushSchedule(true);
+    try{ if(androidApp && typeof androidApp.cancelItem === 'function') androidApp.cancelItem(kind, id); }catch(e){} // APK 1.3+
+    if(notifyReg && notifyReg.getNotifications) notifyReg.getNotifications().then(list => list.forEach(n => { if(mine(n.tag)) n.close(); })).catch(() => {});
+  }, 0);
+}

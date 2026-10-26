@@ -442,6 +442,7 @@ function deleteItem(type, id){
   if(type === 'task'){
     state.tasks = state.tasks.filter(x => x.id !== id);
     cloudSync(() => Cloud.deleteTask(id));
+    forgetItemReminders('task', id); // js/core/notify.js
   } else if(type === 'subtask'){
     const { parent } = findTaskOrSub(id);
     if(!parent) return;
@@ -451,6 +452,7 @@ function deleteItem(type, id){
   } else if(type === 'habit'){
     state.habits = state.habits.filter(x => x.id !== id);
     cloudSync(() => Cloud.deleteHabit(id));
+    forgetItemReminders('habit', id);
   }
 }
 

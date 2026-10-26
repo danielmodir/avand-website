@@ -533,6 +533,28 @@ function renderSharePage(){
   `;
 }
 
+/* Settings → General, in the Android app (APK 1.3+): what can keep reminders
+   from coming on time — exact alarms switched off (Android 12+), battery
+   saving, notifications off — each with a button to the phone's own
+   screen for it, a hint for phones that close apps hard (Xiaomi, Huawei,
+   Samsung…), and a test reminder in a minute. */
+function reminderHealthHtml(){
+  if(!androidApp || typeof androidApp.reminderHealth !== 'function') return '';
+  let h = {};
+  try{ h = JSON.parse(androidApp.reminderHealth() || '{}'); }catch(e){}
+  const row = (ok, label, fix) => `<div class="health-row ${ok ? 'ok' : 'bad'}">
+      <span class="health-mark" aria-hidden="true">${ok ? '✓' : '!'}</span><span class="health-label">${t(label)}</span>
+      ${ok ? '' : `<button type="button" class="btn btn-outline btn-small" data-action="reminder-fix" data-val="${fix}">${t('fixIt')}</button>`}
+    </div>`;
+  return `
+    <div class="section-title">${t('reminderHealthTitle')}</div>
+    ${row(h.notify !== false, 'healthNotify', 'app')}
+    ${row(h.exact !== false, 'healthExact', 'exact')}
+    ${row(h.battery === true, 'healthBattery', 'battery')}
+    <div class="profile-hint">${t('healthOemHint')}</div>
+    <button type="button" class="btn btn-outline btn-small health-test" data-action="reminder-test">${t('testReminder')}</button>`;
+}
+
 /* The real version: the Android app's own (its WebView adds
    "ToojibeeAndroid/1.2.0", android/.../AppWeb.kt), else the web app's
    files version (include.js ASSET_VERSION). Never "beta". */
@@ -601,6 +623,7 @@ function renderGeneralSettings(){
         ${on ? prefRow('notifyOverdue', 'prefNotifyOverdue', 'prefNotifyOverdueSub') : ''}`;
     })()}
     ${androidApp && typeof androidApp.setWidgets === 'function' ? prefRow('ongoingNotification', 'prefOngoing', 'prefOngoingSub') : ''}
+    ${reminderHealthHtml()}
   `;
 }
 

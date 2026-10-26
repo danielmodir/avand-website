@@ -62,6 +62,7 @@ function attachSwipeToDelete(container){
             if(deleteGroupAware(type, id)){ /* a group's item: saved to the group (js/core/groups.js) */ }
             else if(type === 'task'){ state.tasks = state.tasks.filter(x=>x.id!==id); cloudSync(() => Cloud.deleteTask(id)); }
             else if(type === 'habit'){ state.habits = state.habits.filter(x=>x.id!==id); cloudSync(() => Cloud.deleteHabit(id)); }
+            if(type === 'task' || type === 'habit') forgetItemReminders(type, id); // its reminders go too (js/core/notify.js)
             render();
           }, 190);
         }
