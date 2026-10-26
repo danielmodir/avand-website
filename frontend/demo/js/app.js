@@ -70,6 +70,7 @@ function enterGuestMode(){
   state.tasks = []; state.habits = []; state.events = [];
   state.connections = [];
   state.inviteToken = null;
+  state.mcpLink = null;
   state.sharedPeriods = []; state.periodShares = null; state.periodViewIndex = 0;
   clearGroupsState();
   tourAutoSession = null; // the next account decides its own (tour.js)

@@ -104,7 +104,11 @@ there and update the versions/map, so later sessions don't re-read the code.
   what the marketing site is allowed to claim. Same for the "Group planning"
   desk (repo owner, 2026-10-25): groups of friends sharing tasks, habits and
   events (js/core/groups.js, components/groups/, lib/groups.php,
-  apps/social/groups.py).
+  apps/social/groups.py). Same for "Connect to AI" (repo owner, 2026-10-26):
+  a personal MCP link in Profile lets an MCP client (Claude Code, Cursor…)
+  read and change the person's tasks, habits and events — never period
+  data (backend-php/lib/mcp.php, apps/core/mcp.py + apps/planning/mcp.py).
+  The marketing site still never mentions AI.
 - Do not name competitors in copy. Do not invent numbers, testimonials or user counts.
 - If something is not in /docs, ask me instead of guessing.
 

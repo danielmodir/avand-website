@@ -467,6 +467,19 @@ function tj_migrate(PDO $db): void {
         $db->exec("ALTER TABLE tj_group_members ADD COLUMN role VARCHAR(8) NOT NULL DEFAULT 'member'");
         $db->exec('INSERT INTO tj_schema (version) VALUES (23)');
     }
+    if ($v < 24) {
+        // "Connect to AI" (lib/mcp.php): one personal MCP link per account.
+        // The hash finds it; the encrypted copy lets Profile show it again.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_mcp_keys (
+            user_id $fk NOT NULL PRIMARY KEY,
+            key_hash CHAR(64) NOT NULL UNIQUE,
+            key_enc VARCHAR(255) NOT NULL,
+            created_at DATETIME NOT NULL,
+            last_used_at DATETIME NULL,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (24)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

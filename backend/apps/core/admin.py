@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from .models import (
-    AppContent, AppRelease, AuthEvent, AuthSession, EmailOutbox, LegalDocument, Module, Profile, StoredFile,
+    AppContent, AppRelease, AuthEvent, AuthSession, EmailOutbox, LegalDocument, McpKey, Module, Profile, StoredFile,
     SupportMessage, User, UserModule, UserPurgeTask, UserSettings,
 )
 
@@ -251,3 +251,16 @@ class SupportMessageAdmin(admin.ModelAdmin):
         if obj.reply and answered:
             from .services.email import queue_email
             queue_email(obj.user, EmailOutbox.Template.SUPPORT_REPLY, obj.lang, {"reply": obj.reply, "question": obj.body})
+
+
+@admin.register(McpKey)
+class McpKeyAdmin(ReadOnlyAdmin):
+    """Connect to AI: who has a personal MCP link and when an AI app last
+    used it. The link itself is never shown here (only the person sees it)."""
+
+    list_display = ("user", "created_at", "last_used_at")
+    list_filter = ("last_used_at",)
+    search_fields = ("user__email",)
+    ordering = ("-last_used_at",)
+    fields = ("user", "created_at", "last_used_at")
+    readonly_fields = fields

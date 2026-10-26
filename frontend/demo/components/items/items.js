@@ -108,7 +108,8 @@ function setTaskStatusOn(task, key, status){
     task.skipped = status === 'not_done';
     return;
   }
-  task.statusByDate = task.statusByDate || {};
+  // An older server save could turn an empty {} into []: keys on an array are lost when saved.
+  task.statusByDate = Object.assign({}, task.statusByDate);
   if(status) task.statusByDate[key] = status; else delete task.statusByDate[key];
 }
 

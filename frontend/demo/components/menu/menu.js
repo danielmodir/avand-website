@@ -1,5 +1,5 @@
 const MENU_PARENT = {
-  'profile': null, 'profile-edit': 'profile', 'share': 'profile', 'about': 'profile', 'contact': 'profile', 'notices': 'profile', 'articles': 'profile', 'tutorials': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
+  'profile': null, 'profile-edit': 'profile', 'ai-connect': 'profile', 'share': 'profile', 'about': 'profile', 'contact': 'profile', 'notices': 'profile', 'articles': 'profile', 'tutorials': 'profile', 'settings': 'profile', 'friends': 'profile', 'store': null, 'admin': null,
   'settings-general': 'settings', 'settings-calendar': 'settings', 'settings-avandmenu': 'settings',
   // Monthly-cycle settings live with the desks in Management (its gear), not in Settings.
   'settings-period': 'admin',
@@ -24,6 +24,7 @@ function renderMenu(){
   if(sub === 'profile') return renderProfilePage();
   if(sub === 'profile-edit') return renderProfileEditPage();
   if(sub === 'friends') return renderFriendsPage();
+  if(sub === 'ai-connect') return renderAiConnectPage();
   if(sub === 'store') return renderStorePage();
   if(sub === 'admin') return renderAdminPanel();
   if(sub === 'share') return renderSharePage();
@@ -93,6 +94,9 @@ function renderProfilePage(){
         <div class="menu-item-label">${t('connections')} <span class="count">${dig(state.connections.filter(c=>c.status==='accepted').length)}</span></div>
         ${ICONS.chevronRightSmall}
       </div>`}
+      ${aiConnectAvailable() ? `<div class="menu-item-row" data-action="menu-nav" data-sub="ai-connect">
+        <div class="menu-item-icon">${ICONS.linkIcon}</div><div class="menu-item-label">${t('aiConnect')}</div>${ICONS.chevronRightSmall}
+      </div>` : ''}
       <div class="menu-item-row" data-action="menu-nav" data-sub="share">
         <div class="menu-item-icon">${ICONS.shareIcon}</div><div class="menu-item-label">${t('shareApp')}</div>${ICONS.chevronRightSmall}
       </div>
@@ -127,6 +131,61 @@ function renderProfilePage(){
       <span class="logout-hold-label">${t('logout')}</span>
     </button>`}
   `;
+}
+
+/* ---- Connect to AI: the person's own MCP link (backend: /me/mcp) ----
+   An AI app that speaks MCP reads and changes their tasks, habits and
+   events through it. Needs an account (the link is the account's). */
+function aiConnectAvailable(){ return !!Cloud.mcpLink && !REAL_LOGIN_DISABLED && !state.guest && Cloud.hasSession(); }
+
+async function refreshMcpLink(){
+  if(!aiConnectAvailable()) return;
+  try{ state.mcpLink = await Cloud.mcpLink(); }
+  catch(e){ state.mcpLink = state.mcpLink || { error: true }; }
+  if(state.menuSubView === 'ai-connect') render();
+}
+
+function mcpCommand(url){ return `claude mcp add --transport http toojibee "${url}"`; }
+
+function renderAiConnectPage(){
+  const s = state.mcpLink;
+  // PHP sends 'YYYY-MM-DD HH:MM:SS' (UTC), Django an ISO time with its zone.
+  const when = v => { const d = v ? new Date(v.includes('T') ? v : v.replace(' ', 'T') + 'Z') : null; return d && !isNaN(d) ? shortDate(d) : ''; };
+  let body;
+  if(!s) body = `<div class="empty-hint">…</div>`;
+  else if(s.error) body = `<div class="empty-hint">${t('saveFailed')}</div>`;
+  else if(!s.connected) body = `
+    <div class="invite-card">
+      <div class="lbl">${t('aiLinkTitle')}</div>
+      <div class="sub">${t('aiLinkWarn')}</div>
+      <div class="invite-actions"><button type="button" class="btn btn-primary btn-small" data-action="ai-link-make">${ICONS.linkIcon}<span>${t('aiMake')}</span></button></div>
+    </div>`;
+  else body = `
+    <div class="invite-card">
+      <div class="lbl">${t('aiLinkTitle')}</div>
+      <div class="sub">${t('aiLinkWarn')}</div>
+      <div class="invite-link-box" dir="ltr">${escapeHtml(s.url)}</div>
+      <div class="invite-actions">
+        <button type="button" class="btn btn-primary btn-small" data-action="ai-link-copy">${ICONS.copyIcon}<span>${t('copyLink')}</span></button>
+        <button type="button" class="btn btn-outline btn-small" data-action="ai-link-new">${t('newLink')}</button>
+        <button type="button" class="btn btn-outline btn-small" style="color:var(--danger); border-color:var(--danger);" data-action="ai-link-remove">${t('aiRemove')}</button>
+      </div>
+      <div class="sub">${s.last_used_at ? t('aiLastUsed').replace('{d}', when(s.last_used_at)) : t('aiNeverUsed')}</div>
+    </div>
+    <div class="invite-card">
+      <div class="lbl">${t('aiCmdTitle')}</div>
+      <div class="invite-link-box" dir="ltr">${escapeHtml(mcpCommand(s.url))}</div>
+      <div class="invite-actions"><button type="button" class="btn btn-outline btn-small" data-action="ai-cmd-copy">${ICONS.copyIcon}<span>${t('aiCmdCopy')}</span></button></div>
+    </div>
+    <div class="invite-card">
+      <div class="lbl">${t('aiOtherTitle')}</div>
+      <div class="sub">${t('aiOther')}</div>
+    </div>`;
+  return `
+    ${subHeader(t('aiConnect'))}
+    <div class="empty-hint" style="margin-bottom:12px;">${t('aiIntro')}</div>
+    ${body}
+    <div class="tj-menu-note">${t('aiNoPeriod')}</div>`;
 }
 
 /* Birth date as numbers only, in the main calendar: ۱۳۷۴/۰۷/۲۵. */

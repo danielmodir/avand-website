@@ -40,7 +40,7 @@ function tj_meminfo(): ?array {
  * parts of the product, the way the Django backend splits them into
  * one database per module. The panel shows them grouped like that. */
 const TJ_DB_GROUPS = [
-    'accounts' => ['tj_users', 'tj_sessions', 'tj_tokens', 'tj_attempts'],
+    'accounts' => ['tj_users', 'tj_sessions', 'tj_tokens', 'tj_attempts', 'tj_mcp_keys'],
     'userdata' => ['tj_user_data'],
     'social'   => ['tj_connections', 'tj_blocks', 'tj_period_shares', 'tj_groups', 'tj_group_members', 'tj_group_items', 'tj_group_marks'],
     'notifications' => ['tj_push_subs', 'tj_push_queue'],

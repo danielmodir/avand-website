@@ -202,6 +202,10 @@ REST_FRAMEWORK = {
         "groups": "60/hour",
         "upload": "60/hour",
         "support": "60/hour",
+        # Connect to AI (apps/core/mcp.py): new links, tool calls, wrong keys.
+        "mcp_link": "10/hour",
+        "mcp": "120/min",
+        "mcp_bad": "30/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
     "UNAUTHENTICATED_USER": None,

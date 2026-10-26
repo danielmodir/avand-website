@@ -351,6 +351,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
             <label>غیرفعال بیش از … روز<input id="uf-inactive_days" type="number" min="1" max="3650" inputmode="numeric"></label>
             <label>ایمیل<select id="uf-verified"><option value="">همه</option><option value="yes">تأییدشده</option><option value="no">تأییدنشده</option></select></label>
             <label>دستگاه (۳۰ روز اخیر)<select id="uf-device"><option value="">همه</option><option value="app">اپ اندروید</option><option value="phone">مرورگر گوشی</option><option value="desktop">کامپیوتر</option></select></label>
+            <label>اتصال به هوش مصنوعی<select id="uf-ai"><option value="">همه</option><option value="linked">لینک MCP دارن</option><option value="used">تو ۳۰ روز اخیر استفاده کردن</option><option value="none">لینک ندارن</option></select></label>
           </div>
           <div class="actions mt">
             <button class="btn ghost" type="button" id="uf-clear">پاک کردن فیلترها</button>
@@ -543,7 +544,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   };
   var USTATUS = { active: ['فعال', 'good'], suspended: ['معلق', 'bad'] };
   var users = { q: '', filter: 'all', offset: 0, extra: {} };
-  var UF = ['gender', 'age_min', 'age_max', 'born_from', 'born_to', 'joined_from', 'joined_to', 'active_days', 'inactive_days', 'verified', 'device'];
+  var UF = ['gender', 'age_min', 'age_max', 'born_from', 'born_to', 'joined_from', 'joined_to', 'active_days', 'inactive_days', 'verified', 'device', 'ai'];
 
   /* A user's device (lib/admin_users.php tj_device_of): the Android app
      with its version, a phone's browser, or a computer. */
@@ -1134,7 +1135,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
 
   var TABLE_NAMES = {
     tj_users: 'حساب‌های کاربرها', tj_user_data: 'داده‌های ذخیره‌شده‌ی کاربرها', tj_sessions: 'نشست‌های ورود کاربرها',
-    tj_tokens: 'لینک‌های ایمیل (تأیید/بازیابی)', tj_attempts: 'محدودیت تلاش‌ها', tj_admins: 'ادمین‌ها',
+    tj_tokens: 'لینک‌های ایمیل (تأیید/بازیابی)', tj_attempts: 'محدودیت تلاش‌ها', tj_mcp_keys: 'لینک‌های اتصال به هوش مصنوعی (MCP)',tj_admins: 'ادمین‌ها',
     tj_admin_sessions: 'نشست‌های ادمین', tj_admin_audit: 'گزارش فعالیت ادمین‌ها', tj_schema: 'نسخه‌ی ساختار دیتابیس',
     tj_connections: 'دوستی‌ها و درخواست‌ها', tj_blocks: 'مسدودی‌ها', tj_period_shares: 'اشتراک عادت ماهانه با دوستان', tj_push_subs: 'نشانی اعلان مرورگرها', tj_push_queue: 'یادآورهای در صف ارسال', tj_messages: 'پیام‌های «ارتباط با ما»', tj_content: 'محتوای سایت', tj_articles: 'مقاله‌ها',
     tj_hijri_months: 'شروع ماه‌های قمری (رسمی)',
@@ -1310,6 +1311,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         // The newest sign-in's device; "+ اپ" when the app was used lately too.
         var tdD = el('td', '', deviceLabel(u.device, u.device === 'app' ? u.app_version : null));
         if (u.uses_app && u.device !== 'app') tdD.appendChild(el('span', 'tag', '+ اپ'));
+        // Connect to AI: has a personal MCP link (and whether an AI app used it).
+        if (u.ai_linked) tdD.appendChild(el('span', 'tag', u.ai_last_used_at ? '+ AI' : '+ AI (استفاده نشده)'));
         tr.appendChild(tdD);
         if (res.personal) tr.appendChild(el('td', '', u.birth_date ? birthLabel(u.birth_date) : '—'));
         tr.appendChild(el('td', '', when(u.created_at)));
@@ -1336,7 +1339,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
        ['ثبت‌نام', when(u.created_at)], ['آخرین حضور', when(u.last_seen_at)], ['زمان استفاده از برنامه', dur(u.active_seconds)],
        ['تعداد ذخیره‌ها', fa(u.saves)], ['آخرین ذخیره', when(u.last_save_at)], ['حجم داده', kb(u.data_bytes)],
        ['دستگاه‌های وارد‌شده', fa(u.devices.length)], ['آخرین دستگاه', deviceLabel(u.device, u.device === 'app' ? u.app_version : null)],
-       ['اپ اندروید', u.uses_app ? 'استفاده می‌کنه' + (u.app_version ? ' (نسخه‌ی ' + fa(u.app_version) + ')' : '') : 'تو ۳۰ روز اخیر نه']].forEach(function (p) {
+       ['اپ اندروید', u.uses_app ? 'استفاده می‌کنه' + (u.app_version ? ' (نسخه‌ی ' + fa(u.app_version) + ')' : '') : 'تو ۳۰ روز اخیر نه'],
+       ['اتصال به هوش مصنوعی (MCP)', u.ai_linked ? 'لینک ساخته: ' + when(u.ai_linked_at) + ' · آخرین استفاده: ' + (u.ai_last_used_at ? when(u.ai_last_used_at) : 'هنوز نه') : 'لینک نداره']].forEach(function (p) {
         var d = el('div'); d.appendChild(el('b', '', p[0])); d.appendChild(document.createTextNode(p[1])); kv.appendChild(d);
       });
       box.appendChild(kv);
@@ -1389,7 +1393,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       // Where they use it: the Android app, a phone's browser, a computer (last 30 days).
       var dev = $('device-stats');
       dev.textContent = '';
-      [['app_users_30d', 'با اپ اندروید'], ['online_app', 'آنلاین الان با اپ'], ['phone_web_users_30d', 'با مرورگر گوشی'], ['desktop_users_30d', 'با کامپیوتر']].forEach(function (s) {
+      [['app_users_30d', 'با اپ اندروید'], ['online_app', 'آنلاین الان با اپ'], ['phone_web_users_30d', 'با مرورگر گوشی'], ['desktop_users_30d', 'با کامپیوتر'],
+       ['ai_linked', 'لینک اتصال به AI دارن'], ['ai_used_30d', 'با AI (۳۰ روز اخیر)']].forEach(function (s) {
         var c = el('div', 'card stat');
         c.appendChild(el('div', 'n', fa(o[s[0]] || 0)));
         c.appendChild(el('div', 'l', s[1]));

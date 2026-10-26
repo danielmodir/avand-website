@@ -291,6 +291,27 @@ document.getElementById('device').addEventListener('click', (e) => {
       .catch(() => { showToast(t('saveFailed')); el.disabled = false; });
     return;
   }
+  // Connect to AI (components/menu/menu.js renderAiConnectPage).
+  if(action === 'ai-link-make' || action === 'ai-link-new'){
+    const make = () => {
+      el.disabled = true;
+      Cloud.makeMcpLink().then(r => { state.mcpLink = r; showToast(t(action === 'ai-link-new' ? 'newLinkDone' : 'aiMade')); render(); })
+        .catch(() => { showToast(t('saveFailed')); el.disabled = false; });
+    };
+    if(action === 'ai-link-make') make();
+    else appConfirm(t('aiNewConfirm'), t('newLink')).then(yes => { if(yes) make(); });
+    return;
+  }
+  if(action === 'ai-link-copy'){ if(state.mcpLink?.url){ copyText(state.mcpLink.url); showToast(t('aiCopied')); } return; }
+  if(action === 'ai-cmd-copy'){ if(state.mcpLink?.url){ copyText(mcpCommand(state.mcpLink.url)); showToast(t('aiCmdCopied')); } return; }
+  if(action === 'ai-link-remove'){
+    appConfirm(t('aiRemoveConfirm'), t('aiRemove'), true).then(yes => {
+      if(!yes) return;
+      Cloud.removeMcpLink().then(r => { state.mcpLink = r; showToast(t('aiRemoved')); render(); })
+        .catch(() => showToast(t('saveFailed')));
+    });
+    return;
+  }
   if(action === 'connect-request'){ runConnectionAction(el, () => Cloud.sendConnectionRequest(el.dataset.id)); return; }
   if(action === 'connect-accept'){ runConnectionAction(el, () => Cloud.respondConnectionRequest(el.dataset.id, true)); return; }
   if(action === 'connect-decline'){ runConnectionAction(el, () => Cloud.respondConnectionRequest(el.dataset.id, false)); return; }
@@ -354,6 +375,7 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'menu-nav'){
     state.menuSubView = el.dataset.sub; render();
     if(state.menuSubView === 'friends') refreshConnections();
+    if(state.menuSubView === 'ai-connect') refreshMcpLink();
     return;
   }
   if(action === 'menu-back'){

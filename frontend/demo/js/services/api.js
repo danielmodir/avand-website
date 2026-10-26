@@ -724,6 +724,10 @@
     searchUser: searchUser, sendConnectionRequest: sendConnectionRequest, respondConnectionRequest: respondConnectionRequest,
     removeConnection: removeConnection, blockUser: blockUser, unblockUser: unblockUser, listConnections: listConnections,
     inviteToken: inviteToken, resetInviteToken: resetInviteToken, acceptInvite: acceptInvite,
+    // Connect to AI (backend/apps/core/mcp.py): the personal MCP link.
+    mcpLink: function () { return request('GET', '/me/mcp'); },
+    makeMcpLink: function () { return request('POST', '/me/mcp'); },
+    removeMcpLink: function () { return request('DELETE', '/me/mcp'); },
     calendarYear: calendarYear,
     supportsGroups: true, groups: groups, createGroup: createGroup, updateGroup: updateGroup, deleteGroup: deleteGroup, leaveGroup: leaveGroup,
     resetGroupLink: resetGroupLink, joinGroup: joinGroup, saveGroupItem: saveGroupItem, deleteGroupItem: deleteGroupItem, markGroupItem: markGroupItem,

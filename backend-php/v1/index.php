@@ -75,6 +75,9 @@ $routes = [
     'GET /notifications/push-key'      => 'tj_push_key',
     'POST /notifications/subscriptions'=> 'tj_push_subscribe',
     'PUT /notifications/schedule'      => 'tj_push_schedule',
+    'GET /me/mcp'               => 'tj_mcp_link_get',
+    'POST /me/mcp'              => 'tj_mcp_link_create',
+    'DELETE /me/mcp'            => 'tj_mcp_link_delete',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header
@@ -179,7 +182,8 @@ if (preg_match('#^/notifications/subscriptions/([a-f0-9]{32})$#', $path, $m)) {
     tj_fail(405, 'method_not_allowed');
 }
 
-// MCP server for Claude connectors (lib/mcp.php): one URL, every method.
+// The person's MCP server (lib/mcp.php): the personal link, or the key as a Bearer token.
+if (preg_match('#^/mcp/u/([A-Za-z0-9_-]{8,100})$#', $path, $m)) tj_mcp_handle($m[1]);
 if ($path === '/mcp') tj_mcp_handle();
 
 $handler = $routes["$method $path"] ?? null;

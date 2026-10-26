@@ -616,3 +616,18 @@ class SupportMessage(models.Model):
     class Meta:
         ordering = ["-created_at"]
         indexes = [models.Index(fields=["status", "created_at"], name="core_support_status_idx")]
+
+
+class McpKey(models.Model):
+    """Connect to AI: the account's one personal MCP link (apps/core/mcp.py).
+    key_hash finds it; key_enc (AES-GCM under a key derived from SECRET_KEY)
+    lets the app show the link again. A new link replaces the old one."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name="mcp_key")
+    key_hash = models.CharField(max_length=64, unique=True)
+    key_enc = models.BinaryField()
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"MCP link of {self.user_id}"

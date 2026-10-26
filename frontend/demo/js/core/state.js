@@ -70,6 +70,7 @@ const state = {
      have no status field at all). */
   connections: [],
   inviteToken: null, // my personal invite link's code (Friends page)
+  mcpLink: null, // Connect to AI: { connected, url, created_at, last_used_at } from /me/mcp
   searchOpen: false, // the toolbar is the search field (js/core/search.js)
   sharedPeriods: [],    // cycles friends share with me: [{ id, name, userId, period }]
   groups: [],           // group planning (js/core/groups.js): [{ id, name, color, owner, token, members }]

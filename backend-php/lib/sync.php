@@ -9,11 +9,23 @@ declare(strict_types=1);
 
 const TJ_SYNC_KEYS = ['profile', 'settings', 'tasks', 'habits', 'events', 'period'];
 
-function tj_sync_read(int $userId): array {
+/* $forApp: decoded as objects, so what goes back to the app keeps an
+ * empty {} as {} (as arrays it would turn into [], see tj_sync_put). */
+function tj_sync_read(int $userId, bool $forApp = false): array {
     $q = tj_db()->prepare('SELECT data, version, updated_at FROM tj_user_data WHERE user_id = ?');
     $q->execute([$userId]);
     $row = $q->fetch();
     if (!$row) return ['version' => 0, 'data' => new stdClass(), 'updated_at' => null];
+    if ($forApp) {
+        $data = json_decode($row['data']);
+        if (!($data instanceof stdClass)) $data = new stdClass();
+        if (isset($data->period_enc)) {
+            $plain = tj_decrypt($data->period_enc);
+            $data->period = $plain === null ? null : json_decode($plain);
+            unset($data->period_enc);
+        }
+        return ['version' => (int)$row['version'], 'data' => $data, 'updated_at' => $row['updated_at']];
+    }
     $data = json_decode($row['data'], true) ?: [];
     if (isset($data['period_enc'])) {
         $plain = tj_decrypt($data['period_enc']);
@@ -25,7 +37,7 @@ function tj_sync_read(int $userId): array {
 
 function tj_sync_get(): void {
     $u = tj_require_user();
-    tj_json(tj_sync_read((int)$u['id']));
+    tj_json(tj_sync_read((int)$u['id'], true));
 }
 
 function tj_sync_put(): void {
@@ -46,6 +58,11 @@ function tj_sync_put(): void {
         if (!is_array($v) || ($isList && $v !== array_values($v))) tj_fail(400, 'validation_error', ['field' => $k]);
         $clean[$k] = $v;
     }
+    // Stored from an object decode of the same body: decoded as arrays, an
+    // empty {} (a task's statusByDate, a habit's progress) came back as []
+    // and the app's later writes into it were dropped by JSON.stringify.
+    $objects = json_decode((string)file_get_contents('php://input'))->data ?? null;
+    foreach (array_keys($clean) as $k) if (isset($objects->$k)) $clean[$k] = $objects->$k;
     if (isset($clean['period'])) {
         $clean['period_enc'] = tj_encrypt(json_encode($clean['period'], JSON_UNESCAPED_UNICODE));
         unset($clean['period']);
@@ -62,7 +79,7 @@ function tj_sync_put(): void {
         $current = $row ? (int)$row['version'] : 0;
         if ($base !== $current) {
             tj_tx_rollback($db);
-            tj_fail(409, 'version_conflict', ['current' => tj_sync_read($userId)]);
+            tj_fail(409, 'version_conflict', ['current' => tj_sync_read($userId, true)]);
         }
         if ($row) {
             $db->prepare('UPDATE tj_user_data SET data = ?, version = ?, updated_at = ? WHERE user_id = ?')->execute([$json, $current + 1, tj_now(), $userId]);

@@ -289,6 +289,28 @@
   });
   global.addEventListener('online', function () { if (dirty) flush().catch(onSaveError); });
 
+  // Changed elsewhere while this device was in the background (another
+  // device, or an AI app through the personal MCP link, lib/mcp.php):
+  // coming back to the front takes the newer copy, unless something here
+  // is still waiting to go up or the add/edit form is open.
+  async function pullIfNewer() {
+    if (!loaded || dirty || pushing || !hasSession() || state.popupOpen) return;
+    var doc;
+    try { doc = await request('GET', '/sync'); } catch (e) { return; }
+    if (dirty || state.popupOpen || !doc || (doc.version || 0) <= version) return;
+    var data = doc.data || {};
+    var inGroups = function (k) { return (state[k] || []).filter(function (x) { return x.groupId; }); };
+    state.tasks = (data.tasks || []).map(function (t) {
+      return Object.assign({}, t, { subtasks: (t.subtasks || []).map(function (s) { return global.normalizeSubtask ? global.normalizeSubtask(s, t) : s; }) });
+    }).concat(inGroups('tasks'));
+    state.habits = (data.habits || []).concat(inGroups('habits'));
+    state.events = (data.events || []).concat(inGroups('events'));
+    version = doc.version;
+    saveCache(false);
+    if (global.render) global.render();
+  }
+  global.document.addEventListener('visibilitychange', function () { if (!document.hidden) pullIfNewer(); });
+
   function socialRows(rows) {
     return (rows || []).map(function (r) {
       return { id: r.id, name: r.name, username: r.username || '', userId: 'TJ-' + r.public_id, phone: '', status: r.status || 'none' };
@@ -379,6 +401,10 @@
     pushUnsubscribe: function (id) { return request('DELETE', '/notifications/subscriptions/' + id); },
     pushSchedule: function (items) { return request('PUT', '/notifications/schedule', { items: items }); },
     calendarYear: unsupported,
+    // Connect to AI (backend-php/lib/mcp.php): the personal MCP link.
+    mcpLink: function () { return request('GET', '/me/mcp'); },
+    makeMcpLink: function () { return request('POST', '/me/mcp'); },
+    removeMcpLink: function () { return request('DELETE', '/me/mcp'); },
   });
   function pushSubscribe(sub) {
     return request('POST', '/notifications/subscriptions', {

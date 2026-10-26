@@ -1,5 +1,6 @@
 from django.urls import path
 
+from . import mcp
 from . import views as v
 
 urlpatterns = [
@@ -36,6 +37,10 @@ urlpatterns = [
     path("me/modules/<slug:key>", v.ModuleDetailView.as_view()),
     path("me/modules/<slug:key>/purge", v.ModulePurgeView.as_view()),
     path("me/consents", v.ConsentView.as_view()),
+    # Connect to AI: the personal MCP link and the MCP server itself (mcp.py)
+    path("me/mcp", mcp.McpLinkView.as_view()),
+    path("mcp", mcp.McpView.as_view()),
+    path("mcp/u/<str:key>", mcp.McpView.as_view()),
     # files
     path("files", v.FileUploadView.as_view()),
     path("files/<uuid:file_id>", v.FileDetailView.as_view()),
