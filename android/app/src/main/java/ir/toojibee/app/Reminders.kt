@@ -161,6 +161,43 @@ object Reminders {
         return true
     }
 
+    /** A deleted item's notifications leave the shade (every tag is the slot "type|kind|id|date|at"). */
+    fun cancelItem(c: Context, kind: String, id: String) {
+        if (kind.isEmpty() || id.isEmpty()) return
+        val nm = c.getSystemService(NotificationManager::class.java)
+        nm.activeNotifications.forEach { if ((it.tag ?: "").contains("|$kind|$id|")) nm.cancel(it.tag, it.id) }
+    }
+
+    /** What can stop reminders from coming on time, for Settings: exact alarms
+     *  allowed (Android 12+ can switch them off), the app left out of battery
+     *  saving, notifications allowed. JSON {exact, battery, notify}. */
+    fun health(c: Context): String {
+        val am = c.getSystemService(AlarmManager::class.java)
+        val pm = c.getSystemService(android.os.PowerManager::class.java)
+        val nm = c.getSystemService(NotificationManager::class.java)
+        return JSONObject()
+            .put("exact", Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms())
+            .put("battery", pm.isIgnoringBatteryOptimizations(c.packageName))
+            .put("notify", nm.areNotificationsEnabled())
+            .toString()
+    }
+
+    /** "Test a reminder": one notification in a minute, through the same alarm path. */
+    fun test(c: Context) {
+        val am = c.getSystemService(AlarmManager::class.java)
+        val pi = PendingIntent.getBroadcast(c, 9, Intent(c, ReminderReceiver::class.java).putExtra("test", true),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val at = System.currentTimeMillis() + 60_000
+        if (Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
+        else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
+    }
+
+    fun showTest(c: Context) {
+        val fa = c.getSharedPreferences("app", Context.MODE_PRIVATE).getString("lang", "fa") != "en"
+        show(c, if (fa) "یادآوری آزمایشی" else "Test reminder",
+            if (fa) "یادآورها درست کار می‌کنن 👍" else "Reminders work 👍", "test|||" + System.currentTimeMillis(), "", "", "")
+    }
+
     /** The app's language (the web app tells it, setLang), for the buttons' words. */
     fun setLang(c: Context, lang: String) {
         if (lang == "fa" || lang == "en") c.getSharedPreferences("app", Context.MODE_PRIVATE).edit().putString("lang", lang).apply()
@@ -175,7 +212,9 @@ object Reminders {
 }
 
 class ReminderReceiver : BroadcastReceiver() {
-    override fun onReceive(c: Context, intent: Intent) = Reminders.fire(c)
+    override fun onReceive(c: Context, intent: Intent) {
+        if (intent.getBooleanExtra("test", false)) Reminders.showTest(c) else Reminders.fire(c)
+    }
 }
 
 /** Alarms don't survive a restart, and a clock/time-zone change moves them. */

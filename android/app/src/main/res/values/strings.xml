@@ -3,6 +3,7 @@
     <string name="app_name">Toojibee</string>
     <string name="channel_reminders">Reminders</string>
     <string name="channel_today">Today\'s date</string>
+    <string name="lock_desc">Unlock to open Toojibee</string>
     <string name="share_title">Share</string>
     <string name="action_done">Done</string>
     <string name="action_later">Remind me later</string>

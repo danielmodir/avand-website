@@ -3,6 +3,7 @@ package ir.toojibee.app
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -38,6 +39,8 @@ class MainActivity : Activity() {
         const val ACTION_REMINDER = "ir.toojibee.app.REMINDER"
         private const val REQ_FILE = 1
         private const val REQ_NOTIFY = 2
+        private const val REQ_LOCK = 3
+        private const val LOCK_AFTER_MS = 60_000L
         private const val RELOAD_AFTER_MS = 10 * 60_000L
         /** The open app, if any (PhoneActions applies ticks through it). */
         @Volatile var current: java.lang.ref.WeakReference<MainActivity>? = null
@@ -119,8 +122,25 @@ class MainActivity : Activity() {
         }
     }
 
+    /* ---- app lock (Settings → Period → "App lock", the page's setLock) ----
+       The phone's own screen lock (PIN, pattern, fingerprint) through the
+       system's confirm screen: no library, nothing stored but on/off. Asked
+       when the app opens and after it was away more than a minute;
+       cancelling it closes the app. */
+    private var unlocked = false
+    private fun lockOn() = prefs.getBoolean("appLock", false)
+    private fun askUnlock() {
+        val km = getSystemService(KeyguardManager::class.java)
+        @Suppress("DEPRECATION")
+        val i = if (km.isDeviceSecure) km.createConfirmDeviceCredentialIntent(getString(R.string.app_name), getString(R.string.lock_desc)) else null
+        if (i == null) { unlocked = true; return } // no screen lock on the phone: nothing to ask
+        @Suppress("DEPRECATION") startActivityForResult(i, REQ_LOCK)
+    }
+
     override fun onResume() {
         super.onResume()
+        if (leftAt > 0 && System.currentTimeMillis() - leftAt > LOCK_AFTER_MS) unlocked = false
+        if (lockOn() && !unlocked) askUnlock()
         Reminders.appOnScreen = true
         web.onResume()
         web.resumeTimers()
@@ -194,7 +214,12 @@ class MainActivity : Activity() {
             return true
         }
 
+        // Which page is open decides whether the bridge answers (AppWeb.trustedPage).
+        override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) { AppWeb.pageChanged(url) }
+        override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) { AppWeb.pageChanged(url) }
+
         override fun onPageFinished(view: WebView, url: String) {
+            AppWeb.pageChanged(url)
             pageReady = true
             pendingJs?.let { web.evaluateJavascript(it, null); pendingJs = null }
         }
@@ -232,6 +257,8 @@ class MainActivity : Activity() {
         if (requestCode == REQ_FILE) {
             fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data))
             fileCallback = null
+        } else if (requestCode == REQ_LOCK) {
+            if (resultCode == RESULT_OK) unlocked = true else finish()
         } else @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
     }
 
@@ -252,43 +279,81 @@ class MainActivity : Activity() {
         web.evaluateJavascript("window.toojibeePermission&&window.toojibeePermission('${notifyPermission()}')", null)
     }
 
-    /** window.ToojibeeAndroid — called from the page's JavaScript thread. */
+    /** window.ToojibeeAndroid — called from the page's JavaScript thread.
+     *  Only the app's own page gets answers (AppWeb.trustedPage); every
+     *  argument is size-capped or checked against the known values. */
     private inner class Bridge {
-        @JavascriptInterface fun permission(): String = notifyPermission()
+        private val ok get() = AppWeb.trustedPage
 
-        @JavascriptInterface fun requestPermission() = ui.post {
+        @JavascriptInterface fun permission(): String = if (ok) notifyPermission() else "denied"
+
+        @JavascriptInterface fun requestPermission() { if (!ok) return; ui.post {
             if (Build.VERSION.SDK_INT >= 33 && notifyPermission() == "default") {
                 prefs.edit().putBoolean("notifyAsked", true).apply()
                 requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_NOTIFY)
             } else answerPermission()
-        }.let { }
+        } }
 
-        @JavascriptInterface fun schedule(json: String) = Reminders.save(this@MainActivity, json)
+        @JavascriptInterface fun schedule(json: String?) { if (ok) AppWeb.json(json)?.let { Reminders.save(this@MainActivity, it) } }
 
-        @JavascriptInterface fun takeShown(): String = Reminders.takeShown(this@MainActivity)
+        @JavascriptInterface fun takeShown(): String = if (ok) Reminders.takeShown(this@MainActivity) else "[]"
 
-        @JavascriptInterface fun show(title: String, body: String, tag: String, kind: String, id: String, date: String) =
-            Reminders.show(this@MainActivity, title, body, tag, kind, id, date)
+        @JavascriptInterface fun show(title: String?, body: String?, tag: String?, kind: String?, id: String?, date: String?) {
+            if (!ok) return
+            Reminders.show(this@MainActivity, AppWeb.text(title, 300), AppWeb.text(body, 1000), AppWeb.text(tag, 300),
+                AppWeb.kind(kind), AppWeb.text(id, 100), AppWeb.text(date, 10))
+        }
 
-        @JavascriptInterface fun share(title: String, text: String) = ui.post {
-            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, title).putExtra(Intent.EXTRA_TEXT, text)
+        @JavascriptInterface fun share(title: String?, text: String?) { if (!ok) return; ui.post {
+            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, AppWeb.text(title, 300)).putExtra(Intent.EXTRA_TEXT, AppWeb.text(text))
             try { startActivity(Intent.createChooser(send, getString(R.string.share_title))) } catch (e: ActivityNotFoundException) { }
-        }.let { }
+        } }
 
-        @JavascriptInterface fun copy(text: String) = ui.post {
+        @JavascriptInterface fun copy(text: String?) { if (!ok) return; ui.post {
             // The web app shows its own "copied" toast.
-            getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Toojibee", text))
-        }.let { }
+            getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Toojibee", AppWeb.text(text)))
+        } }
 
-        @JavascriptInterface fun setBars(color: String, light: Boolean) = ui.post {
-            prefs.edit().putString("barColor", color).putBoolean("barLight", light).apply()
-            this@MainActivity.setBars(color, light)
-        }.let { }
+        @JavascriptInterface fun setBars(color: String?, light: Boolean) {
+            val c = AppWeb.color(color) ?: return
+            if (!ok) return
+            ui.post {
+                prefs.edit().putString("barColor", c).putBoolean("barLight", light).apply()
+                this@MainActivity.setBars(c, light)
+            }
+        }
 
         // APK 1.1: the notification buttons' language, and ticks made outside the app.
-        @JavascriptInterface fun setLang(lang: String) = Reminders.setLang(this@MainActivity, lang)
-        @JavascriptInterface fun takeActions(): String = PhoneActions.take(this@MainActivity)
+        @JavascriptInterface fun setLang(lang: String?) { if (ok) Reminders.setLang(this@MainActivity, AppWeb.lang(lang)) }
+        @JavascriptInterface fun takeActions(): String = if (ok) PhoneActions.take(this@MainActivity) else "[]"
         @JavascriptInterface fun actionsApplied() {}
-        @JavascriptInterface fun setWidgets(json: String) = Widgets.save(this@MainActivity, json)
+
+        // APK 1.3: reminders — a deleted item's notifications, what may delay them, a test, the system screens to fix it.
+        @JavascriptInterface fun cancelItem(kind: String?, id: String?) { if (ok) Reminders.cancelItem(this@MainActivity, AppWeb.kind(kind), AppWeb.text(id, 100)) }
+        @JavascriptInterface fun reminderHealth(): String = if (ok) Reminders.health(this@MainActivity) else "{}"
+        @JavascriptInterface fun testReminder() { if (ok) Reminders.test(this@MainActivity) }
+        @JavascriptInterface fun openReminderSettings(what: String?) { if (!ok) return; ui.post {
+            val i = when {
+                what == "exact" && Build.VERSION.SDK_INT >= 31 -> Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName"))
+                what == "battery" -> Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                else -> Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+            }
+            try { startActivity(i) } catch (e: ActivityNotFoundException) {
+                try { startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) } catch (e2: ActivityNotFoundException) { }
+            }
+        } }
+
+        // APK 1.3: the app lock. 'no_lock' when the phone has no screen lock to ask for.
+        @JavascriptInterface fun lockOn(): Boolean = ok && this@MainActivity.lockOn()
+        @JavascriptInterface fun setLock(on: Boolean): String {
+            if (!ok) return "denied"
+            if (on && !getSystemService(KeyguardManager::class.java).isDeviceSecure) return "no_lock"
+            prefs.edit().putBoolean("appLock", on).apply()
+            unlocked = true // just set by the person themselves
+            return "ok"
+        }
+        @JavascriptInterface fun setWidgets(json: String?) {
+            if (ok) AppWeb.json(json)?.let { try { Widgets.save(this@MainActivity, it) } catch (e: Exception) { /* not valid JSON: ignored */ } }
+        }
     }
 }

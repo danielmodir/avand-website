@@ -129,15 +129,17 @@ object HiddenPage {
         @JavascriptInterface fun permission(): String =
             if (c.getSystemService(NotificationManager::class.java).areNotificationsEnabled()) "granted" else "denied"
         @JavascriptInterface fun requestPermission() {}
-        @JavascriptInterface fun schedule(json: String) = Reminders.save(c, json)
+        // This page never leaves the app's start page (shouldOverrideUrlLoading = true);
+        // its values are still size-capped like the screen's bridge (AppWeb).
+        @JavascriptInterface fun schedule(json: String?) { AppWeb.json(json)?.let { Reminders.save(c, it) } }
         @JavascriptInterface fun takeShown(): String = Reminders.takeShown(c)
-        @JavascriptInterface fun show(title: String, body: String, tag: String, kind: String, id: String, date: String) {} // the phone's alarms show them
-        @JavascriptInterface fun share(title: String, text: String) {}
-        @JavascriptInterface fun copy(text: String) {}
-        @JavascriptInterface fun setBars(color: String, light: Boolean) {}
-        @JavascriptInterface fun setLang(lang: String) = Reminders.setLang(c, lang)
+        @JavascriptInterface fun show(title: String?, body: String?, tag: String?, kind: String?, id: String?, date: String?) {} // the phone's alarms show them
+        @JavascriptInterface fun share(title: String?, text: String?) {}
+        @JavascriptInterface fun copy(text: String?) {}
+        @JavascriptInterface fun setBars(color: String?, light: Boolean) {}
+        @JavascriptInterface fun setLang(lang: String?) = Reminders.setLang(c, AppWeb.lang(lang))
         @JavascriptInterface fun takeActions(): String = PhoneActions.take(c)
-        @JavascriptInterface fun setWidgets(json: String) = Widgets.save(c, json)
+        @JavascriptInterface fun setWidgets(json: String?) { AppWeb.json(json)?.let { try { Widgets.save(c, it) } catch (e: Exception) { /* not valid JSON: ignored */ } } }
         @JavascriptInterface fun actionsApplied() {
             ui.post {
                 // A tick that came in meanwhile goes through the same page.
