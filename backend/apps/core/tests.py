@@ -226,6 +226,14 @@ class ProfileAndSettingsTests(ApiTestCase):
         self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"nope": True}, "version": v}, format="json").status_code, 400)
         self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"occasions_hijri": "no"}, "version": v}, format="json").status_code, 400)
         self.assertEqual(client.patch("/api/v1/me/settings", {"palette": "neon", "version": v}, format="json").status_code, 400)
+        # The prayer city is the one text value; switches stay true/false.
+        city = client.patch("/api/v1/me/settings", {"preferences": {"prayer_city": "mashhad"}, "version": v}, format="json")
+        self.assertEqual(city.status_code, 200)
+        self.assertEqual(city.json()["preferences"]["prayer_city"], "mashhad")
+        v = city.json()["version"]
+        self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"prayer_city": True}, "version": v}, format="json").status_code, 400)
+        self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"prayer_city": "<b>x</b>"}, "version": v}, format="json").status_code, 400)
+        self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"prayer_notify": "yes"}, "version": v}, format="json").status_code, 400)
 
     def test_period_desktop_only_appears_for_eligible_profiles(self):
         client = self.register(gender="female")

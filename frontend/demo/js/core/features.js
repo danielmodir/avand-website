@@ -8,7 +8,8 @@ const FEATURES = {
   articles: 'auto',    // Profile → Articles: only with a backend that serves them (Cloud.articles)
   notices: 'auto',     // Profile → Messages: only once there's an account with messages (noticesAvailable)
   aiConnect: false,    // Profile → Connect to AI: greyed out, last, "coming soon" (owner, 2026-10-26); true = the working page again
-  periodMinAge: 0,     // the period desk only from this age (birth date on the account); 0 = no extra limit (sign-up is 9+)
+  prayer: true,        // prayer times on the Occasions desk, the date widget and adhan reminders (js/core/prayer.js)
+  periodMinAge: 0,    // the period desk only from this age (birth date on the account); 0 = no extra limit (sign-up is 9+)
 };
 
 /* Old enough for the period desk (FEATURES.periodMinAge; an unknown birth date passes). */

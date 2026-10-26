@@ -170,6 +170,11 @@ object Widgets {
         v.setViewVisibility(R.id.occ, if (names.isEmpty()) View.GONE else View.VISIBLE)
         v.setTextViewText(R.id.occ, names.joinToString(if (look.fa) "، " else ", "))
         v.setTextColor(R.id.occ, if (day.optBoolean("holiday")) look.holiday else look.text)
+        // Prayer times of the chosen city (the app's prayer.js; empty when switched off).
+        val pray = day.optString("pray")
+        v.setViewVisibility(R.id.pray, if (pray.isEmpty()) View.GONE else View.VISIBLE)
+        v.setTextViewText(R.id.pray, pray)
+        v.setTextColor(R.id.pray, look.muted)
         v.setOnClickPendingIntent(R.id.root, openApp(c, 2, key))
         return v
     }

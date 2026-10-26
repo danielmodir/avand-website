@@ -266,6 +266,17 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'toggle-pref'){
     setPref(el.dataset.key, !pref(el.dataset.key));
+    // Adhan reminders need reminders on (and the phone's permission): the same path as that switch.
+    if(el.dataset.key === 'prayerNotify' && pref('prayerNotify') && (!state.settings.notifications || !notifyAllowed())){
+      state.settings.notifications = true;
+      cloudSync(() => Cloud.saveSettings(state.settings));
+      askNotificationPermission().then(p => {
+        if(p === 'denied') showToast(t('notifBlockedHint'));
+        if(p === 'granted') registerReminderWorker().then(() => enablePush());
+        render();
+      });
+    }
+    syncAndroidSchedule(true);
     render();
     return;
   }
@@ -349,6 +360,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     goToDesktopIndex(i);
     return;
   }
+  if(action === 'open-prayer-settings'){ state.menuPanelOpen = true; state.menuSubView = 'settings-occasions'; render(); return; }
   if(action === 'open-desktop-settings'){
     state.menuSubView = el.dataset.sub;
     render();

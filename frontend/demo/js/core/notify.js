@@ -112,6 +112,15 @@ function reminderSlots(day){
   state.tasks.filter(x => occursOnDate(x, day)).forEach(x => forItem('task', x, taskStatusOn(x, key) === 'done'));
   state.habits.filter(h => habitOccursOnDate(h, day)).forEach(h => forItem('habit', h, h.completedDates.includes(key)));
   state.events.filter(e => occursOnDate(e, day)).forEach(e => forItem('event', e, false));
+  // Adhan at dawn, noon and maghrib for the chosen city (js/core/prayer.js).
+  if(featureOn('prayer') && pref('prayerNotify')){
+    const times = prayerTimesFor(day, prayerCityId()), city = prayerCity(prayerCityId());
+    [['fajr', 'prFajr'], ['dhuhr', 'prDhuhr'], ['maghrib', 'prMaghrib']].forEach(([k, label]) => {
+      const title = t('adhanTitle').replace('{p}', t(label));
+      out.push({ slot: `adhan|${k}|${key}`, kind: '', id: '', date: key, title, at: times[k].at, item: { id: 'adhan', title },
+        body: t('adhanBody').replace('{city}', lang() === 'fa' ? city.fa : city.en).replace('{t}', dig(times[k].hm)) });
+    });
+  }
   // Her period, N days ahead (the setup popup's "remind me" answer), at 9.
   const pd = state.period, ahead = Number(pd && pd.remindDays) || 0;
   if(ahead && pd.enabled && pd.step === 'done' && pd.lastStart && state.profile.gender === 'female' && !periodAbnormal(pd)){

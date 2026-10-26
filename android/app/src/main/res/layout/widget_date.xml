@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Today's date: the big day number, weekday and month, the other
-     calendars' dates, and the day's first occasion. Widgets.kt fills it. -->
+     calendars' dates, the day's first occasions and its prayer times. Widgets.kt fills it. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent">
     <ImageView android:id="@+id/bg" android:layout_width="match_parent" android:layout_height="match_parent"
@@ -23,5 +23,7 @@
             android:layout_marginTop="6dp" android:textSize="12sp" android:maxLines="2" />
         <TextView android:id="@+id/occ" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="4dp" android:textSize="12sp" android:textStyle="bold" android:maxLines="2" android:ellipsize="end" />
+        <TextView android:id="@+id/pray" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

@@ -697,6 +697,17 @@ function renderOccasionsSettings(){
     ${prefRow('occasionsHolidaysOnly', 'prefOccHolidaysOnly', 'prefOccHolidaysOnlySub')}
     ${prefRow('occasionsMarkHolidays', 'prefOccMarkHolidays', 'prefOccMarkHolidaysSub')}
     ${prefRow('occasionsShowEvents', 'prefOccShowEvents', 'prefOccShowEventsSub')}
+    ${featureOn('prayer') ? `
+    <div class="section-title">${t('prayerSettings')}</div>
+    ${prefRow('prayerShow', 'prefPrayerShow', 'prefPrayerShowSub')}
+    <div class="settings-row">
+      <div><div class="lbl">${t('prayerCityLbl')}</div><div class="sub">${t('prayerCitySub')}</div></div>
+      <select class="settings-select" id="prayer-city-select" aria-label="${escapeAttr(t('prayerCityLbl'))}">
+        ${PRAYER_CITIES.map(c => `<option value="${c[0]}" ${prayerCityId() === c[0] ? 'selected' : ''}>${lang() === 'fa' ? c[1] : c[2]}</option>`).join('')}
+      </select>
+    </div>
+    ${prefRow('prayerNotify', 'prefPrayerNotify', 'prefPrayerNotifySub')}
+    <div class="sub" style="margin:6px 2px 0;">${t('prayerMethodNote')}</div>` : ''}
   `;
 }
 
@@ -821,6 +832,7 @@ function wireMenuInteractivity(){
       showToast(t('accountDeleted'));
     }).catch(err => showToast(authErrorMessage(err)));
   });
+  document.getElementById('prayer-city-select')?.addEventListener('change', e => { setPref('prayerCity', e.target.value); render(); });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; cloudSync(() => Cloud.saveSettings(state.settings)); render(); });
   document.getElementById('primary-calendar-select')?.addEventListener('change', e => {
     state.settings.calendarSystem = e.target.value;

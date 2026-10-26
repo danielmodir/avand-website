@@ -580,7 +580,7 @@
   }
   function prefsToApi(p) {
     var out = {};
-    Object.keys(p).forEach(function (k) { out[k.replace(/[A-Z]/g, function (c) { return '_' + c.toLowerCase(); })] = !!p[k]; });
+    Object.keys(p).forEach(function (k) { out[k.replace(/[A-Z]/g, function (c) { return '_' + c.toLowerCase(); })] = typeof p[k] === 'string' ? p[k] : !!p[k]; }); // prayerCity is text
     return out;
   }
 

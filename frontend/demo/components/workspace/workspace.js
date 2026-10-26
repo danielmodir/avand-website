@@ -20,8 +20,23 @@ function renderOccasionsPane(d, events){
     <div class="events-scroll">${sortEvents(dayEvents).map(e=>eventCard(e)).join('')}</div>
   ` : '';
   const share = `<div class="occ-share-row"><button type="button" class="btn btn-outline btn-small" data-action="share-day">${ICONS.shareIcon}<span>${t('shareDay')}</span></button></div>`;
-  if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>` + share;
-  return occasionsHtml + eventsHtml + share;
+  if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>` + prayerBlockHtml(d) + share;
+  return occasionsHtml + eventsHtml + prayerBlockHtml(d) + share;
+}
+
+/* The day's prayer times (js/core/prayer.js) for the chosen city; on today
+   the next one is marked. The city name opens its setting. */
+const PRAYER_SHOWN = [['fajr', 'prFajr'], ['sunrise', 'prSunrise'], ['dhuhr', 'prDhuhr'], ['sunset', 'prSunset'], ['maghrib', 'prMaghrib'], ['midnight', 'prMidnight']];
+function prayerBlockHtml(d){
+  if(!featureOn('prayer') || !pref('prayerShow')) return '';
+  const times = prayerTimesFor(d, prayerCityId()), city = prayerCity(prayerCityId());
+  const now = Date.now(), isToday = dateKey(d) === dateKey(new Date());
+  const next = isToday ? (PRAYER_SHOWN.find(([k]) => times[k].at > now) || [])[0] : null;
+  return `<div class="prayer-block">
+    <div class="section-title">${t('prayerTimes')}
+      <button type="button" class="link-btn prayer-city" data-action="open-prayer-settings">${escapeHtml(t('prayerIn').replace('{city}', lang() === 'fa' ? city.fa : city.en))}</button></div>
+    <div class="prayer-grid">${PRAYER_SHOWN.map(([k, label]) => `<div class="prayer-cell ${k === next ? 'next' : ''}"><span class="lbl">${t(label)}</span><span class="hm">${dig(times[k].hm)}</span></div>`).join('')}</div>
+  </div>`;
 }
 
 /* "Share this day": its date in every calendar, its occasions and the site's

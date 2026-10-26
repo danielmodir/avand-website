@@ -14,9 +14,9 @@ function renderDaySheet(){
   title.setAttribute('dir', lang() === 'fa' ? 'rtl' : 'ltr');
   sheet.querySelector('[data-action="close-day-sheet"]').setAttribute('aria-label', t('close'));
   // Empty sections are hidden, so a free day said nothing at all.
-  document.getElementById('day-sheet-body').innerHTML = (tasks.length || habits.length || events.length)
+  document.getElementById('day-sheet-body').innerHTML = ((tasks.length || habits.length || events.length)
     ? renderItemSections(tasks, habits, events, d)
-    : `<div class="empty-hint">${t('nothingPlanned')}</div>`;
+    : `<div class="empty-hint">${t('nothingPlanned')}</div>`) + prayerBlockHtml(d); // the day's prayer times (components/workspace)
   attachSwipeToDelete(document.getElementById('day-sheet-body'));
 }
 

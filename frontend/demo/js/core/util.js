@@ -12,7 +12,11 @@ const DEFAULT_PREFS = {
   ongoingNotification: true, // Android app: the always-there date notification (Widgets.kt)
   inviteApprove: false, // invite-link openers send me a request instead of becoming friends at once (lib/social.php)
   statsOptIn: false, // "Help improve Toojibee": anonymous counts, only when switched on (js/core/stats.js)
+  prayerShow: true, // prayer times on the Occasions desk and the date widget (js/core/prayer.js)
+  prayerNotify: false, // a reminder at dawn, noon and maghrib adhan
 };
+/* The one text preference: the prayer-times city (an id in PRAYER_CITIES). */
+function prayerCityId(){ return (state.settings.prefs || {}).prayerCity || 'tehran'; }
 function pref(key){
   const p = state.settings.prefs || {};
   return key in p ? !!p[key] : DEFAULT_PREFS[key];

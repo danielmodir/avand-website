@@ -129,9 +129,10 @@ function widgetData(){
     ongoing: { on: pref('ongoingNotification') && !state.guest, days: {} },
   };
   const occ = d => (typeof occasionsForDate === 'function' ? occasionsForDate(d) : []) || [];
+  const prayOn = featureOn('prayer') && pref('prayerShow');
   const s = state.settings;
   const sig = [keyOf(today), lang(), s.calendarSystem, s.weekStartDay, JSON.stringify(s.calendarEnabled), occ(today).length, occ(addDays(today, 1)).length,
-    OCCASIONS_DATA || OCCASIONS_BY_DATE ? 1 : 0].join('|'); // occasions.js: loaded or not yet
+    OCCASIONS_DATA || OCCASIONS_BY_DATE ? 1 : 0, prayOn ? prayerCityId() : ''].join('|'); // occasions.js: loaded or not yet
   if(widgetCalCache.sig === sig){
     data.days = widgetCalCache.days; data.months = widgetCalCache.months; data.weeks = widgetCalCache.weeks;
   } else {
@@ -153,6 +154,8 @@ function widgetData(){
       month: displayMonthYear(d).monthLabel + ' ' + displayMonthYear(d).yearLabel,
       occ: occ(d).map(o => o.event_name).filter(Boolean).slice(0, 3),
       holiday: isHolidayOn(d),
+      // Dawn, noon and maghrib adhan for the chosen city (APK 1.4+ shows it).
+      pray: prayOn ? (() => { const p = prayerTimesFor(d, prayerCityId()); return [['fajr', 'prFajr'], ['dhuhr', 'prDhuhr'], ['maghrib', 'prMaghrib']].map(([k, l]) => t(l) + ' ' + dig(p[k].hm)).join('  ·  '); })() : '',
     };
   }
   // The month calendar: the app's primary calendar, its week start, its

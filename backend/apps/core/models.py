@@ -338,6 +338,9 @@ class UserSettings(models.Model):
         "ongoing_notification": True,       # Android app: today's date and what's left, always in the notification shade
         "invite_approve": False,            # invite-link openers send a request instead of becoming friends at once
         "stats_opt_in": False,              # "Help improve Toojibee": anonymous counts (the PHP backend keeps them; Django: none yet)
+        "prayer_show": True,                # prayer times on the Occasions desk and the date widget
+        "prayer_notify": False,             # adhan reminders (dawn, noon, maghrib)
+        "prayer_city": "tehran",            # the one text value: a city id from the app's list (js/core/prayer.js)
         # Tutorials already seen (finished or skipped), so signing in again
         # doesn't repeat them (frontend/demo/components/tour/tour.js).
         "tour_general": False, "tour_calendar": False, "tour_planning": False,

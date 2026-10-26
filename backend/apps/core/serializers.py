@@ -153,8 +153,13 @@ class SettingsSerializer(serializers.ModelSerializer):
         unknown = sorted(set(value) - set(UserSettings.PREFERENCE_DEFAULTS))
         if unknown:
             raise serializers.ValidationError(f"Unknown keys: {', '.join(unknown)}.")
-        if any(not isinstance(v, bool) for v in value.values()):
-            raise serializers.ValidationError("Every value must be true or false.")
+        defaults = UserSettings.PREFERENCE_DEFAULTS
+        for k, v in value.items():
+            if isinstance(defaults[k], str):
+                if not isinstance(v, str) or not re.fullmatch(r"[a-z]{1,40}", v):
+                    raise serializers.ValidationError(f"{k}: a short lowercase id.")
+            elif not isinstance(v, bool):
+                raise serializers.ValidationError("Every switch must be true or false.")
         merged = dict(self.instance.preferences or {}) if self.instance else {}
         merged.update(value)
         return merged
