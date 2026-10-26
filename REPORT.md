@@ -28,3 +28,33 @@ Also in this phase, at the owner's separate request: the landing hero glow goes 
 ### Known risks
 - App links verify only after **1.3.0** is installed (the manifest change) and `assetlinks.json` is live; until then Android may still ask which app opens a link.
 - If the release key changes, `assetlinks.json` must be updated with the new SHA-256.
+
+## Phase 2 — Trust, privacy, quality (2026-10-27) → app 1.3.0 (versionCode 4)
+
+| # | Task | Result | Commit |
+|---|------|--------|--------|
+| 2.1 | Backups | **[VERIFY] correct**: `allowBackup` was `true`. Now `false`, with `backup_rules.xml` / `data_extraction_rules.xml` that exclude every domain (cloud backup and device-to-device). | 333bd24 |
+| 2.2 | WebView hardening | Mixed content never, no file-URL access, no geolocation, no saved form data. The JS bridge answers only the app's own page (`AppWeb.trustedPage`, updated on page start / history / finish); every argument is size-capped or checked (text, JSON ≤ 2 MB, language, kind, colour); bad widget JSON is ignored. | b1fa589 |
+| 2.3 | Zoom | **Skipped at the owner's request.** | — |
+| 2.4 | Period privacy | **[VERIFY]**: period data was synced to the server (encrypted at rest). Added in Period settings → Privacy: *keep on this phone only* (off by default; on = local copy, server copy purged, shares stopped), *discreet notifications* (neutral title/text), *app lock* with the phone's own PIN/fingerprint screen (APK 1.3+; asks on open and after a minute away), *export* (JSON file) and *delete all*. Privacy pages fa/en got a period section (`#period`). | 74d7c04, b1fa589 |
+| 2.5 | Invite approval | **[VERIFY] correct**: an invite link made you friends at once. New setting on the Friends page, *approve invite requests* (off by default): when on, opening the link sends a request instead. PHP + Django + a Django test. | 316972d |
+| 2.6 | Offline / sync state | The full-width strip became a small dot by the header: red = offline, amber = changes waiting to sync; hidden when all is well; tap explains. | 0218a08 |
+| 2.7 | Reminders | Deleting a task/habit/event removes its reminders at once (phone alarms, service-worker notifications, push resync). App: *reminder health* row in General settings (exact alarms, battery optimisation, notifications allowed) with fix buttons and *send a test reminder* (arrives in a minute through the real alarm path). | 8d62215, b1fa589 |
+| 2.8 | Smoothness | Desks off screen aren't laid out (`content-visibility:auto`); lite mode (phones, the app) drops big card shadows; the build now minifies JS/CSS (bundle.js 545 → 524 KB, gzip 138 → 135). Month switch ~11 ms, home render ~5 ms on a 375 px viewport. | 8d15349 |
+| 2.9 | Usage counts | Opt-in only (*Help improve Toojibee*, off by default). Sends just an event name to our own server — no account, device id, content or anything about the period. Events: onboarding_done, first_task, first_habit, return_d1/d7/d30, share, invite_accepted. Daily counts in one JSON file (30 days); the admin panel's Visits tab shows totals. | 45c6f04, 7126174 |
+| 2.10 | Accessibility | Every switch and back arrow has a role, state, name and keyboard access; overlays hidden from screen readers; 44 px tap areas on small buttons/switches/dots (look unchanged); orange text on the light Toojibee theme darkened to 5.4:1 (`--primary-text`, was 2.5:1). | 457a9fd |
+
+Also at the owner's request: "Connect to AI" in Profile greyed out, last in the list, with a "coming soon" badge (a70a11a).
+
+### Backend work still needed
+- **Usage counts on Django**: only the PHP backend has `POST /stats` (Django accepts the `stats_opt_in` preference but has no endpoint yet).
+- Google sign-in on PHP (from Phase 1) is still open.
+
+### Decisions for the owner
+- Defaults chosen as *off*: invite approval, usage counts, period local-only. Say if any should start *on*.
+- `FEATURES.periodMinAge` is 0 (no age gate on the period desk). Set an age if you want one.
+
+### Known risks
+- With *keep on this phone only*, period data lives only on that device: a lost phone or cleared app data loses it (the setting says so; export is next to it).
+- App lock needs a screen lock on the phone; without one the switch explains and stays off.
+- Usage counts are per IP-throttled (60/h) but anonymous, so numbers are estimates, not unique users.

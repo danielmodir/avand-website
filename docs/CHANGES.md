@@ -48,15 +48,37 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-26.6
-- PHP schema: v23
+- Demo asset version: 2026-10-27.1
+- PHP schema: v24
 - Django latest migrations: core 0008, planning 0006, social 0003,
   notifications 0003, calendar_data 0002, period 0001
-- Android: 1.2.0 (versionCode 3)
+- Android: 1.3.0 (versionCode 4)
 
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — growth spec Phase 2 (web app, Android 1.3.0, PHP, Django,
+  privacy pages, panel) — details per task in REPORT.md, user-facing text
+  in CHANGELOG.md. Map: backups off (AndroidManifest, res/xml/*_rules);
+  bridge trusts only the app's page + argument checks (AppWeb.kt,
+  MainActivity.kt); app lock (MainActivity askUnlock, bridge setLock /
+  lockOn); period privacy section (period.js renderPeriodSettings,
+  appLockOn/exportPeriodData/deleteAllPeriodData; localOnly in
+  api-php.js / api.js; discreet texts in notify.js / android.js); invite
+  approval (pref inviteApprove; social.php
+  tj_social_invite_needs_approval; Django services.invite_needs_approval);
+  sync dot (Cloud.syncPending, header dot); forgetItemReminders
+  (notify.js) + reminder health/test (menu.js reminderHealthHtml,
+  Reminders.kt health/test/cancelItem); content-visibility on desks, lite
+  mode without card shadows, esbuild --minify in build-site-zip.ps1;
+  opt-in usage counts (js/core/stats.js, lib/stats.php, POST /stats,
+  GET /admin/stats, panel Visits tab, pref statsOptIn); accessibility
+  (render.js labelControls, buttons.css 44px tap areas, --primary-text
+  token, #9A4F00 on light Toojibee). Zoom (2.3) skipped by the owner.
+- 2026-10-26 — web app — Profile's "Connect to AI" greyed out, last, with
+  a "coming soon" badge; FEATURES.aiConnect = true brings it back
+  (menu.js, features.js).
 
 - 2026-10-26 — admin panel (panel/panel.html only) — fixes found by
   opening every tab with a local mock of /api/v1/admin (example data,
