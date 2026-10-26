@@ -94,9 +94,6 @@ function renderProfilePage(){
         <div class="menu-item-label">${t('connections')} <span class="count">${dig(state.connections.filter(c=>c.status==='accepted').length)}</span></div>
         ${ICONS.chevronRightSmall}
       </div>`}
-      ${aiConnectAvailable() ? `<div class="menu-item-row" data-action="menu-nav" data-sub="ai-connect">
-        <div class="menu-item-icon">${ICONS.linkIcon}</div><div class="menu-item-label">${t('aiConnect')}</div>${ICONS.chevronRightSmall}
-      </div>` : ''}
       <div class="menu-item-row" data-action="menu-nav" data-sub="share">
         <div class="menu-item-icon">${ICONS.shareIcon}</div><div class="menu-item-label">${t('shareApp')}</div>${ICONS.chevronRightSmall}
       </div>
@@ -122,6 +119,12 @@ function renderProfilePage(){
         <div class="menu-item-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4 2 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4-2L4 4zm1 8.9c.7.3 1.4.4 2 .4.9 0 1.7-.2 2.5-.6a5.6 5.6 0 0 0 5 0 5.6 5.6 0 0 0 5 0c.6.4 1.4.6 2.5.6.6 0 1.3-.1 2-.4V20H5v-7.1z"/></svg></div>
         <div class="menu-item-label">${t('store')}</div>${ICONS.chevronRightSmall}
       </div>` : ''}
+      ${/* Connect to AI: greyed, last, "coming soon" for now (owner, 2026-10-26; FEATURES.aiConnect). */ featureOn('aiConnect') ? (aiConnectAvailable() ? `<div class="menu-item-row" data-action="menu-nav" data-sub="ai-connect">
+        <div class="menu-item-icon">${ICONS.linkIcon}</div><div class="menu-item-label">${t('aiConnect')}</div>${ICONS.chevronRightSmall}
+      </div>` : '') : `<div class="menu-item-row disabled" aria-disabled="true">
+        <div class="menu-item-icon">${ICONS.linkIcon}</div><div class="menu-item-label">${t('aiConnect')}</div>
+        <span class="soon-badge">${t('comingSoon')}</span>
+      </div>`}
     </div>
     ${/* No backend = no account: nothing to log out of (it used to wipe
          this device's data). */ REAL_LOGIN_DISABLED ? '' : `

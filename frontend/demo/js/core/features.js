@@ -7,6 +7,7 @@ const FEATURES = {
   store: false,        // Profile → Store: every card in it is locked or "upgrade" (no payments by design)
   articles: 'auto',    // Profile → Articles: only with a backend that serves them (Cloud.articles)
   notices: 'auto',     // Profile → Messages: only once there's an account with messages (noticesAvailable)
+  aiConnect: false,    // Profile → Connect to AI: greyed out, last, "coming soon" (owner, 2026-10-26); true = the working page again
   periodMinAge: 0,     // the period desk only from this age (birth date on the account); 0 = no extra limit (sign-up is 9+)
 };
 
