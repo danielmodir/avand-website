@@ -708,6 +708,7 @@ function submitPopup(){
     // A new, unticked subtask makes a finished parent unfinished again.
     if(obj.subtasks.length && !obj.recurrence.mode){ obj.done = obj.subtasks.every(s => s.done); if(obj.done) obj.skipped = false; }
     upsert('tasks', obj);
+    if(!state.editingId) trackEvent('first_task', true); // opt-in anonymous count (js/core/stats.js)
   } else if(type === 'habit'){
     const obj = {
       id: state.editingId || uid(),
@@ -721,6 +722,7 @@ function submitPopup(){
       progress: state.editingId ? (findItem('habit', state.editingId).progress || {}) : {},
     };
     upsert('habits', obj);
+    if(!state.editingId) trackEvent('first_habit', true);
   } else if(type === 'event'){
     const obj = {
       id: state.editingId || uid(),

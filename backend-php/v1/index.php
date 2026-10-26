@@ -21,6 +21,7 @@ require __DIR__ . '/../lib/support.php';
 require __DIR__ . '/../lib/notices.php';
 require __DIR__ . '/../lib/groups.php';
 require __DIR__ . '/../lib/mcp.php';
+require __DIR__ . '/../lib/stats.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -33,6 +34,7 @@ $path = preg_replace('#^.*?/api/v1#', '', $path) ?: '/';
 
 $routes = [
     'GET /health'               => function () { tj_db(); tj_json(['ok' => true, 'backend' => 'php']); },
+    'POST /stats'               => 'tj_stats_post',        // anonymous, opt-in counts (lib/stats.php)
     'GET /auth/providers'       => function () { tj_json(['password' => true, 'google' => false]); },
     'POST /auth/register'       => 'tj_register',
     'POST /auth/login'          => 'tj_login',
@@ -94,6 +96,7 @@ $routes = [
     'GET /admin/users'          => 'tj_admin_users',
     'GET /admin/backup'         => 'tj_admin_backup',
     'GET /admin/visits'         => 'tj_admin_visits',
+    'GET /admin/stats'          => 'tj_admin_stats',
     'GET /content'              => 'tj_public_content',
     'GET /articles/featured'    => 'tj_public_featured_articles',
     'GET /articles'             => 'tj_public_articles',

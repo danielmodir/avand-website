@@ -31,6 +31,7 @@ function shareDay(d){
   const occ = (visibleOccasionsForDate(d) || []).map(o => '• ' + o.event_name + (o.is_holiday ? ' (' + t('holidayWord') + ')' : ''));
   const text = [dayLabel(d), dayAllCalendarsLine(d)].concat(occ).filter(Boolean).join('\n');
   const url = 'https://toojibee.ir/';
+  trackEvent('share'); // opt-in anonymous count (js/core/stats.js)
   if(navigator.share) navigator.share({ title: t('appName'), text, url }).catch(() => {});
   else { copyText(text + '\n' + url); showToast(t('linkCopied')); }
 }

@@ -105,6 +105,7 @@ function tourPrefKey(id){ return 'tour' + id[0].toUpperCase() + id.slice(1); }
 function tourSeenLocal(){ try{ return JSON.parse(localStorage.getItem(TOUR_SEEN_KEY)) || {}; }catch(e){ return {}; } }
 function tourSeen(id){ return !!(state.settings.prefs && state.settings.prefs[tourPrefKey(id)]) || !!tourSeenLocal()[id]; }
 function markTourSeen(id){
+  if(id === 'general') trackEvent('onboarding_done', true); // opt-in anonymous count (js/core/stats.js)
   const local = tourSeenLocal(); local[id] = 1;
   try{ localStorage.setItem(TOUR_SEEN_KEY, JSON.stringify(local)); }catch(e){}
   if(state.settings.prefs && state.settings.prefs[tourPrefKey(id)]) return;

@@ -627,6 +627,7 @@ function renderGeneralSettings(){
     })()}
     ${androidApp && typeof androidApp.setWidgets === 'function' ? prefRow('ongoingNotification', 'prefOngoing', 'prefOngoingSub') : ''}
     ${reminderHealthHtml()}
+    ${TOOJIBEE_CONFIG.backend === 'php' && TOOJIBEE_CONFIG.apiBase ? prefRow('statsOptIn', 'prefStats', 'prefStatsSub') : ''}
   `;
 }
 

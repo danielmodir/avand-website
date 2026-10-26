@@ -172,6 +172,7 @@ async function boot(){
   openAuthFromLink();
   if(!state.guest && !state.bootError){ acceptPendingInvite(); loadGroups().then(joinPendingGroup); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); welcomeChain(); }
   else if(state.guest && (pendingInvite() || pendingGroup()) && !state.authOpen) openAuth('signup', pendingInvite() ? 'inviteSignInFirst' : 'groupSignInFirst');
+  trackReturn(); // opt-in anonymous "came back on day 1/7/30" (js/core/stats.js)
 }
 
 /* A friend's invite link (/demo/#invite=CODE): remembered until the person
@@ -207,6 +208,7 @@ async function acceptPendingInvite(){
     const name = r && r.friend && r.friend.name ? r.friend.name : '';
     // The inviter approves invite-link friends themself: a request went to them.
     showToast(t(r && r.status === 'pending' ? 'inviteRequested' : 'inviteAccepted').replace('{name}', name));
+    trackEvent('invite_accepted'); // opt-in anonymous count (js/core/stats.js)
     if(state.menuSubView === 'friends') refreshConnections();
   }catch(err){
     showToast(t(err && err.code === 'own_invite' ? 'inviteOwn' : err && err.status === 404 ? 'inviteInvalid' : 'saveFailed'));

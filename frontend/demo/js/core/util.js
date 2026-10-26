@@ -11,6 +11,7 @@ const DEFAULT_PREFS = {
   groupsEnabled: true, // the Group planning desk (components/groups)
   ongoingNotification: true, // Android app: the always-there date notification (Widgets.kt)
   inviteApprove: false, // invite-link openers send me a request instead of becoming friends at once (lib/social.php)
+  statsOptIn: false, // "Help improve Toojibee": anonymous counts, only when switched on (js/core/stats.js)
 };
 function pref(key){
   const p = state.settings.prefs || {};

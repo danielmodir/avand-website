@@ -283,7 +283,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'share-invite-link'){
-    if(state.inviteToken && navigator.share) navigator.share({ title: t('appName'), text: t('inviteShareText'), url: inviteUrl(state.inviteToken) }).catch(() => {});
+    if(state.inviteToken && navigator.share){ trackEvent('share'); navigator.share({ title: t('appName'), text: t('inviteShareText'), url: inviteUrl(state.inviteToken) }).catch(() => {}); }
     return;
   }
   if(action === 'share-day'){ shareDay(new Date(state.homeDate)); return; } // the Occasions desk (workspace.js)

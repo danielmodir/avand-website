@@ -221,6 +221,8 @@ textarea.tall{ min-height:340px; line-height:1.9; }
         <div class="card"><h2>صفحه‌های پربازدید</h2><table><tbody id="v-pages"></tbody></table></div>
         <div class="card"><h2>از کجا اومدن</h2><table><tbody id="v-refs"></tbody></table></div>
       </div>
+      <div class="card"><h2>شمارش ناشناس داخل برنامه (۳۰ روز اخیر)</h2><table><tbody id="v-events"></tbody></table>
+        <p class="hint">فقط از کاربرهایی که «کمک به بهتر شدن توجیبی» رو تو تنظیمات روشن کردن. فقط تعداد هر رویداد در روز؛ بدون حساب، IP یا محتوا.</p></div>
       <div class="card"><h2>دانلود اپ اندروید (۳۰ روز اخیر، هر نسخه)</h2><table><tbody id="v-apk"></tbody></table>
         <p class="hint">هر نفر در هر روز یه بار شمرده می‌شه (دانلودی که چند تکه ادامه پیدا کنه، یکیه).</p></div>
     </section>
@@ -853,6 +855,12 @@ textarea.tall{ min-height:340px; line-height:1.9; }
       fill('v-pages', v.pages, function (p) { return PAGE_NAMES[p] || p; }, '');
       fill('v-refs', v.referrers, function (h) { return h; }, 'ltr');
       fill('v-apk', v.apk_versions || [], function (n) { return 'نسخه‌ی ' + ver(n); }, '');
+      // The app's anonymous, opt-in counts (lib/stats.php).
+      api('GET', '/stats').then(function (s) {
+        var EV = { onboarding_done: 'تموم کردن آموزش اول', first_task: 'اولین کار', first_habit: 'اولین عادت', return_d1: 'برگشت روز بعد', return_d7: 'برگشت بعد از یه هفته',
+          return_d30: 'برگشت بعد از یه ماه', share: 'اشتراک‌گذاری', invite_accepted: 'قبول دعوت دوست' };
+        fill('v-events', (s.events || []).map(function (e) { return { name: e, count: (s.totals || {})[e] || 0 }; }), function (e) { return EV[e] || e; }, '');
+      }).catch(function () {});
     });
   }
 
