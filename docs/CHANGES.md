@@ -48,7 +48,7 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.1
+- Demo asset version: 2026-10-27.2
 - PHP schema: v24
 - Django latest migrations: core 0008, planning 0006, social 0003,
   notifications 0003, calendar_data 0002, period 0001
@@ -57,6 +57,13 @@ Update these with every change.
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-10-27 — Phase 3.1–3.2 (web app, Django pref, Android widget layout) —
+  prayer times: js/core/prayer.js (offline, Tehran Geophysics angles, 36
+  cities), prayerBlockHtml in workspace.js (Occasions desk + day sheet),
+  adhan slots in notify.js, settings under Occasions, widget line `pray`
+  (needs APK 1.4), tests/prayer-times.test.js. Day sheet shows every
+  calendar's date. Next: 3.3 birthdays/countdowns (not started).
 
 - 2026-10-27 — growth spec Phase 2 (web app, Android 1.3.0, PHP, Django,
   privacy pages, panel) — details per task in REPORT.md, user-facing text
