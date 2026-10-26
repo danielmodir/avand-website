@@ -280,8 +280,17 @@ function tj_social_invite_reset(): void {
     tj_json(['token' => $tok]);
 }
 
+/* The link's owner chose to approve invite-link friends themself
+ * (Settings → Friends, pref inviteApprove in their synced settings). */
+function tj_social_invite_needs_approval(int $ownerId): bool {
+    $doc = tj_sync_read($ownerId)['data'];
+    $prefs = is_array($doc) ? ($doc['settings']['prefs'] ?? []) : [];
+    return !empty($prefs['inviteApprove']);
+}
+
 /* POST /social/invite/accept {token} — opened someone's link: we're
- * friends now (no request to answer: sharing the link was the yes). */
+ * friends now (sharing the link was the yes), or, when its owner approves
+ * invites themself, a friend request is waiting for them ('pending'). */
 function tj_social_invite_accept(): void {
     $me = tj_require_user();
     tj_throttle('invite_accept', (string)$me['id'], 30, 3600);
@@ -296,6 +305,12 @@ function tj_social_invite_accept(): void {
     if (tj_social_blocked($a, $b) || tj_social_blocked($b, $a)) tj_fail(404, 'invite_not_found');
     $db = tj_db();
     $row = tj_social_row($a, $b);
+    if (tj_social_invite_needs_approval($b) && !($row && $row['status'] === 'accepted')) {
+        // A request from the opener to the link's owner, answered like any other.
+        if (!$row) $db->prepare("INSERT INTO tj_connections (requester_id, addressee_id, status, created_at, updated_at) VALUES (?, ?, 'pending', ?, ?)")
+            ->execute([$a, $b, tj_now(), tj_now()]);
+        tj_json(['status' => 'pending', 'friend' => tj_social_card($owner, 'pending-outgoing')]);
+    }
     if ($row) $db->prepare("UPDATE tj_connections SET status = 'accepted', updated_at = ? WHERE id = ?")->execute([tj_now(), $row['id']]);
     else $db->prepare("INSERT INTO tj_connections (requester_id, addressee_id, status, created_at, updated_at) VALUES (?, ?, 'accepted', ?, ?)")
         ->execute([$b, $a, tj_now(), tj_now()]);

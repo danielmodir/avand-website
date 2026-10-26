@@ -628,7 +628,7 @@
   }
   function acceptInvite(token) {
     return request('POST', '/social/invites/' + encodeURIComponent(String(token).toLowerCase()) + '/redeem').then(function (r) {
-      return { status: 'accepted', friend: r.inviter };
+      return { status: r.status || 'accepted', friend: r.inviter }; // 'pending' when the inviter approves invites themself
     });
   }
   function listConnections() {

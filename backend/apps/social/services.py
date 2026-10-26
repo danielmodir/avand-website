@@ -88,10 +88,21 @@ def create_invite(me, max_uses=None):
     raise ApiError("try_again", 503)
 
 
+def invite_needs_approval(user_id):
+    """The inviter approves invite-link friends themself (preference invite_approve)."""
+    from apps.core.models import UserSettings
+
+    s = UserSettings.objects.filter(user_id=user_id).first()
+    return bool(s and (s.preferences or {}).get("invite_approve"))
+
+
 def redeem_invite(me, code):
     """Someone opened an invite link: they and the inviter are friends at
-    once (sharing the link was the inviter's yes). Opening it again is
-    harmless. A block between the two still wins, without saying so."""
+    once (sharing the link was the inviter's yes), or, when the inviter
+    approves invites themself, a request from the opener waits for them
+    (invite.pending is set). Opening it again is harmless. A block between
+    the two still wins, without saying so."""
+    approval = None
     with transaction.atomic(using=DB):
         invite = Invite.objects.select_for_update().filter(code=code).first()
         if invite is None or not invite.is_usable or str(invite.inviter_user_id) == str(me):
@@ -101,6 +112,14 @@ def redeem_invite(me, code):
             invite.uses += 1
             invite.save(update_fields=["uses"])
         a, b, row = _lock_pair(me, invite.inviter_user_id)
+        invite.pending = False
+        if row is not None and row.status == Connection.Status.BLOCKED:
+            raise ApiError("invalid_invite", 404)
+        if (row is None or row.status != Connection.Status.ACCEPTED) and invite_needs_approval(invite.inviter_user_id):
+            if row is None:
+                Connection.objects.create(user_a=a, user_b=b, status=Connection.Status.PENDING, requested_by=me)
+            invite.pending = True
+            return invite
         if row is None:
             Connection.objects.create(user_a=a, user_b=b, status=Connection.Status.ACCEPTED, requested_by=invite.inviter_user_id,
                                       responded_at=timezone.now())

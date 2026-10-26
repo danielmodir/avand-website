@@ -205,7 +205,8 @@ async function acceptPendingInvite(){
   try{
     const r = await Cloud.acceptInvite(code);
     const name = r && r.friend && r.friend.name ? r.friend.name : '';
-    showToast(t('inviteAccepted').replace('{name}', name));
+    // The inviter approves invite-link friends themself: a request went to them.
+    showToast(t(r && r.status === 'pending' ? 'inviteRequested' : 'inviteAccepted').replace('{name}', name));
     if(state.menuSubView === 'friends') refreshConnections();
   }catch(err){
     showToast(t(err && err.code === 'own_invite' ? 'inviteOwn' : err && err.status === 404 ? 'inviteInvalid' : 'saveFailed'));

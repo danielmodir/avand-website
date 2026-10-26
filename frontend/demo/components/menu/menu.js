@@ -384,14 +384,15 @@ function renderFriendsPage(){
   const inviteHtml = Cloud.inviteToken ? `
     <div class="invite-card">
       <div class="lbl">${t('inviteLinkTitle')}</div>
-      <div class="sub">${t('inviteLinkSub')}</div>
+      <div class="sub">${t(pref('inviteApprove') ? 'inviteLinkSubApprove' : 'inviteLinkSub')}</div>
       <div class="invite-link-box" dir="ltr">${state.inviteToken ? escapeHtml(inviteUrl(state.inviteToken)) : '…'}</div>
       <div class="invite-actions">
         <button type="button" class="btn btn-primary btn-small" data-action="copy-invite-link" ${state.inviteToken ? '' : 'disabled'}>${ICONS.copyIcon}<span>${t('copyLink')}</span></button>
         ${navigator.share ? `<button type="button" class="btn btn-outline btn-small" data-action="share-invite-link" ${state.inviteToken ? '' : 'disabled'}>${ICONS.linkIcon}<span>${t('shareLink')}</span></button>` : ''}
         <button type="button" class="btn btn-outline btn-small" data-action="reset-invite-link" ${state.inviteToken ? '' : 'disabled'}>${t('newLink')}</button>
       </div>
-    </div>` : `
+    </div>
+    ${prefRow('inviteApprove', 'prefInviteApprove', 'prefInviteApproveSub')}` : `
     <div class="settings-row">
       <div style="min-width:0;"><div class="lbl">${t('inviteLink')}</div><div class="sub" style="overflow:hidden; text-overflow:ellipsis;" dir="ltr">toojibee.ir · ${escapeHtml(state.profile.userId)}</div></div>
       <span class="link-btn" data-action="copy-invite-link" aria-label="${t('copyBtn')}">${ICONS.copyIcon}</span>

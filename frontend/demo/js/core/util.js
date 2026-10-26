@@ -10,6 +10,7 @@ const DEFAULT_PREFS = {
   notifyOverdue: true, // one reminder when a task turns "not done" (js/core/notify.js)
   groupsEnabled: true, // the Group planning desk (components/groups)
   ongoingNotification: true, // Android app: the always-there date notification (Widgets.kt)
+  inviteApprove: false, // invite-link openers send me a request instead of becoming friends at once (lib/social.php)
 };
 function pref(key){
   const p = state.settings.prefs || {};

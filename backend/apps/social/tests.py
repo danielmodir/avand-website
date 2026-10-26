@@ -48,6 +48,15 @@ class SocialTests(ApiTestCase):
         self.assertEqual(newbie.post(f"/api/v1/social/invites/{code}/redeem").status_code, 200)  # again: harmless
         self.assertEqual(self.sara.post(f"/api/v1/social/invites/{code}/redeem").status_code, 404)  # own link
 
+    def test_invite_link_needs_approval_when_the_inviter_wants_it(self):
+        settings = self.sara.get("/api/v1/me/settings").json()
+        self.sara.patch("/api/v1/me/settings", {"preferences": {"invite_approve": True}, "version": settings["version"]}, format="json")
+        code = self.sara.post("/api/v1/social/invites").json()["code"]
+        newbie = self.register("new2@example.com", "Neda")
+        res = newbie.post(f"/api/v1/social/invites/{code}/redeem")
+        self.assertEqual((res.status_code, res.json()["status"]), (200, "pending"))
+        self.assertNotEqual(self.statuses(self.sara).get(newbie.tokens["user_id"]), "accepted")  # a request, not a friend yet
+
     def test_reports(self):
         ok = self.sara.post("/api/v1/social/reports", {"user_id": self.ali_id, "reason": "spam"}, format="json")
         self.assertEqual(ok.status_code, 202)

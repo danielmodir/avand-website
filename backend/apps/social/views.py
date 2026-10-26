@@ -113,7 +113,8 @@ class InviteDetailView(APIView):
 class RedeemInviteView(APIView):
     def post(self, request, code):
         invite = services.redeem_invite(request.user.id, code.lower())
-        return Response({"inviter": _people([invite.inviter_user_id]).get(str(invite.inviter_user_id))})
+        return Response({"inviter": _people([invite.inviter_user_id]).get(str(invite.inviter_user_id)),
+                         "status": "pending" if invite.pending else "accepted"})
 
 
 class ReportInput(serializers.Serializer):
