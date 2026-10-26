@@ -58,6 +58,14 @@ Update these with every change.
 
 Format: `date — surfaces — what changed (key files)`.
 
+- 2026-10-27 — PHP API, admin panel — Users tab switch «ثبت‌نام بدون کد تأیید ایمیل»
+  (owner's request): lib/auth.php tj_auth_settings() reads
+  data/auth-settings.json; on = register returns a session at once (email
+  marked verified) and login confirms an unverified account after a correct
+  password. GET/PUT /admin/auth-settings (users.view / users.manage, audit
+  log). The app already handled tokens from register (auth.js). Django: not
+  done (not deployed; still always sends the code).
+
 - 2026-10-27 — web app (Android) — «تنظیمات عمومی» didn't open in the app: the
   page read Notification.permission, and the WebView has no Notification
   object (notifySupported() is true there because of the bridge). New

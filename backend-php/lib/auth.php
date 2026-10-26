@@ -169,10 +169,40 @@ function tj_register(): void {
                    tj_new_public_id(), tj_new_display_id($db), tj_now(), tj_now()]);
     $userId = (int)$db->lastInsertId();
 
+    // The owner's switch in the panel (tj_auth_settings): no email code, the
+    // account is confirmed and signed in at once.
+    if (tj_auth_settings()['skip_email_verify']) {
+        $db->prepare('UPDATE tj_users SET email_verified_at = ? WHERE id = ?')->execute([tj_now(), $userId]);
+        tj_json(tj_new_session($userId), 201);
+    }
     // The email is confirmed with a code before the first sign-in (the owner
     // brought the step back, 2026-10-25): no session until then.
     tj_send_verify_code($userId, $email);
     tj_json(['verify_required' => true, 'email' => $email], 201);
+}
+
+/* Sign-up settings the owner changes in the panel (Users tab), kept in one
+ * small file next to the database: skip_email_verify = sign up without the
+ * email code, and confirm unconfirmed accounts when they sign in. */
+function tj_auth_settings(): array {
+    $f = tj_data_dir() . '/auth-settings.json';
+    $d = is_file($f) ? json_decode((string)file_get_contents($f), true) : null;
+    return ['skip_email_verify' => is_array($d) && !empty($d['skip_email_verify'])];
+}
+
+/* GET /admin/auth-settings */
+function tj_admin_auth_settings(): void {
+    tj_admin_require('users.view');
+    tj_json(tj_auth_settings());
+}
+
+/* PUT /admin/auth-settings {skip_email_verify} — users.manage, in the audit log. */
+function tj_admin_auth_settings_save(): void {
+    $me = tj_admin_require('users.manage');
+    $on = (bool)(tj_body()['skip_email_verify'] ?? false);
+    file_put_contents(tj_data_dir() . '/auth-settings.json', json_encode(['skip_email_verify' => $on]), LOCK_EX);
+    tj_admin_audit((int)$me['id'], $on ? 'email_verify_skipped' : 'email_verify_required');
+    tj_json(tj_auth_settings());
 }
 
 /* A 6-digit code to confirm the address; at most one a minute. */
@@ -230,6 +260,11 @@ function tj_login(): void {
     if ($user['status'] !== 'active') tj_fail(403, 'account_suspended');
     // Not confirmed yet (also accounts from before 2026-10-25): a code goes
     // out and the app asks for it.
+    // With the panel's switch on, an unconfirmed account is confirmed now (the password was right).
+    if ($user['email_verified_at'] === null && tj_auth_settings()['skip_email_verify']) {
+        tj_db()->prepare('UPDATE tj_users SET email_verified_at = ?, updated_at = ? WHERE id = ?')->execute([tj_now(), tj_now(), $user['id']]);
+        $user['email_verified_at'] = tj_now();
+    }
     if ($user['email_verified_at'] === null) {
         tj_send_verify_code((int)$user['id'], $user['email']);
         tj_fail(403, 'email_not_verified', ['email' => $user['email']]);

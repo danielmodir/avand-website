@@ -338,6 +338,11 @@ textarea.tall{ min-height:340px; line-height:1.9; }
     </section>
 
     <section id="tab-users" class="hidden stack">
+      <div class="card" id="auth-settings-card">
+        <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;"><input type="checkbox" id="skip-verify" style="margin-top:5px;">
+          <span><b>ثبت‌نام بدون کد تأیید ایمیل</b><br><small>روشن باشه: ثبت‌نام بدون ایمیل کد، یه‌راست وارد حساب می‌شه؛ و هر کی که ایمیلش تأیید نشده، با رمز درست که وارد بشه، ایمیلش تأیید حساب می‌شه. یعنی هر کسی با ایمیل غیرواقعی یا ایمیل یکی دیگه هم می‌تونه حساب بسازه.</small></span></label>
+        <div class="alert hidden" id="skip-verify-result"></div>
+      </div>
       <form class="card" id="user-search" novalidate>
         <div class="toolbar">
           <input id="u-q" type="text" placeholder="جستجو: ایمیل، نام کاربری یا کد TJ-…" autocomplete="off">
@@ -669,7 +674,7 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   function openTab(name) {
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.tab === name); });
     ['overview', 'visits', 'users', 'notices', 'messages', 'content', 'articles', 'system', 'admins', 'audit'].forEach(function (t) { $('tab-' + t).classList.toggle('hidden', t !== name); });
-    ({ overview: loadOverview, visits: loadVisits, messages: function () { msgs.offset = 0; return loadMessages(); }, notices: loadNotices, content: loadContent, articles: loadArticles, system: loadSystem, users: function () { users.offset = 0; $('user-detail').classList.add('hidden'); return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
+    ({ overview: loadOverview, visits: loadVisits, messages: function () { msgs.offset = 0; return loadMessages(); }, notices: loadNotices, content: loadContent, articles: loadArticles, system: loadSystem, users: function () { users.offset = 0; $('user-detail').classList.add('hidden'); loadAuthSettings(); return loadUsers(); }, admins: loadAdmins, audit: loadAudit })[name]()
       .catch(onAuthError).catch(function (err) { alert(errorText(err)); });
   }
 
@@ -1332,6 +1337,24 @@ textarea.tall{ min-height:340px; line-height:1.9; }
   }
 
   /* ---- users ---- */
+
+  /* Sign-up without the email code (lib/auth.php tj_auth_settings). */
+  function loadAuthSettings() {
+    var box = $('skip-verify');
+    box.disabled = !can('users.manage');
+    return api('GET', '/auth-settings').then(function (s) { box.checked = !!s.skip_email_verify; }).catch(function () {});
+  }
+  $('skip-verify').addEventListener('change', function () {
+    var box = this, on = box.checked, res = $('skip-verify-result');
+    if (on && !confirm('ثبت‌نام بدون تأیید ایمیل روشن بشه؟ هر کسی می‌تونه با هر ایمیلی حساب بسازه.')) { box.checked = false; return; }
+    box.disabled = true;
+    api('PUT', '/auth-settings', { skip_email_verify: on }).then(function (s) {
+      box.checked = !!s.skip_email_verify;
+      res.textContent = s.skip_email_verify ? 'روشن شد: ثبت‌نام و ورود بدون کد ایمیل.' : 'خاموش شد: کد تأیید ایمیل دوباره لازمه.';
+      res.classList.remove('hidden');
+    }).catch(function () { box.checked = !on; res.textContent = 'ذخیره نشد. دوباره امتحان کن.'; res.classList.remove('hidden'); })
+      .then(function () { box.disabled = !can('users.manage'); });
+  });
 
   function loadUsers() {
     var qs = '?q=' + encodeURIComponent(users.q) + '&filter=' + users.filter + '&offset=' + users.offset
