@@ -49,20 +49,22 @@
 }
 .app-crash.show{ opacity:1; pointer-events:auto; }
 
-/* ===== connection strip ===== */
+/* ===== connection dot =====
+   A small, calm dot in the top corner instead of the old sliding strip
+   (hidden off-screen, its shadow still drew a line along the top): red
+   while offline, amber while changes wait to be sent. Not there at all
+   otherwise. Tapping it says what it means (app-error.js). */
 .connection-strip{
-  position:fixed; top:0; left:50%; z-index:120;
-  transform:translate(-50%, -110%); transition:transform .3s cubic-bezier(.22,1,.36,1);
-  margin-top:8px; padding:7px 14px; border-radius:999px;
-  background:var(--card); color:var(--text); border:1px solid var(--border);
-  box-shadow:var(--shadow); font-size:12.5px; font-weight:700; white-space:nowrap; max-width:92vw;
-  overflow:hidden; text-overflow:ellipsis;
+  display:none; position:fixed; z-index:120;
+  top:calc(env(safe-area-inset-top, 0px) + 6px); left:6px;
+  width:44px; height:44px; padding:0; border:none; background:transparent; cursor:pointer;
 }
 .connection-strip::before{
-  content:''; display:inline-block; width:8px; height:8px; border-radius:50%;
-  background:var(--danger); margin-inline-end:8px; vertical-align:1px;
-  animation:strip-pulse 1.6s ease-in-out infinite;
+  content:''; position:absolute; left:16px; top:16px; width:12px; height:12px; border-radius:50%;
+  background:var(--danger); box-shadow:0 0 0 3px var(--card);
+  animation:strip-pulse 2.4s ease-in-out infinite;
 }
-.connection-strip.show{ transform:translate(-50%, 0); }
-@keyframes strip-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
-.device.lang-fa .connection-strip{ direction:rtl; }
+.connection-strip.pending::before{ background:var(--pms); }
+.connection-strip.show{ display:block; }
+@keyframes strip-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
+@media (prefers-reduced-motion:reduce){ .connection-strip::before{ animation:none; } }

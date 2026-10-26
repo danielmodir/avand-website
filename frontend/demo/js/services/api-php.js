@@ -341,6 +341,8 @@
 
   Object.assign(api, {
     uuid: base.uuid, isConfigured: function () { return true; }, hasSession: hasSession,
+    // Changes made here that haven't reached the server yet (the connection dot, app-error.js).
+    syncPending: function () { return loaded && dirty && hasSession(); },
     signUp: signUp, signIn: signIn, signOut: signOut, verifyEmailCode: verifyEmailCode,
     resendVerifyCode: function (email) { return request('POST', '/auth/email/code/resend', { email: email }, { auth: false }); },
     signInWithGoogle: function () { /* not on this backend */ },

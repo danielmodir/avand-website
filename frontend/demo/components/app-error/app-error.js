@@ -100,15 +100,24 @@ function initCrashScreen(){
   });
 }
 
-/* ---- connection strip ---- */
+/* ---- connection dot (offline / changes waiting to be sent) ---- */
 function renderConnectionStrip(){
   const el = document.getElementById('connection-strip');
   if(!el) return;
-  el.textContent = t('offlineStrip');
-  el.classList.toggle('show', !navigator.onLine);
+  const offline = !navigator.onLine;
+  const pending = !offline && typeof Cloud !== 'undefined' && Cloud.syncPending && Cloud.syncPending();
+  const label = offline ? t('offlineStrip') : t('syncPending');
+  el.textContent = '';
+  el.classList.toggle('show', offline || !!pending);
+  el.classList.toggle('pending', !!pending);
+  el.setAttribute('aria-label', label);
+  el.title = label;
 }
 
 function initConnectionWatch(){
+  document.getElementById('connection-strip')?.addEventListener('click', e => showToast(e.currentTarget.getAttribute('aria-label')));
+  // A save that's waiting goes out on its own (api-php.js); the dot follows.
+  setInterval(renderConnectionStrip, 5000);
   window.addEventListener('offline', renderConnectionStrip);
   window.addEventListener('online', () => {
     renderConnectionStrip();
