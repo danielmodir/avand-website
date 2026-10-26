@@ -19,8 +19,31 @@ function renderOccasionsPane(d, events){
     <div class="section-title">${t('events')} <span class="count">${dig(dayEvents.length)}</span></div>
     <div class="events-scroll">${sortEvents(dayEvents).map(e=>eventCard(e)).join('')}</div>
   ` : '';
-  if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>`;
-  return occasionsHtml + eventsHtml;
+  const share = `<div class="occ-share-row"><button type="button" class="btn btn-outline btn-small" data-action="share-day">${ICONS.shareIcon}<span>${t('shareDay')}</span></button></div>`;
+  if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>` + share;
+  return occasionsHtml + eventsHtml + share;
+}
+
+/* "Share this day": its date in every calendar, its occasions and the site's
+   address, through the phone's share sheet (the Android app's bridge,
+   js/core/android.js) or copied when there's none. Never anyone's own items. */
+function shareDay(d){
+  const occ = (visibleOccasionsForDate(d) || []).map(o => '• ' + o.event_name + (o.is_holiday ? ' (' + t('holidayWord') + ')' : ''));
+  const text = [dayLabel(d), dayAllCalendarsLine(d)].concat(occ).filter(Boolean).join('\n');
+  const url = 'https://toojibee.ir/';
+  if(navigator.share) navigator.share({ title: t('appName'), text, url }).catch(() => {});
+  else { copyText(text + '\n' + url); showToast(t('linkCopied')); }
+}
+
+/* "۴ آبان ۱۴۰۵ · 26 October 2026 · ۱۴ جمادی‌الاول ۱۴۴۸": the day in each enabled calendar. */
+function dayAllCalendarsLine(d){
+  const y = d.getFullYear(), m = d.getMonth() + 1, dd = d.getDate();
+  const j = toJalali(y, m, dd), h = toHijri(y, m, dd), on = state.settings.calendarEnabled || {};
+  return [
+    on.jalali !== false ? `${toSysDigits(j.jd, 'jalali')} ${jalaliMonthName(j.jm - 1)} ${toSysDigits(j.jy, 'jalali')}` : '',
+    on.gregorian !== false ? `${toSysDigits(dd, 'gregorian')} ${monthName(m - 1)} ${toSysDigits(y, 'gregorian')}` : '',
+    on.hijri !== false ? `${toSysDigits(h.hd, 'hijri')} ${hijriMonthName(h.hm - 1)} ${toSysDigits(h.hy, 'hijri')}` : '',
+  ].filter(Boolean).join(' · ');
 }
 
 /* The three swipeable "desktops" described in the plan: occasions (the

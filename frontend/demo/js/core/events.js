@@ -2,6 +2,7 @@
    look around the calendar and the occasions. Every other action opens
    the sign-in popup instead (requireAccount). */
 const GUEST_ACTIONS = new Set([
+  'share-day',
   'cal-prev-week','cal-next-week','cal-prev-day','cal-next-day','cal-prev-month','cal-next-month',
   'home-prev-month','home-next-month','home-pick-month','home-pick-year','set-cal-mode',
   'pick-month','pick-year','tap-month','tap-year','tap-sec-month','tap-sec-year','pick-sec-month','pick-sec-year',
@@ -284,6 +285,7 @@ document.getElementById('device').addEventListener('click', (e) => {
     if(state.inviteToken && navigator.share) navigator.share({ title: t('appName'), text: t('inviteShareText'), url: inviteUrl(state.inviteToken) }).catch(() => {});
     return;
   }
+  if(action === 'share-day'){ shareDay(new Date(state.homeDate)); return; } // the Occasions desk (workspace.js)
   if(action === 'reset-invite-link'){
     if(!Cloud.resetInviteToken || !confirm(t('newLinkConfirm'))) return;
     el.disabled = true;

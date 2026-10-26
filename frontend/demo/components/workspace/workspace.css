@@ -76,6 +76,9 @@
 }
 .occasion-row{ padding:12px 14px; border-radius:12px; background:var(--card); border:1px solid var(--border); margin-bottom:8px; font-size:13px; display:flex; align-items:center; gap:8px; }
 .occasion-row.holiday{ color:var(--danger); border-color:var(--danger-soft); }
+.occ-share-row{ display:flex; justify-content:center; margin:6px 0 4px; }
+.occ-share-row .btn{ display:inline-flex; align-items:center; gap:6px; min-height:44px; }
+.occ-share-row svg{ width:16px; height:16px; }
 .occasion-holiday-dot{ width:6px; height:6px; border-radius:50%; background:var(--danger); flex:0 0 auto; }
 /* Persian: occasions read right to left (the app's frame is LTR by default). */
 .device.lang-fa .occasion-row{ direction:rtl; text-align:right; }
