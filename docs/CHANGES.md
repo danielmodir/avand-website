@@ -16,12 +16,16 @@ A request names what it is for; decide which surfaces it touches:
 | Live API (PHP) | backend-php/ → public_html/api/ | lib/*.php per module; schema migrations in lib/bootstrap.php (`if ($v < N)`) |
 | Django API | backend/apps/<module>/ | not deployed; kept in step with PHP (models, migrations, serializers, tests) |
 | API clients | frontend/demo/js/services/api-php.js (live), api.js (Django) | both need the same mapping |
+| Next-version management | docs/next-version/ | audit, 111-row master checklist, implementation plan, decisions, test report and API/data inventory; development awaits owner coordination |
 
 Checklist per feature: UI (fa + en strings in js/core/i18n.js, both themes,
 360/1280 px) → PHP endpoint + migration → Django model + migration + test →
 both API clients → offline behavior (no apiBase) → Android if it needs native
 code → bump demo asset version (`?v=` in frontend/demo/index.html) → commit,
-push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
+push to a review branch. Deployment is a separate step requiring the owner's
+explicit instruction after review (owner, 2026-11-15). Do not push to master
+during review: pages.yml automatically publishes GitHub Pages on that branch.
+Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-android.ps1.
 
 ## Code map
 
@@ -43,6 +47,9 @@ push, deploy (deploy/build-site-zip.ps1; Android: deploy/build-android.ps1).
 - Deploy scripts (deploy/): build-site-zip.ps1, build-android.ps1,
   make-keystore.ps1, make-logo.js, make-desk-shots.js, make-quotes.py, webp.py,
   css-compat.js.
+- Next-version work: docs/next-version/README.md links the audit, central
+  checklist, dependencies, decisions, baseline tests and source-derived
+  API/model inventory. This is the management source for the new update.
 
 ## Current versions
 
@@ -50,13 +57,23 @@ Update these with every change.
 
 - Demo asset version: 2026-10-27.15
 - PHP schema: v24
-- Django latest migrations: core 0008, planning 0008, social 0003,
+- Django latest migrations: core 0009, planning 0008, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-11-15 — docs only — next-version initial audit and management system
+  (docs/next-version/): 111 traceable rows, 15-section product mapping,
+  PHP/Django/API/database/Android inventory, dependency plan, 22 open product
+  decisions and evidence-backed risks. Baseline: 14 Node tests and 76 Django
+  tests pass; migration drift check passes. Core migration number corrected
+  to the existing 0009_mcp_key; no new migration or runtime version change.
+  No feature implementation or host deployment. Development requires owner
+  coordination; local changes go to a GitHub review branch first, and the
+  production host remains untouched until an explicit later instruction.
 
 - 2026-10-27 — web app, Django — prayer times off by default (owner): pref
   prayerShow false (util.js DEFAULT_PREFS, Django prayer_show False); turned
