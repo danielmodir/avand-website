@@ -64,6 +64,7 @@ class Reminder(models.Model):
     reminder_text = models.CharField(max_length=200, blank=True)
     reminder_lead_minutes = models.PositiveIntegerField(null=True, blank=True)
     reminder_every_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
+    reminder_window_end = models.TimeField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -82,7 +83,12 @@ def _common_checks(prefix, allow_none_recurrence=True):
             condition=(
                 Q(reminder_type="none")
                 | Q(reminder_type="at_time", reminder_time__isnull=False)
-                | Q(reminder_type="repeating", reminder_time__isnull=False, reminder_every_hours__gte=1, reminder_every_hours__lte=24)
+                | (Q(reminder_type="repeating", reminder_time__isnull=False) & (
+                    Q(reminder_window_end__isnull=True, reminder_every_hours__gte=1, reminder_every_hours__lte=24)
+                    | (Q(reminder_window_end__isnull=False, reminder_every_minutes__isnull=False,
+                         reminder_every_minutes__gte=1, reminder_every_minutes__lte=1440)
+                       & ~Q(reminder_time=F("reminder_window_end")))
+                ))
                 | Q(reminder_type="before_start")
                 | Q(reminder_type="countdown", reminder_lead_minutes__gte=15, reminder_lead_minutes__lte=10080,
                     reminder_every_minutes__gte=15, reminder_every_minutes__lte=1440)

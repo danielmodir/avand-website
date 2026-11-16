@@ -1,5 +1,13 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۱۶ — یادآوری در بازه
+
+- `node --test tests/reminder-window.test.js`: 9/9 PASS؛ مثال‌ها، بازه نامعتبر/صفر/منفی/اعشاری، نیمه‌شب، DST gap، cutoff، تغییر/حذف و نگاشت API؛ تست روی snapshot دقیق index نیز 9/9 PASS، مستقل از تغییرات ثبت‌نشدهٔ دیگر.
+- `manage.py test apps.planning apps.core.test_weekends --settings=config.settings.test --noinput`: 24/24 PASS؛ شامل 4 تست API جدید با سه نوع فعالیت، validation، legacy، overnight و حذف یادآوری بدون تکثیر فعالیت.
+- `makemigrations planning --check --dry-run --settings=config.settings.test --noinput`: PASS. بررسی عمومی Migrationها یک drift مستقل در core EmailOutbox.template یافت؛ در این کار تغییر داده نشد.
+- Chromium منبع: 8/8 در 360/1280 × fa/en × light/dark؛ ایجاد، انتهای شامل، رد صفر، ویرایش همان فعالیت و حذف یادآوری؛ pageerror/external صفر. ورودی‌ها برای لمس 44px اصلاح شدند.
+- PHP CLI روی PATH موجود نیست؛ تست backend-php/tests/reminder-windows.php نوشته شد ولی اجرا نشده. تحویل واقعی اعلان، ظرفیت صف پرتراکم، WebView گوشی و timezone هنگام بسته بودن برنامه تأیید نشده‌اند؛ In Progress.
+
 ## ۲۰۲۶-۱۱-۱۶ — بازبینی و تست بستهٔ واقعی
 
 - بازبینی مستقل یک P2 پیدا کرد: @import توکن‌ها بعد از تجمیع CSS نادیده گرفته می‌شد. با لینک صریح و استخراج متغیرهای layout از منبع مرکزی اصلاح شد.

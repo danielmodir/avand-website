@@ -244,11 +244,12 @@
       reminder_time: type === 'none' || type === 'before_start' || type === 'countdown' ? null : (n.time || '09:00'),
       // A one-time task's reminder on a later day of its range.
       reminder_date: type === 'at_time' && n.date ? n.date : null,
-      reminder_every_hours: type === 'repeating' ? Math.min(24, Math.max(1, Number(n.repeatHours) || 1)) : null,
+      reminder_every_hours: type === 'repeating' && !n.windowEnd ? Math.min(24, Math.max(1, Number(n.repeatHours) || 1)) : null,
+      reminder_window_end: type === 'repeating' && n.windowEnd ? n.windowEnd : null,
       reminder_text: (n && n.text) || '',
       // "Over and over until it starts": from N minutes before, every M minutes.
       reminder_lead_minutes: type === 'countdown' ? Math.min(10080, Math.max(15, Number(n.leadMinutes) || 1440)) : null,
-      reminder_every_minutes: type === 'countdown' ? Math.min(1440, Math.max(15, Number(n.everyMinutes) || 60)) : null,
+      reminder_every_minutes: type === 'repeating' && n.windowEnd ? Number(n.everyMinutes) : type === 'countdown' ? Math.min(1440, Math.max(15, Number(n.everyMinutes) || 60)) : null,
     };
   }
   function reminderFromApi(row) {
@@ -257,6 +258,8 @@
       time: row.reminder_time ? row.reminder_time.slice(0, 5) : '09:00',
       date: row.reminder_date || null,
       repeatHours: row.reminder_every_hours || 1,
+      windowEnd: row.reminder_window_end ? row.reminder_window_end.slice(0, 5) : null,
+      windowSince: row.reminder_window_end ? Date.parse(row.updated_at) || Date.now() : null,
       minutesBefore: row.reminder_minutes_before || 15,
       leadMinutes: row.reminder_lead_minutes || 1440,
       everyMinutes: row.reminder_every_minutes || 60,

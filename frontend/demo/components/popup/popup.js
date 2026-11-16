@@ -50,6 +50,8 @@ function resetFormDraft(type, existing){
       time: existing ? (existing.notification?.time || '09:00') : '09:00',
       date: existing ? (existing.notification?.date || null) : null,
       repeatHours: existing ? (existing.notification?.repeatHours || 1) : 1,
+      windowEnd: existing ? (existing.notification?.windowEnd || null) : null,
+      windowSince: existing ? (existing.notification?.windowSince || null) : null,
       minutesBefore: existing ? (existing.notification?.minutesBefore || 15) : 15,
       leadMinutes: existing ? (existing.notification?.leadMinutes || 1440) : 1440,
       everyMinutes: existing ? (existing.notification?.everyMinutes || 60) : 60,
@@ -138,7 +140,7 @@ function itemDetailsHtml(type, item, day){
   if(rep) rows.push([ICONS.repeatIcon, rep]);
   const n = item.notification || {};
   if(n.type === 'time') rows.push([ICONS.bellIcon, t('reminderAt') + ' ' + `<span dir="ltr">${dig(n.time)}</span>`]);
-  if(n.type === 'repeat') rows.push([ICONS.bellIcon, t('reminderEveryNHours').replace('{n}', dig(n.repeatHours || 1))]);
+  if(n.type === 'repeat') rows.push([ICONS.bellIcon, n.windowEnd ? t('reminderWindowSummary').replace('{from}', dig(n.time)).replace('{to}', dig(n.windowEnd)).replace('{every}', durationLabel(n.everyMinutes)) : t('reminderEveryNHours').replace('{n}', dig(n.repeatHours || 1))]);
   if(n.type === 'before') rows.push([ICONS.bellIcon, t('reminderMinutesBefore').replace('{n}', dig(n.minutesBefore || 15))]);
   if(type === 'habit' && habitTracker(item)) rows.push([item.tracker.kind === 'counter' ? ICONS.counterIcon : ICONS.timerIcon,
     trackerSummary(item) + ' · ' + t('trackerToday').replace('{v}', trackerLabel(item, dateKey(state.homeDate || today)))]);
@@ -376,9 +378,10 @@ function startReminderDraft(){
   reminderDraft = {
     type: n.type || 'time', time: n.time || formDraft.startTime || '09:00', date: n.date || null,
     repeatHours: Math.min(12, Math.max(1, Number(n.repeatHours) || 1)),
+    windowEnd: n.windowEnd || null,
     minutesBefore: n.minutesBefore || 15, text: n.text || '',
     leadMinutes: Math.min(COUNTDOWN_MAX_LEAD, Math.max(15, Number(n.leadMinutes) || 1440)),
-    everyMinutes: COUNTDOWN_EVERY.includes(Number(n.everyMinutes)) ? Number(n.everyMinutes) : 60,
+    everyMinutes: n.type === 'repeat' ? (n.windowEnd ? Number(n.everyMinutes) : (Number(n.repeatHours) || 1) * 60) : (COUNTDOWN_EVERY.includes(Number(n.everyMinutes)) ? Number(n.everyMinutes) : 60),
   };
 }
 
@@ -398,6 +401,15 @@ function notificationSubviewHtml(){
       ${reminderSpans() ? `data-base="${formDraft.date}" data-span="${REMINDER_MAX_DAYS}" data-date="${n.date || formDraft.date}"` : ''}></div>
       ${reminderSpans() && n.date && n.date > formDraft.date ? `<div class="profile-hint">${t('reminderNextDayHint').replace('{d}', tjDayLabel(n.date))}</div>` : ''}` : ''}
     ${n.type === 'repeat' ? `
+      <label class="rec-block dp-time-check"><input type="checkbox" id="notif-window" ${n.windowEnd ? 'checked' : ''}><span>${t('reminderWindow')}</span></label>
+      ${n.windowEnd ? `
+        <label class="rec-block rec-every"><span>${t('startTime')}</span><input type="time" id="f-window-start" value="${escapeAttr(n.time)}"></label>
+        <label class="rec-block rec-every"><span>${t('endTime')}</span><input type="time" id="f-window-end" value="${escapeAttr(n.windowEnd)}"></label>
+        <div class="rec-block window-interval"><span class="field-label">${t('repeatEvery')}</span>
+          <label>${t('windowHours')} <input type="number" id="f-window-hours" min="0" max="24" step="1" inputmode="numeric" value="${Math.floor(n.everyMinutes / 60)}"></label>
+          <label>${t('windowMinutes')} <input type="number" id="f-window-minutes" min="0" max="59" step="1" inputmode="numeric" value="${n.everyMinutes % 60}"></label>
+        </div><p class="profile-hint">${t('reminderWindowHint')}</p>
+      ` : `
       <div class="rec-block rec-every">
         <span>${t('repeatEvery')}</span>
         <div class="rec-stepper" dir="ltr">
@@ -405,7 +417,7 @@ function notificationSubviewHtml(){
         </div>
         <span>${t('reminderHoursUnit')}</span>
       </div>
-      <div class="profile-hint">${t('reminderRepeatHint').replace('{t}', `<span dir="ltr">${dig(formDraft.startTime || n.time)}</span>`)}</div>` : ''}
+      <div class="profile-hint">${t('reminderRepeatHint').replace('{t}', `<span dir="ltr">${dig(formDraft.startTime || n.time)}</span>`)}</div>`}` : ''}
     ${n.type === 'before' ? (formDraft.startTime ? `
       <div class="rec-block"><select class="settings-select" id="notif-before-select" style="width:100%;">
         ${REMINDER_BEFORE_CHOICES.map(m => `<option value="${m}" ${n.minutesBefore === m ? 'selected' : ''}>${beforeLabel(m)}</option>`).join('')}
@@ -640,6 +652,18 @@ function wireSubviewInteractivity(){
     wireTrackerSubview();
   } else if(sub === 'notification'){
     const n = reminderDraft;
+    document.getElementById('notif-window')?.addEventListener('change', e => {
+      n.windowEnd = e.target.checked ? (formDraft.endTime || '18:00') : null;
+      if(e.target.checked) n.time = formDraft.startTime || n.time;
+      renderPopupBody();
+    });
+    document.getElementById('f-window-start')?.addEventListener('input', e => { n.time = e.target.value; });
+    document.getElementById('f-window-end')?.addEventListener('input', e => { n.windowEnd = e.target.value; });
+    const readWindowInterval = () => {
+      const hours = Number(document.getElementById('f-window-hours').value), minutes = Number(document.getElementById('f-window-minutes').value);
+      n.everyMinutes = Number.isInteger(hours) && hours >= 0 && hours <= 24 && Number.isInteger(minutes) && minutes >= 0 && minutes <= 59 ? hours * 60 + minutes : NaN;
+    };
+    ['f-window-hours','f-window-minutes'].forEach(id => document.getElementById(id)?.addEventListener('input', readWindowInterval));
     document.getElementById('notif-type-select')?.addEventListener('change', e => { n.type = e.target.value; renderPopupBody(); });
     document.getElementById('f-notif-time')?.addEventListener('input', e => {
       const had = n.date;
@@ -671,6 +695,7 @@ function wireSubviewInteractivity(){
     });
     document.getElementById('f-notif-text')?.addEventListener('input', e => { n.text = e.target.value; });
     document.getElementById('notif-confirm')?.addEventListener('click', () => {
+      if(n.type === 'repeat' && document.getElementById('notif-window')?.checked && !reminderWindowSpec(n)){ showToast(t('reminderWindowInvalid')); return; }
       if(n.type === 'time' && !n.time){ showToast(t('reminderTimeRequired')); return; }
       if((n.type === 'before' || n.type === 'countdown') && !formDraft.startTime){ showToast(t('reminderNeedsStart')); return; }
       let day = null;
@@ -683,6 +708,7 @@ function wireSubviewInteractivity(){
         }
       }
       formDraft.notification = { type: n.type, time: n.time || '09:00', date: day && day > formDraft.date ? day : null, repeatHours: n.repeatHours, minutesBefore: n.minutesBefore,
+        windowEnd: n.type === 'repeat' ? n.windowEnd : null,
         leadMinutes: n.leadMinutes, everyMinutes: n.everyMinutes, text: n.text.trim() };
       reminderDraft = null; state.popupSubView = null;
       askNotificationPermission(); // the first reminder asks the browser once (js/core/notify.js)
@@ -694,6 +720,22 @@ function wireSubviewInteractivity(){
       renderPopupBody();
     });
   }
+}
+
+function windowOccurrenceSignature(item, type){
+  if(!item?.notification?.windowEnd || item.notification.type !== 'repeat') return null;
+  const r = item.recurrence || {}, n = item.notification;
+  const mode = r.mode || null, monthly = mode === 'monthly' || mode === 'yearly';
+  return JSON.stringify([type === 'habit' ? item.startDate : item.date,
+    item.endDate || null, mode, mode ? Number(r.interval) || 1 : 1,
+    mode === 'weekdays' ? [...(r.weekdays || [])].sort((a,b)=>a-b) : [],
+    monthly ? r.anchor || null : null, monthly ? r.cal || 'jalali' : null,
+    n.time, n.windowEnd, Number(n.everyMinutes)]);
+}
+function reminderWindowActivation(previous, next, type, now){
+  const since = Number(previous?.notification?.windowSince);
+  return previous && windowOccurrenceSignature(previous, type) === windowOccurrenceSignature(next, type)
+    && Number.isFinite(since) && since > 0 ? since : now;
 }
 
 function submitPopup(){
@@ -717,6 +759,14 @@ function submitPopup(){
   if(type === 'event' && formDraft.kind === 'birthday'){ recurrence.mode = 'yearly'; recurrence.interval = 1; recurrence.anchor = formDraft.date; recurrence.cal = recurrence.cal || (isHijriPrimary() ? 'jalali' : primarySystem()); }
   if(!state.editingId && type === 'task' && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
   const notification = { ...formDraft.notification };
+  if(notification.type === 'repeat' && notification.windowEnd && !reminderWindowSpec(notification)){ showToast(t('reminderWindowInvalid')); return; }
+  if(notification.type === 'repeat' && notification.windowEnd){
+    const previous = state.editingId ? findItem(type, state.editingId) : null;
+    const next = { ...formDraft, notification, recurrence,
+      startDate: type === 'habit' ? previous?.startDate || dateKey(state.homeDate || today) : undefined,
+      endDate: type === 'habit' ? previous?.endDate || null : formDraft.timeMode === 'range' ? formDraft.endDate : null };
+    notification.windowSince = reminderWindowActivation(previous, next, type, Date.now());
+  }
   // A reminder's own day only for a one-time task, and only inside its days.
   if(notification.date && (type !== 'task' || recurrence.mode || notification.type !== 'time' || notification.date <= formDraft.date
     || notification.date > (formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date))) notification.date = null;

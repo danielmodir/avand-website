@@ -70,18 +70,48 @@ function atTimeOn(day, hm){
   return d.getTime();
 }
 
+/* A custom reminder window is a single activity with several wall-clock
+   reminders. End is inclusive; an earlier end belongs to the next day. */
+function reminderWindowSpec(n){
+  const clock = value => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  if(!clock(n.time) || !clock(n.windowEnd) || n.time === n.windowEnd) return null;
+  const step = Number(n.everyMinutes);
+  if(!Number.isInteger(step) || step < 1 || step > 1440) return null;
+  const minute = value => Number(value.slice(0,2)) * 60 + Number(value.slice(3));
+  const start = minute(n.time), end = minute(n.windowEnd);
+  return { start, end: end < start ? end + 1440 : end, step, overnight: end < start };
+}
+function reminderWindowTimes(day, n){
+  const spec = reminderWindowSpec(n);
+  if(!spec) return [];
+  const result = [], seen = new Set();
+  for(let minute = spec.start; minute <= spec.end; minute += spec.step){
+    const hour = Math.floor(minute % 1440 / 60), min = minute % 60;
+    const at = new Date(day.getFullYear(), day.getMonth(), day.getDate() + Math.floor(minute / 1440), hour, min);
+    // A DST gap has no such local time; don't shift it into another slot.
+    if(at.getHours() !== hour || at.getMinutes() !== min || seen.has(at.getTime()) || at.getTime() < (Number(n.windowSince) || 0)) continue;
+    seen.add(at.getTime()); result.push(at.getTime());
+  }
+  return result;
+}
+
 /* Every reminder slot of `day`: { slot, kind, id, title, body, at }. */
 function reminderSlots(day){
   const key = dateKey(day);
   const out = [];
-  const push = (kind, item, type, at, body) => { if(at != null) out.push({ slot: `${type}|${kind}|${item.id}|${key}|${at}`, kind, id: item.id, date: key, title: item.title, body, at, item }); };
-  const forItem = (kind, item, done) => {
+  const push = (kind, item, type, at, body, occurrenceKey = key) => { if(at != null) out.push({ slot: `${type}|${kind}|${item.id}|${occurrenceKey}|${at}`, kind, id: item.id, date: occurrenceKey, title: item.title, body, at, item }); };
+  const forItem = (kind, item, done, occurrence = day) => {
     const n = item.notification || {};
     if(!n.type || done) return;
     const text = n.text || '';
     // A one-time task's reminder may sit on a later day of its range (n.date).
     if(n.type === 'time' && (!n.date || n.date === key)) push(kind, item, 'time', atTimeOn(day, n.time), text || dig(n.time));
-    if(n.type === 'repeat'){
+    if(n.type === 'repeat' && n.windowEnd){
+      const lo = new Date(day).setHours(0,0,0,0), hi = new Date(day).setHours(24,0,0,0);
+      reminderWindowTimes(occurrence, n).forEach(at => {
+        if(at >= lo && at < hi) push(kind, item, 'window', at, text || t('notifRepeatBody'), dateKey(occurrence));
+      });
+    } else if(n.type === 'repeat'){
       const start = atTimeOn(day, item.startTime || n.time);
       const step = Math.max(1, Number(n.repeatHours) || 1) * 3600000;
       const end = new Date(day).setHours(24, 0, 0, 0);
@@ -118,6 +148,18 @@ function reminderSlots(day){
   state.tasks.filter(x => occursOnDate(x, day)).forEach(x => forItem('task', x, taskStatusOn(x, key) === 'done'));
   state.habits.filter(h => habitOccursOnDate(h, day)).forEach(h => forItem('habit', h, h.completedDates.includes(key)));
   state.events.filter(e => occursOnDate(e, day)).forEach(e => forItem('event', e, false));
+  // The after-midnight tail belongs to yesterday's occurrence (including
+  // its completion state), even when the activity doesn't occur today.
+  const previous = addDays(day, -1), previousKey = dateKey(previous);
+  const tail = (kind, item, done) => {
+    const spec = item.notification?.type === 'repeat' && reminderWindowSpec(item.notification);
+    if(spec && spec.overnight) forItem(kind, item, done, previous);
+  };
+  state.tasks.filter(x => occursOnDate(x, previous)).forEach(x => tail('task', x,
+    isRecurringTask(x) ? ['done','not_done'].includes(x.statusByDate?.[previousKey]) : x.done || x.skipped));
+  state.habits.filter(x => habitOccursOnDate(x, previous)).forEach(x => tail('habit', x,
+    x.completedDates.includes(previousKey) || (x.skippedDates || []).includes(previousKey)));
+  state.events.filter(x => occursOnDate(x, previous)).forEach(x => tail('event', x, false));
   // Adhan at dawn, noon and maghrib for the chosen city (js/core/prayer.js).
   if(featureOn('prayer') && pref('prayerNotify')){
     const times = prayerTimesFor(day, prayerCityId()), city = prayerCity(prayerCityId());

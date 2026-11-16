@@ -55,13 +55,23 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-16.7
+- Demo asset version: 2026-11-16.8
 - PHP schema: v24
-- Django latest migrations: core 0009, planning 0008, social 0003,
+- Django latest migrations: core 0009, planning 0009, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
+
+- 2026-11-16 — web app, PHP validation, Django planning — custom reminder
+  windows for one task/habit/event (owner decision): minute/hour interval,
+  aligned end inclusive, overnight occurrence identity, DST gap handling,
+  activation cutoff at activity save, editing/removal without duplicating
+  activities. Legacy hourly reminders unchanged. PHP JSON needs no migration;
+  Django planning 0009 adds nullable reminder_window_end and constraints.
+  Details and remaining native timezone/400-slot queue limits:
+  docs/next-version/REMINDER_WINDOWS.md. PHP CLI and actual phone unavailable;
+  no live DB migration or deployment. Feature remains In Progress.
 
 - 2026-11-16 — web app packaging — central spacing/radius tokens are
   loaded explicitly in the source page and embedded in the release CSS,

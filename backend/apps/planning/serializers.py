@@ -12,7 +12,7 @@ from .models import Category, Event, Habit, HabitLog, Task, TaskOccurrence
 COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 RECURRENCE_FIELDS = ["rec_mode", "rec_interval", "rec_weekdays", "rec_until", "rec_anchor", "rec_calendar"]
 REPEAT_KINDS = ("interval", "weekdays", "monthly", "yearly")
-REMINDER_FIELDS = ["reminder_type", "reminder_time", "reminder_every_hours", "reminder_text", "reminder_lead_minutes", "reminder_every_minutes"]
+REMINDER_FIELDS = ["reminder_type", "reminder_time", "reminder_every_hours", "reminder_text", "reminder_lead_minutes", "reminder_every_minutes", "reminder_window_end"]
 SYNC_FIELDS = ["id", "version", "created_at", "updated_at", "deleted_at"]
 READ_ONLY = ["id", "created_at", "updated_at", "deleted_at"]
 
@@ -60,8 +60,18 @@ class OwnedSerializer(serializers.ModelSerializer):
         rtype = merged(attrs, inst, "reminder_type", "none")
         if rtype in ("at_time", "repeating") and not merged(attrs, inst, "reminder_time"):
             raise ApiError("reminder_time_required")
-        if rtype == "repeating" and not 1 <= (merged(attrs, inst, "reminder_every_hours") or 0) <= 24:
-            raise ApiError("reminder_every_hours_invalid")
+        window_end = merged(attrs, inst, "reminder_window_end")
+        if rtype == "repeating":
+            if window_end is not None:
+                if (window_end == merged(attrs, inst, "reminder_time")
+                        or window_end.second or window_end.microsecond
+                        or merged(attrs, inst, "reminder_time").second or merged(attrs, inst, "reminder_time").microsecond
+                        or not 1 <= (merged(attrs, inst, "reminder_every_minutes") or 0) <= 1440):
+                    raise ApiError("reminder_window_invalid")
+            elif not 1 <= (merged(attrs, inst, "reminder_every_hours") or 0) <= 24:
+                raise ApiError("reminder_every_hours_invalid")
+        else:
+            attrs["reminder_window_end"] = None
         if rtype == "countdown" and not (15 <= (merged(attrs, inst, "reminder_lead_minutes") or 0) <= 10080
                                          and 15 <= (merged(attrs, inst, "reminder_every_minutes") or 0) <= 1440):
             raise ApiError("reminder_countdown_invalid")
