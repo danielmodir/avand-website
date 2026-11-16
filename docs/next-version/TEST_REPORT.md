@@ -2,6 +2,7 @@
 
 ## ۲۰۲۶-۱۱-۱۶ — یادآوری در بازه
 
+- تأیید نهایی asset 2026-11-16.8: کل تست‌های Node در working tree، 40/40 PASS؛ build-site-zip exit 0 با 71 fallback و ZIP 254 فایل؛ همان 8 سناریوی ایجاد/ویرایش/حذف یادآوری روی بستهٔ تجمیعی نیز PASS، pageerror/external صفر. بسته شامل تغییرات مستقل working tree است و منتشر نشده.
 - `node --test tests/reminder-window.test.js`: 9/9 PASS؛ مثال‌ها، بازه نامعتبر/صفر/منفی/اعشاری، نیمه‌شب، DST gap، cutoff، تغییر/حذف و نگاشت API؛ تست روی snapshot دقیق index نیز 9/9 PASS، مستقل از تغییرات ثبت‌نشدهٔ دیگر.
 - `manage.py test apps.planning apps.core.test_weekends --settings=config.settings.test --noinput`: 24/24 PASS؛ شامل 4 تست API جدید با سه نوع فعالیت، validation، legacy، overnight و حذف یادآوری بدون تکثیر فعالیت.
 - `makemigrations planning --check --dry-run --settings=config.settings.test --noinput`: PASS. بررسی عمومی Migrationها یک drift مستقل در core EmailOutbox.template یافت؛ در این کار تغییر داده نشد.

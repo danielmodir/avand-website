@@ -69,6 +69,8 @@ Update these with every change.
   activation cutoff at activity save, editing/removal without duplicating
   activities. Legacy hourly reminders unchanged. PHP JSON needs no migration;
   Django planning 0009 adds nullable reminder_window_end and constraints.
+  Verification: Node 40/40, related Django 24/24; source and bundled
+  reminder UI 8/8 each (360/1280, fa/en, light/dark), no external requests.
   Details and remaining native timezone/400-slot queue limits:
   docs/next-version/REMINDER_WINDOWS.md. PHP CLI and actual phone unavailable;
   no live DB migration or deployment. Feature remains In Progress.
