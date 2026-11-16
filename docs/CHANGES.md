@@ -65,6 +65,10 @@ Update these with every change.
 
 Format: `date — surfaces — what changed (key files)`.
 
+- 2026-11-16 — repository instructions — synchronized `AGENTS.md` with the
+  full contents of `CLAUDE.md`, so Codex and Claude Code follow the same
+  project rules. No runtime or version change.
+
 - 2026-11-15 — docs only — next-version initial audit and management system
   (docs/next-version/): 111 traceable rows, 15-section product mapping,
   PHP/Django/API/database/Android inventory, dependency plan, 22 open product
