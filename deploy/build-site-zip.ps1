@@ -65,7 +65,16 @@ $html = [regex]::Replace($html, '\s*<link rel="preload" href="components/[^"]+\.
 #     font paths stay right; component CSS has no url()s.
 $ver = ([regex]::Match($html, 'css/base\.css\?v=([^"]+)')).Groups[1].Value
 $cssFiles = [regex]::Matches($html, '<link rel="stylesheet" href="([^"?]+\.css)\?v=[^"]*">') | ForEach-Object { $_.Groups[1].Value }
-$css = ($cssFiles | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $stage 'demo') ($_ -replace '/', '\'))).Trim() }) -join "`n"
+$css = ($cssFiles | ForEach-Object {
+  $sheet = [IO.File]::ReadAllText((Join-Path (Join-Path $stage 'demo') ($_ -replace '/', '\'))).Trim()
+  if ($_ -eq '../assets/css/tokens.css') {
+    # App layout shares the central spacing/radius source. Keep marketing
+    # colors and relative font URLs out of the app's concatenated CSS.
+    $declarations = [regex]::Matches($sheet, '--(?:space-[0-9]+|radius-[a-z]+)\s*:\s*[^;]+;') | ForEach-Object { $_.Value }
+    if ($declarations.Count -lt 10) { throw 'App layout tokens are missing' }
+    ':root{' + ($declarations -join '') + '}'
+  } else { $sheet }
+}) -join "`n"
 [IO.File]::WriteAllText((Join-Path $stage 'demo\css\bundle.css'), $css, (New-Object Text.UTF8Encoding $false))
 # Fallbacks for phones with an old WebView/Chrome (inset, dvh, color-mix):
 # a current browser still applies the original declarations.
@@ -77,12 +86,16 @@ $html = [regex]::Replace($html, '<link rel="stylesheet" href="[^"?]+\.css\?v=[^"
   if ($script:first) { $script:first = $false; return "<link rel=`"stylesheet`" href=`"css/bundle.css?v=$ver`">`n" }
   ''
 })
-$jsFiles = [regex]::Matches($html, '<script src="([^"?]+\.js)\?v=[^"]*"></script>') | ForEach-Object { $_.Groups[1].Value }
+# Keep early head scripts before first paint. Combining body scripts at the
+# first head script would run their DOM listeners before the app markup exists.
+$earlyJs = @([regex]::Matches(($html -split '</head>')[0], '<script src="([^"?]+\.js)\?v=[^"]*"></script>') | ForEach-Object { $_.Groups[1].Value })
+$jsFiles = [regex]::Matches($html, '<script src="([^"?]+\.js)\?v=[^"]*"></script>') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $earlyJs -notcontains $_ }
 $js = ($jsFiles | ForEach-Object { ";`n" + [IO.File]::ReadAllText((Join-Path (Join-Path $stage 'demo') ($_ -replace '/', '\'))).Trim() }) -join "`n"
 [IO.File]::WriteAllText((Join-Path $stage 'demo\js\bundle.js'), $js, (New-Object Text.UTF8Encoding $false))
 $first = $true
-$html = [regex]::Replace($html, '<script src="[^"?]+\.js\?v=[^"]*"></script>\r?\n?', {
+$html = [regex]::Replace($html, '<script src="([^"?]+\.js)\?v=[^"]*"></script>\r?\n?', {
   param($m)
+  if ($earlyJs -contains $m.Groups[1].Value) { return $m.Value }
   if ($script:first) { $script:first = $false; return "<script src=`"js/bundle.js?v=$ver`"></script>`n" }
   ''
 })
@@ -100,6 +113,7 @@ $appFiles = @(
   'assets/data/occasions.json', 'assets/data/hijri-months.json',
   'assets/icons/logo.svg', 'assets/icons/icon-192.png', 'assets/icons/favicon-48.png'
 )
+$appFiles += @($earlyJs | ForEach-Object { 'demo/' + $_ })
 $hashes = [ordered]@{}
 foreach ($f in $appFiles) {
   $p = Join-Path $stage ($f -replace '/', '\')

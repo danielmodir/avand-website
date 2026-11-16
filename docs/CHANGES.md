@@ -55,13 +55,21 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-16.6
+- Demo asset version: 2026-11-16.7
 - PHP schema: v24
 - Django latest migrations: core 0009, planning 0008, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
+
+- 2026-11-16 — web app packaging — central spacing/radius tokens are
+  loaded explicitly in the source page and embedded in the release CSS,
+  fixing an ignored component @import after concatenation. Preserve early
+  head scripts separately from DOM-dependent body JS and include them in
+  Android offline hashes. Local ZIP build succeeds; bundled app boots and
+  timeline padding/radius pass 8 viewport/language/theme browser cases,
+  with no page errors or external requests. No publication or APK build.
 
 - 2026-11-16 — web app, Django preferences — selectable weekend days in
   Calendar settings (seven boolean preferences, existing storage/API mapping).

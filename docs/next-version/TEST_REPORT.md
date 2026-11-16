@@ -1,5 +1,13 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۱۶ — بازبینی و تست بستهٔ واقعی
+
+- بازبینی مستقل یک P2 پیدا کرد: @import توکن‌ها بعد از تجمیع CSS نادیده گرفته می‌شد. با لینک صریح و استخراج متغیرهای layout از منبع مرکزی اصلاح شد.
+- اجرای بستهٔ working tree یک ایراد دیگر را بازتولید کرد: bundle شامل کد بدنه در head اجرا می‌شد و listener روی null می‌افتاد. builder اکنون اسکریپت‌های head را جدا و در فهرست فایل‌های Android حفظ می‌کند.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File deploy/build-site-zip.ps1`: exit 0، 71 fallback CSS، ZIP محلی 254 فایل (شامل تغییرات ثبت‌نشدهٔ مستقل؛ بسته برای انتشار تحویل نشده است).
+- Chromium روی بستهٔ تجمیعی محلی: 8/8، شروع واقعی برنامه، padding 8px و radius 14px، بدون overflow/pageerror/external request.
+- مجموعهٔ Node: 31/31 PASS؛ `manage.py test apps.planning apps.core.test_weekends --settings=config.settings.test --noinput`: 20/20 PASS. گوشی واقعی/APK/هاست تست نشده‌اند.
+
 ## ۲۰۲۶-۱۱-۱۶ — انتخاب آخر هفته
 
 - `node --test tests/weekends.test.js`: 2/2 PASS؛ چند روز، پاک‌کردن انتخاب، استقلال از شروع هفته، برچسب غیررنگی. تست‌ها ابتدا برای نبود helper شکست خوردند.
