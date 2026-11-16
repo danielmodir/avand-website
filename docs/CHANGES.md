@@ -59,7 +59,7 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-16.6
+- Demo asset version: 2026-11-16.7
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
 - PHP schema: v24
 - Django latest migrations: core 0011, planning 0008, social 0003,
@@ -67,6 +67,14 @@ Update these with every change.
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-16 — web app packaging — central spacing/radius tokens are
+  loaded explicitly in the source page and embedded in the release CSS,
+  fixing an ignored component @import after concatenation. Preserve early
+  head scripts separately from DOM-dependent body JS and include them in
+  Android offline hashes. Local ZIP build succeeds; bundled app boots and
+  timeline padding/radius pass 8 viewport/language/theme browser cases,
+  with no page errors or external requests. No publication or APK build.
 
 - 2026-11-16 — web app, Django preferences — selectable weekend days in
   Calendar settings (seven boolean preferences, existing storage/API mapping).
@@ -84,7 +92,11 @@ Update these with every change.
   app logo URLs use tj7, and the app asset version is 2026-11-16.6. The
   circular loader rings were removed; 28 baked marketing screenshots were
   recaptured from the current app. The Android OTA manifest lists both sets
-  of app marks. Native source version remains 1.4.1 (6).
+  of app marks. Native source version remains 1.4.1 (6). Preview source was
+  pushed to `codex/logo-preview-2026-11-16` on GitHub and a public,
+  noindex test copy published at
+  https://toojibee-logo-review-20261116.outermodel4.chatgpt.site.
+  The production domain and `master` were not changed.
 
 - 2026-11-16 — web app — ordinary events can be created/edited in the past
   (popup.js, events.js); tasks retain their prior rule. The picker retains
