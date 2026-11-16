@@ -4,6 +4,8 @@ let toastTimer = null;
    defaults as UserSettings.PREFERENCE_DEFAULTS on the server (camelCase
    here, snake_case there — api.js maps them). */
 const DEFAULT_PREFS = {
+  weekendSunday:false, weekendMonday:false, weekendTuesday:false, weekendWednesday:false,
+  weekendThursday:false, weekendFriday:false, weekendSaturday:false,
   planningDaySummary: true, planningCalendarDots: true, planningShowEvents: true, planningShowHabits: true,
   occasionsEnabled: true, occasionsJalali: true, occasionsHijri: true, occasionsGregorian: true,
   occasionsHolidaysOnly: false, occasionsMarkHolidays: true, occasionsShowEvents: true,

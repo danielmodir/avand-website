@@ -55,13 +55,21 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-16.5
+- Demo asset version: 2026-11-16.6
 - PHP schema: v24
 - Django latest migrations: core 0009, planning 0008, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
+
+- 2026-11-16 — web app, Django preferences — selectable weekend days in
+  Calendar settings (seven boolean preferences, existing storage/API mapping).
+  Month, week, expanded calendar and date picker use red text, double underline
+  and accessible labels. Week start and scheduling unchanged; default empty
+  selection preserves prior behavior. No schema migration. Node 2/2, Django
+  API 2/2 and eight browser matrix cases including reload persistence pass.
+  Native Android widgets retain existing behavior pending native integration.
 
 - 2026-11-16 — web app — ordinary events can be created/edited in the past
   (popup.js, events.js); tasks retain their prior rule. The picker retains

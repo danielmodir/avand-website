@@ -336,3 +336,7 @@
 /* Focus timer (js/core/templates.js). */
 .focus-box{ text-align:center; }
 .focus-clock{ font-size:48px; font-weight:800; color:var(--primary-text); line-height:1.4; margin:4px 0 10px; }
+/* Calendar weekends use the existing preference store and native checkboxes. */
+.weekend-settings{ border:0; padding:0; margin:var(--space-4) 0; min-width:0; }
+.weekend-settings .settings-row{ min-height:44px; cursor:pointer; }
+.weekend-settings input{ accent-color:var(--primary); width:20px; height:20px; }

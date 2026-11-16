@@ -1,5 +1,12 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۱۶ — انتخاب آخر هفته
+
+- `node --test tests/weekends.test.js`: 2/2 PASS؛ چند روز، پاک‌کردن انتخاب، استقلال از شروع هفته، برچسب غیررنگی. تست‌ها ابتدا برای نبود helper شکست خوردند.
+- `backend/.venv/Scripts/python.exe backend/manage.py test apps.core.test_weekends --settings=config.settings.test --noinput`: 2/2 PASS؛ PATCH/GET، ادغام مستقل روزها و رد مقدار غیربولی.
+- مرورگر Chromium: انتخاب پنج‌شنبه/جمعه با checkbox واقعی، reload و حفظ انتخاب؛ 8/8 در 360/1280، fa/en، light/dark؛ علامت تقویم و picker، underline و aria، شروع هفته بدون تغییر؛ pageerror/external صفر. بررسی تصویری موبایل فارسی روشن.
+- کل مجموعهٔ Node موجود در working tree: 31/31 PASS (شامل تست‌های تم متعلق به کار مستقل). PHP روی هاست و ویجت native گوشی تست نشده‌اند.
+
 ## ۲۰۲۶-۱۱-۱۶ — ثبت ایونت در گذشته
 
 - `node --test tests/past-events.test.js`: 5/5 PASS؛ ایجاد/ویرایش، حفظ تاریخ و تکرار، حد picker، حفظ منع تسک و عدم زمان‌بندی اعلان تاریخی. تست ایجاد ابتدا با pastDateNotAllowed شکست خورد.

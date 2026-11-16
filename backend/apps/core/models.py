@@ -322,6 +322,10 @@ class UserSettings(models.Model):
     # these keys are accepted (SettingsSerializer.validate_preferences)
     # and missing keys read as these defaults.
     PREFERENCE_DEFAULTS = {
+        # Display-only weekend selection, independent of week_start/scheduling.
+        "weekend_sunday": False, "weekend_monday": False, "weekend_tuesday": False,
+        "weekend_wednesday": False, "weekend_thursday": False,
+        "weekend_friday": False, "weekend_saturday": False,
         "planning_day_summary": True,       # the "Day summary" progress card
         "planning_calendar_dots": True,     # dot under days that have plans
         "planning_show_events": True,

@@ -9,7 +9,7 @@
    Pages lets browsers cache files for 10 minutes, so after a deploy a
    phone kept the old CSS/JS. Bump both (one find-and-replace) on every
    frontend change to /demo/. */
-const ASSET_VERSION = '2026-11-16.5';
+const ASSET_VERSION = '2026-11-16.6';
 
 async function loadComponents(){
   const slots = [...document.querySelectorAll('[data-include]')];

@@ -318,3 +318,9 @@
 .cf-task{ background:color-mix(in srgb, var(--task-color) 22%, transparent); box-shadow:inset 3px 0 0 var(--task-color); }
 .cal-full[dir="rtl"] .cf-task{ box-shadow:inset -3px 0 0 var(--task-color); }
 .cf-task.missed{ text-decoration:line-through; color:var(--danger); }
+/* Double underline supplies a non-color weekend cue, including selection. */
+.day-cell.weekend .day-cell-num, .cf-cell.weekend .day-cell-num,
+.week-row.weekend .wd, .weekday-header .weekend-label{ text-decoration:underline double; text-underline-offset:3px; }
+.day-cell.weekend:not(.selected) .day-cell-num,
+.cf-cell.weekend:not(.today) .day-cell-num, .week-row.weekend .wd,
+.weekday-header .weekend-label{ color:var(--danger); }

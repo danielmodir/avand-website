@@ -41,8 +41,8 @@
 | NV-01-08 | تکرار فاصله‌ای در بازه | هر N واحد در شروع/پایان معین و حفظ نوبت‌ها | P1 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | RECUR؛ 00-04؛ rangeNoRepeat فعلی؛ D02 |
 | NV-01-09 | تکرار روز/تاریخ مشخص | انتخاب روزهای هفته و تاریخ‌های مشخص در بازه | P1 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | RECUR؛ 01-08؛ D02 |
 | NV-01-10 | اعلان مطابق تکرار | یک منطق وقوع برای نمایش و اعلان، لغو و حذف بدون اعلان تکراری | P1 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | NOTIFY؛ 01-08/09؛ پوشش 04 هم |
-| NV-01-11 | انتخاب آخر هفته | انتخاب یک یا چند روز آخر هفته مستقل از شروع هفته | P1 | [ ] Not Started | N | PHP:P / DJ:N | N | Pending | PREF؛ 00-04؛ weekStartDay موجود است |
-| NV-01-12 | رنگ قرمز آخر هفته | نمایش روزهای انتخاب‌شده در همهٔ نماهای تقویم و دو تم با توکن | P1 | [ ] Not Started | P | — | — | Pending | DATE؛ 01-11؛ اکنون تعطیلات dataset رنگ می‌گیرند |
+| NV-01-11 | انتخاب آخر هفته | انتخاب یک یا چند روز آخر هفته مستقل از شروع هفته | P1 | [ ] In Progress | N | PHP:P / DJ:N | N | Node/API/browser PASS | App calendars complete; native Android widget follow-up remains |
+| NV-01-12 | رنگ قرمز آخر هفته | نمایش روزهای انتخاب‌شده در همهٔ نماهای تقویم و دو تم با توکن | P1 | [ ] In Progress | P | — | — | Node/API/browser PASS | App calendars complete; native Android widget follow-up remains |
 | NV-01-13 | DND هر عادت | سکوت مستقل عادت و اعمال در مرورگر/سرور/Android | P1 | [ ] Not Started | N | PHP:N / DJ:P | N | Pending | NOTIFY؛ 01-10؛ D03؛ mute ماژول Django معادل آن نیست |
 | NV-01-14 | Undo پنج ثانیه | برگرداندن عملیات توافق‌شده طی ۵ ثانیه، سازگار با sync و اعلان | P1 | [ ] Not Started | N | PHP:P / DJ:P | P | Pending | MUTATION؛ 00-02؛ D03 |
 | NV-01-15 | آلارم پایان تسک | اعلان واقعی پایان زمان اختصاص‌یافته، توقف/اتمام/پس‌زمینه طبق قرارداد | P1 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | NOTIFY؛ D03؛ overdue و تایمر عادت موجود؛ پوشش 04 |

@@ -670,6 +670,11 @@ function renderCalendarSettings(){
         ${weekdayLabels.map((key,i) => `<option value="${key}" ${state.settings.weekStartDay===key?'selected':''}>${weekdayFull(i)}</option>`).join('')}
       </select>
     </div>
+    <fieldset class="weekend-settings">
+      <legend class="section-title">${t('weekendDays')}</legend>
+      <p class="sub">${t('weekendDaysHint')}</p>
+      ${weekdayOrder().map(i => `<label class="settings-row"><span class="lbl">${weekdayFull(i)}</span><input type="checkbox" data-weekend="${i}" ${pref(WEEKEND_PREF_KEYS[i]) ? 'checked' : ''}></label>`).join('')}
+    </fieldset>
   `;
 }
 
@@ -863,6 +868,12 @@ function wireMenuInteractivity(){
   document.getElementById('main-desk-select')?.addEventListener('change', e => { setPref('mainDesk', e.target.value); state.activeDesktopIndex = 0; render(); });
   document.getElementById('prayer-city-select')?.addEventListener('change', e => { setPref('prayerCity', e.target.value); render(); });
   document.getElementById('week-start-select')?.addEventListener('change', e => { state.settings.weekStartDay = e.target.value; cloudSync(() => Cloud.saveSettings(state.settings)); render(); });
+  document.querySelectorAll('[data-weekend]').forEach(input => input.addEventListener('change', () => {
+    const index = input.dataset.weekend;
+    setPref(WEEKEND_PREF_KEYS[Number(index)], input.checked);
+    render();
+    document.querySelector(`[data-weekend="${index}"]`)?.focus();
+  }));
   document.getElementById('primary-calendar-select')?.addEventListener('change', e => {
     state.settings.calendarSystem = e.target.value;
     state.monthDropdownOpen = false; state.yearDropdownOpen = false;
