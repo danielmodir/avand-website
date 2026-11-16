@@ -377,7 +377,7 @@
         language: st.language, calendarSystem: st.calendar_primary,
         calendarEnabled: { gregorian: enabled.indexOf('gregorian') >= 0, jalali: enabled.indexOf('jalali') >= 0, hijri: enabled.indexOf('hijri') >= 0 },
         planningEnabled: planning ? planning.enabled : true,
-        theme: st.theme, palette: st.palette || 'toojibee',
+        theme: st.theme || 'system', palette: st.palette || 'sustainable-tangerine',
         prefs: prefsFromApi(st.preferences || {}),
         itemColors: st.item_colors || {},
       },
@@ -592,9 +592,9 @@
       var body = {
         language: s.language, calendar_primary: s.calendarSystem, calendars_enabled: enabled,
         week_start: s.weekStartDay, notifications_enabled: !!s.notifications, show_add_menu_labels: !!s.showAddMenuLabels,
-        palette: s.palette || 'toojibee', preferences: prefsToApi(s.prefs || {}), item_colors: s.itemColors || {},
+        palette: s.palette || 'sustainable-tangerine', preferences: prefsToApi(s.prefs || {}), item_colors: s.itemColors || {},
       };
-      if (s.theme === 'light' || s.theme === 'dark') body.theme = s.theme;
+      if (s.theme === 'light' || s.theme === 'dark' || s.theme === 'system') body.theme = s.theme;
       var send = function (v) { return request('PATCH', '/me/settings', Object.assign({ version: v }, body)); };
       var row;
       try { row = await send(meVersions.settings); }
@@ -645,8 +645,13 @@
   function leaveGroup(id) { return request('POST', '/groups/' + id + '/leave'); }
   function resetGroupLink(id) { return request('POST', '/groups/' + id + '/invite/reset'); }
   function joinGroup(token) { return request('POST', '/groups/join', { token: token }); }
-  function saveGroupItem(gid, kind, data, mode) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode }); }
+  function saveGroupItem(gid, kind, data, mode, assignee) {
+    return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode, assignee: assignee });
+  }
   function deleteGroupItem(gid, id) { return request('DELETE', '/groups/' + gid + '/items/' + encodeURIComponent(id)); }
+  function setGroupProgress(gid, id, progress) {
+    return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/progress', { progress: progress });
+  }
   function markGroupItem(gid, id, key, status) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/marks', { key: key, status: status }); }
 
   // ── public calendar data ─────────────────────────────────────────────
@@ -746,7 +751,7 @@
     removeMcpLink: function () { return request('DELETE', '/me/mcp'); },
     calendarYear: calendarYear,
     supportsGroups: true, groups: groups, createGroup: createGroup, updateGroup: updateGroup, deleteGroup: deleteGroup, leaveGroup: leaveGroup,
-    resetGroupLink: resetGroupLink, joinGroup: joinGroup, saveGroupItem: saveGroupItem, deleteGroupItem: deleteGroupItem, markGroupItem: markGroupItem,
+    resetGroupLink: resetGroupLink, joinGroup: joinGroup, saveGroupItem: saveGroupItem, deleteGroupItem: deleteGroupItem, markGroupItem: markGroupItem, setGroupProgress: setGroupProgress,
   });
   global.Cloud = api;
 })(window);

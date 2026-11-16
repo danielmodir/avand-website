@@ -11,7 +11,7 @@
    own mark is my tick; 'shared': anyone's mark is everybody's tick. */
 const GROUP_KIND_KEY = { task: 'tasks', habit: 'habits', event: 'events' };
 const GROUP_CACHE_KEY = 'toojibee-groups-v1';
-const GROUP_LOCAL_FIELDS = ['groupId', 'doneMode', 'groupMine', 'groupBy', 'groupMarks', 'pinned', 'progress',
+const GROUP_LOCAL_FIELDS = ['groupId', 'groupAssignee', 'groupProgress', 'doneMode', 'groupMine', 'groupBy', 'groupMarks', 'pinned', 'progress',
   'done', 'skipped', 'statusByDate', 'completedDates', 'skippedDates'];
 
 function groupsAvailable(){ return !!Cloud.supportsGroups && !REAL_LOGIN_DISABLED && !state.guest && Cloud.hasSession(); }
@@ -22,6 +22,7 @@ function groupColorOf(item){ const g = item && item.groupId ? groupById(item.gro
 function groupItemEditable(item){
   if(!item || !item.groupId) return true;
   const g = groupById(item.groupId);
+  if(item.groupProgress) return groupCanAdd(g);
   return !!g && (item.groupMine || g.owner);
 }
 
@@ -39,7 +40,7 @@ function groupColorChoices(){
 function applyGroupsPayload(p, fromCache){
   state.groups = (p && p.groups || []).map(g => ({
     id: String(g.id), name: g.name || '', color: g.color || ITEM_COLOR_CHOICES[0], owner: !!g.owner,
-    token: g.token || '', members: g.members || [],
+    admin: !!g.admin, supergroup: g.group_type === 'supergroup', token: g.token || '', members: g.members || [],
   }));
   ['tasks', 'habits', 'events'].forEach(k => { state[k] = state[k].filter(x => !x.groupId); });
   (p && p.items || []).forEach(it => {
@@ -47,7 +48,8 @@ function applyGroupsPayload(p, fromCache){
     if(!k || !groupById(String(it.group))) return;
     const item = Object.assign({}, it.data || {}, {
       id: it.id, groupId: String(it.group), doneMode: it.done_mode === 'shared' ? 'shared' : 'each',
-      groupMine: !!it.mine, groupBy: it.by || null, groupMarks: (it.marks || []).slice(), pinned: false,
+      groupProgress: it.kind === 'task' && groupById(String(it.group)).supergroup ? it.progress || 'not_started' : null,
+      groupAssignee: it.assignee || null, groupMine: !!it.mine, groupBy: it.by || null, groupMarks: (it.marks || []).slice(), pinned: false,
     });
     item.recurrence = item.recurrence || { mode: null, interval: 1, weekdays: [] };
     item.notification = item.notification || { type: null };
@@ -76,7 +78,7 @@ function projectGroupMarks(item, kind){
     item.statusByDate = {};
     days.forEach(k => { const s = groupMarkStatus(item, k); if(s) item.statusByDate[k] = s; });
     const once = groupMarkStatus(item, 'once');
-    item.done = once === 'done'; item.skipped = once === 'not_done';
+    item.done = item.groupProgress ? item.groupProgress === 'done' : once === 'done'; item.skipped = once === 'not_done';
     (item.subtasks || []).forEach(s => {
       const st = groupMarkStatus(item, 'once:' + s.id);
       s.done = st === 'done'; s.skipped = st === 'not_done';
@@ -138,6 +140,8 @@ function groupErrorText(err){
   if(code === 'too_many_groups') return t('groupErrTooMany');
   if(code === 'group_full' || code === 'too_many') return t('groupErrFull');
   if(code === 'not_owner' || code === 'not_yours') return t('groupNotYours');
+  if(code === 'invalid_assignee') return t('groupChooseAssignee');
+  if(code === 'not_assignee' || code === 'not_admin') return t('groupNotYours');
   if(code === 'group_not_found') return t('groupLinkInvalid');
   return authErrorMessage(err);
 }
@@ -169,6 +173,7 @@ function groupSetMark(item, key, status){
 
 /* After a tick on a group task: its marks follow the task's fields. */
 function groupMarkTask(task, dayKey, subId){
+  if(task.groupProgress) return;
   const st = x => x.done ? 'done' : x.skipped ? 'not_done' : null;
   const once = !isRecurringTask(task);
   if(subId){
@@ -187,7 +192,7 @@ function groupMarkHabit(habit, dayKey){
    it was a group item (handled here). */
 function deleteGroupAware(kind, id){
   const arr = GROUP_KIND_KEY[kind];
-  const item = state[arr].find(x => x.id === id);
+  const item = arr && state[arr].find(x => x.id === id);
   if(!item || !item.groupId) return false;
   if(!groupItemEditable(item)){ showToast(t('groupNotYours')); return true; }
   state[arr] = state[arr].filter(x => x.id !== id);

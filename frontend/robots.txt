@@ -1,13 +1,2 @@
 User-agent: *
-Allow: /
-# The app's API (JSON for the app, nothing to index). The pages it makes
-# are reached at their own addresses (/fa/today/, /fa/articles/...).
-Disallow: /api/
-
-# /demo/ carries its own <meta name="robots" content="noindex"> instead
-# of being Disallow'd here. Disallowing it too would stop crawlers from
-# ever fetching the page to see that tag, which can leave a bare URL
-# indexed with no snippet — see DEPLOY.md. Privacy/Terms are real,
-# complete pages now (see SPEC.md §11.9) and are meant to be indexed.
-
-Sitemap: https://toojibee.ir/sitemap.xml
+Disallow: /

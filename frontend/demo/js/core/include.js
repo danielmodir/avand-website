@@ -20,4 +20,7 @@ async function loadComponents(){
     })
   ));
   slots.forEach((el, i) => { el.outerHTML = htmls[i]; });
+  document.querySelectorAll('[data-theme-logo]').forEach(img => {
+    img.src = AppThemes.logoUrl(document.documentElement.dataset.palette, document.documentElement.dataset.theme, img.dataset.themeLogo);
+  });
 }

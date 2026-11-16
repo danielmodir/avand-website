@@ -221,16 +221,20 @@ document.getElementById('device').addEventListener('click', (e) => {
     switchThemeAnimated(r.left + r.width / 2, r.top + r.height / 2, () => {
       state.settings.theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       applyAppearance();
+      cloudSync(() => Cloud.saveSettings(state.settings));
       render();
     });
-    cloudSync(() => Cloud.saveSettings(state.settings));
     return;
   }
-  if(action === 'set-palette'){
-    state.settings.palette = el.dataset.val === 'classic' ? 'classic' : 'toojibee';
+  if(action === 'set-palette' || action === 'set-appearance'){
+    const focusAction = action, focusVal = el.dataset.val;
+    if(action === 'set-palette') state.settings.palette = AppThemes.validId(el.dataset.val);
+    else state.settings.theme = AppThemes.validMode(el.dataset.val);
     applyAppearance();
     cloudSync(() => Cloud.saveSettings(state.settings));
+    // Refresh only the settings panel; preserve the surrounding app state.
     render();
+    document.querySelector('[data-action="'+focusAction+'"][data-val="'+focusVal+'"]')?.focus({preventScroll:true});
     return;
   }
   if(action === 'toggle-notifications'){
@@ -360,7 +364,6 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'share-item-link'){ shareItemLink(el.dataset.kind, el.dataset.id); return; } // components/items
-  if(action === 'set-accent'){ if(accentUnlocked(el.dataset.val)){ setPref('accent', el.dataset.val); applyAppearance(); scheduleWidgetData(); render(); } return; } // css/palette-accents.css
   if(action === 'start-quickstart'){ state.menuPanelOpen = false; render(); startQuickStart(true); return; } // js/core/onboarding.js
   // Ready-made plans and the focus timer (js/core/templates.js)
   if(action === 'apply-template'){ applyTemplate(el.dataset.key); return; }

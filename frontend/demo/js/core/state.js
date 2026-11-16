@@ -53,7 +53,7 @@ const state = {
     userId: genUserId()
   },
   settings: { notifications: true, weekStartDay: 'saturday', showAddMenuLabels: true, language: 'fa', calendarSystem: 'jalali', calendarEnabled: { gregorian: true, jalali: true, hijri: true }, planningEnabled: true,
-    theme: null, palette: 'toojibee', prefs: {} },
+    theme: 'system', palette: 'sustainable-tangerine', prefs: {} },
   /* Admin-editable "About us" text, per language. Empty string means
      "use the default aboutDesc translation" — renderAboutPage() falls
      back to t('aboutDesc') until an admin actually fills this in. */

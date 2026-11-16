@@ -44,3 +44,13 @@ demo/
   GitHub Pages deploy.
 - Partials are fetched at runtime, so open the demo over HTTP
   (`npx http-server frontend`), not from `file://`.
+
+## Application themes (2026-11-16)
+
+The six replacement palettes and their twelve schemes are centralized in
+`js/core/themes.js`, loaded synchronously in the head before first paint.
+Theme palette and light/dark/system appearance are independent; settings
+previews and accessible component states live in `css/themes.css`. Shared
+spacing/radius tokens come from `../assets/css/tokens.css`. No old palette
+stylesheet or accent override should be reintroduced. See
+`../../docs/theme-system/README.md` for storage migration, contrast and tests.

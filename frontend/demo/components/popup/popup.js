@@ -39,6 +39,8 @@ function resetFormDraft(type, existing){
     // 'HH:MM' or '' — the end time only when "end time" was ticked.
     startTime: existing ? (existing.startTime || '') : '',
     endTime: existing ? (existing.endTime || '') : '',
+    endAlarm: existing?.endAlarm !== false,
+    reminderQuiet: Object.assign({ mode: 'on', start: '22:00', end: '07:00' }, existing?.reminderQuiet || {}),
     recurrence: {
       mode: existing ? (existing.recurrence?.mode || null) : (type === 'habit' ? 'interval' : null),
       interval: existing ? (existing.recurrence?.interval || 1) : 1,
@@ -57,6 +59,8 @@ function resetFormDraft(type, existing){
     },
     // Group planning: which group (none = just me) and how it's ticked.
     groupId: existing ? (existing.groupId || '') : (popupPresetGroup || ''),
+    groupAssignee: existing?.groupAssignee || '',
+    originalAssignee: existing?.groupAssignee || '',
     doneMode: existing?.doneMode === 'shared' ? 'shared' : 'each',
     // A group habit as a challenge: 7, 21 or 30 days from its start (js/core/challenge.js).
     challenge: existing && existing.challenge ? existing.challenge.days : 0,
@@ -533,6 +537,8 @@ function renderPopupBody(){
     <div class="float-field"><input type="text" id="f-title" placeholder=" " value="${escapeAttr(formDraft.title)}" autocomplete="off"><label>${t('titleLabel')}</label></div>
     ${state.popupType === 'task' && !state.editingParentId ? subtasksBlock() : ''}
     ${formBody(state.popupType)}
+    ${state.popupType === 'task' && !state.editingParentId && formDraft.endTime ? `<label class="field-label"><input type="checkbox" id="f-end-alarm" ${formDraft.endAlarm ? 'checked' : ''}> ${t('taskEndAlarm')}</label>` : ''}
+    ${state.popupType === 'habit' ? habitQuietFields() : ''}
     ${groupFieldHtml()}
   `;
   wireMainFormInteractivity();
@@ -542,6 +548,16 @@ function renderPopupBody(){
   const paint = () => submitBtn.classList.toggle('needs-title', !titleInput.value.trim());
   paint();
   titleInput.addEventListener('input', () => { formDraft.title = titleInput.value; paint(); });
+}
+
+function habitQuietFields(){
+  const rule = formDraft.reminderQuiet;
+  return `<div class="field"><label for="f-habit-quiet">${t('habitDelivery')}</label>
+    <select class="settings-select" id="f-habit-quiet">
+      ${[['on','habitAsScheduled'], ['off','habitMuted'], ['quiet','habitQuiet']].map(([v,k]) => `<option value="${v}" ${rule.mode === v ? 'selected' : ''}>${t(k)}</option>`).join('')}
+    </select>
+    ${rule.mode === 'quiet' ? ['start','end'].map(k => `<label class="field-label" for="f-quiet-${k}">${t(k === 'start' ? 'quietFrom' : 'quietUntil')}</label>
+      <input type="time" id="f-quiet-${k}" value="${escapeAttr(rule[k])}">`).join('') : ''}</div>`;
 }
 
 /* The group drop-down (only with groups, never for a subtask) and, for a
@@ -558,7 +574,12 @@ function groupFieldHtml(){
           ${state.groups.filter(x => groupCanAdd(x) || x.id === formDraft.groupId).map(x => `<option value="${escapeAttr(x.id)}" ${x.id === formDraft.groupId ? 'selected' : ''}>${escapeHtml(x.name)}</option>`).join('')}
         </select>
       </div>
-      ${g && state.popupType !== 'event' ? `
+      ${g?.supergroup && state.popupType === 'task' ? `
+        <label class="field-label" for="f-assignee">${t('groupAssignee')}</label>
+        <select class="settings-select" id="f-assignee" required>
+          <option value="">${t('groupChooseAssignee')}</option>
+          ${g.members.map(m => `<option value="${escapeAttr(String(m.id))}" ${String(m.id) === formDraft.groupAssignee ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}
+        </select>` : g && state.popupType !== 'event' ? `
         <label class="field-label" for="f-done-mode" style="margin-top:10px;">${t('groupDoneMode')}</label>
         <select class="settings-select" id="f-done-mode" style="width:100%;">
           <option value="each" ${formDraft.doneMode !== 'shared' ? 'selected' : ''}>${t('groupDoneEach')}</option>
@@ -569,11 +590,15 @@ function groupFieldHtml(){
 }
 
 function wireMainFormInteractivity(){
-  document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; renderPopupBody(); });
+  document.getElementById('f-end-alarm')?.addEventListener('change', e => { formDraft.endAlarm = e.target.checked; });
+  document.getElementById('f-habit-quiet')?.addEventListener('change', e => { formDraft.reminderQuiet.mode = e.target.value; renderPopupBody(); });
+  ['start','end'].forEach(k => document.getElementById('f-quiet-' + k)?.addEventListener('input', e => { formDraft.reminderQuiet[k] = e.target.value; }));
+  document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; formDraft.groupAssignee = ''; renderPopupBody(); });
   document.querySelectorAll('[data-ecolor]').forEach(b => b.addEventListener('click', () => { formDraft.color = b.dataset.ecolor; renderPopupBody(); }));
   document.querySelectorAll('[data-ekind]').forEach(b => b.addEventListener('click', () => { applyEventKind(b.dataset.ekind); renderPopupBody(); }));
   document.querySelectorAll('[data-epreset]').forEach(b => b.addEventListener('click', () => { applyEventPreset(b.dataset.epreset); renderPopupBody(); }));
   document.getElementById('f-challenge')?.addEventListener('change', e => { formDraft.challenge = Number(e.target.value) || 0; });
+  document.getElementById('f-assignee')?.addEventListener('change', e => { formDraft.groupAssignee = e.target.value; });
   document.getElementById('f-done-mode')?.addEventListener('change', e => { formDraft.doneMode = e.target.value === 'shared' ? 'shared' : 'each'; });
   document.getElementById('f-description')?.addEventListener('input', e => { formDraft.description = e.target.value; });
   document.getElementById('desc-clip-btn')?.addEventListener('click', () => document.getElementById('f-photo-input').click());
@@ -696,13 +721,18 @@ function wireSubviewInteractivity(){
   }
 }
 
-function submitPopup(){
+async function submitPopup(){
+  if(formDraft.savingAssignedTask) return;
   const title = (formDraft.title||'').trim();
   // The title is required: say so and put the cursor there.
   if(!title){ showToast(t('titleRequired')); haptic(20); document.getElementById('f-title')?.focus(); return; }
   if(state.popupSubView) return; // finish (or leave) the repeat / reminder page first
   const type = state.popupType;
   const rec = formDraft.recurrence;
+  const quiet = formDraft.reminderQuiet;
+  if(type === 'habit' && quiet.mode === 'quiet' && (!quiet.start || !quiet.end || quiet.start === quiet.end)){
+    showToast(t('quietTimeRequired')); return;
+  }
   const recurrence = { mode: rec.mode, interval: rec.interval, weekdays: Array.from(formWeekdays), anchor: rec.anchor || null, cal: rec.cal || null };
   // Repeat settings that would hide the item or make no sense: say so
   // instead of saving something that never shows up.
@@ -765,11 +795,25 @@ function submitPopup(){
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
       ...times,
+      endAlarm: formDraft.endAlarm,
       recurrence, notification
     };
     // A new, unticked subtask makes a finished parent unfinished again.
     if(obj.subtasks.length && !obj.recurrence.mode){ obj.done = obj.subtasks.every(s => s.done); if(obj.done) obj.skipped = false; }
-    upsert('tasks', obj);
+    const group = groupById(formDraft.groupId);
+    if(group?.supergroup){
+      if(!group.members.some(m => String(m.id) === formDraft.groupAssignee)){
+        showToast(t('groupChooseAssignee')); document.getElementById('f-assignee')?.focus(); return;
+      }
+      const draft = formDraft;
+      draft.savingAssignedTask = true;
+      try {
+        await saveAssignedTask(group, obj, existing, draft);
+      } catch(err){
+        showToast(groupErrorText(err)); loadGroups(); return;
+      } finally { draft.savingAssignedTask = false; }
+      if(formDraft !== draft) return;
+    } else upsert('tasks', obj);
     if(!state.editingId) trackEvent('first_task', true); // opt-in anonymous count (js/core/stats.js)
   } else if(type === 'habit'){
     const obj = {
@@ -778,6 +822,7 @@ function submitPopup(){
       recurrence, notification,
       // A new habit starts on the day picked in the calendar.
       startDate: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(state.homeDate || today),
+      reminderQuiet: quiet.mode === 'on' ? null : quiet.mode === 'off' ? { mode: 'off' } : { ...quiet },
       endDate: state.editingId ? (findItem('habit', state.editingId).endDate || null) : null, // kept when edited (a template's last day)
       completedDates: state.editingId ? findItem('habit', state.editingId).completedDates : [],
       skippedDates: state.editingId ? (findItem('habit', state.editingId).skippedDates || []) : [],
@@ -811,6 +856,20 @@ const CLOUD_DELETE_BY_ARRKEY = { tasks: Cloud.deleteTask, habits: Cloud.deleteHa
 
 /* Saves to the person's own data, or to a group (js/core/groups.js); an
    item moved between the two (or between groups) leaves the old place. */
+async function saveAssignedTask(group, obj, prev, draft){
+  // A stable id makes a retry safe if the server saved before the connection dropped.
+  const sameGroup = prev && prev.groupId === group.id;
+  if(!sameGroup) obj.id = draft.assignedTaskId || (draft.assignedTaskId = uid());
+  const assignee = !sameGroup || draft.groupAssignee !== draft.originalAssignee ? draft.groupAssignee : undefined;
+  await Cloud.saveGroupItem(group.id, 'task', groupItemData(obj), 'each', assignee);
+  if(prev && !sameGroup){
+    if(prev.groupId) await Cloud.deleteGroupItem(prev.groupId, prev.id);
+    else await Cloud.deleteTask(prev.id);
+    state.tasks = state.tasks.filter(x => x.id !== prev.id);
+  }
+  await loadGroups();
+}
+
 function upsert(arrKey, obj){
   const arr = state[arrKey];
   const idx = arr.findIndex(x => x.id === obj.id);
@@ -831,4 +890,6 @@ function upsert(arrKey, obj){
   if(left) groupCloud(() => Cloud.deleteGroupItem(left.groupId, left.id).then(() => gid ? Cloud.saveGroupItem(gid, kind, groupItemData(obj), obj.doneMode) : null));
   else if(gid) groupSaveItem(kind, obj);
   if(!gid) cloudSync(() => CLOUD_SAVE_BY_ARRKEY[arrKey](obj));
+  syncAndroidSchedule(false);
+  syncPushSchedule(false);
 }

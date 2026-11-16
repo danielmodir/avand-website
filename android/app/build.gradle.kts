@@ -11,8 +11,8 @@ android {
         applicationId = "ir.toojibee.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.4.0"
+        versionCode = 6
+        versionName = "1.4.1"
     }
     buildFeatures { buildConfig = true }
     // The release key (deploy/make-keystore.ps1); kept out of git.

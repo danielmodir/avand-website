@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="dark" data-palette="toojibee">
+<html lang="en" dir="ltr" data-theme="light" data-palette="sustainable-tangerine">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>توجیبی — Toojibee</title>
 <meta name="robots" content="noindex">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1A1708">
-<link rel="apple-touch-icon" href="../assets/icons/logo.svg?v=tj5">
-<script>(function(){try{var r=document.documentElement,t=localStorage.getItem('toojibee-theme'),p=localStorage.getItem('toojibee-palette');if(t)r.setAttribute('data-theme',t);if(p==='classic')r.setAttribute('data-palette','classic');}catch(e){}
+<meta name="theme-color" content="#FAF3E1">
+<link rel="apple-touch-icon" href="../assets/icons/logo.svg?v=tj7">
+<script src="js/core/themes.js?v=2026-11-16.6"></script>
+<script>(function(){
 /* Lighter effects (no backdrop blur, css/theme.css) on every phone and in the
    Android app (its WebView redraws the blur under each frame of an animation,
    which made the app stutter), on weaker computers (<= 4 GB or <= 4 cores),
@@ -18,37 +19,27 @@ var n=navigator,m=window.matchMedia;if(/[?&]lite\b/.test(location.search)||windo
 <style>
 /* Splash: inline so it paints before any stylesheet or script arrives
    (slow, filtered networks). Its own few colors per palette x mode, the
-   same values as css/base.css + css/palette-toojibee.css. Removed by
+   same semantic values as js/core/themes.js. Removed by
    start() in js/app.js once the app has rendered. */
 #app-splash{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
-  --s-bg:#1A1708;--s-ring:rgba(235,227,167,.12);--s-arc:#EB7D00;--s-text:rgba(235,227,167,.7);
-  background:radial-gradient(600px 400px at 50% 38%,rgba(235,125,0,.16),transparent 70%),var(--s-bg);transition:opacity .4s ease,visibility .4s}
-[data-theme="light"] #app-splash{--s-bg:#F7F3DA;--s-ring:rgba(46,41,16,.10);--s-text:rgba(46,41,16,.6)}
-[data-palette="classic"] #app-splash{--s-bg:#000;--s-ring:rgba(255,255,255,.12);--s-arc:#FCA311;--s-text:rgba(255,255,255,.6);background:radial-gradient(600px 400px at 50% 38%,rgba(252,163,17,.16),transparent 70%),var(--s-bg)}
-[data-palette="classic"][data-theme="light"] #app-splash{--s-bg:#E5E5E5;--s-ring:rgba(20,33,61,.12);--s-arc:#14213D;--s-text:rgba(0,0,0,.55)}
+  --s-bg:var(--background);--s-arc:var(--primary);--s-text:var(--text-secondary);
+  background:var(--s-bg);transition:opacity .18s ease,visibility .18s}
 #app-splash.done{opacity:0;visibility:hidden}
 .splash-mark{position:relative;width:112px;height:112px}
-.splash-mark img{position:absolute;inset:20px;width:72px;height:72px;border-radius:50%;animation:splash-breathe 2s ease-in-out infinite}
-.splash-mark svg{position:absolute;inset:0;width:100%;height:100%;animation:splash-spin 1.4s linear infinite}
-.splash-mark .track{fill:none;stroke:var(--s-ring);stroke-width:5}
-.splash-mark .arc{fill:none;stroke:var(--s-arc);stroke-width:5;stroke-linecap:round;stroke-dasharray:70 300;animation:splash-arc 1.4s ease-in-out infinite}
+.splash-mark img{position:absolute;inset:20px;width:72px;height:72px;animation:splash-breathe 2s ease-in-out infinite}
 .splash-dots{display:flex;gap:7px}
 .splash-dots i{width:7px;height:7px;border-radius:50%;background:var(--s-arc);opacity:.25;animation:splash-dot 1.2s ease-in-out infinite}
 .splash-dots i:nth-child(2){animation-delay:.15s}.splash-dots i:nth-child(3){animation-delay:.3s}
 .splash-slow{font:600 13px/1.6 'Baloo Bhaijaan 2',Tahoma,system-ui,sans-serif;color:var(--s-text);text-align:center;opacity:0;animation:splash-slow .4s 12s forwards}
 .splash-slow a{color:var(--s-arc)}
-@keyframes splash-spin{to{transform:rotate(360deg)}}
-@keyframes splash-arc{0%{stroke-dasharray:20 300}50%{stroke-dasharray:110 300}100%{stroke-dasharray:20 300}}
 @keyframes splash-breathe{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}
 @keyframes splash-dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
 @keyframes splash-slow{to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#app-splash *{animation:none!important}.splash-slow{opacity:1;animation:none}}
 .splash-name{font:800 22px/1.3 'Baloo Bhaijaan 2',Tahoma,system-ui,sans-serif;color:var(--s-text);text-align:center;margin-top:-6px}
 .splash-name small{display:block;font-weight:600;font-size:13px;opacity:.8}
-/* In the Android app its own splash (the logo) comes first: this one carries
-   on from it as the same still logo with the name, no spinning ring or dots
-   (a second, moving loader looked like starting twice). */
-html.in-app .splash-mark svg,html.in-app .splash-dots{display:none}
+/* In the Android app its own splash carries on as a still mark and name. */
+html.in-app .splash-dots{display:none}
 html.in-app .splash-mark img{animation:none}
 </style>
 <!-- Fetched alongside the CSS/JS instead of after it (slow networks):
@@ -59,6 +50,7 @@ html.in-app .splash-mark img{animation:none}
 <link rel="preload" href="components/banner/banner.html?v=2026-11-16.6" as="fetch" crossorigin="anonymous">
 <link rel="preload" href="components/toolbar/toolbar.html?v=2026-11-16.6" as="fetch" crossorigin="anonymous">
 <link rel="preload" href="components/popup/popup.html?v=2026-11-16.6" as="fetch" crossorigin="anonymous">
+<link rel="stylesheet" href="../assets/css/tokens.css?v=2026-11-16.6">
 <link rel="stylesheet" href="css/base.css?v=2026-11-16.6">
 <link rel="stylesheet" href="css/layout.css?v=2026-11-16.6">
 <link rel="stylesheet" href="css/shared.css?v=2026-11-16.6">
@@ -83,14 +75,12 @@ html.in-app .splash-mark img{animation:none}
 <link rel="stylesheet" href="components/app-error/app-error.css?v=2026-11-16.6">
 <link rel="stylesheet" href="components/date-picker/date-picker.css?v=2026-11-16.6">
 <link rel="stylesheet" href="css/theme.css?v=2026-11-16.6">
-<link rel="stylesheet" href="css/palette-toojibee.css?v=2026-11-16.6">
-<link rel="stylesheet" href="css/palette-accents.css?v=2026-11-16.6">
+<link rel="stylesheet" href="css/themes.css?v=2026-11-16.6">
 </head>
 <body>
 <div id="app-splash" role="progressbar" aria-label="Loading Toojibee">
   <div class="splash-mark">
-    <svg viewBox="0 0 112 112" aria-hidden="true"><circle class="track" cx="56" cy="56" r="50"/><circle class="arc" cx="56" cy="56" r="50"/></svg>
-    <img src="../assets/icons/logo.svg?v=tj5" alt="">
+    <img data-theme-logo="splash" src="../assets/icons/logo-sustainable-tangerine-light.svg?v=tj7" alt="">
   </div>
   <div class="splash-name" lang="fa" dir="rtl">توجیبی<small>تقویم و برنامه‌ریز</small></div>
   <div class="splash-dots" aria-hidden="true"><i></i><i></i><i></i></div>

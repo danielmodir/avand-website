@@ -98,7 +98,19 @@ $appFiles = @(
   'assets/fonts/baloo-bhaijaan-2/BalooBhaijaan2-Arabic-VF.woff2',
   'assets/fonts/baloo-bhaijaan-2/BalooBhaijaan2-Latin-VF.woff2',
   'assets/data/occasions.json', 'assets/data/hijri-months.json',
-  'assets/icons/logo.svg', 'assets/icons/icon-192.png', 'assets/icons/favicon-48.png'
+  'assets/icons/logo.svg', 'assets/icons/icon-192.png', 'assets/icons/favicon-48.png',
+  'assets/icons/logo-sustainable-tangerine-light.svg', 'assets/icons/logo-sustainable-tangerine-dark.svg',
+  'assets/icons/logo-emerald-nature-light.svg', 'assets/icons/logo-emerald-nature-dark.svg',
+  'assets/icons/logo-ocean-contrast-light.svg', 'assets/icons/logo-ocean-contrast-dark.svg',
+  'assets/icons/logo-earthy-harmony-light.svg', 'assets/icons/logo-earthy-harmony-dark.svg',
+  'assets/icons/logo-organic-apricot-light.svg', 'assets/icons/logo-organic-apricot-dark.svg',
+  'assets/icons/logo-midnight-luxe-light.svg', 'assets/icons/logo-midnight-luxe-dark.svg',
+  'assets/icons/logo-sustainable-tangerine-light-banner.svg', 'assets/icons/logo-sustainable-tangerine-dark-banner.svg',
+  'assets/icons/logo-emerald-nature-light-banner.svg', 'assets/icons/logo-emerald-nature-dark-banner.svg',
+  'assets/icons/logo-ocean-contrast-light-banner.svg', 'assets/icons/logo-ocean-contrast-dark-banner.svg',
+  'assets/icons/logo-earthy-harmony-light-banner.svg', 'assets/icons/logo-earthy-harmony-dark-banner.svg',
+  'assets/icons/logo-organic-apricot-light-banner.svg', 'assets/icons/logo-organic-apricot-dark-banner.svg',
+  'assets/icons/logo-midnight-luxe-light-banner.svg', 'assets/icons/logo-midnight-luxe-dark-banner.svg'
 )
 $hashes = [ordered]@{}
 foreach ($f in $appFiles) {

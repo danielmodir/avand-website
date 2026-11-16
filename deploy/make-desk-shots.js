@@ -5,7 +5,7 @@
 
    1. Serve frontend/ on port 8080 (the "avand-site" launch config).
    2. node deploy/make-desk-shots.js
-   3. python -I deploy/webp.py  (PNG -> WebP, see the end of this file)
+   3. node deploy/webp.js  (PNG -> WebP)
 
    The app runs offline (no apiBase on localhost) with a few example items
    added in memory for the picture; nothing is saved anywhere. */
@@ -117,11 +117,13 @@ async function main() {
         const big = section === 'desktop', vp = VIEWPORTS[section] || [W, H];
         await send('Emulation.setDeviceMetricsOverride', { width: vp[0], height: vp[1], deviceScaleFactor: 2, mobile: !big });
         await send('Emulation.setTouchEmulationEnabled', { enabled: !big });
-        await send('Page.navigate', { url: SITE }); await sleep(2500);
+        await send('Page.navigate', { url: SITE });
+        await sleep(300);
+        await evaluate(`new Promise((resolve,reject)=>{let n=0;let timer=setInterval(()=>{if(document.getElementById('day-sheet')){clearInterval(timer);resolve(1)}else if(++n>100){clearInterval(timer);reject(Error('app components did not load'))}},100)})`);
         await evaluate(`document.getElementById('bday-overlay')?.remove(); document.getElementById('tour-root')?.remove(); 1`);
         const desks = await evaluate(`(${setup.toString()})(${JSON.stringify(section)}, '${theme}')`);
         await sleep(900);
-        await evaluate(`document.getElementById('app-toast')?.remove(); document.getElementById('back-today-btn')?.remove(); 1`);
+        await evaluate(`document.getElementById('app-toast')?.remove(); document.getElementById('back-today-btn')?.remove(); document.getElementById('period-ask-overlay')?.remove(); document.getElementById('install-bar')?.remove(); 1`);
         await evaluate(`document.fonts.ready.then(() => 1)`);
         const shot = await send('Page.captureScreenshot', { format: 'png' });
         const file = path.join(OUT, `desk-${section}-${lng}-${theme}.png`);

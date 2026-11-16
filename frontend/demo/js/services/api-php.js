@@ -399,8 +399,13 @@
     leaveGroup: function (id) { return request('POST', '/groups/' + id + '/leave'); },
     resetGroupLink: function (id) { return request('POST', '/groups/' + id + '/invite/reset'); },
     joinGroup: function (token) { return request('POST', '/groups/join', { token: token }); },
-    saveGroupItem: function (gid, kind, data, mode) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode }); },
+    saveGroupItem: function (gid, kind, data, mode, assignee) {
+    return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode, assignee: assignee });
+  },
     deleteGroupItem: function (gid, id) { return request('DELETE', '/groups/' + gid + '/items/' + encodeURIComponent(id)); },
+    setGroupProgress: function(gid, id, progress) {
+    return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/progress', { progress: progress });
+  },
     markGroupItem: function (gid, id, key, status) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/marks', { key: key, status: status }); },
     periodShares: function () { return request('GET', '/period/shares').then(socialRows); },
     savePeriodShares: function (ids) { return request('PUT', '/period/shares', { viewers: ids }).then(socialRows); },

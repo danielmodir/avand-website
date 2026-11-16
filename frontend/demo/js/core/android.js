@@ -46,7 +46,7 @@ async function applyPhoneActions(){
   list.forEach(a => {
     if(a.kind === 'task'){
       const task = state.tasks.find(x => x.id === a.id);
-      if(!task) return;
+      if(!task || task.groupProgress) return;
       setTaskStatusOn(task, a.date, a.done ? 'done' : null);
       if(!isRecurringTask(task)) (task.subtasks || []).forEach(s => { s.done = !!a.done; s.skipped = false; });
       if(task.groupId) groupMarkTask(task, a.date); else cloudSync(() => Cloud.saveTask(task));
@@ -200,7 +200,7 @@ function widgetData(){
   for(let i = 0; i < 7; i++){
     const d = addDays(today, i), key = keyOf(d);
     const items = [];
-    state.tasks.filter(x => occursOnDate(x, d)).forEach(x => items.push({ kind: 'task', id: x.id, title: x.title, time: x.startTime || '', color: cssColorHex(x.color || itemColor('task') || 'var(--primary)'), done: taskStatusOn(x, key) === 'done' }));
+    state.tasks.filter(x => occursOnDate(x, d)).forEach(x => items.push({ kind: 'task', id: x.id, title: x.title, time: x.startTime || '', color: cssColorHex(x.color || itemColor('task') || 'var(--primary)'), done: taskStatusOn(x, key) === 'done', tick: !x.groupProgress }));
     // tick: false — a counting/timed habit ticks itself (trackers.js): no checkbox on the widget.
     state.habits.filter(x => habitOccursOnDate(x, d)).forEach(x => items.push({ kind: 'habit', id: x.id, title: x.title, time: x.startTime || '', color: cssColorHex(x.color || itemColor('habit')), done: x.completedDates.includes(key), tick: !habitTracker(x) }));
     state.events.filter(x => occursOnDate(x, d)).forEach(x => items.push({ kind: 'event', id: x.id, title: x.title, time: x.startTime || '', color: cssColorHex(x.color || itemColor('event')), done: false }));
@@ -216,7 +216,7 @@ function widgetData(){
     data.plan[key] = {
       events: sortEvents(events).map(x => ({ id: x.id, title: x.title, time: x.startTime ? itemTimeLabel(x) : (eventTime(x) ? dig(eventTime(x)) : '') })),
       tasks: [...tasks].sort((a, b) => (b.pinned - a.pinned) || (isDone(a) - isDone(b))).map(x => ({ id: x.id, title: x.title, time: itemTimeLabel(x),
-        state: taskStatusOn(x, key) || '', pinned: !!x.pinned })),
+        state: taskStatusOn(x, key) || '', pinned: !!x.pinned, tick: !x.groupProgress })),
       habits: habits.map(x => ({ id: x.id, title: x.title,
         state: x.completedDates.includes(key) ? 'done' : (x.skippedDates || []).includes(key) ? 'not_done' : '', tick: !habitTracker(x) })),
     };

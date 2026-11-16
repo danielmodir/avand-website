@@ -33,11 +33,11 @@
 /* Explicitly marked "not done" from the selection menu (see
    applyQuicksetState), distinct from the plain empty/untouched state. */
 .checkbox.skipped{background:var(--danger); border-color:var(--danger); animation:checkbox-pop .3s cubic-bezier(.34,1.56,.64,1); }
-.checkbox.skipped svg{width:12px; height:12px; fill:#fff;}
+.checkbox.skipped svg{width:12px; height:12px; fill:var(--on-error);}
 @keyframes checkbox-pop{ 0%{ transform:scale(0.7); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
 .item-card{ transition:transform .15s ease, opacity .3s ease; }
 .item-card:active{ transform:scale(0.985); }
-.checkbox.checked svg{width:12px; height:12px; fill:#fff;}
+.checkbox.checked svg{width:12px; height:12px; fill:var(--on-primary);}
 .checkbox.square{ border-radius:7px; }
 .item-title{ font-size:15px; font-weight:600; margin:0; flex:1; }
 .task-row .item-title{ font-size:14px; font-weight:500; }
@@ -47,20 +47,21 @@
 .mini-btn svg{width:14px; height:14px;}
 .star-btn{ background:none; border:none; cursor:pointer; }
 .star-btn svg{ width:20px; height:20px; fill:none; stroke:var(--text-muted); stroke-width:2; }
-.star-btn.active svg{ fill:#E0B95C; stroke:#E0B95C; }
+.star-btn.active svg{ fill:var(--primary-text); stroke:var(--primary-text); }
 .task-title-wrap{ display:flex; align-items:center; gap:5px; flex:1; min-width:0; }
 .task-title-wrap .item-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .star-mini{ position:relative; background:none; border:none; cursor:pointer; padding:2px; flex:0 0 auto; display:flex; }
 .star-mini::before{ content:''; position:absolute; inset:-6px; }
 .star-mini svg{ width:16px; height:16px; fill:none; stroke:var(--text-muted); stroke-width:2; }
-.star-mini.active svg{ fill:#E0B95C; stroke:#E0B95C; }
+.star-mini.active svg{ fill:var(--primary-text); stroke:var(--primary-text); }
 /* swipe to delete */
 .swipe-wrap{ position:relative; overflow:hidden; border-radius:16px; margin-bottom:8px; touch-action:pan-y; }
 .swipe-wrap.task-wrap{ border-radius:24px; margin-bottom:8px; }
 .swipe-wrap .item-card{ margin-bottom:0; border-radius:inherit; position:relative; background:var(--card); }
-.swipe-delete-bg{ position:absolute; inset:0; background:#D9534F; border-radius:inherit; display:flex; align-items:center; justify-content:center; }
-.swipe-delete-bg svg{ width:17px; height:17px; fill:#fff; }
-.swipe-delete-bg.swipe-bg-done{ background:#2E7D32; }
+.swipe-delete-bg{ position:absolute; inset:0; background:var(--error); border-radius:inherit; display:flex; align-items:center; justify-content:center; }
+.swipe-delete-bg svg{ width:17px; height:17px; fill:var(--on-error); }
+.swipe-bg-done svg{fill:var(--on-success)}
+.swipe-delete-bg.swipe-bg-done{ background:var(--success); }
 /* subtasks: small down-arrow at the bottom-center of a task card that
    has subtasks. Open, the subtasks hang under the card as one connected
    block (not separate cards): tucked under the card's bottom edge,
@@ -134,7 +135,7 @@
 .item-time{ flex:0 0 auto; font-size:11px; font-weight:700; color:var(--text-muted); white-space:nowrap; }
 /* Item colors (Settings → Planning; items.js applyItemColors sets the
    chosen ones inline on #device, these are the defaults). */
-.device{ --task-color:var(--primary); --habit-color:#4CC38A; --event-color:#D9B65C; }
+.device{ --task-color:var(--primary); --habit-color:var(--success); --habit-on:var(--on-success); --event-color:var(--warning); }
 .device .checkbox[data-action="toggle-task"], .device .checkbox[data-action="toggle-subtask"]{ border-color:var(--task-color); }
 .device .checkbox[data-action="toggle-task"].checked, .device .checkbox[data-action="toggle-subtask"].checked{
   background:var(--task-color); border-color:var(--task-color); box-shadow:0 0 0 4px color-mix(in srgb, var(--task-color) 18%, transparent);
@@ -148,7 +149,7 @@
 .device .event-time{ color:var(--event-color); }
 .device{ --task-on:var(--on-primary); }
 .device .checkbox[data-action="toggle-task"].checked svg, .device .checkbox[data-action="toggle-subtask"].checked svg{ fill:var(--task-on); }
-.device .checkbox[data-action="toggle-habit"].checked svg{ fill:var(--habit-on, #fff); }
+.device .checkbox[data-action="toggle-habit"].checked svg{ fill:var(--habit-on, var(--on-success)); }
 /* Swipe layer: only while swiping sideways (swipe.js .swiping), so a tap or
    long press never shows a red box behind the card. The icon sits on the
    uncovered side (done: right, delete: left) and grows with the swipe. */
@@ -157,7 +158,8 @@
 .swipe-delete-bg.swipe-bg-done{ justify-content:flex-end; }
 .swipe-bg-icon{ display:flex; width:30px; height:30px; border-radius:50%; align-items:center; justify-content:center;
   background:rgba(255,255,255,.18); transform:scale(calc(.6 + .4 * var(--swipe-p, 0))); transition:transform .08s linear; }
-.swipe-bg-icon svg{ width:17px; height:17px; fill:#fff; }
+.swipe-bg-icon svg{ width:17px; height:17px; fill:var(--on-error); }
+.swipe-bg-done .swipe-bg-icon svg{fill:var(--on-success)}
 
 /* A habit's counter (− 3/8 +) or timer (12:05 ▶), js/core/trackers.js. */
 .habit-tracker{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
@@ -169,7 +171,7 @@
 .ht-btn:active{ transform:scale(.88); }
 .ht-btn svg{ width:16px; height:16px; }
 .ht-value{ min-width:36px; text-align:center; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.habit-tracker.running .ht-play{ background:var(--habit-color); color:var(--habit-on, #fff); }
+.habit-tracker.running .ht-play{ background:var(--habit-color); color:var(--habit-on, var(--on-success)); }
 .habit-tracker.running .ht-value{ color:var(--habit-color); }
 /* Countdown / birthday: days left (eventBadgeHtml), and the event form's kind chips (popup.js). */
 .event-badge{ display:inline-block; margin-top:4px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--primary-soft); color:var(--primary-text); }

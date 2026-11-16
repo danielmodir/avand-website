@@ -34,6 +34,10 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   Gregorian), occasions.js, groups.js, trackers.js (habit counter/timer),
   notify.js (reminders/push), android.js (bridge to Kotlin), local-store.js,
   search.js, include.js (loads component partials), compat.js (old WebViews).
+- App themes: frontend/demo/js/core/themes.js (6 palettes × 2 appearances,
+  semantic tokens and pre-paint storage); css/themes.css (states/selector);
+  docs/theme-system/ (color audit and verification); tests/themes.test.js and
+  tests/theme-ui.cjs. Old palette CSS and accent picker removed.
 - Web app components: app-error, articles, auth, banner, birthday, calendar,
   contact, date-picker, day-sheet, groups, items, menu, notices, period,
   popup, toolbar, tour, workspace.
@@ -45,8 +49,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 - Android Kotlin: MainActivity, AppWeb, WebFiles (offline/OTA files),
   Reminders, PhoneActions, Widgets.
 - Deploy scripts (deploy/): build-site-zip.ps1, build-android.ps1,
-  make-keystore.ps1, make-logo.js, make-desk-shots.js, make-quotes.py, webp.py,
-  css-compat.js.
+  make-keystore.ps1, make-logo.js, render-logo.js, make-desk-shots.js,
+  webp.js, make-quotes.py, webp.py, css-compat.js.
 - Next-version work: docs/next-version/README.md links the audit, central
   checklist, dependencies, decisions, baseline tests and source-derived
   API/model inventory. This is the management source for the new update.
@@ -56,10 +60,11 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 Update these with every change.
 
 - Demo asset version: 2026-11-16.6
+- Logo cache version: tj7 (transparent mark, site and six app palettes)
 - PHP schema: v24
-- Django latest migrations: core 0009, planning 0008, social 0003,
+- Django latest migrations: core 0011, planning 0008, social 0003,
   notifications 0003, calendar_data 0002, period 0001
-- Android: 1.4.0 (versionCode 5)
+- Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
 
@@ -71,6 +76,16 @@ Update these with every change.
   API 2/2 and eight browser matrix cases including reload persistence pass.
   Native Android widgets retain existing behavior pending native integration.
 
+- 2026-11-16 — marketing site, web app, Android assets — removed the circular
+  field around the owner's new logo. The vector generator now writes a
+  transparent mark for site icons plus separate splash/banner colors for all
+  twelve app appearances; favicon, PWA and Android launcher images were
+  regenerated. Marketing headers switch transparent marks with light/dark,
+  app logo URLs use tj7, and the app asset version is 2026-11-16.6. The
+  circular loader rings were removed; 28 baked marketing screenshots were
+  recaptured from the current app. The Android OTA manifest lists both sets
+  of app marks. Native source version remains 1.4.1 (6).
+
 - 2026-11-16 — web app — ordinary events can be created/edited in the past
   (popup.js, events.js); tasks retain their prior rule. The picker retains
   older stored dates. Existing PHP document sync and Django Event API already
@@ -78,6 +93,23 @@ Update these with every change.
   API tests and eight browser cases pass, including no stale event reminders.
   Custom interval = one activity with multiple reminders (owner); occasion
   notifications require the user to choose their time (owner). No deployment.
+
+- 2026-11-16 — web app, Android WebView, Django settings — replaced old
+  Toojibee/Classic/accent/period skins with six owner-specified palettes and
+  twelve light/dark schemes (themes.js, themes.css). Independent System
+  appearance, synchronous pre-paint migration/storage, Android bars, localized
+  dual-preview settings cards and accessible semantic states. Shared sizing
+  tokens remain in assets/css/tokens.css. Django palette IDs expanded/migrated
+  (core 0011_six_theme_palettes); API client saves System; PHP settings already
+  accept the document. Five color/state tests and seven targeted Django settings tests pass.
+  Full Node suite passed 28 tests before a concurrent historical-event test
+  was added; latest run 28/29 (new test VM lacks navigator; unrelated). Chromium: 48 selector combinations
+  (12 × fa/en × 360/1280), System/reload/toolbar behavior, twelve dialog/day-sheet
+  states; no page errors or external requests. See docs/theme-system/README.md
+  and token-audit.json. Broader core Django tests retain an unrelated Google
+  redirect test failure. Android physical-device check and production
+  deployment not performed. Asset version 2026-11-16.4; existing concurrent
+  work preserved and changes left uncommitted for review.
 
 - 2026-11-16 — web app (Android WebView too) — main desk/day calendar/day
   sheet share an hourly task + event timeline (items.js/css, i18n.js). Explicit
@@ -88,6 +120,19 @@ Update these with every change.
   phased work; no host deployment. Unrelated working changes excluded.
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-11-16 — marketing site, web app, Android assets — replaced the old
+  Tj-road drawing with the owner's new flat, shadow-free mark from the supplied
+  image. `deploy/make-logo.js` generates the site SVGs and twelve app badges
+  from the current six light/dark palette tokens; `deploy/render-logo.js`
+  renders PNG, ICO, social preview and launcher files. The app banner and
+  splash follow the selected palette, including Android offline file updates
+  (`themes.js`, `include.js`, `build-site-zip.ps1`). All icon URLs use tj6;
+  demo asset version is 2026-11-16.2. The 28 marketing screenshots containing
+  the old mark were recaptured (`make-desk-shots.js`) and encoded with the
+  package-free `deploy/webp.js`. Android monochrome notification mark
+  updated; Android source version is 1.4.1 (6), pending a new APK build.
+  No API or database change.
 
 - 2026-11-16 — repository instructions — synchronized `AGENTS.md` with the
   full contents of `CLAUDE.md`, so Codex and Claude Code follow the same
