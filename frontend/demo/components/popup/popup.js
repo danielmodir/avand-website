@@ -1,5 +1,12 @@
 function typeLabel(type){ return t(type); }
 
+/* Keep task creation's existing lower bound; events can document the past.
+   A stored older date must remain selectable while editing. */
+function popupDateMinimum(type, editing, value){
+  const min = type === 'event' ? dateYearsAgo(100) : editing ? dateYearsAgo(1) : dateKey(today);
+  return (type === 'event' || editing) && value && value < min ? value : min;
+}
+
 let formPhotos = [];
 
 let formSubtasks = [];
@@ -706,10 +713,9 @@ function submitPopup(){
     recurrence.interval = n;
   }
   if(type !== 'habit' && recurrence.mode && formDraft.timeMode === 'range' && formDraft.endDate !== formDraft.date){ showToast(t('rangeNoRepeat')); return; }
-  // A new task or event can't be put on a day that has already passed.
-  // (A birthday is the day someone was born: any past day.)
+  // Events may record past activity; birthdays still repeat every year.
   if(type === 'event' && formDraft.kind === 'birthday'){ recurrence.mode = 'yearly'; recurrence.interval = 1; recurrence.anchor = formDraft.date; recurrence.cal = recurrence.cal || (isHijriPrimary() ? 'jalali' : primarySystem()); }
-  if(!state.editingId && (type === 'task' || (type === 'event' && formDraft.kind !== 'birthday')) && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
+  if(!state.editingId && type === 'task' && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
   const notification = { ...formDraft.notification };
   // A reminder's own day only for a one-time task, and only inside its days.
   if(notification.date && (type !== 'task' || recurrence.mode || notification.type !== 'time' || notification.date <= formDraft.date

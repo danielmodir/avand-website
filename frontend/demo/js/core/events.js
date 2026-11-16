@@ -114,9 +114,8 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-subview' && el.dataset.sub === 'calendar'){
     // The item's date (or a range: press and drag) in the small date picker.
     openDatePicker({
-      // Within a year back and five years ahead (it used to allow 1926).
-      // A new task or event can't go on a day that has passed.
-      title: t('dateTitle'), range: true, min: state.editingId ? dateYearsAgo(1) : dateKey(today), max: dateKey(stepYear(today, 5)), value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
+      // Events can record past activity; task creation keeps its current rule.
+      title: t('dateTitle'), range: true, min: popupDateMinimum(state.popupType, !!state.editingId, formDraft.date), max: dateKey(stepYear(today, 5)), value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
       time: { start: formDraft.startTime, end: formDraft.endTime },
       onPick: (start, end, time) => {
         formDraft.date = start; formDraft.endDate = end;

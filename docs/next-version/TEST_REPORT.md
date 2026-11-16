@@ -1,5 +1,12 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۱۶ — ثبت ایونت در گذشته
+
+- `node --test tests/past-events.test.js`: 5/5 PASS؛ ایجاد/ویرایش، حفظ تاریخ و تکرار، حد picker، حفظ منع تسک و عدم زمان‌بندی اعلان تاریخی. تست ایجاد ابتدا با pastDateNotAllowed شکست خورد.
+- `backend/.venv/Scripts/python.exe backend/manage.py test apps.planning.test_past_events --settings=config.settings.test --noinput`: 2/2 PASS؛ ایجاد، ویرایش و sync API و anchor تاریخی تکرار؛ فقط دیتابیس تست.
+- Chromium: 360/1280 × fa/en × light/dark؛ 8/8 PASS؛ بازشدن picker با تاریخ گذشته، ثبت با دکمهٔ واقعی UI، نمایش در روز تاریخی، عدم اعلان جاری/آینده؛ pageerror و external request صفر.
+- PHP sync سند JSON را بدون منع تاریخ نگه می‌دارد (بررسی کد)؛ PHP روی هاست، گوشی واقعی و اعلان تحویلی OS در این بررسی تست نشده‌اند.
+
 ## ۲۰۲۶-۱۱-۱۶ — خط زمانی میزکار
 
 - `node --test tests/planning-timeline.test.js`: 5/5 PASS؛ ترتیب مشترک، tie، دادهٔ قدیمی، reminder-only، حفظ reference و ورودی، 10,000 آیتم، ترتیب پین/انجام موارد بدون ساعت. تست‌ها ابتدا برای نبود تابع شکست خوردند.
