@@ -1,3 +1,5 @@
+@import url('../../../assets/css/tokens.css');
+
 .item-card{ background:var(--card); border-radius:16px; padding:14px; margin-bottom:10px; border:1px solid var(--border); display:flex; align-items:center; gap:12px; }
 /* Done rows fade their CONTENT, not the card: a translucent card let the
    red swipe-to-delete layer behind it (.swipe-delete-bg) show through,
@@ -176,3 +178,14 @@
 .event-kind-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
 .event-icon{ display:inline-flex; vertical-align:-2px; margin-inline-end:4px; color:var(--primary-text); }
 .event-icon svg{ width:14px; height:14px; }
+/* Shared day timeline: existing theme colors and central spacing tokens. */
+.planning-timeline{ min-width:0; }
+.timeline-hour{ margin:var(--space-4) 0 var(--space-2); font-size:12px; font-weight:700; color:var(--text-muted); }
+.timeline-entry{ border-inline-start:2px solid var(--task-color); padding-inline-start:var(--space-2); margin-bottom:var(--space-3); min-width:0; }
+.timeline-event{ border-inline-start-style:dashed; border-inline-start-color:var(--event-color); }
+.device.lang-fa .timeline-entry{ border-inline-start:0; border-inline-end:2px solid var(--task-color); padding-inline-start:0; padding-inline-end:var(--space-2); }
+.device.lang-fa .timeline-event{ border-inline-end-style:dashed; border-inline-end-color:var(--event-color); }
+.timeline-kind{ display:block; font-size:11px; color:var(--text-muted); margin-bottom:var(--space-1); }
+.timeline-entry .event-card{ width:100%; height:auto; min-height:64px; padding:var(--space-3); border-radius:var(--radius-md); }
+.timeline-entry .event-title{ overflow-wrap:anywhere; }
+.timeline-entry .event-time{ direction:ltr; unicode-bidi:isolate; text-align:start; }

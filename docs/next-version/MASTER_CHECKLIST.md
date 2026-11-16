@@ -31,10 +31,10 @@
 
 | ID | Feature | Description | Priority | Status | Frontend | Backend | Database | Testing | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| NV-01-01 | اولویت تسک زمان‌دار | نمایش تسک‌های دارای زمان پیش از تسک‌های بدون زمان با قاعدهٔ پین/اتمام مشخص | P1 | [ ] Not Started | P | — | — | Pending | PLAN؛ D01؛ مرتب‌سازی فعلی پین/انجام است |
-| NV-01-02 | ایونت کنار تسک | نمای مشترک تسک و ایونت در برنامهٔ روز | P1 | [ ] Not Started | P | — | — | Pending | PLAN؛ وابسته 01-01؛ D01 |
-| NV-01-03 | تقسیم‌بندی زمانی | نمایش یکپارچهٔ فعالیت‌ها در بخش‌های زمانی توافق‌شده | P1 | [ ] Not Started | N | — | — | Pending | PLAN؛ D01 |
-| NV-01-04 | نمای برنامهٔ روزانه | بهبود خوانایی و تعامل روزانه و وضعیت‌های خالی/بارگذاری/خطا | P1 | [ ] Not Started | P | — | — | Pending | PLAN؛ 01-01 تا 03؛ D01 |
+| NV-01-01 | اولویت تسک زمان‌دار | نمایش تسک‌های دارای زمان پیش از تسک‌های بدون زمان با قاعدهٔ پین/اتمام مشخص | P1 | [ ] Awaiting User Review | E | — | — | Node + browser PASS | MAIN_TIMELINE_PLAN؛ 2026-11-16: hourly timeline; untimed behavior retained; native widgets unchanged |
+| NV-01-02 | ایونت کنار تسک | نمای مشترک تسک و ایونت در برنامهٔ روز | P1 | [ ] Awaiting User Review | E | — | — | Node + browser PASS | MAIN_TIMELINE_PLAN؛ 2026-11-16: hourly timeline; untimed behavior retained; native widgets unchanged |
+| NV-01-03 | تقسیم‌بندی زمانی | نمایش یکپارچهٔ فعالیت‌ها در بخش‌های زمانی توافق‌شده | P1 | [ ] Awaiting User Review | E | — | — | Node + browser PASS | MAIN_TIMELINE_PLAN؛ 2026-11-16: hourly timeline; untimed behavior retained; native widgets unchanged |
+| NV-01-04 | نمای برنامهٔ روزانه | بهبود خوانایی و تعامل روزانه و وضعیت‌های خالی/بارگذاری/خطا | P1 | [ ] Awaiting User Review | E | — | — | Node + browser PASS | MAIN_TIMELINE_PLAN؛ 2026-11-16: hourly timeline; untimed behavior retained; native widgets unchanged |
 | NV-01-05 | ایونت گذشته | ثبت ایونت معمولی در گذشته، بدون اعلان ناخواستهٔ عقب‌افتاده | P1 | [ ] Not Started | P | PHP:P / DJ:E | E | Pending | PLAN؛ فعلاً فقط تولد مجاز؛ پوشش درخواست 03 نیز |
 | NV-01-06 | انتخاب بازه با Drag | تکمیل و آزمون انتخاب بازهٔ تاریخ/زمان با Drag و جایگزین قابل دسترس | P1 | [ ] Not Started | E | PHP:E / DJ:E | E | Pending | DATE؛ Drag تاریخ موجود؛ D02 |
 | NV-01-07 | ورود مستقیم بازه | کادر شروع/پایان با انتخاب و ورود مستقیم تاریخ و اعتبارسنجی | P1 | [ ] Not Started | P | PHP:P / DJ:E | E | Pending | DATE؛ picker موجود، ورود مستقیم کامل نیست؛ D02 |

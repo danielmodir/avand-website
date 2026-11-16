@@ -312,8 +312,43 @@ function renderHabitsSection(habits, date){
   `;
 }
 
+/* Date filtering stays in itemsForDate. Only an explicit activity start
+   belongs on the timeline; a reminder is not the event's start time. */
+function planningTimeline(tasks, events){
+  const result = { timed: [], tasks: [], events: [] };
+  const add = (items, type, untimed) => items.forEach(item => {
+    const time = item.startTime;
+    if(typeof time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){
+      untimed.push(item);
+      return;
+    }
+    const hour = Number(time.slice(0, 2));
+    result.timed.push({ type, item, hour, minute: hour * 60 + Number(time.slice(3)), order: result.timed.length });
+  });
+  add(tasks, 'task', result.tasks);
+  add(events, 'event', result.events);
+  result.timed.sort((a, b) => a.minute - b.minute || a.order - b.order);
+  return result;
+}
+
+function renderPlanningTimeline(rows, date){
+  if(!rows.length) return '';
+  const key = dateKey(date);
+  let previousHour = -1;
+  const html = rows.map(row => {
+    const heading = row.hour === previousHour ? '' : `<h3 class="timeline-hour"><time dir="ltr">${dig(String(row.hour).padStart(2, '0') + ':00')}</time></h3>`;
+    previousHour = row.hour;
+    return `${heading}<div class="timeline-entry timeline-${row.type}">
+      <span class="timeline-kind">${t(row.type === 'task' ? 'timelineTask' : 'timelineEvent')}</span>
+      ${row.type === 'task' ? taskRow(row.item, key) : eventCard(row.item)}
+    </div>`;
+  }).join('');
+  return `<section class="planning-timeline" aria-label="${t('timelineTitle')}"><div class="section-title">${t('timelineTitle')} <span class="count">${dig(rows.length)}</span></div>${html}</section>`;
+}
+
 function renderItemSections(tasks, habits, events, date){
-  return `${renderEventsSection(events)}${renderTasksSection(tasks, date)}${renderHabitsSection(habits, date)}`;
+  const plan = planningTimeline(tasks, events);
+  return `${renderPlanningTimeline(plan.timed, date)}${renderEventsSection(plan.events)}${renderTasksSection(plan.tasks, date)}${renderHabitsSection(habits, date)}`;
 }
 
 /* ============ DONE / NOT DONE ============

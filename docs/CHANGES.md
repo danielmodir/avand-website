@@ -55,13 +55,21 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-10-27.15
+- Demo asset version: 2026-11-16.3
 - PHP schema: v24
 - Django latest migrations: core 0009, planning 0008, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
+
+- 2026-11-16 — web app (Android WebView too) — main desk/day calendar/day
+  sheet share an hourly task + event timeline (items.js/css, i18n.js). Explicit
+  start times sort chronologically; untimed pin/done/collapse behavior and
+  habits retained. No API/DB/native widget change. Five timeline Node tests,
+  including 10,000 items; browser 360/1280 × fa/en × light/dark, completion,
+  shared status, event details/deletion; no external requests. Owner approved
+  phased work; no host deployment. Unrelated working changes excluded.
 
 Format: `date — surfaces — what changed (key files)`.
 
