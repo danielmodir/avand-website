@@ -25,6 +25,7 @@
   var CONFIG = global.TOOJIBEE_CONFIG || {};
   var BASE = (CONFIG.apiBase || '').replace(/\/$/, '');
   var SESSION_KEY = 'toojibee_session';
+  var GOOGLE_VERIFIER_KEY = 'toojibee-google-verifier';
 
   function uuid() {
     if (global.crypto && global.crypto.randomUUID) return global.crypto.randomUUID();
@@ -139,9 +140,16 @@
     storeSession(await request('POST', '/auth/login', Object.assign({ email: email, password: password }, deviceMeta()), { auth: false }));
   }
 
-  function signInWithGoogle() {
+  async function signInWithGoogle() {
+    if (!global.crypto || !global.crypto.getRandomValues || !global.crypto.subtle) throw new Error('google_sign_in_unavailable');
+    var bytes = new Uint8Array(32);
+    global.crypto.getRandomValues(bytes);
+    var verifier = Array.from(bytes, function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+    var digest = await global.crypto.subtle.digest('SHA-256', Uint8Array.from(verifier, function (ch) { return ch.charCodeAt(0); }));
+    var challenge = Array.from(new Uint8Array(digest), function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+    sessionStorage.setItem(GOOGLE_VERIFIER_KEY, verifier);
     var back = global.location.origin + global.location.pathname;
-    global.location.href = BASE + '/auth/google/start?next=' + encodeURIComponent(back);
+    global.location.href = BASE + '/auth/google/start?next=' + encodeURIComponent(back) + '&challenge=' + challenge;
   }
 
   /* After the Google redirect the URL carries #login_code=… (one-time,
@@ -151,8 +159,11 @@
     var err = /[#&]login_error=([^&]+)/.exec(global.location.hash);
     if (!m && !err) return false;
     history.replaceState(null, '', global.location.pathname + global.location.search);
+    var verifier = sessionStorage.getItem(GOOGLE_VERIFIER_KEY);
+    sessionStorage.removeItem(GOOGLE_VERIFIER_KEY);
     if (!m) { var e = new Error('google_failed'); e.code = err ? decodeURIComponent(err[1]) : 'google_failed'; throw e; }
-    storeSession(await request('POST', '/auth/google/exchange', { code: decodeURIComponent(m[1]) }, { auth: false }));
+    if (!verifier) throw new Error('google_verifier_missing');
+    storeSession(await request('POST', '/auth/google/exchange', { code: decodeURIComponent(m[1]), verifier: verifier }, { auth: false }));
     return true;
   }
 

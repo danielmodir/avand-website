@@ -200,7 +200,14 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'contact-send'){ sendContactMessage(); return; }
   if(action === 'articles-cat'){ articlesView.cat = el.dataset.val; render(); return; }
   if(action === 'start-tour'){ startTour(el.dataset.tourId); return; }
-  if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){
+  if(action === 'auth-google'){
+    Promise.resolve().then(() => Cloud.signInWithGoogle()).catch(() => {
+      authErrors.general = t('errGoogleDisabled');
+      renderAuth();
+    });
+    return;
+  }
+  if(action === 'remove-profile-photo'){
     if(profileDraft) profileDraft.photo = null; // edit page: waits for "Save changes"
     else { state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); }
     render(); return;

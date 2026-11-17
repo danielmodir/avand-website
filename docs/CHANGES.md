@@ -55,13 +55,21 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-17.2
+- Demo asset version: 2026-11-18.1
 - PHP schema: v24
 - Django latest migrations: core 0009, planning 0010, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
+
+- 2026-11-18 — Django API web client — Google sign-in now sends a
+  per-tab SHA-256 challenge and exchanges the redirect code with its
+  one-time verifier. The browser clears the verifier on callback and shows
+  an existing localized error if crypto or storage is unavailable. No
+  server, schema, PHP or Android native change. Demo asset version
+  2026-11-18.1. Focused Node 2/2 and full Node 48/48 pass. Live Google
+  credentials and redirect on a deployed host remain unverified. No deployment.
 
 - 2026-11-17 — web app, Django planning, PHP document compatibility —
   one event now has independent default-on visibility in Planning and
