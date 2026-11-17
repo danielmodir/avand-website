@@ -274,6 +274,8 @@ class Event(UserOwnedSyncModel, Recurrence, Reminder):
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
+    show_in_planning = models.BooleanField(default=True)
+    show_in_occasions = models.BooleanField(default=True)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     all_day = models.BooleanField(default=True)

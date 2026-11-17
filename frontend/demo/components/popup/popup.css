@@ -60,6 +60,10 @@
 .photo-add-btn svg{ width:18px; height:18px; }
 /* popup icon row + subviews */
 .popup-icon-row{ display:flex; justify-content:center; gap:4px; margin-bottom:14px; }
+.event-visibility-row{ display:flex; gap:10px; flex-wrap:wrap; border:1px solid var(--border); border-radius:var(--radius-md); padding:8px 12px 12px; margin:0 0 14px; color:var(--text); }
+.event-visibility-row legend{ color:var(--text-muted); font-size:12px; font-weight:700; padding:0 4px; }
+.event-visibility-row label{ display:flex; align-items:center; gap:6px; min-height:44px; font-size:13px; cursor:pointer; }
+.event-visibility-row input{ accent-color:var(--primary); width:18px; height:18px; }
 .popup-icon-btn{ flex:0 0 auto; width:46px; height:46px; border-radius:14px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
 .popup-icon-btn svg{ width:18px; height:18px; }
 .popup-icon-btn.set{ color:var(--primary-text); background:transparent; border-color:transparent; }

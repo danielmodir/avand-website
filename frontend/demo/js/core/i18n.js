@@ -4,7 +4,7 @@ const STRINGS = {
   en: {
     appName:'Toojibee', appTagline:'Calendar and planner', subtasksLabel:'Subtasks', saveFailed:"Couldn't save — check your connection",
     today:'Today', calendar:'Calendar', planning:'Planning', occasionsDesktop:'Occasions', periodDesktop:'Period', occasionsComingSoon:"Today's and this month's occasions are coming here soon.", menu:'Menu', backToToday:'Back to today', workspace:'Workspace',
-    events:'Events', tasks:'Tasks', habits:'Habits',
+    events:'Events', tasks:'Tasks', habits:'Habits', eventShowIn:'Show this event in',
     timelineTitle:'Schedule', timelineTask:'Task', timelineEvent:'Event',
     reminderWindow:'Repeat within a time window', windowHours:'Hours', windowMinutes:'Minutes',
     reminderWindowHint:'The end is included when it matches the interval. An earlier end means the next day.',
@@ -337,7 +337,7 @@ const STRINGS = {
   fa: {
     appName:'توجیبی', appTagline:'تقویم و برنامه‌ریز', subtasksLabel:'ریزتسک‌ها', saveFailed:'ذخیره نشد — اتصالت رو چک کن',
     today:'امروز', calendar:'تقویم', planning:'برنامه‌ریزی', occasionsDesktop:'مناسبت‌ها', periodDesktop:'عادت ماهانه', occasionsComingSoon:'مناسبت‌های امروز و این ماه به‌زودی اینجا اضافه می‌شن.', menu:'منو', backToToday:'بازگشت به امروز', workspace:'میزکار',
-    events:'رویدادها', tasks:'کارها', habits:'عادت‌ها',
+    events:'رویدادها', tasks:'کارها', habits:'عادت‌ها', eventShowIn:'نمایش این رویداد در',
     timelineTitle:'برنامهٔ زمانی', timelineTask:'کار', timelineEvent:'رویداد',
     reminderWindow:'تکرار در بازهٔ زمانی', windowHours:'ساعت', windowMinutes:'دقیقه',
     reminderWindowHint:'اگه نوبت تکرار به پایان بازه برسه، اون نوبت هم یادآوری می‌شه. ساعت پایانِ زودتر یعنی روز بعد.',

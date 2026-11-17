@@ -14,7 +14,7 @@ function renderOccasionsPane(d, events){
   const occasionsHtml = items === null ? `<div class="empty-hint">…</div>` : (() => {
     return items.length ? items.map(it => `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}${escapeHtml(it.event_name)}</div>`).join('') : '';
   })();
-  const dayEvents = pref('occasionsShowEvents') ? (events || []) : [];
+  const dayEvents = pref('occasionsShowEvents') ? (events || []).filter(e => eventVisibleIn(e, 'occasions')) : [];
   const eventsHtml = dayEvents.length ? `
     <div class="section-title">${t('events')} <span class="count">${dig(dayEvents.length)}</span></div>
     <div class="events-scroll">${sortEvents(dayEvents).map(e=>eventCard(e)).join('')}</div>
@@ -110,11 +110,14 @@ function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = deskKeys().map(key => {
     if(key === 'occasionsDesktop') return { key, html: renderOccasionsPane(d, events) };
-    if(key === 'planning') return { key, html:`
+    if(key === 'planning'){
+      const shownEvents = events.filter(e => eventVisibleIn(e, 'planning'));
+      return { key, html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
-      ${pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
-      ${renderItemSections(tasks, habits, events, d)}
+      ${pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, shownEvents, d) : ''}
+      ${renderItemSections(tasks, habits, shownEvents, d)}
     ` };
+    }
     if(key === 'groupsDesktop') return { key, html: renderGroupsPane(d) };
     return { key, html: renderPeriodPage('') + renderArticleStrip('app_period') };
   });

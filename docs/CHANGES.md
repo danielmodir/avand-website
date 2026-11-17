@@ -55,13 +55,25 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-16.8
+- Demo asset version: 2026-11-17.2
 - PHP schema: v24
-- Django latest migrations: core 0009, planning 0009, social 0003,
+- Django latest migrations: core 0009, planning 0010, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
+
+- 2026-11-17 — web app, Django planning, PHP document compatibility —
+  one event now has independent default-on visibility in Planning and
+  Occasions (same record, reminder and recurrence). The existing event form
+  has two choices; Django planning 0010 adds boolean fields and the Django
+  client maps them. PHP sync already retains additive event JSON, so no PHP
+  schema change. Demo asset version 2026-11-17.2. Node 46/46, Django
+  91/91, and eight browser cases pass; no external requests in the browser
+  run. The current worktree has a separate Google redirect test correction;
+  the web client's Google flow still needs a fix. Core EmailOutbox migration
+  drift, PHP CLI, actual Android
+  WebView and live database remain unverified. No deployment.
 
 - 2026-11-16 — web app, PHP validation, Django planning — custom reminder
   windows for one task/habit/event (owner decision): minute/hour interval,

@@ -1,5 +1,20 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۱۷ — نمایش مستقل ایونت
+
+- `node --test tests/event-visibility.test.js`: 3/3 PASS؛ مقدار پیش‌فرض دادهٔ قدیمی، جدایی دو گزینه، ذخیرهٔ فرم و نمایش دو میزکار. آزمون‌ها ابتدا برای نبود تابع/فیلد شکست خوردند.
+- `node --test tests/*.test.js`: 46/46 PASS. فایل مرورگری `theme-ui.cjs` به بستهٔ `playwright` محلی وابسته است و در این فرمان نیست؛ اجرای جداگانهٔ آن به‌علت نصب نبودن بسته متوقف شد.
+- `manage.py test apps --settings=config.settings.test --noinput`: 91/91 PASS روی SQLite آزمایشیِ درخت کاری فعلی؛ یک تست جدید رفت‌وبرگشت فیلدهای Event و اصلاح محلی تست Google در شمارش است. اصلاح Google جزو commit این بسته نیست.
+- Chromium محلی: 8/8 ترکیب 360/1280 × fa/en × light/dark؛ هر میزکار فقط رویداد مجاز خود را نشان داد، جهت فارسی و حالت تم درست بود، فرم با کلیک واقعی گزینه را ذخیره کرد؛ pageerror، سرریز افقی و درخواست خارج از origin صفر.
+- `makemigrations --check --dry-run` عمومی هنوز drift مستقل `core.EmailOutbox.template` نشان می‌دهد. planning 0010 در تست SQLite اعمال شد؛ MySQL/هاست واقعی، PHP CLI و Android WebView آزموده نشده‌اند. ورود Google در کلاینت وب Django هنوز با challenge/verifier جدید سرور هماهنگ نیست.
+
+## ۲۰۲۶-۱۱-۱۷ — اعتبارسنجی ساعت انتخابگر
+
+- `node --test tests/*.test.js`: 43/43 PASS؛ سه تست جدید برای ساعت شروع، ترتیب همان‌روز و عبور از نیمه‌شب.
+- `backend/.venv/Scripts/python.exe manage.py test apps --settings=config.settings.test`: 89/90 PASS؛ تست موجود GoogleRedirectFlowTests.test_start_callback_exchange با HTTP 400 به‌جای 302 شکست خورد. مسیر Django OAuth اکنون challenge می‌خواهد ولی تست و کلاینت Django آن را نمی‌فرستند؛ این بخش هنوز آمادهٔ انتشار نیست.
+- `git diff --check`: بدون خطای محتوایی؛ هشدارهای تبدیل LF/CRLF در فایل‌های موجود.
+- بررسی مرورگر، دستگاه واقعی، PHP و استقرار آنلاین برای این تغییر انجام نشده‌اند.
+
 ## ۲۰۲۶-۱۱-۱۶ — یادآوری در بازه
 
 - تأیید نهایی asset 2026-11-16.8: کل تست‌های Node در working tree، 40/40 PASS؛ build-site-zip exit 0 با 71 fallback و ZIP 254 فایل؛ همان 8 سناریوی ایجاد/ویرایش/حذف یادآوری روی بستهٔ تجمیعی نیز PASS، pageerror/external صفر. بسته شامل تغییرات مستقل working tree است و منتشر نشده.

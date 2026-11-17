@@ -31,6 +31,8 @@ function resetFormDraft(type, existing){
     category: existing ? (existing.category || '') : '',
     kind: existing ? (existing.kind || '') : '', // an event's kind: '' | 'birthday' | 'countdown'
     color: existing ? (existing.color || '') : '', // an event's own colour ('' = the default)
+    showInPlanning: existing ? existing.showInPlanning !== false : true,
+    showInOccasions: existing ? existing.showInOccasions !== false : true,
     description: existing ? (existing.description || '') : '',
     timeMode: existing ? (existing.timeMode || 'single') : 'single',
     // A new item goes on the day picked in the calendar (homeDate), not today.
@@ -234,7 +236,7 @@ function subtasksListHtml(){
 function formBody(type){
   const parts = [popupIconRow(type)];
   if(type === 'task') parts.push(descriptionBlock());
-  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(eventColorRow(), descriptionBlock(false)); } // events: a kind, a description, no photos
+  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(eventColorRow(), eventVisibilityRow(), descriptionBlock(false)); } // events: a kind, a description, no photos
   return parts.join('');
 }
 
@@ -254,6 +256,12 @@ function eventColorRow(){
     <button type="button" class="color-swatch ${cur ? '' : 'active'}" data-ecolor="" style="--c:var(--event-color)" role="radio" aria-checked="${!cur}" aria-label="${t('defaultColor')}"></button>
     ${ITEM_COLOR_CHOICES.map(c => `<button type="button" class="color-swatch ${cur === c ? 'active' : ''}" data-ecolor="${c}" style="--c:${c}" role="radio" aria-checked="${cur === c}" aria-label="${c}"></button>`).join('')}
   </div></div>`;
+}
+function eventVisibilityRow(){
+  return `<fieldset class="event-visibility-row"><legend>${t('eventShowIn')}</legend>
+    <label><input type="checkbox" id="f-show-in-planning" ${formDraft.showInPlanning !== false ? 'checked' : ''}> ${t('planning')}</label>
+    <label><input type="checkbox" id="f-show-in-occasions" ${formDraft.showInOccasions !== false ? 'checked' : ''}> ${t('occasionsDesktop')}</label>
+  </fieldset>`;
 }
 function applyEventKind(k){
   formDraft.kind = k;
@@ -583,6 +591,8 @@ function groupFieldHtml(){
 function wireMainFormInteractivity(){
   document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; renderPopupBody(); });
   document.querySelectorAll('[data-ecolor]').forEach(b => b.addEventListener('click', () => { formDraft.color = b.dataset.ecolor; renderPopupBody(); }));
+  document.getElementById('f-show-in-planning')?.addEventListener('change', e => { formDraft.showInPlanning = e.target.checked; });
+  document.getElementById('f-show-in-occasions')?.addEventListener('change', e => { formDraft.showInOccasions = e.target.checked; });
   document.querySelectorAll('[data-ekind]').forEach(b => b.addEventListener('click', () => { applyEventKind(b.dataset.ekind); renderPopupBody(); }));
   document.querySelectorAll('[data-epreset]').forEach(b => b.addEventListener('click', () => { applyEventPreset(b.dataset.epreset); renderPopupBody(); }));
   document.getElementById('f-challenge')?.addEventListener('change', e => { formDraft.challenge = Number(e.target.value) || 0; });
@@ -844,6 +854,8 @@ function submitPopup(){
       description: (formDraft.description||'').trim(),
       kind: formDraft.kind || '',
       color: formDraft.color || '',
+      showInPlanning: formDraft.showInPlanning !== false,
+      showInOccasions: formDraft.showInOccasions !== false,
       timeMode: formDraft.timeMode,
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,

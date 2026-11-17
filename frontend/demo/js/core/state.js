@@ -223,3 +223,9 @@ function itemsForDate(date){
     events: state.events.filter(e => occursOnDate(e, date))
   };
 }
+
+/* A missing flag is an older event: it remains visible on both desks.
+   This only controls presentation; reminders and the stored event stay put. */
+function eventVisibleIn(event, desk){
+  return desk === 'occasions' ? event.showInOccasions !== false : event.showInPlanning !== false;
+}
