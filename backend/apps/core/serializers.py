@@ -155,6 +155,26 @@ class SettingsSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Unknown keys: {', '.join(unknown)}.")
         defaults = UserSettings.PREFERENCE_DEFAULTS
         for k, v in value.items():
+            if k == "occasion_reminders":
+                if not isinstance(v, dict) or len(v) > 1000:
+                    raise serializers.ValidationError("occasion_reminders: at most 1000 occasion plans.")
+                for rule, reminders in v.items():
+                    if not isinstance(rule, str) or len(rule) > 1200 or not re.fullmatch(r"(?:jalali|gregorian|hijri):(?:[1-9]|1[0-2]):(?:[1-9]|[12][0-9]|3[01]):[^\s|]{1,1100}", rule):
+                        raise serializers.ValidationError("occasion_reminders: invalid occasion key.")
+                    if not isinstance(reminders, list) or len(reminders) > 10:
+                        raise serializers.ValidationError("occasion_reminders: at most 10 reminders per occasion.")
+                    ids = set()
+                    for reminder in reminders:
+                        if not isinstance(reminder, dict) or set(reminder) != {"id", "days_before", "time", "enabled"}:
+                            raise serializers.ValidationError("occasion_reminders: invalid reminder.")
+                        rid = reminder["id"]
+                        if not isinstance(rid, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", rid) or rid in ids:
+                            raise serializers.ValidationError("occasion_reminders: invalid or repeated reminder id.")
+                        ids.add(rid)
+                        lead, clock, enabled = reminder["days_before"], reminder["time"], reminder["enabled"]
+                        if type(lead) is not int or not 0 <= lead <= 56 or not isinstance(clock, str) or not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", clock) or type(enabled) is not bool:
+                            raise serializers.ValidationError("occasion_reminders: invalid lead, time or enabled flag.")
+                continue
             if isinstance(defaults[k], str):
                 if not isinstance(v, str) or not re.fullmatch(r"[a-z]{1,40}", v):
                     raise serializers.ValidationError(f"{k}: a short lowercase id.")

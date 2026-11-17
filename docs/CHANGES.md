@@ -16,7 +16,7 @@ A request names what it is for; decide which surfaces it touches:
 | Live API (PHP) | backend-php/ → public_html/api/ | lib/*.php per module; schema migrations in lib/bootstrap.php (`if ($v < N)`) |
 | Django API | backend/apps/<module>/ | not deployed; kept in step with PHP (models, migrations, serializers, tests) |
 | API clients | frontend/demo/js/services/api-php.js (live), api.js (Django) | both need the same mapping |
-| Next-version management | docs/next-version/ | audit, 111-row master checklist, implementation plan, decisions, test report and API/data inventory; development awaits owner coordination |
+| Next-version management | docs/next-version/ | audit, 112-row master checklist, implementation plan, decisions, test report and API/data inventory; phased development approved by owner |
 
 Checklist per feature: UI (fa + en strings in js/core/i18n.js, both themes,
 360/1280 px) → PHP endpoint + migration → Django model + migration + test →
@@ -31,7 +31,7 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 - Web app core (frontend/demo/js/core/): state.js (app state), render.js,
   events.js, i18n.js (all strings), dates.js / calendars.js (Jalali, Hijri,
-  Gregorian), occasions.js, groups.js, trackers.js (habit counter/timer),
+  Gregorian), occasions.js (calendar rules and reminder plans), groups.js, trackers.js (habit counter/timer),
   notify.js (reminders/push), android.js (bridge to Kotlin), local-store.js,
   search.js, include.js (loads component partials), compat.js (old WebViews).
 - Web app components: app-error, articles, auth, banner, birthday, calendar,
@@ -55,13 +55,25 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-18.1
+- Demo asset version: 2026-11-18.2
 - PHP schema: v24
 - Django latest migrations: core 0009, planning 0010, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
+
+- 2026-11-18 — web app, PHP document settings, Django settings/calendar API —
+  optional per-occasion reminders now use the existing browser, push and
+  Android notification schedules. Each plan selects a time and 0–56 days
+  before, with multiple editable, toggleable reminders; none are on by
+  default. Stable calendar-rule keys survive a changed Gregorian date for
+  an official Hijri month. PHP sync retains the settings object; Django
+  validates it in existing JSON preferences and exposes rule month/day,
+  so no schema migration is needed. Asset version 2026-11-18.2. Node 51/51,
+  Django 94/94, browser 8/8 matrix and add/toggle/delete pass; no external
+  browser requests. Category/country templates, live delivery and a real
+  Android device remain open, so NV-03-04 is In Progress. No deployment.
 
 - 2026-11-18 — Django API web client — Google sign-in now sends a
   per-tab SHA-256 challenge and exchanges the redirect code with its

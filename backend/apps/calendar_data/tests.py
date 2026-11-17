@@ -30,6 +30,7 @@ class OccasionApiTests(ApiTestCase):
         for o in data["occasions"]:
             by_date.setdefault(o["date"], []).append(o)
         self.assertTrue(any(o["is_holiday"] and "نوروز" in o["title_fa"] for o in by_date["2026-03-21"]))
+        self.assertTrue(all(isinstance(o["rule_month"], int) and isinstance(o["rule_day"], int) for o in data["occasions"]))
         # 3 Jumada II 1448 = 2026-11-13 (Jumada II starts 2026-11-11), not mid-October.
         fatemiyeh = [o for o in data["occasions"] if "فاطمه زهرا" in o["title_fa"] and o["is_holiday"]]
         self.assertEqual([o["date"] for o in fatemiyeh], ["2026-11-13"])

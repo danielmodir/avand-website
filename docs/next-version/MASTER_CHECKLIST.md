@@ -72,7 +72,7 @@
 | NV-03-01 | Google Calendar | اتصال و همگام‌سازی واقعی، قطع اتصال، تعارض و مدیریت حذف | P2 | [ ] Not Started | N | PHP:N / DJ:N | N | Pending | GOOGLE؛ 06-01/02،00-02،01-08؛ D08؛ ICS جایگزین sync نیست |
 | NV-03-02 | مناسبت ادمین | ثبت/ویرایش مناسبت توسط ادمین و رسیدن به برنامهٔ آنلاین/آفلاین | P1 | [ ] Not Started | P | PHP:N / DJ:E | PHP:N / DJ:E | Pending | CALDATA؛ 00-04؛ PHP فعلاً جدول شروع ماه قمری دارد |
 | NV-03-03 | مناسبت‌های باستانی | مجموعهٔ جداگانهٔ مورد تأیید با انتخاب نمایش و منبع ثبت‌شده | P2 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | CALDATA؛ 03-02؛ D09؛ مقاله دربارهٔ جشن‌ها معادل تقویم نیست |
-| NV-03-04 | اعلان مناسبت | فعال‌سازی اختیاری اعلان مناسبت با لغو/تغییر و تشخیص تکرار | P1 | [ ] Not Started | N | PHP:P / DJ:P | P | Pending | NOTIFY/CALDATA؛ 03-02،01-10؛ D09؛ پوشش 04 |
+| NV-03-04 | اعلان مناسبت | فعال‌سازی اختیاری اعلان مناسبت با لغو/تغییر و تشخیص تکرار | P1 | [ ] In Progress | P | PHP:P / DJ:P | P | Node/Django/browser PASS; live pending | NOTIFY/CALDATA؛ 2026-11-18؛ چند یادآوری مستقل با ساعت دلخواه، ۰ تا ۵۶ روز قبل، ذخیرهٔ settings در PHP/Django، asset 2026-11-18.2؛ الگوی کشور/دسته و تحویل واقعی Android/Push باز است |
 | NV-03-05 | تکرار پیشرفتهٔ ایونت | تکرار محدود، تاریخ مشخص و استثنا/ویرایش نوبت طبق قرارداد مصوب | P1 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | RECUR؛ 01-08/09؛ D02 |
 | NV-03-06 | نمایش مستقل ایونت | یک رکورد با دو گزینهٔ نمایش در مناسبت‌ها و برنامه‌ریزی | P1 | [ ] Awaiting User Review | E | PHP:E / DJ:E | DJ:E | Node/Django/browser PASS; live pending | 2026-11-17؛ planning 0010؛ asset 2026-11-17.2؛ اعلان/تکرار مشترک، PHP و Android واقعی آزموده نشده‌اند |
 

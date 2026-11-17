@@ -337,6 +337,7 @@ class UserSettings(models.Model):
         "occasions_holidays_only": False,
         "occasions_mark_holidays": True,    # holidays in red on the calendar
         "occasions_show_events": True,      # my events under the occasions
+        "occasion_reminders": {},            # opt-in per-rule plans, no reminders by default
         "notify_overdue": True,             # a reminder when a task turns "not done"
         "groups_enabled": True,             # the Group planning desktop
         "ongoing_notification": True,       # Android app: today's date and what's left, always in the notification shade

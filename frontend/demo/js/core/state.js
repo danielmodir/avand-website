@@ -14,6 +14,7 @@ const state = {
   // shown — persisted so a re-render (which rebuilds the pager's whole
   // DOM) doesn't snap it back to pane 0.
   activeDesktopIndex: 0,
+  occasionEditorKey: null,
   monthDropdownOpen: false,
   yearDropdownOpen: false,
   /* Tapping a *secondary* (non-primary) calendar system's month/year in

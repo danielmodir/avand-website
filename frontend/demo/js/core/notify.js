@@ -160,6 +160,7 @@ function reminderSlots(day){
   state.habits.filter(x => habitOccursOnDate(x, previous)).forEach(x => tail('habit', x,
     x.completedDates.includes(previousKey) || (x.skippedDates || []).includes(previousKey)));
   state.events.filter(x => occursOnDate(x, previous)).forEach(x => tail('event', x, false));
+  if(typeof occasionReminderSlots === 'function') out.push(...occasionReminderSlots(day));
   // Adhan at dawn, noon and maghrib for the chosen city (js/core/prayer.js).
   if(featureOn('prayer') && pref('prayerNotify')){
     const times = prayerTimesFor(day, prayerCityId()), city = prayerCity(prayerCityId());
@@ -210,7 +211,7 @@ function overdueSlots(day){
 
 function reminderBody(r){
   if(!r.kind) return r.body;
-  const kindLabel = t(r.kind === 'event' ? 'searchEvent' : r.kind === 'habit' ? 'habit' : 'task');
+  const kindLabel = t(r.kind === 'occasion' ? 'occasionsDesktop' : r.kind === 'event' ? 'searchEvent' : r.kind === 'habit' ? 'habit' : 'task');
   return `${kindLabel} · ${r.body}`;
 }
 
@@ -260,6 +261,10 @@ function openReminderTarget(d){
     const day = parseDateKey(d.date);
     state.homeDate = day; state.selectedDate = day; state.calCursor = new Date(day);
     state.menuPanelOpen = false; state.calFull = false;
+    if(d.kind === 'occasion' && pref('occasionsEnabled')){
+      const desk = deskKeys().indexOf('occasionsDesktop');
+      if(desk >= 0){ state.activeDesktopIndex = desk; state.occasionEditorKey = d.id; }
+    }
     render();
   }
   if(d.kind && d.id && findItem(d.kind, d.id)) openItemDetails(d.kind, d.id, null);

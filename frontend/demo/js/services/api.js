@@ -593,11 +593,27 @@
   function prefsFromApi(p) {
     var out = {};
     Object.keys(p).forEach(function (k) { out[k.replace(/_([a-z])/g, function (_, c) { return c.toUpperCase(); })] = p[k]; });
+    if (p.occasion_reminders) {
+      out.occasionReminders = {};
+      Object.keys(p.occasion_reminders).forEach(function (key) {
+        out.occasionReminders[key] = (p.occasion_reminders[key] || []).map(function (r) {
+          return { id: r.id, daysBefore: r.days_before, time: r.time, enabled: r.enabled };
+        });
+      });
+    }
     return out;
   }
   function prefsToApi(p) {
     var out = {};
     Object.keys(p).forEach(function (k) { out[k.replace(/[A-Z]/g, function (c) { return '_' + c.toLowerCase(); })] = typeof p[k] === 'string' ? p[k] : !!p[k]; }); // prayerCity is text
+    if (p.occasionReminders) {
+      out.occasion_reminders = {};
+      Object.keys(p.occasionReminders).forEach(function (key) {
+        out.occasion_reminders[key] = (p.occasionReminders[key] || []).map(function (r) {
+          return { id: r.id, days_before: r.daysBefore, time: r.time, enabled: !!r.enabled };
+        });
+      });
+    }
     return out;
   }
 

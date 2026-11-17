@@ -12,7 +12,13 @@ function renderHome(){
 function renderOccasionsPane(d, events){
   const items = visibleOccasionsForDate(d); // null while still loading
   const occasionsHtml = items === null ? `<div class="empty-hint">…</div>` : (() => {
-    return items.length ? items.map(it => `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}${escapeHtml(it.event_name)}</div>`).join('') : '';
+    return items.length ? items.map(it => {
+      const list = state.settings.prefs?.occasionReminders?.[it.key] || [];
+      const open = state.occasionEditorKey === it.key;
+      return `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}<span class="occasion-name">${escapeHtml(it.event_name)}</span>
+        <button type="button" class="occasion-reminder-open ${list.some(r => r.enabled)?'active':''}" data-action="occasion-reminder-open" data-key="${escapeAttr(it.key)}" aria-expanded="${open}" aria-label="${escapeAttr(t('occasionReminder'))}: ${escapeAttr(it.event_name)}">${ICONS.bellIcon}<span>${dig(list.length)}</span></button></div>
+        ${open ? renderOccasionReminderEditor(it.key, list) : ''}`;
+    }).join('') : '';
   })();
   const dayEvents = pref('occasionsShowEvents') ? (events || []).filter(e => eventVisibleIn(e, 'occasions')) : [];
   const eventsHtml = dayEvents.length ? `
@@ -22,6 +28,25 @@ function renderOccasionsPane(d, events){
   const share = `<div class="occ-share-row">${shareCardBtn('day', '', 'cardDay')}</div>`;
   if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>` + countdownsHtml() + prayerBlockHtml(d) + share;
   return occasionsHtml + eventsHtml + countdownsHtml() + prayerBlockHtml(d) + share;
+}
+
+function renderOccasionReminderEditor(key, list){
+  const row = r => `<div class="occasion-reminder-row" data-reminder-id="${escapeAttr(r.id)}">
+    <label>${t('occasionReminderDays')}<input class="occ-days" type="number" min="0" max="56" step="1" value="${r.daysBefore}" inputmode="numeric"></label>
+    <label>${t('occasionReminderTime')}<input class="occ-time" type="time" value="${escapeAttr(r.time)}"></label>
+    <button type="button" class="btn" data-action="occasion-reminder-toggle" data-key="${escapeAttr(key)}" data-id="${escapeAttr(r.id)}" aria-pressed="${!!r.enabled}">${t(r.enabled ? 'occasionReminderOn' : 'occasionReminderOff')}</button>
+    <button type="button" class="btn" data-action="occasion-reminder-save" data-key="${escapeAttr(key)}" data-id="${escapeAttr(r.id)}">${t('occasionReminderSave')}</button>
+    <button type="button" class="btn" data-action="occasion-reminder-delete" data-key="${escapeAttr(key)}" data-id="${escapeAttr(r.id)}">${t('occasionReminderDelete')}</button>
+  </div>`;
+  return `<div class="occasion-reminder-editor" data-key="${escapeAttr(key)}">
+    <div class="section-title">${t('occasionReminder')}</div>
+    ${list.map(row).join('')}
+    ${list.length < 10 ? `<div class="occasion-reminder-row occasion-reminder-new">
+      <label>${t('occasionReminderDays')}<input class="occ-days" type="number" min="0" max="56" step="1" value="0" inputmode="numeric"></label>
+      <label>${t('occasionReminderTime')}<input class="occ-time" type="time" value="" required></label>
+      <button type="button" class="btn btn-primary" data-action="occasion-reminder-add" data-key="${escapeAttr(key)}">${t('occasionReminderAdd')}</button>
+    </div>` : ''}
+  </div>`;
 }
 
 /* The day's prayer times (js/core/prayer.js) for the chosen city; on today

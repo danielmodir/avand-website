@@ -28,6 +28,40 @@ document.getElementById('device').addEventListener('click', (e) => {
   // Guests may browse; anything that needs an account opens the sign-in popup.
   if(state.guest && !GUEST_ACTIONS.has(action)){ e.preventDefault(); requireAccount(); return; }
 
+  if(action === 'occasion-reminder-open'){
+    state.occasionEditorKey = state.occasionEditorKey === el.dataset.key ? null : el.dataset.key;
+    render(); return;
+  }
+  if(['occasion-reminder-add','occasion-reminder-save','occasion-reminder-delete','occasion-reminder-toggle'].includes(action)){
+    const key = el.dataset.key;
+    const list = (state.settings.prefs?.occasionReminders?.[key] || []).map(r => ({ ...r }));
+    const id = el.dataset.id;
+    const row = el.closest('.occasion-reminder-row');
+    if(action === 'occasion-reminder-delete'){
+      const index = list.findIndex(r => r.id === id);
+      if(index >= 0) list.splice(index, 1);
+    }
+    else if(action === 'occasion-reminder-toggle'){
+      const target = list.find(r => r.id === id);
+      if(target) target.enabled = !target.enabled;
+    } else {
+      const rawDays = row?.querySelector('.occ-days')?.value;
+      const time = row?.querySelector('.occ-time')?.value || '';
+      const daysBefore = rawDays === '' ? NaN : Number(rawDays);
+      if(!Number.isInteger(daysBefore) || daysBefore < 0 || daysBefore > 56 || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){
+        showToast(t('occasionReminderInvalid')); return;
+      }
+      if(action === 'occasion-reminder-add') list.push({ id: uid(), daysBefore, time, enabled: true });
+      else {
+        const target = list.find(r => r.id === id);
+        if(target) Object.assign(target, { daysBefore, time });
+      }
+    }
+    if(!saveOccasionReminderList(key, list)) showToast(t('occasionReminderInvalid'));
+    else render();
+    return;
+  }
+
   // Leaving the profile edit page with unsaved changes asks first (menu.js).
   if(['open-menu', 'close-menu-overlay', 'menu-back', 'menu-nav'].includes(action) && !leaveProfileEditOk()) return;
 

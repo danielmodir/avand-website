@@ -42,5 +42,10 @@ demo/
   for the partials. Bump it (one find-and-replace across both files) with
   each change, or phones keep the old files for up to 10 minutes after a
   GitHub Pages deploy.
+- Public occasion reminders are opt-in plans in `settings.prefs.occasionReminders`.
+  `js/core/occasions.js` gives each calendar rule a stable key and emits
+  slots from its current date; `js/core/notify.js` feeds the same slots to
+  browser, push and Android schedules. Django stores the plans in the
+  existing settings JSON; PHP keeps them in the synced document.
 - Partials are fetched at runtime, so open the demo over HTTP
   (`npx http-server frontend`), not from `file://`.
