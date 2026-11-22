@@ -47,5 +47,8 @@ demo/
   slots from its current date; `js/core/notify.js` feeds the same slots to
   browser, push and Android schedules. Django stores the plans in the
   existing settings JSON; PHP keeps them in the synced document.
+- Events can carry optional `location` and `meetingUrl` text from the
+  existing popup. The Django adapter maps them to `location` and
+  `meeting_url`; PHP sync keeps the additive event fields as JSON.
 - Partials are fetched at runtime, so open the demo over HTTP
   (`npx http-server frontend`), not from `file://`.

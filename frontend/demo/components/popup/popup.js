@@ -33,6 +33,8 @@ function resetFormDraft(type, existing){
     color: existing ? (existing.color || '') : '', // an event's own colour ('' = the default)
     showInPlanning: existing ? existing.showInPlanning !== false : true,
     showInOccasions: existing ? existing.showInOccasions !== false : true,
+    location: existing ? (existing.location || '') : '',
+    meetingUrl: existing ? (existing.meetingUrl || '') : '',
     description: existing ? (existing.description || '') : '',
     timeMode: existing ? (existing.timeMode || 'single') : 'single',
     // A new item goes on the day picked in the calendar (homeDate), not today.
@@ -138,6 +140,9 @@ function itemDetailsHtml(type, item, day){
     rows.push([ICONS.calendarIcon, (type === 'habit' ? t('detailsFrom') + ' ' : '') + formatDateLabel(date) + (range ? ' – ' + formatDateLabel(item.endDate) : '')]);
   }
   if(item.startTime) rows.push([ICONS.clockIcon, `<span dir="ltr">${itemTimeLabel(item)}</span>`]);
+  if(type === 'event' && item.location) rows.push([ICONS.pinIcon, escapeHtml(item.location)]);
+  if(type === 'event' && safeEventWebUrl(item.meetingUrl)) rows.push([ICONS.linkIcon,
+    `<a href="${escapeAttr(item.meetingUrl)}" target="_blank" rel="noopener noreferrer">${t('eventOpenMeeting')}</a>`]);
   const rep = repeatSummary(item.recurrence);
   if(rep) rows.push([ICONS.repeatIcon, rep]);
   const n = item.notification || {};
@@ -236,7 +241,7 @@ function subtasksListHtml(){
 function formBody(type){
   const parts = [popupIconRow(type)];
   if(type === 'task') parts.push(descriptionBlock());
-  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(eventColorRow(), eventVisibilityRow(), descriptionBlock(false)); } // events: a kind, a description, no photos
+  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(eventColorRow(), eventVisibilityRow(), eventLocationRow(), descriptionBlock(false)); } // events: a kind, a description, no photos
   return parts.join('');
 }
 
@@ -262,6 +267,19 @@ function eventVisibilityRow(){
     <label><input type="checkbox" id="f-show-in-planning" ${formDraft.showInPlanning !== false ? 'checked' : ''}> ${t('planning')}</label>
     <label><input type="checkbox" id="f-show-in-occasions" ${formDraft.showInOccasions !== false ? 'checked' : ''}> ${t('occasionsDesktop')}</label>
   </fieldset>`;
+}
+function safeEventWebUrl(value){
+  if(!value) return false;
+  try { const url = new URL(value); return (url.protocol === 'https:' || url.protocol === 'http:') && !!url.hostname; }
+  catch(e){ return false; }
+}
+function eventLocationRow(){
+  return `<div class="event-location-row">
+    <label for="f-event-location">${t('eventLocation')}</label>
+    <input id="f-event-location" type="text" maxlength="500" value="${escapeAttr(formDraft.location || '')}" placeholder="${t('eventLocationHint')}">
+    <label for="f-event-meeting-url">${t('eventMeetingUrl')}</label>
+    <input id="f-event-meeting-url" type="url" inputmode="url" dir="ltr" maxlength="2048" value="${escapeAttr(formDraft.meetingUrl || '')}" placeholder="https://…">
+  </div>`;
 }
 function applyEventKind(k){
   formDraft.kind = k;
@@ -593,6 +611,8 @@ function wireMainFormInteractivity(){
   document.querySelectorAll('[data-ecolor]').forEach(b => b.addEventListener('click', () => { formDraft.color = b.dataset.ecolor; renderPopupBody(); }));
   document.getElementById('f-show-in-planning')?.addEventListener('change', e => { formDraft.showInPlanning = e.target.checked; });
   document.getElementById('f-show-in-occasions')?.addEventListener('change', e => { formDraft.showInOccasions = e.target.checked; });
+  document.getElementById('f-event-location')?.addEventListener('input', e => { formDraft.location = e.target.value; });
+  document.getElementById('f-event-meeting-url')?.addEventListener('input', e => { formDraft.meetingUrl = e.target.value; });
   document.querySelectorAll('[data-ekind]').forEach(b => b.addEventListener('click', () => { applyEventKind(b.dataset.ekind); renderPopupBody(); }));
   document.querySelectorAll('[data-epreset]').forEach(b => b.addEventListener('click', () => { applyEventPreset(b.dataset.epreset); renderPopupBody(); }));
   document.getElementById('f-challenge')?.addEventListener('change', e => { formDraft.challenge = Number(e.target.value) || 0; });
@@ -848,6 +868,8 @@ function submitPopup(){
     upsert('habits', obj);
     if(!state.editingId) trackEvent('first_habit', true);
   } else if(type === 'event'){
+    const meetingUrl = (formDraft.meetingUrl || '').trim();
+    if(meetingUrl && !safeEventWebUrl(meetingUrl)){ showToast(t('eventMeetingUrlInvalid')); return; }
     const obj = {
       id: state.editingId || uid(),
       title,
@@ -856,6 +878,8 @@ function submitPopup(){
       color: formDraft.color || '',
       showInPlanning: formDraft.showInPlanning !== false,
       showInOccasions: formDraft.showInOccasions !== false,
+      location: (formDraft.location || '').trim().slice(0, 500),
+      meetingUrl,
       timeMode: formDraft.timeMode,
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,

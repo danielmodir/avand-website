@@ -362,6 +362,7 @@
       versions['events:' + row.id] = row.version;
       return {
         id: row.id, title: row.title, description: row.description || '', kind: row.kind || '', color: row.color || '',
+        location: row.location || '', meetingUrl: row.meeting_url || '',
         showInPlanning: row.show_in_planning !== false, showInOccasions: row.show_in_occasions !== false,
         timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
         startTime: row.start_time ? row.start_time.slice(0, 5) : null, endTime: row.end_time ? row.end_time.slice(0, 5) : null,
@@ -550,6 +551,7 @@
       var timed = !!evt.startTime;
       var before = timed && evt.notification && evt.notification.type === 'before';
       return putVersioned('events', evt.id, Object.assign({ title: evt.title, description: evt.description || '', kind: evt.kind || '', color: evt.color || '',
+        location: evt.location || '', meeting_url: evt.meetingUrl || '',
         show_in_planning: evt.showInPlanning !== false, show_in_occasions: evt.showInOccasions !== false, all_day: !timed,
         start_time: timed ? evt.startTime : null, end_time: timed && evt.endTime ? evt.endTime : null },
         datesToApi(evt), recurrenceToApi(evt.recurrence, true),

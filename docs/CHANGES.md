@@ -16,7 +16,7 @@ A request names what it is for; decide which surfaces it touches:
 | Live API (PHP) | backend-php/ → public_html/api/ | lib/*.php per module; schema migrations in lib/bootstrap.php (`if ($v < N)`) |
 | Django API | backend/apps/<module>/ | not deployed; kept in step with PHP (models, migrations, serializers, tests) |
 | API clients | frontend/demo/js/services/api-php.js (live), api.js (Django) | both need the same mapping |
-| Next-version management | docs/next-version/ | audit, 112-row master checklist, implementation plan, decisions, test report and API/data inventory; phased development approved by owner |
+| Next-version management | docs/next-version/ | audit, 113-row master checklist, implementation plan, decisions, test report and API/data inventory; phased development approved by owner |
 
 Checklist per feature: UI (fa + en strings in js/core/i18n.js, both themes,
 360/1280 px) → PHP endpoint + migration → Django model + migration + test →
@@ -55,13 +55,22 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-18.2
+- Demo asset version: 2026-11-22.3
 - PHP schema: v24
-- Django latest migrations: core 0009, planning 0010, social 0003,
+- Django latest migrations: core 0009, planning 0011, social 0003,
   notifications 0003, calendar_data 0002, period 0001
 - Android: 1.4.0 (versionCode 5)
 
 ## Log (newest first)
+
+- 2026-11-22 — web app, PHP event document, Django planning — events now
+  keep an optional manual location and an http(s) meeting link. Both appear
+  in the existing event editor and details popup; the same event record is
+  used in both desks. The PHP sync document retains the additive fields.
+  Django planning 0011 adds two fields and the Django client maps them.
+  Asset version 2026-11-22.3. Node 53/53, Django 96/96, planning migration
+  check and eight browser cases passed; no external browser requests. Map
+  search/coordinates and a live API/Android check remain open. No deployment.
 
 - 2026-11-18 — web app, PHP document settings, Django settings/calendar API —
   optional per-occasion reminders now use the existing browser, push and

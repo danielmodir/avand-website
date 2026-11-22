@@ -276,6 +276,8 @@ class Event(UserOwnedSyncModel, Recurrence, Reminder):
     description = models.TextField(blank=True)
     show_in_planning = models.BooleanField(default=True)
     show_in_occasions = models.BooleanField(default=True)
+    location = models.CharField(max_length=500, blank=True, default="")
+    meeting_url = models.URLField(max_length=2048, blank=True, default="")
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     all_day = models.BooleanField(default=True)

@@ -64,6 +64,11 @@
 .event-visibility-row legend{ color:var(--text-muted); font-size:12px; font-weight:700; padding:0 4px; }
 .event-visibility-row label{ display:flex; align-items:center; gap:6px; min-height:44px; font-size:13px; cursor:pointer; }
 .event-visibility-row input{ accent-color:var(--primary); width:18px; height:18px; }
+.event-location-row{ display:grid; gap:var(--space-2); margin-bottom:var(--space-4); }
+.event-location-row label{ color:var(--text-muted); font-size:12px; font-weight:700; }
+.event-location-row input{ width:100%; min-width:0; min-height:44px; padding:var(--space-2) var(--space-3); border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--card); color:var(--text); font:inherit; }
+.event-location-row input:focus-visible{ outline:2px solid var(--focus-ring); outline-offset:2px; }
+.details-row a{ color:var(--primary-text); text-decoration:underline; overflow-wrap:anywhere; }
 .popup-icon-btn{ flex:0 0 auto; width:46px; height:46px; border-radius:14px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
 .popup-icon-btn svg{ width:18px; height:18px; }
 .popup-icon-btn.set{ color:var(--primary-text); background:transparent; border-color:transparent; }
