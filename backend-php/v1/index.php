@@ -6,7 +6,9 @@ declare(strict_types=1);
 
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/auth.php';
+require __DIR__ . '/../lib/google_oauth.php';
 require __DIR__ . '/../lib/sync.php';
+require __DIR__ . '/../lib/task-shares.php';
 require __DIR__ . '/../lib/mail.php';
 require __DIR__ . '/../lib/admin.php';
 require __DIR__ . '/../lib/admin_users.php';
@@ -35,7 +37,10 @@ $path = preg_replace('#^.*?/api/v1#', '', $path) ?: '/';
 $routes = [
     'GET /health'               => function () { tj_db(); tj_json(['ok' => true, 'backend' => 'php']); },
     'POST /stats'               => 'tj_stats_post',        // anonymous, opt-in counts (lib/stats.php)
-    'GET /auth/providers'       => function () { tj_json(['password' => true, 'google' => false]); },
+    'GET /auth/providers'       => function () { tj_json(['password' => true, 'google' => tj_google_enabled()]); },
+    'GET /auth/google/start'    => 'tj_google_start',
+    'GET /auth/google/callback' => 'tj_google_callback',
+    'POST /auth/google/exchange' => 'tj_google_exchange',
     'POST /auth/register'       => 'tj_register',
     'POST /auth/login'          => 'tj_login',
     'POST /auth/refresh'        => 'tj_refresh',
@@ -57,6 +62,8 @@ $routes = [
     'GET /social/invite'        => 'tj_social_invite',
     'POST /social/invite/reset' => 'tj_social_invite_reset',
     'POST /social/invite/accept'=> 'tj_social_invite_accept',
+    'GET /social/task-shares' => 'tj_task_shares_list',
+    'POST /social/task-shares' => 'tj_task_shares_save',
     'GET /groups'               => 'tj_groups_list',
     'POST /groups'              => 'tj_group_create',
     'POST /groups/join'         => 'tj_group_join',
@@ -157,14 +164,21 @@ if (preg_match('#^/social/(connections|blocks)/([a-f0-9]{32})(?:/(request|respon
     tj_fail(405, 'method_not_allowed');
 }
 
+if (preg_match('#^/social/task-shares/([a-f0-9]{32})$#', $path, $m)) {
+    if ($method === 'PATCH') tj_task_share_edit($m[1]);
+    if ($method === 'DELETE') tj_task_share_revoke($m[1]);
+    tj_fail(405, 'method_not_allowed');
+}
+
 // Group planning (lib/groups.php): /groups/<id>[/leave|/invite/reset] and
 // /groups/<id>/items/<item id>[/marks].
-if (preg_match('#^/groups/([a-f0-9]{32})(?:/(leave|invite/reset)|/items/([A-Za-z0-9-]{8,64})(/marks)?)?$#', $path, $m)) {
-    $act = $m[2] ?? ''; $item = $m[3] ?? ''; $marks = !empty($m[4]);
+if (preg_match('#^/groups/([a-f0-9]{32})(?:/(leave|invite/reset)|/items/([A-Za-z0-9-]{8,64})(/marks|/progress)?)?$#', $path, $m)) {
+    $act = $m[2] ?? ''; $item = $m[3] ?? ''; $suffix = $m[4] ?? '';
     if ($item !== '') {
-        if ($marks && $method === 'PUT') tj_group_item_mark($m[1], $item);
-        if (!$marks && $method === 'PUT') tj_group_item_put($m[1], $item);
-        if (!$marks && $method === 'DELETE') tj_group_item_delete($m[1], $item);
+        if ($suffix === '/progress' && $method === 'PUT') tj_group_item_progress($m[1], $item);
+        if ($suffix === '/marks' && $method === 'PUT') tj_group_item_mark($m[1], $item);
+        if ($suffix === '' && $method === 'PUT') tj_group_item_put($m[1], $item);
+        if ($suffix === '' && $method === 'DELETE') tj_group_item_delete($m[1], $item);
     } elseif ($act === 'leave') {
         if ($method === 'POST') tj_group_leave($m[1]);
     } elseif ($act === 'invite/reset') {

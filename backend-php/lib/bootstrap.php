@@ -480,6 +480,41 @@ function tj_migrate(PDO $db): void {
         )$tail");
         $db->exec('INSERT INTO tj_schema (version) VALUES (24)');
     }
+    if ($v < 25) {
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_supergroups (
+            group_id $fk NOT NULL PRIMARY KEY,
+            FOREIGN KEY (group_id) REFERENCES tj_groups(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_group_task_workflows (
+            item_id $fk NOT NULL PRIMARY KEY,
+            assignee_id $fk NULL,
+            progress VARCHAR(12) NOT NULL DEFAULT 'not_started',
+            FOREIGN KEY (item_id) REFERENCES tj_group_items(id) ON DELETE CASCADE,
+            FOREIGN KEY (assignee_id) REFERENCES tj_users(id) ON DELETE SET NULL
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (25)');
+    }
+    if ($v < 27) {
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_task_grants (
+            id CHAR(32) PRIMARY KEY, connection_id $fk NOT NULL,
+            owner_id $fk NOT NULL, recipient_id $fk NOT NULL,
+            task_id VARCHAR(80) NOT NULL, role VARCHAR(6) NOT NULL,
+            UNIQUE(owner_id, recipient_id, task_id),
+            FOREIGN KEY(connection_id) REFERENCES tj_connections(id) ON DELETE CASCADE,
+            FOREIGN KEY(owner_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY(recipient_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (27)');
+    }
+    if ($v < 28) {
+        // One verified Google subject per account; existing users remain untouched.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_google_accounts (
+            user_id $fk NOT NULL PRIMARY KEY,
+            subject_hash CHAR(64) NOT NULL UNIQUE,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (28)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

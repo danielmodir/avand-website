@@ -20,9 +20,10 @@ function tj_group_color($c): ?string {
 }
 
 /* The group by public id, with my membership row; 404 if I'm not in it. */
-function tj_group_mine(array $me, string $publicId): array {
+function tj_group_mine(array $me, string $publicId, bool $lock = false): array {
     if (!preg_match('/^[a-f0-9]{32}$/', $publicId)) tj_fail(404, 'not_found');
-    $q = tj_db()->prepare('SELECT g.*, m.color AS my_color, m.role AS my_role FROM tj_groups g JOIN tj_group_members m ON m.group_id = g.id AND m.user_id = ? WHERE g.public_id = ?');
+    $lockSql = $lock && tj_driver() !== 'sqlite' ? ' FOR UPDATE' : '';
+    $q = tj_db()->prepare('SELECT g.*, s.group_id AS supergroup, m.color AS my_color, m.role AS my_role FROM tj_groups g JOIN tj_group_members m ON m.group_id = g.id LEFT JOIN tj_supergroups s ON s.group_id = g.id WHERE m.user_id = ? AND g.public_id = ?' . $lockSql);
     $q->execute([$me['id'], $publicId]);
     $g = $q->fetch();
     if (!$g) tj_fail(404, 'not_found');
@@ -83,7 +84,7 @@ function tj_group_add_member(int $groupId, int $userId, string $color): void {
 function tj_groups_payload(array $me): array {
     $db = tj_db();
     $uid = (int)$me['id'];
-    $q = $db->prepare('SELECT g.*, m.color AS my_color, m.role AS my_role FROM tj_groups g JOIN tj_group_members m ON m.group_id = g.id WHERE m.user_id = ? ORDER BY m.joined_at');
+    $q = $db->prepare('SELECT g.*, s.group_id AS supergroup, m.color AS my_color, m.role AS my_role FROM tj_groups g JOIN tj_group_members m ON m.group_id = g.id LEFT JOIN tj_supergroups s ON s.group_id = g.id WHERE m.user_id = ? ORDER BY m.joined_at');
     $q->execute([$uid]);
     $groups = [];
     $byId = [];
@@ -92,6 +93,7 @@ function tj_groups_payload(array $me): array {
         $byId[(int)$g['id']] = $g['public_id'];
         $groups[(int)$g['id']] = [
             'id' => $g['public_id'], 'name' => $g['name'], 'color' => $g['my_color'],
+            'group_type' => $g['supergroup'] ? 'supergroup' : 'ordinary',
             'owner' => $owner, 'admin' => $g['my_role'] === 'admin', 'token' => $g['invite_token'], 'members' => [],
         ];
     }
@@ -109,7 +111,7 @@ function tj_groups_payload(array $me): array {
         ];
     }
     $items = [];
-    $iq = $db->query("SELECT i.*, u.public_id AS by_public FROM tj_group_items i LEFT JOIN tj_users u ON u.id = i.created_by WHERE i.group_id IN ($in) ORDER BY i.id");
+    $iq = $db->query("SELECT i.*, u.public_id AS by_public, a.public_id AS assignee, w.progress FROM tj_group_items i LEFT JOIN tj_users u ON u.id = i.created_by LEFT JOIN tj_group_task_workflows w ON w.item_id = i.id LEFT JOIN tj_users a ON a.id = w.assignee_id WHERE i.group_id IN ($in) ORDER BY i.id");
     $rows = $iq->fetchAll();
     $marks = [];
     if ($rows) {
@@ -126,6 +128,7 @@ function tj_groups_payload(array $me): array {
         $items[] = [
             'id' => $r['item_id'], 'group' => $byId[(int)$r['group_id']], 'kind' => $r['kind'],
             'data' => json_decode((string)$r['data'], true) ?: new stdClass(), 'done_mode' => $r['done_mode'],
+            'assignee' => $r['assignee'], 'progress' => $r['progress'],
             'by' => $r['by_public'], 'mine' => (int)$r['created_by'] === $uid,
             'marks' => $marks[(int)$r['id']] ?? [],
         ];
@@ -146,6 +149,8 @@ function tj_group_create(): void {
     if ($name === '') tj_fail(400, 'validation_error', ['fields' => ['name' => ['required']]]);
     $color = tj_group_color($b['color'] ?? null);
     if (!$color) tj_fail(400, 'validation_error', ['fields' => ['color' => ['invalid']]]);
+    $groupType = $b['group_type'] ?? 'ordinary';
+    if (!in_array($groupType, ['ordinary', 'supergroup'], true)) tj_fail(400, 'validation_error');
     $friends = tj_group_friend_ids($me, $b['members'] ?? []);
     if (count($friends) + 1 > TJ_GROUP_MEMBERS_MAX) tj_fail(400, 'too_many', ['max' => TJ_GROUP_MEMBERS_MAX]);
     if (tj_group_count_for((int)$me['id']) >= TJ_GROUPS_MAX) tj_fail(429, 'too_many_groups', ['max' => TJ_GROUPS_MAX]);
@@ -156,6 +161,9 @@ function tj_group_create(): void {
         $db->prepare('INSERT INTO tj_groups (public_id, name, owner_id, invite_token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
             ->execute([$pid, $name, $me['id'], tj_group_new_token(), tj_now(), tj_now()]);
         $gid = (int)$db->lastInsertId();
+        if ($groupType === 'supergroup') {
+            $db->prepare('INSERT INTO tj_supergroups (group_id) VALUES (?)')->execute([$gid]);
+        }
         tj_group_add_member($gid, (int)$me['id'], $color);
         // Friends start with the same color; each can change their own.
         foreach ($friends as $f) if (tj_group_count_for($f) < TJ_GROUPS_MAX) tj_group_add_member($gid, $f, $color);
@@ -226,6 +234,7 @@ function tj_group_drop_member(int $groupId, int $userId): void {
     $db = tj_db();
     $db->prepare('DELETE FROM tj_group_marks WHERE user_id = ? AND item_id IN (SELECT id FROM tj_group_items WHERE group_id = ?)')->execute([$userId, $groupId]);
     $db->prepare('DELETE FROM tj_group_members WHERE group_id = ? AND user_id = ?')->execute([$groupId, $userId]);
+    $db->prepare('UPDATE tj_group_task_workflows SET assignee_id = NULL WHERE assignee_id = ? AND item_id IN (SELECT id FROM tj_group_items WHERE group_id = ?)')->execute([$userId, $groupId]);
 }
 
 /* DELETE /groups/<id> — owner only; everything in it goes. */
@@ -253,7 +262,10 @@ function tj_group_leave(string $publicId): void {
     $me = tj_require_user();
     $g = tj_group_mine($me, $publicId);
     if (tj_group_is_owner($g, $me)) tj_fail(400, 'owner_cannot_leave');
+    $db = tj_db();
+    tj_tx_begin($db);
     tj_group_drop_member((int)$g['id'], (int)$me['id']);
+    tj_tx_commit($db);
     tj_json(tj_groups_payload($me));
 }
 
@@ -306,7 +318,9 @@ function tj_group_item_id(string $itemId): string {
  * adds; the one who made it (or the owner) edits. */
 function tj_group_item_put(string $publicId, string $itemId): void {
     $me = tj_require_user();
-    $g = tj_group_mine($me, $publicId);
+    $db = tj_db();
+    tj_tx_begin($db);
+    $g = tj_group_mine($me, $publicId, true);
     $itemId = tj_group_item_id($itemId);
     $b = tj_body();
     $kind = (string)($b['kind'] ?? '');
@@ -316,10 +330,22 @@ function tj_group_item_put(string $publicId, string $itemId): void {
     $mode = ($b['done_mode'] ?? 'each') === 'shared' ? 'shared' : 'each';
     $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if (strlen($json) > TJ_GROUP_ITEM_BYTES) tj_fail(413, 'too_large');
-    $db = tj_db();
     $row = tj_group_item($g, $itemId);
+    $workflow = $g['supergroup'] && $kind === 'task';
+    if (array_key_exists('progress', $b) || (!$workflow && array_key_exists('assignee', $b))) tj_fail(400, 'validation_error');
+    if ($workflow && !tj_group_can_add($g, $me)) tj_fail(403, 'not_admin');
+    $setAssignee = $workflow && (!$row || array_key_exists('assignee', $b));
+    if ($setAssignee) {
+        $pid = $b['assignee'] ?? null;
+        if (!is_string($pid)) tj_fail(400, 'invalid_assignee');
+        $lock = tj_driver() !== 'sqlite' ? ' FOR UPDATE' : '';
+        $q = $db->prepare('SELECT m.user_id FROM tj_group_members m JOIN tj_users u ON u.id = m.user_id WHERE m.group_id = ? AND u.public_id = ?' . $lock);
+        $q->execute([$g['id'], $pid]);
+        $assignee = $q->fetchColumn();
+        if (!$assignee) tj_fail(400, 'invalid_assignee');
+    }
     if ($row) {
-        if ((int)$row['created_by'] !== (int)$me['id'] && !tj_group_is_owner($g, $me)) tj_fail(403, 'not_yours');
+        if (!$workflow && (int)$row['created_by'] !== (int)$me['id'] && !tj_group_is_owner($g, $me)) tj_fail(403, 'not_yours');
         if ($row['kind'] !== $kind) tj_fail(400, 'validation_error', ['fields' => ['kind' => ['invalid']]]);
         $db->prepare('UPDATE tj_group_items SET data = ?, done_mode = ?, updated_at = ? WHERE id = ?')->execute([$json, $mode, tj_now(), $row['id']]);
     } else {
@@ -333,6 +359,11 @@ function tj_group_item_put(string $publicId, string $itemId): void {
         $db->prepare('INSERT INTO tj_group_items (group_id, item_id, kind, data, done_mode, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
             ->execute([$g['id'], $itemId, $kind, $json, $mode, $me['id'], tj_now(), tj_now()]);
     }
+    if ($setAssignee) {
+        if ($row) $db->prepare('UPDATE tj_group_task_workflows SET assignee_id = ? WHERE item_id = ?')->execute([$assignee, $row['id']]);
+        else $db->prepare('INSERT INTO tj_group_task_workflows (assignee_id, item_id) VALUES (?, ?)')->execute([$assignee, $db->lastInsertId()]);
+    }
+    tj_tx_commit($db);
     tj_json(['ok' => true]);
 }
 
@@ -342,7 +373,9 @@ function tj_group_item_delete(string $publicId, string $itemId): void {
     $g = tj_group_mine($me, $publicId);
     $row = tj_group_item($g, tj_group_item_id($itemId));
     if (!$row) tj_json(['ok' => true]);
-    if ((int)$row['created_by'] !== (int)$me['id'] && !tj_group_is_owner($g, $me)) tj_fail(403, 'not_yours');
+    if ($g['supergroup'] && $row['kind'] === 'task') {
+        if (!tj_group_can_add($g, $me)) tj_fail(403, 'not_admin');
+    } elseif ((int)$row['created_by'] !== (int)$me['id'] && !tj_group_is_owner($g, $me)) tj_fail(403, 'not_yours');
     $db = tj_db();
     $db->prepare('DELETE FROM tj_group_marks WHERE item_id = ?')->execute([$row['id']]);
     $db->prepare('DELETE FROM tj_group_items WHERE id = ?')->execute([$row['id']]);
@@ -357,6 +390,7 @@ function tj_group_item_mark(string $publicId, string $itemId): void {
     $row = tj_group_item($g, tj_group_item_id($itemId));
     if (!$row) tj_fail(404, 'not_found');
     $b = tj_body();
+    if ($g['supergroup'] && $row['kind'] === 'task') tj_fail(400, 'use_task_progress');
     $key = (string)($b['key'] ?? '');
     if (!preg_match('/^(\d{4}-\d{2}-\d{2}|once)(:[A-Za-z0-9-]{8,64})?$/', $key)) tj_fail(400, 'validation_error', ['fields' => ['key' => ['invalid']]]);
     $status = $b['status'] ?? null;
@@ -369,5 +403,22 @@ function tj_group_item_mark(string $publicId, string $itemId): void {
         $db->prepare('INSERT INTO tj_group_marks (item_id, user_id, mark_key, status, updated_at) VALUES (?, ?, ?, ?, ?)')
             ->execute([$row['id'], $me['id'], $key, $status, tj_now()]);
     }
+    tj_json(['ok' => true]);
+}
+
+function tj_group_item_progress(string $publicId, string $itemId): void {
+    $me = tj_require_user();
+    $db = tj_db();
+    tj_tx_begin($db);
+    $g = tj_group_mine($me, $publicId, true);
+    $row = tj_group_item($g, tj_group_item_id($itemId));
+    if (!$row || !$g['supergroup'] || $row['kind'] !== 'task') tj_fail(404, 'not_found');
+    $q = $db->prepare('SELECT assignee_id FROM tj_group_task_workflows WHERE item_id = ?');
+    $q->execute([$row['id']]);
+    if ((int)$q->fetchColumn() !== (int)$me['id']) tj_fail(403, 'not_assignee');
+    $progress = tj_body()['progress'] ?? null;
+    if (!in_array($progress, ['not_started', 'in_progress', 'done'], true)) tj_fail(400, 'validation_error');
+    $db->prepare('UPDATE tj_group_task_workflows SET progress = ? WHERE item_id = ?')->execute([$progress, $row['id']]);
+    tj_tx_commit($db);
     tj_json(['ok' => true]);
 }

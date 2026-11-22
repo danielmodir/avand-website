@@ -19,6 +19,7 @@ backend/
     period/                encrypted (envelope encryption, crypto-shredding)
     social/                connections, invites, abuse reports
     notifications/         push devices, quiet hours (inactive until the app exists)
+    finance/               owner-scoped accounts, cards and atomic toman ledger (foundation only)
 ```
 
 ## Run locally

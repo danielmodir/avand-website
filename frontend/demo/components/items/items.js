@@ -37,10 +37,15 @@ function findTaskOrSub(id){
    day-summary dot and chart, the calendar dots and the full-screen chips.
    state.settings.itemColors = { task, habit, event }: '#RRGGBB', or
    missing for the default (tasks: the theme's own primary). */
-const ITEM_COLOR_DEFAULTS = { task: null, habit: '#4CC38A', event: '#D9B65C' };
+const ITEM_COLOR_DEFAULTS = { task: null, habit: null, event: null };
 const ITEM_COLOR_CHOICES = ['#EB7D00', '#E5484D', '#E93D82', '#8E4EC6', '#3E63DD', '#0EA5B7', '#30A46C', '#D9B65C'];
 
-function itemColor(kind){ return state.settings.itemColors?.[kind] || ITEM_COLOR_DEFAULTS[kind]; }
+function itemColor(kind){
+  const custom = state.settings.itemColors?.[kind];
+  if(custom) return custom;
+  const token = { task: '--primary', habit: '--success', event: '--warning' }[kind];
+  return token ? getComputedStyle(document.documentElement).getPropertyValue(token).trim() : null;
+}
 
 /* --task-color etc. on #device (defaults in items.css); called by render(). */
 function applyItemColors(){
@@ -50,7 +55,7 @@ function applyItemColors(){
     if(c) dev.style.setProperty(`--${k}-color`, c); else dev.style.removeProperty(`--${k}-color`);
     // Text/tick on that color: dark on light colors, white on dark ones.
     const hex = c || ITEM_COLOR_DEFAULTS[k];
-    if(hex) dev.style.setProperty(`--${k}-on`, colorIsLight(hex) ? '#1A1708' : '#FFFFFF'); else dev.style.removeProperty(`--${k}-on`);
+    if(hex) dev.style.setProperty(`--${k}-on`, AppThemes.contrast(hex, '#141414') >= AppThemes.contrast(hex, '#FFFFFF') ? '#141414' : '#FFFFFF'); else dev.style.removeProperty(`--${k}-on`);
   });
 }
 
@@ -69,6 +74,7 @@ function colorIsLight(hex){
 function isRecurringTask(task){ return !!task.recurrence?.mode; }
 
 function taskStatusOn(task, key){
+  if(task.groupProgress) return task.groupProgress === 'done' ? 'done' : null;
   const set = !isRecurringTask(task) ? (task.done ? 'done' : task.skipped ? 'not_done' : null) : (task.statusByDate?.[key] || null);
   // Not ticked and its time is over: "not done" by itself (it can still be
   // ticked as done afterwards — an explicit status always wins).
@@ -126,7 +132,7 @@ function taskRow(task, key){
   return `<div class="swipe-wrap task-wrap ${open?'subs-open':''} ${sel?'is-selected':''}" data-swipe-type="task" data-swipe-id="${task.id}"${groupStyleAttr(task)}>
     <div class="swipe-delete-bg">${ICONS.trash}</div>
     <div class="item-card task-row ${subs.length?'has-subtasks':''} ${done?'done':''} ${skipped?'skipped':''} ${sel?'is-selected':''}" data-select-type="task" data-select-id="${task.id}">
-      <div class="checkbox ${done?'checked':''} ${skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" data-date="${key}" role="checkbox" aria-checked="${done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${done?ICONS.check:skipped?ICONS.close:''}</div>
+      ${task.groupProgress ? groupProgressControl(task) : `<div class="checkbox ${done?'checked':''} ${skipped?'skipped':''}" data-action="toggle-task" data-id="${task.id}" data-date="${key}" role="checkbox" aria-checked="${done}" aria-label="${escapeAttr(task.title)}" tabindex="0">${done?ICONS.check:skipped?ICONS.close:''}</div>`}
       <div class="task-title-wrap" data-action="view-item" data-type="task" data-id="${task.id}">
         <p class="item-title">${escapeHtml(task.title)}</p>
         ${task.startTime ? `<span class="item-time" dir="ltr">${itemTimeLabel(task)}</span>` : ''}
@@ -147,7 +153,7 @@ function subtaskRow(task, s){
   const title = subTitle(s);
   const sel = isSelected('subtask', s.id);
   return `<div class="subtask-row ${s.done?'done':''} ${s.skipped?'skipped':''} ${sel?'is-selected':''}" data-task-id="${task.id}" data-sub-id="${s.id}" data-select-type="subtask" data-select-id="${s.id}">
-    <div class="checkbox ${s.done?'checked':''} ${s.skipped?'skipped':''}" data-action="toggle-subtask" data-task-id="${task.id}" data-sub-id="${s.id}" role="checkbox" aria-checked="${!!s.done}" aria-label="${escapeAttr(title)}" tabindex="0">${s.done?ICONS.check:s.skipped?ICONS.close:''}</div>
+    ${task.groupProgress ? '' : `<div class="checkbox ${s.done?'checked':''} ${s.skipped?'skipped':''}" data-action="toggle-subtask" data-task-id="${task.id}" data-sub-id="${s.id}" role="checkbox" aria-checked="${!!s.done}" aria-label="${escapeAttr(title)}" tabindex="0">${s.done?ICONS.check:s.skipped?ICONS.close:''}</div>`}
     <p class="item-title" data-action="view-item" data-type="task" data-id="${s.id}">${escapeHtml(title)}</p>
   </div>`;
 }
@@ -369,7 +375,7 @@ function applyQuicksetState(cb, wantDone, markSkipped){
   if((wantDone || isSkipped) && day && day > dateKey(today)){ showToast(t('futureNotYet')); haptic(20); return; }
   if(action === 'toggle-task'){
     const task = state.tasks.find(x => x.id === cb.dataset.id);
-    if(!task) return;
+    if(!task || task.groupProgress) return;
     setTaskStatusOn(task, cb.dataset.date, wantDone ? 'done' : isSkipped ? 'not_done' : null);
     // A one-off parent and its subtasks move together. A repeating parent
     // is ticked per day while its (one-off) subtasks keep their own state.
@@ -380,7 +386,7 @@ function applyQuicksetState(cb, wantDone, markSkipped){
   } else if(action === 'toggle-subtask'){
     const task = state.tasks.find(x => x.id === cb.dataset.taskId);
     const sub = task?.subtasks?.find(s => s.id === cb.dataset.subId);
-    if(!sub) return;
+    if(!sub || task.groupProgress) return;
     sub.done = wantDone; sub.skipped = isSkipped;
     if(!isRecurringTask(task)){
       task.done = task.subtasks.every(s => s.done);
@@ -402,6 +408,8 @@ function applyQuicksetState(cb, wantDone, markSkipped){
     if(habit.groupId) groupMarkHabit(habit, dk); else cloudSync(() => Cloud.saveHabit(habit));
     paintCheckbox(cb, wantDone, isSkipped);
   } else return;
+  syncAndroidSchedule(false);
+  syncPushSchedule(false);
   updateDayStatsInPlace();
 }
 
@@ -440,7 +448,7 @@ function syncTaskDom(task){
 const LONG_PRESS_MS = 450;
 
 function selectableFrom(target){
-  if(target.closest('.star-mini, .subtask-toggle, .row-context-menu, .group-add-item, .habit-tracker')) return null;
+  if(target.closest('.star-mini, .subtask-toggle, .row-context-menu, .group-add-item, .habit-tracker, .group-progress')) return null;
   return target.closest('[data-select-type]');
 }
 
@@ -479,8 +487,8 @@ function showRowContextMenu(el, point){
   menu.innerHTML = groupEntries
     ? groupEntries.map((e, i) => `<button type="button" role="menuitem" data-ctx="group" data-i="${i}" class="${e.danger ? 'danger' : ''}">${e.icon}${escapeHtml(e.label)}</button>`).join('')
     : `
-    <button type="button" role="menuitem" data-ctx="done">${ICONS.check}${t('qsDone')}</button>
-    <button type="button" role="menuitem" data-ctx="undone">${ICONS.close}${t('qsUndone')}</button>
+    ${owner?.groupProgress ? `<button type="button" role="menuitem" data-ctx="view">${t('groupProgress')}</button>` : `<button type="button" role="menuitem" data-ctx="done">${ICONS.check}${t('qsDone')}</button>
+    <button type="button" role="menuitem" data-ctx="undone">${ICONS.close}${t('qsUndone')}</button>`}
     ${type === 'habit' && habitTracker(owner) ? `<button type="button" role="menuitem" data-ctx="reset">${ICONS.repeatIcon}${t('trackerReset')}</button>` : ''}
     ${editable ? `<button type="button" role="menuitem" data-ctx="edit">${ICONS.pencilIcon}${t('editBtn')}</button>
     <button type="button" role="menuitem" data-ctx="delete" class="danger">${ICONS.trash}${t('deleteBtn')}</button>` : ''}
@@ -513,7 +521,8 @@ function runItemMenuAction(el, action){
   const type = el.dataset.selectType, id = el.dataset.selectId;
   const cb = el.querySelector('.checkbox[data-action]');
   clearSelection();
-  if(action === 'done' && cb) applyQuicksetState(cb, true);
+  if(action === 'view') openItemDetails('task', id, el);
+  else if(action === 'done' && cb) applyQuicksetState(cb, true);
   else if(action === 'undone' && cb) applyQuicksetState(cb, false, true);
   else if(action === 'reset' && cb) habitTrackerReset(id, cb.dataset.date); // counter / timer back to zero (js/core/trackers.js)
   else if(action === 'edit'){

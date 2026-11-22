@@ -103,7 +103,7 @@
 
 | ID | Feature | Description | Priority | Status | Frontend | Backend | Database | Testing | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| NV-06-01 | ثبت‌نام Google | ساخت حساب با Google و تکمیل اطلاعات اجباری با جریان امن | P1 | [ ] Not Started | P | PHP:N / DJ:P | PHP:N / DJ:E | Pending | GOOGLE/AUTH؛ 00-03/05؛ OAuth واقعی آزموده نشده |
+| NV-06-01 | ثبت‌نام Google | ساخت حساب با Google و تکمیل اطلاعات اجباری با جریان امن | P1 | [ ] In Progress | P | PHP:P / DJ:P | PHP:P / DJ:E | Node PASS; PHP/live pending | GOOGLE/AUTH؛ 2026-11-22: PHP router/client wired, schema v28; provider credentials, live callback and Android handoff unverified؛ 00-03/05 |
 | NV-06-02 | ورود Google | ورود و اتصال حساب بدون ساخت حساب تکراری و بازگشت امن به اپ | P1 | [ ] Not Started | P | PHP:N / DJ:P | PHP:N / DJ:E | Pending | GOOGLE/AUTH؛ 06-01؛ WebView نیازمند جریان سیستم |
 | NV-06-03 | توسعهٔ موبایل | تکمیل Android فعلی و دامنهٔ پلتفرم مصوب، OTA سازگار و دادهٔ محفوظ | P1 | [ ] Not Started | P | PHP:E / DJ:P | P | Pending | NATIVE؛ D11؛ فعلاً Android 1.4.0 |
 | NV-06-04 | هماهنگی بین پلتفرم‌ها | پایداری داده/مجوز/تنظیم بین وب و موبایل و چند دستگاه | P0 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | SYNC؛ 00-02/03/04؛ D22 |

@@ -7,6 +7,7 @@ const DEFAULT_PREFS = {
   weekendSunday:false, weekendMonday:false, weekendTuesday:false, weekendWednesday:false,
   weekendThursday:false, weekendFriday:false, weekendSaturday:false,
   planningDaySummary: true, planningCalendarDots: true, planningShowEvents: true, planningShowHabits: true,
+  habitDeskView: 'daily',
   occasionsEnabled: true, occasionsJalali: true, occasionsHijri: true, occasionsGregorian: true,
   occasionsHolidaysOnly: false, occasionsMarkHolidays: true, occasionsShowEvents: true,
   notifyOverdue: true, // one reminder when a task turns "not done" (js/core/notify.js)
@@ -18,7 +19,7 @@ const DEFAULT_PREFS = {
   prayerNotify: false, // a reminder at dawn, noon and maghrib adhan
 };
 /* The one text preference: the prayer-times city (an id in PRAYER_CITIES). */
-/* The other text preferences: prayer city, accent colour. */
+/* Prayer city is a text preference. */
 function prayerCityId(){ return (state.settings.prefs || {}).prayerCity || 'tehran'; }
 function pref(key){
   const p = state.settings.prefs || {};
@@ -35,41 +36,14 @@ function loadLocalPrefs(){
   try{ Object.assign(state.settings.prefs, JSON.parse(localStorage.getItem('toojibee-prefs') || '{}')); }catch(e){}
 }
 
-/* Theme = palette (Toojibee olive/orange or Classic navy/orange) x mode
-   (dark/light). The day/night button only flips the mode, inside the
-   chosen palette. Both are cached locally so the first paint is right
-   (index.html's inline script) and saved to the account when signed in. */
-const THEME_COLOR = {
-  toojibee: { dark:'#1A1708', light:'#F7F3DA' },
-  classic:  { dark:'#000000', light:'#E5E5E5' },
-};
-/* Accent colours unlocked by friends (Phase 3.12): orange always, teal with
-   the first friend, rose with the third; once unlocked they stay (this device). */
-const ACCENTS = [['orange', 0], ['teal', 1], ['rose', 3]];
-const ACCENT_KEY = 'toojibee-accents-v1';
-function friendCount(){ return (state.connections || []).filter(c => c.status === 'accepted').length; }
-function accentUnlocked(id){
-  const need = (ACCENTS.find(a => a[0] === id) || [0, 99])[1];
-  if(friendCount() >= need) return true;
-  try{ return (JSON.parse(localStorage.getItem(ACCENT_KEY)) || []).includes(id); }catch(e){ return false; }
-}
-function rememberUnlockedAccents(){
-  const open = ACCENTS.filter(a => friendCount() >= a[1]).map(a => a[0]);
-  try{ const had = JSON.parse(localStorage.getItem(ACCENT_KEY)) || []; localStorage.setItem(ACCENT_KEY, JSON.stringify([...new Set(had.concat(open))])); }catch(e){}
-}
-function currentAccent(){ const a = (state.settings.prefs || {}).accent || 'orange'; return a !== 'orange' && accentUnlocked(a) ? a : ''; }
-
+/* Apply the central palette without replacing page state or component DOM. */
 function applyAppearance(){
-  const root = document.documentElement;
-  const palette = state.settings.palette === 'classic' ? 'classic' : 'toojibee';
-  if(state.settings.theme === 'light' || state.settings.theme === 'dark') root.setAttribute('data-theme', state.settings.theme);
-  root.setAttribute('data-palette', palette);
-  root.setAttribute('data-accent', palette === 'toojibee' ? currentAccent() : ''); // css/palette-accents.css
-  const mode = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-  try{ localStorage.setItem('toojibee-palette', palette); localStorage.setItem('toojibee-theme', mode); }catch(e){}
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[palette][mode]);
-  if(androidApp) androidApp.setBars(THEME_COLOR[palette][mode], mode === 'light'); // js/core/android.js
-  if(typeof applyBanner === 'function') applyBanner(); // day/night header picture
+  const result = AppThemes.apply(state.settings.palette, state.settings.theme);
+  state.settings.palette = result.id;
+  state.settings.theme = result.appearance;
+  if(state.settings.prefs) delete state.settings.prefs.accent;
+  if(androidApp) androidApp.setBars(result.background, result.mode === 'light');
+  if(typeof applyBanner === 'function') applyBanner();
 }
 
 /* Day <-> night as one movement, not every part fading on its own clock:
@@ -89,7 +63,7 @@ function switchThemeAnimated(x, y, apply){
     vt.ready.then(() => {
       const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
       root.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
-        { duration: 650, easing: 'cubic-bezier(.4,0,.2,1)', pseudoElement: '::view-transition-new(root)' });
+        { duration: 180, easing: 'cubic-bezier(.4,0,.2,1)', pseudoElement: '::view-transition-new(root)' });
     }).catch(() => {});
     vt.finished.then(done, done);
     return;
@@ -153,7 +127,7 @@ function showLanguageLoading(newLang){
     el = document.createElement('div');
     el.id = 'lang-loading';
     el.className = 'lang-loading';
-    el.innerHTML = '<div class="brand-loader" aria-hidden="true"><svg viewBox="0 0 112 112"><circle class="track" cx="56" cy="56" r="50"/><circle class="arc" cx="56" cy="56" r="50"/></svg><img src="../assets/icons/logo.svg?v=tj5" alt=""></div>';
+    el.innerHTML = '<div class="brand-loader" aria-hidden="true"><img data-theme-logo="splash" src="'+AppThemes.logoUrl(document.documentElement.dataset.palette,document.documentElement.dataset.theme,'splash')+'" alt=""></div>';
     document.getElementById('device').appendChild(el);
   }
   requestAnimationFrame(() => el.classList.add('show'));

@@ -1,3 +1,4 @@
+import hashlib
 import re
 from datetime import timedelta
 from unittest import mock
@@ -213,15 +214,16 @@ class ProfileAndSettingsTests(ApiTestCase):
     def test_palette_and_preferences_merge_and_validate(self):
         client = self.register()
         first = client.get("/api/v1/me/settings").json()
-        self.assertEqual(first["palette"], "toojibee")
+        self.assertEqual(first["palette"], "sustainable-tangerine")
         self.assertTrue(first["preferences"]["planning_day_summary"])  # defaults are filled in
-        ok = client.patch("/api/v1/me/settings", {"palette": "classic", "preferences": {"occasions_hijri": False}, "version": first["version"]}, format="json")
+        ok = client.patch("/api/v1/me/settings", {"palette": "midnight-luxe", "theme": "dark", "preferences": {"occasions_hijri": False}, "version": first["version"]}, format="json")
         self.assertEqual(ok.status_code, 200)
-        ok2 = client.patch("/api/v1/me/settings", {"preferences": {"planning_day_summary": False}, "version": ok.json()["version"]}, format="json")
+        ok2 = client.patch("/api/v1/me/settings", {"theme": "system", "preferences": {"planning_day_summary": False}, "version": ok.json()["version"]}, format="json")
         prefs = ok2.json()["preferences"]
         self.assertFalse(prefs["occasions_hijri"])  # the earlier switch is kept
         self.assertFalse(prefs["planning_day_summary"])
-        self.assertEqual(ok2.json()["palette"], "classic")
+        self.assertEqual(ok2.json()["palette"], "midnight-luxe")
+        self.assertEqual(client.get("/api/v1/me/settings").json()["theme"], "system")
         v = ok2.json()["version"]
         self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"nope": True}, "version": v}, format="json").status_code, 400)
         self.assertEqual(client.patch("/api/v1/me/settings", {"preferences": {"occasions_hijri": "no"}, "version": v}, format="json").status_code, 400)
@@ -289,24 +291,27 @@ class AdminDeviceTests(ApiTestCase):
                    CORS_ALLOWED_ORIGINS=["http://localhost:8080"])
 class GoogleRedirectFlowTests(ApiTestCase):
     def test_start_callback_exchange(self):
-        start = APIClient().get("/api/v1/auth/google/start", {"next": "http://localhost:8080/demo/"})
+        client = APIClient()
+        verifier = "a" * 64
+        challenge = hashlib.sha256(verifier.encode()).hexdigest()
+        start = client.get("/api/v1/auth/google/start", {"next": "http://localhost:8080/demo/", "challenge": challenge})
         self.assertEqual(start.status_code, 302)
         query = parse_qs(urlparse(start["Location"]).query)
         self.assertEqual(query["client_id"], ["web-client"])
 
         claims = {"sub": "g-123", "email": "g@example.com", "email_verified": True, "given_name": "Gol", "nonce": "x"}
         with mock.patch("apps.core.google_oauth.claims_from_code", return_value=claims):
-            back = APIClient().get("/api/v1/auth/google/callback", {"code": "c", "state": query["state"][0]})
+            back = client.get("/api/v1/auth/google/callback", {"code": "c", "state": query["state"][0]})
         self.assertEqual(back.status_code, 302)
         location = back["Location"]
         self.assertTrue(location.startswith("http://localhost:8080/demo/#login_code="))
         self.assertNotIn("access_token", location)  # tokens never travel in the URL
 
         code = location.split("login_code=")[1]
-        tokens = APIClient().post("/api/v1/auth/google/exchange", {"code": code}, format="json")
+        tokens = APIClient().post("/api/v1/auth/google/exchange", {"code": code, "verifier": verifier}, format="json")
         self.assertEqual(tokens.status_code, 200)
         self.assertIn("refresh_token", tokens.json())
-        again = APIClient().post("/api/v1/auth/google/exchange", {"code": code}, format="json")
+        again = APIClient().post("/api/v1/auth/google/exchange", {"code": code, "verifier": verifier}, format="json")
         self.assertEqual(again.status_code, 401)  # one-time code
         self.assertTrue(User.objects.filter(email="g@example.com", email_verified_at__isnull=False).exists())
 

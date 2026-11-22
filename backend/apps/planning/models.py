@@ -234,6 +234,8 @@ class Habit(UserOwnedSyncModel, Recurrence, Reminder):
     # Counter or timer (the app's habit form): {"kind": "counter", "target": N | null}
     # or {"kind": "timer", "mode": "up" | "down", "minutes": N}; null = a plain tick.
     tracker = models.JSONField(null=True, blank=True)
+    # Period target for the existing daily logs; null means the legacy daily check.
+    goal = models.JSONField(null=True, blank=True)
 
     class Meta(UserOwnedSyncModel.Meta):
         constraints = _common_checks("planning_habit", allow_none_recurrence=False) + [

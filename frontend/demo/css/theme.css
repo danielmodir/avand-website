@@ -1,62 +1,5 @@
-/* ============ THEME: landing-page look for the app ============
-   Loaded LAST (after every component stylesheet) and only changes
-   surfaces, not layout: backgrounds, borders, shadows, glass blur and
-   motion. Same brand colors as before; what it adds is the marketing
-   site's soft-UI layer (frontend/assets/css/tokens.css: --gradient-glow,
-   --shadow-soft-*, --shadow-glow, spring easing), so the app and the
-   landing read as one product. Remove this one <link> to get the old
-   flat look back. */
-
-:root{
-  --ease-spring:cubic-bezier(.22,1,.36,1);
-  --ease-standard:cubic-bezier(.4,0,.2,1);
-
-  /* Dark (default) */
-  --glow-orange:rgba(252,163,17,0.20);
-  --glow-navy:rgba(40,66,122,0.45);
-  --surface-1:linear-gradient(160deg, rgba(28,44,80,0.92) 0%, rgba(16,26,48,0.92) 100%);
-  --surface-2:linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%);
-  --surface-solid:linear-gradient(165deg, #1C2C50 0%, #121D36 60%, #0E172B 100%);
-  --surface-panel:linear-gradient(170deg, rgba(26,42,78,0.78) 0%, rgba(14,22,42,0.82) 55%, rgba(10,15,28,0.88) 100%);
-  --edge:rgba(255,255,255,0.09);
-  --edge-strong:rgba(255,255,255,0.16);
-  --edge-highlight:inset 0 1px 0 rgba(255,255,255,0.07);
-  --shadow-soft-sm:0 2px 10px rgba(0,0,0,0.30);
-  --shadow-soft-lg:0 28px 70px -18px rgba(0,0,0,0.60);
-  --shadow-glow:0 0 0 1px rgba(252,163,17,0.24), 0 14px 36px -12px rgba(252,163,17,0.55);
-  --gradient-brand:linear-gradient(135deg, #FCA311 0%, #E8890A 100%);
-  --banner-bg:
-    radial-gradient(120% 180% at 100% 0%, rgba(252,163,17,0.38) 0%, transparent 55%),
-    linear-gradient(135deg, #1C2C52 0%, #14213D 55%, #0B1326 100%);
-  --glass:rgba(13,17,28,0.62);
-  --glow-accent:0 4px 12px -2px rgba(252,163,17,0.55);
-  --glow-today:0 0 0 1px rgba(252,163,17,0.35), 0 10px 24px -10px rgba(252,163,17,0.75);
-  --glow-switch:0 6px 16px -6px rgba(252,163,17,0.7);
-  --glow-mark:0 0 0 3px rgba(252,163,17,0.35), 0 8px 20px -6px rgba(252,163,17,0.6);
-  --shadow-hover:0 10px 26px -12px rgba(0,0,0,0.55);
-  --banner-edge:rgba(255,255,255,0.10);
-  --on-banner:#FFFFFF;
-}
-:root[data-theme="light"]{
-  --glow-orange:rgba(252,163,17,0.22);
-  --glow-navy:rgba(20,33,61,0.10);
-  --surface-1:linear-gradient(160deg, #FFFFFF 0%, #F7F8FB 100%);
-  --surface-2:linear-gradient(160deg, rgba(20,33,61,0.04) 0%, rgba(20,33,61,0.015) 100%);
-  --surface-solid:linear-gradient(165deg, #FFFFFF 0%, #F6F7FA 100%);
-  --surface-panel:linear-gradient(170deg, rgba(255,255,255,0.92) 0%, rgba(246,247,250,0.92) 100%);
-  --edge:rgba(20,33,61,0.10);
-  --edge-strong:rgba(20,33,61,0.18);
-  --edge-highlight:inset 0 1px 0 rgba(255,255,255,0.9);
-  --shadow-soft-sm:0 2px 8px rgba(20,33,61,0.08);
-  --shadow-soft-lg:0 24px 60px -16px rgba(20,33,61,0.25);
-  --shadow-glow:0 0 0 1px rgba(20,33,61,0.10), 0 14px 32px -12px rgba(20,33,61,0.45);
-  --gradient-brand:linear-gradient(135deg, #1C2C52 0%, #14213D 100%);
-  --glass:rgba(255,255,255,0.72);
-  --glow-accent:0 4px 12px -2px rgba(20,33,61,0.4);
-  --glow-switch:0 6px 16px -6px rgba(20,33,61,0.5);
-  --shadow-hover:0 10px 24px -12px rgba(20,33,61,0.28);
-}
-
+/* Structural surface styling; palette values live in js/core/themes.js. */
+:root{--ease-spring:cubic-bezier(.22,1,.36,1);--ease-standard:cubic-bezier(.4,0,.2,1);}
 /* ---- page background: the landing hero's warm glow ---- */
 body{
   background:
@@ -77,25 +20,6 @@ body{
 .app-banner.has-image{ background:var(--card); }
 .app-banner-title{ color:var(--on-banner); letter-spacing:-0.01em; }
 .app-banner-mark{ box-shadow:var(--glow-mark); }
-.app-banner-mark .logo-navy{ display:none; }
-
-/* Classic palette, day mode: a white header with the navy logo and navy
-   text (the owner's request, 2026-10-25), instead of a navy slab on the
-   light page. */
-:root[data-palette="classic"][data-theme="light"]{
-  --banner-bg:
-    radial-gradient(120% 180% at 100% 0%, rgba(252,163,17,0.14) 0%, transparent 55%),
-    linear-gradient(135deg, #FFFFFF 0%, #F7F8FB 100%);
-  --banner-edge:rgba(20,33,61,0.10);
-  --on-banner:#14213D;
-  --banner-btn-bg:rgba(20,33,61,0.06);
-  --banner-btn-bg-hover:rgba(20,33,61,0.12);
-  --banner-btn-border:rgba(20,33,61,0.22);
-  --glow-mark:0 0 0 3px rgba(20,33,61,0.10), 0 8px 18px -8px rgba(20,33,61,0.45);
-}
-:root[data-palette="classic"][data-theme="light"] .app-banner{ box-shadow:var(--shadow-soft-sm), inset 0 1px 0 #FFFFFF; }
-:root[data-palette="classic"][data-theme="light"] .app-banner-mark .logo-std{ display:none; }
-:root[data-palette="classic"][data-theme="light"] .app-banner-mark .logo-navy{ display:block; }
 
 /* ---- big panels (desktop calendar box, workspace box, menu, sheets) ---- */
 #page-calendar.page,

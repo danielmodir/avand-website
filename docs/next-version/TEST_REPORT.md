@@ -1,11 +1,24 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۲۳ — بازبینی یکپارچه پیش از انتشار تست
+
+- `node --test tests/*.test.js`: 64/64 PASS.
+- `manage.py test apps --settings=config.settings.test --noinput`: 103/103 PASS.
+- Chromium محلی: 12 ترکیب `/fa/`، `/en/` و `/demo/` در 360/1280 و روشن/تاریک؛ 48 ترکیب تم برنامه. خطای صفحه، درخواست خارجی، تصویر بارگذاری‌شدهٔ خراب یا سرریز افقی صفر.
+- `deploy/build-site-zip.ps1`: خروج 0، بستهٔ 255 فایلی. اجرای PHP، OAuth واقعی و دستگاه اندروید در این مرحله ممکن نبود.
+
 ## ۲۰۲۶-۱۱-۲۲ — نشانی و لینک جلسهٔ ایونت
 
 - `node --test tests/*.test.js`: 53/53 PASS؛ آزمون تازه، نگهداری هر دو فیلد روی همان ایونت و رد لینک ناامن را پوشش داد.
 - `manage.py test apps --settings=config.settings.test --noinput`: 96/96 PASS؛ تست API جدید، ساخت/ویرایش/sync و رد `javascript:` را پوشش داد. `makemigrations planning --check --dry-run`: بدون تغییر مدلِ جاافتاده.
 - Chromium: 8/8 ترکیب 360/1280 × fa/en × light/dark؛ فرم دارای دو فیلد، ذخیره با کلیک واقعی، نمایش در جزئیات، بدون سرریز/pageerror/درخواست خارجی.
 - PHP CLI، API روی میزبان، دستگاه Android، جست‌وجوی مکان، مختصات و باز کردن برنامهٔ نقشه بررسی نشده‌اند.
+
+## ۲۰۲۶-۱۱-۲۲ — اتصال OAuth در PHP
+
+- `node --test tests/php-google-client.test.js`: 1/1 PASS؛ کلاینت PHP جریان مشترک verifier و پاسخ واقعی `/auth/providers` را مصرف می‌کند.
+- `node --test tests/*.test.js`: 53/53 PASS در درخت کاری فعلی.
+- PHP CLI در PATH نیست؛ syntax/migration و جریان واقعی OAuth در PHP اجرا نشده است. Credential و callback محیط آنلاین نیز آزموده نشده‌اند.
 
 ## ۲۰۲۶-۱۱-۱۸ — یادآوری مناسبت
 

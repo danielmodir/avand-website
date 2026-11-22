@@ -510,6 +510,10 @@ function renderAdminPanel(){
       <div class="desktop-manage-title">${t('planning')}</div>
       <div class="desktop-manage-desc">${t('planningDesktopSub')}</div>
     </div>
+    <div class="desktop-manage-card">
+      <div class="desktop-manage-title">${t('habitsDesktop')}</div>
+      <div class="desktop-manage-desc">${t('habitsDesktopSub')}</div>
+    </div>
     ${Cloud.supportsGroups && !REAL_LOGIN_DISABLED ? `
       <div class="desktop-manage-card">
         <div class="desktop-manage-title">${t('groupsDesktop')}</div>
@@ -536,7 +540,7 @@ function renderSharePage(){
   return `
     ${subHeader(t('shareToojibee'))}
     <div class="share-hero">
-      <div class="share-app-icon"><img class="brand-mark-img" src="../assets/icons/logo.svg?v=tj5" alt=""></div>
+      <div class="share-app-icon"><img class="brand-mark-img" src="../assets/icons/logo.svg?v=tj7" alt=""></div>
       <div class="share-app-name">${t('appName')}</div>
       <div class="share-app-desc">${t('shareDesc')}</div>
     </div>
@@ -583,7 +587,7 @@ function renderAboutPage(){
   const customText = state.aboutText[lang()];
   return `
     ${subHeader(t('aboutUs'))}
-    <div class="about-logo"><img class="brand-mark-img" src="../assets/icons/logo.svg?v=tj5" alt=""></div>
+    <div class="about-logo"><img class="brand-mark-img" src="../assets/icons/logo.svg?v=tj7" alt=""></div>
     <div class="about-name">${t('appName')}</div>
     <div class="about-tagline">${t('appTagline')}</div>
     <div class="about-version" dir="auto">${escapeHtml(appVersionLabel())}</div>
@@ -617,20 +621,9 @@ function renderGeneralSettings(){
       </div>
     </div>
     <div class="section-title">${t('appearance')}</div>
-    <div class="palette-picker" role="radiogroup" aria-label="${t('themePalette')}">
-      ${['toojibee','classic'].map(p => `
-        <button type="button" class="palette-option ${state.settings.palette===p?'active':''}" data-action="set-palette" data-val="${p}" role="radio" aria-checked="${state.settings.palette===p}">
-          <span class="palette-swatches palette-swatches-${p}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-          <span class="palette-name">${t(p==='toojibee'?'paletteToojibee':'paletteClassic')}</span>
-        </button>`).join('')}
-    </div>
-    ${state.settings.palette !== 'classic' ? accentRowHtml() : ''}
+    ${themeSelectorHtml()}
     ${state.guest ? '' : `<div class="settings-row"><div><div class="lbl">${t('mainDesk')}</div><div class="sub">${t('mainDeskSub')}</div></div>
-      <select class="settings-select" id="main-desk-select" aria-label="${escapeAttr(t('mainDesk'))}">${[['planning', 'planning'], ['occasions', 'occasionsDesktop'], ['groups', 'groupsDesktop'], ['period', 'periodDesktop']].map(([v, l]) => `<option value="${v}" ${((state.settings.prefs || {}).mainDesk || 'planning') === v ? 'selected' : ''}>${t(l)}</option>`).join('')}</select></div>`}
-    <div class="settings-row">
-      <div><div class="lbl">${t('darkMode')}</div><div class="sub">${t('darkModeSub')}</div></div>
-      <div class="switch ${document.documentElement.getAttribute('data-theme')!=='light'?'on':''}" data-action="toggle-app-theme" role="switch" aria-checked="${document.documentElement.getAttribute('data-theme')!=='light'}"><div class="knob"></div></div>
-    </div>
+      <select class="settings-select" id="main-desk-select" aria-label="${escapeAttr(t('mainDesk'))}">${[['planning', 'planning'], ['habits', 'habitsDesktop'], ['occasions', 'occasionsDesktop'], ['groups', 'groupsDesktop'], ['period', 'periodDesktop']].map(([v, l]) => `<option value="${v}" ${((state.settings.prefs || {}).mainDesk || 'planning') === v ? 'selected' : ''}>${t(l)}</option>`).join('')}</select></div>`}
     ${(() => {
       // Reminders (js/core/notify.js): the switch, what the browser allows, and overdue tasks.
       const on = !!state.settings.notifications;
@@ -678,16 +671,19 @@ function renderCalendarSettings(){
   `;
 }
 
-/* Accent colours, unlocked by friends (js/core/util.js ACCENTS; Phase 3.12). */
-function accentRowHtml(){
-  rememberUnlockedAccents();
-  const cur = (state.settings.prefs || {}).accent || 'orange';
-  return `<div class="section-title">${t('accentTitle')}</div><div class="sub" style="margin:-6px 2px 10px;">${t('accentSub')}</div>
-    <div class="accent-row" role="radiogroup" aria-label="${escapeAttr(t('accentTitle'))}">${ACCENTS.map(([id, need]) => {
-      const open = accentUnlocked(id);
-      return `<button type="button" class="accent-opt ${cur === id ? 'active' : ''}" data-action="set-accent" data-val="${id}" role="radio" aria-checked="${cur === id}" ${open ? '' : 'disabled'}>
-        <span class="accent-dot ${id}"></span><span>${t('accent_' + id)}${open ? '' : ' · ' + t('accentLocked').replace('{n}', dig(need))}</span></button>`;
-    }).join('')}</div>`;
+/* Fixed previews describe each identity independently of the current appearance. */
+function themeSelectorHtml(){
+  const fa = lang() === 'fa';
+  return `<div class="appearance-picker" dir="${fa ? 'rtl' : 'ltr'}" role="group" aria-label="${t('appearanceMode')}">
+    ${['light','dark','system'].map(mode => `<button type="button" data-action="set-appearance" data-val="${mode}" aria-pressed="${state.settings.theme === mode}" class="${state.settings.theme === mode ? 'active' : ''}">${t('appearance_' + mode)}</button>`).join('')}
+    </div><div class="theme-grid" dir="${fa ? 'rtl' : 'ltr'}" role="group" aria-label="${t('themePalette')}">
+    ${AppThemes.palettes.map(p => `<button type="button" class="theme-option ${state.settings.palette === p.id ? 'active' : ''}" data-action="set-palette" data-val="${p.id}" aria-pressed="${state.settings.palette === p.id}">
+      <span class="theme-heading"><span>${escapeHtml(fa ? p.nameFa : p.name)}</span><span class="theme-check" aria-hidden="true">${state.settings.palette === p.id ? '✓' : '○'}</span></span>
+      <span class="theme-description">${escapeHtml(fa ? p.descriptionFa : p.description)}</span>
+      <span class="theme-swatches" aria-hidden="true">${p.original.map(color => `<i style="--swatch:${color}"></i>`).join('')}</span>
+      <span class="theme-previews" aria-hidden="true">${['light','dark'].map(mode => { const v=AppThemes.tokens(p.id,mode); return `<span class="theme-preview" style="--preview-bg:${v.background};--preview-surface:${v.surface};--preview-text:${v.textPrimary};--preview-muted:${v.textSecondary};--preview-primary:${v.primary};--preview-on:${v.onPrimary}"><span>${t('appearance_'+mode)}</span><span class="theme-preview-card">${t('themeSampleCard')}<small>${t('themeSampleText')}</small></span><span class="theme-preview-button">${t('themeSampleAction')}</span></span>`; }).join('')}</span>
+      <span class="theme-selected">${state.settings.palette === p.id ? t('themeSelected') : t('themeChoose')}</span>
+    </button>`).join('')}</div>`;
 }
 
 function prefRow(key, label, sub){

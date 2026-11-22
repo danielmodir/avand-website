@@ -92,18 +92,11 @@ a { color: inherit; }
 
 .brand { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; }
 .brand-mark {
-  /* Single source for the placeholder brand mark: assets/icons/logo.svg?v=tj5.
-     Swap that one file to rebrand every page at once (per CLAUDE.md).
-     42px = the shared logo.svg's old 38px circle, 10% bigger. */
-  width: 42px; height: 42px; border-radius: var(--radius-md); flex: 0 0 auto; display: block;
-  box-shadow: var(--shadow-soft-sm);
+  width: 42px; height: 42px; flex: 0 0 auto; display: block;
   transition: transform var(--duration-normal) var(--ease-spring);
 }
 .brand:hover .brand-mark { transform: rotate(-8deg) scale(1.05); }
-/* fa/en index.html's header only: logo-header(-dark).svg, a 40%-bigger
-   mark inside the same-size circle (see that file's own comment), swapped
-   light/dark via [data-theme] instead of the shared logo.svg everywhere
-   else staying a single static file. */
+/* The transparent mark switches color with the marketing light/dark mode. */
 .brand-mark-dark { display: none; }
 [data-theme="dark"] .brand-mark-light { display: none; }
 [data-theme="dark"] .brand-mark-dark { display: block; }

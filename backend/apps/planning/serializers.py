@@ -155,11 +155,22 @@ class HabitSerializer(OwnedSerializer):
 
     class Meta:
         model = Habit
-        fields = SYNC_FIELDS + ["category_id", "title", "start_date", "end_date", "sort_order", "tracker"] + RECURRENCE_FIELDS + REMINDER_FIELDS
+        fields = SYNC_FIELDS + ["category_id", "title", "start_date", "end_date", "sort_order", "tracker", "goal"] + RECURRENCE_FIELDS + REMINDER_FIELDS
         read_only_fields = READ_ONLY
 
     def validate_category_id(self, category):
         return self.validate_category(category)
+
+    def validate_goal(self, value):
+        if value is None:
+            return None
+        if not isinstance(value, dict) or set(value) != {"period", "target"}:
+            raise ApiError("invalid_habit_goal")
+        limits = {"daily": 1, "weekly": 7, "monthly": 31}
+        period, target = value["period"], value["target"]
+        if period not in limits or type(target) is not int or not 1 <= target <= limits[period]:
+            raise ApiError("invalid_habit_goal")
+        return {"period": period, "target": target}
 
     def validate_tracker(self, t):
         """None, a counter (target 1-999 or none) or a timer (up, or down from 1-600 minutes)."""

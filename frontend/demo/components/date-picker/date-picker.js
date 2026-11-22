@@ -56,6 +56,7 @@ function dpFinish(){
   let picked = null;
   if(time){
     picked = { start: time.start || '', end: time.hasEnd ? (time.end || '') : '' };
+    if(time.hasEnd && !picked.start){ showToast(t('startTimeRequired')); return; }
     if(time.hasEnd && !picked.end){ showToast(t('endTimeRequired')); return; }
     // Same day: the end can't come before the start.
     if(picked.start && picked.end && (!range || (end || value) === value) && picked.end <= picked.start){ showToast(t('endBeforeStart')); return; }

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "apps.period",
     "apps.social",
     "apps.notifications",
+    "apps.finance",
 ]
 
 MIDDLEWARE = [
@@ -92,6 +93,7 @@ MODULE_DATABASES = {
     "period":         ("DB_PERIOD",        "toojibee_period"),
     "social":         ("DB_SOCIAL",        "toojibee_social"),
     "notifications":  ("DB_NOTIFICATIONS", "toojibee_notifications"),
+    "finance":        ("DB_FINANCE",       "toojibee_finance"),
 }
 
 
@@ -174,6 +176,7 @@ PURGE_HANDLERS = {
     "period": "apps.period.services.purge_user",
     "social": "apps.social.services.purge_user",
     "notifications": "apps.notifications.services.purge_user",
+    "finance": "apps.finance.services.purge_user",
 }
 
 # ── API ──────────────────────────────────────────────────────────────────

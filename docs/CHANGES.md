@@ -32,21 +32,28 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 - Web app core (frontend/demo/js/core/): state.js (app state), render.js,
   events.js, i18n.js (all strings), dates.js / calendars.js (Jalali, Hijri,
   Gregorian), occasions.js (calendar rules and reminder plans), groups.js, trackers.js (habit counter/timer),
+  habit-goals.js (period goals, calendar periods and streaks),
   notify.js (reminders/push), android.js (bridge to Kotlin), local-store.js,
   search.js, include.js (loads component partials), compat.js (old WebViews).
+- App themes: frontend/demo/js/core/themes.js (6 palettes × 2 appearances,
+  semantic tokens and pre-paint storage); css/themes.css (states/selector);
+  docs/theme-system/ (color audit and verification); tests/themes.test.js and
+  tests/theme-ui.cjs. Old palette CSS and accent picker removed.
 - Web app components: app-error, articles, auth, banner, birthday, calendar,
   contact, date-picker, day-sheet, groups, items, menu, notices, period,
-  popup, toolbar, tour, workspace.
+  popup, toolbar, tour, workspace. The workspace now includes a separate
+  Habit Tracker pane, still using the existing habit rows and records.
 - PHP lib: auth, sync (the user's synced document), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
-- Django apps: core, calendar_data, planning, period, social, notifications
-  (+ common).
+- Django apps: core, calendar_data, planning, period, social,
+  notifications, finance (+ common; finance currently has a private ledger
+  foundation only).
 - Android Kotlin: MainActivity, AppWeb, WebFiles (offline/OTA files),
   Reminders, PhoneActions, Widgets.
 - Deploy scripts (deploy/): build-site-zip.ps1, build-android.ps1,
-  make-keystore.ps1, make-logo.js, make-desk-shots.js, make-quotes.py, webp.py,
-  css-compat.js.
+  make-keystore.ps1, make-logo.js, render-logo.js, make-desk-shots.js,
+  webp.js, make-quotes.py, webp.py, css-compat.js.
 - Next-version work: docs/next-version/README.md links the audit, central
   checklist, dependencies, decisions, baseline tests and source-derived
   API/model inventory. This is the management source for the new update.
@@ -55,13 +62,55 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-22.3
-- PHP schema: v24
-- Django latest migrations: core 0009, planning 0011, social 0003,
-  notifications 0003, calendar_data 0002, period 0001
-- Android: 1.4.0 (versionCode 5)
+- Demo asset version: 2026-11-22.6
+- Logo cache version: tj7 (transparent mark, site and six app palettes)
+- PHP schema: v28
+- Django latest migrations: core 0012, planning 0012, social 0005,
+  notifications 0003, calendar_data 0002, period 0001, finance 0001
+- Marketing CSS cache version: 2026-11-23.1
+- Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-23 — review and release preparation — reconciled accumulated
+  web, API, Android-source and documentation changes for team review. Added
+  core 0012 for the previously unrecorded EmailOutbox template choice,
+  refreshed the marketing CSS cache version and corrected doubled logo URL
+  separators. Local checks: Node 64/64, Django 103/103, browser 12/12
+  marketing/app cases and 48/48 theme cases without page errors, external
+  requests or overflow; release ZIP built (255 files). GitHub Pages serves
+  frontend only; the PHP and Django APIs and a new APK are not deployed by
+  that workflow. PHP CLI, live OAuth and Android device checks remain open.
+
+- 2026-11-22 — Django finance foundation — a separate `finance` database,
+  owner-scoped account/card/category/transaction/ledger-entry tables, initial
+  migration, integer-toman atomic posting service and user purge handler.
+  An idempotent request key and owner validation prevent duplicate posting
+  and cross-user account use. Transfers produce two opposite entries, so
+  wallet total remains unchanged. Five finance domain tests and the full
+  Django suite (103/103) pass; Node 64/64 and finance migration check pass. The PHP
+  schema/API, web and Android desks, encrypted offline queue, SMS path and
+  university package are still unimplemented. No deploy or release.
+
+- 2026-11-22 — docs — the owner selected Toman as the financial base unit,
+  per-dossier GPA rules and direct APK distribution, and approved the
+  additive financial ledger design plus encrypted offline storage.
+  `docs/phase2/IMPLEMENTATION_DESIGN.md` records the proposed contracts,
+  SMS permission constraints and academic data links. No finance or
+  university runtime code, schema or deployment in this entry.
+
+- 2026-11-22 — web app and Django planning — phase-two Habit Tracker work.
+  Planning and its progress card now omit habits; a separate pane reuses
+  the existing records, daily controls and details. Period goals (daily,
+  weekly, monthly), streak and success-rate calculations, and a selectable
+  daily/weekly/monthly progress calendar are added without rewriting
+  completion history. Django planning 0012 stores optional goal JSON;
+  the Django client maps it, PHP sync already retains additive habit JSON,
+  and offline storage retains the same object. Asset version 2026-11-22.6.
+  Node 64/64, Django 98/98 and browser 360/1280 × fa/en × light/dark pass;
+  no external browser requests or horizontal overflow. Core EmailOutbox
+  migration drift predates this change; PHP CLI, Android device and live
+  backend not tested. Financial and university desks remain open. No deploy.
 
 - 2026-11-22 — web app, PHP event document, Django planning — events now
   keep an optional manual location and an http(s) meeting link. Both appear
@@ -75,6 +124,14 @@ Update these with every change.
 - 2026-11-22 — Django planning — event meeting links now reject non-web
   schemes such as ftp, matching the editor's http(s) rule. The focused API
   tests pass 2/2, including both invalid schemes. No schema change.
+
+- 2026-11-22 — web app and PHP API — connected the existing one-use Google
+  OAuth flow to the live PHP router and client. Provider availability comes
+  from server configuration; the PHP client reuses the Django client's
+  verifier and redirect handling. Additive PHP schema v28 creates the
+  Google subject mapping without changing existing accounts. Demo asset
+  version 2026-11-22.2. Node 53/53, focused client 1/1; PHP CLI, provider
+  credentials, live redirect and Android handoff remain unverified. No deploy.
 
 - 2026-11-18 — web app, PHP document settings, Django settings/calendar API —
   optional per-occasion reminders now use the existing browser, push and
@@ -108,6 +165,11 @@ Update these with every change.
   drift, PHP CLI, actual Android
   WebView and live database remain unverified. No deployment.
 
+- 2026-11-17 — web app — date picker now rejects an end time without a
+  start time while preserving same-day order and overnight ranges. Added
+  focused Node regressions (3/3). Demo asset version 2026-11-17.1.
+  No backend or schema change; live deployment and device checks pending.
+
 - 2026-11-16 — web app, PHP validation, Django planning — custom reminder
   windows for one task/habit/event (owner decision): minute/hour interval,
   aligned end inclusive, overnight occurrence identity, DST gap handling,
@@ -136,6 +198,20 @@ Update these with every change.
   API 2/2 and eight browser matrix cases including reload persistence pass.
   Native Android widgets retain existing behavior pending native integration.
 
+- 2026-11-16 — marketing site, web app, Android assets — removed the circular
+  field around the owner's new logo. The vector generator now writes a
+  transparent mark for site icons plus separate splash/banner colors for all
+  twelve app appearances; favicon, PWA and Android launcher images were
+  regenerated. Marketing headers switch transparent marks with light/dark,
+  app logo URLs use tj7, and the app asset version is 2026-11-16.6. The
+  circular loader rings were removed; 28 baked marketing screenshots were
+  recaptured from the current app. The Android OTA manifest lists both sets
+  of app marks. Native source version remains 1.4.1 (6). Preview source was
+  pushed to `codex/logo-preview-2026-11-16` on GitHub and a public,
+  noindex test copy published at
+  https://toojibee-logo-review-20261116.outermodel4.chatgpt.site.
+  The production domain and `master` were not changed.
+
 - 2026-11-16 — web app — ordinary events can be created/edited in the past
   (popup.js, events.js); tasks retain their prior rule. The picker retains
   older stored dates. Existing PHP document sync and Django Event API already
@@ -143,6 +219,23 @@ Update these with every change.
   API tests and eight browser cases pass, including no stale event reminders.
   Custom interval = one activity with multiple reminders (owner); occasion
   notifications require the user to choose their time (owner). No deployment.
+
+- 2026-11-16 — web app, Android WebView, Django settings — replaced old
+  Toojibee/Classic/accent/period skins with six owner-specified palettes and
+  twelve light/dark schemes (themes.js, themes.css). Independent System
+  appearance, synchronous pre-paint migration/storage, Android bars, localized
+  dual-preview settings cards and accessible semantic states. Shared sizing
+  tokens remain in assets/css/tokens.css. Django palette IDs expanded/migrated
+  (core 0011_six_theme_palettes); API client saves System; PHP settings already
+  accept the document. Five color/state tests and seven targeted Django settings tests pass.
+  Full Node suite passed 28 tests before a concurrent historical-event test
+  was added; latest run 28/29 (new test VM lacks navigator; unrelated). Chromium: 48 selector combinations
+  (12 × fa/en × 360/1280), System/reload/toolbar behavior, twelve dialog/day-sheet
+  states; no page errors or external requests. See docs/theme-system/README.md
+  and token-audit.json. Broader core Django tests retain an unrelated Google
+  redirect test failure. Android physical-device check and production
+  deployment not performed. Asset version 2026-11-16.4; existing concurrent
+  work preserved and changes left uncommitted for review.
 
 - 2026-11-16 — web app (Android WebView too) — main desk/day calendar/day
   sheet share an hourly task + event timeline (items.js/css, i18n.js). Explicit
@@ -153,6 +246,19 @@ Update these with every change.
   phased work; no host deployment. Unrelated working changes excluded.
 
 Format: `date — surfaces — what changed (key files)`.
+
+- 2026-11-16 — marketing site, web app, Android assets — replaced the old
+  Tj-road drawing with the owner's new flat, shadow-free mark from the supplied
+  image. `deploy/make-logo.js` generates the site SVGs and twelve app badges
+  from the current six light/dark palette tokens; `deploy/render-logo.js`
+  renders PNG, ICO, social preview and launcher files. The app banner and
+  splash follow the selected palette, including Android offline file updates
+  (`themes.js`, `include.js`, `build-site-zip.ps1`). All icon URLs use tj6;
+  demo asset version is 2026-11-16.2. The 28 marketing screenshots containing
+  the old mark were recaptured (`make-desk-shots.js`) and encoded with the
+  package-free `deploy/webp.js`. Android monochrome notification mark
+  updated; Android source version is 1.4.1 (6), pending a new APK build.
+  No API or database change.
 
 - 2026-11-16 — repository instructions — synchronized `AGENTS.md` with the
   full contents of `CLAUDE.md`, so Codex and Claude Code follow the same
