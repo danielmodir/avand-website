@@ -81,6 +81,10 @@ Update these with every change.
   requests or overflow; release ZIP built (255 files). GitHub Pages serves
   frontend only; the PHP and Django APIs and a new APK are not deployed by
   that workflow. PHP CLI, live OAuth and Android device checks remain open.
+  Review source pushed to `codex/phase2-development-2026-11-22`; GitHub
+  Pages workflow run 45069902360 published commit `ff1de50` at
+  https://danielmodir.github.io/avand-website/ . The live site passed the
+  same 12-case browser smoke check. `master` remains unchanged.
 
 - 2026-11-22 — Django finance foundation — a separate `finance` database,
   owner-scoped account/card/category/transaction/ledger-entry tables, initial
