@@ -24,7 +24,9 @@ class EventLocationTests(ApiTestCase):
         self.assertEqual((synced["location"], synced["meeting_url"]), ("Office", "https://meet.example.org/a"))
 
     def test_non_web_meeting_link_is_rejected(self):
-        path = f"/api/v1/planning/events/{uuid.uuid4()}"
-        bad = self.client.put(path, {
-            "title": "Visit", "start_date": "2026-11-18", "meeting_url": "javascript:alert(1)"}, format="json")
-        self.assertEqual(bad.status_code, 400)
+        for url in ("javascript:alert(1)", "ftp://files.example.org/meeting"):
+            with self.subTest(url=url):
+                path = f"/api/v1/planning/events/{uuid.uuid4()}"
+                bad = self.client.put(path, {
+                    "title": "Visit", "start_date": "2026-11-18", "meeting_url": url}, format="json")
+                self.assertEqual(bad.status_code, 400)

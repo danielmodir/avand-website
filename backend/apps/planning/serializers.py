@@ -201,6 +201,11 @@ class EventSerializer(OwnedSerializer):
     def validate_category_id(self, category):
         return self.validate_category(category)
 
+    def validate_meeting_url(self, value):
+        if value and not value.lower().startswith(("https://", "http://")):
+            raise ApiError("invalid_meeting_url")
+        return value
+
     def validate(self, attrs):
         self.check_schedule(attrs)
         inst = self.instance

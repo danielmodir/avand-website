@@ -72,6 +72,10 @@ Update these with every change.
   check and eight browser cases passed; no external browser requests. Map
   search/coordinates and a live API/Android check remain open. No deployment.
 
+- 2026-11-22 — Django planning — event meeting links now reject non-web
+  schemes such as ftp, matching the editor's http(s) rule. The focused API
+  tests pass 2/2, including both invalid schemes. No schema change.
+
 - 2026-11-18 — web app, PHP document settings, Django settings/calendar API —
   optional per-occasion reminders now use the existing browser, push and
   Android notification schedules. Each plan selects a time and 0–56 days
