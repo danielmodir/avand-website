@@ -78,7 +78,9 @@ Update these with every change.
   endpoint returned 200 before this patch, but its Pages-origin request had
   no Allow-Origin header and OPTIONS returned 405. Host upload, live
   preflight verification and switching the Pages app to the API remain
-  pending. No frontend release or database change.
+  pending. Owner selected GitHub Pages for the site and toojibee.ir for the
+  PHP API, with final publication after service-backed features are ready.
+  No frontend release or database change.
 
 - 2026-11-23 — review and release preparation — reconciled accumulated
   web, API, Android-source and documentation changes for team review. Added
