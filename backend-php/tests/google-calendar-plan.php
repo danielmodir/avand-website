@@ -39,4 +39,6 @@ $unsupported = tj_gcal_plan_collection([$one], [$special], [$links[0]]);
 equals(actions($unsupported), ['one/g-one' => 'unsupported_link'], 'unsupported Google event is not deletion');
 $match = tj_gcal_plan_collection([$one], [remote($one, 'g-one')], []);
 equals(actions($match), ['one/g-one' => 'link_equal'], 'reconnect by stable ID');
+$missingLocal = tj_gcal_plan_collection([], [remote($one, 'g-one')], []);
+equals(actions($missingLocal), ['one/g-one' => 'confirm_local_delete'], 'private ID with missing local event requires confirmation');
 echo "Google Calendar collection plan: PASS\n";

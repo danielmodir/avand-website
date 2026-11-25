@@ -40,10 +40,11 @@ function tj_gcal_plan_collection(array $localRows, array $googleRows, array $lin
     // manufacturing a duplicate event, even if the old link row is gone.
     foreach ($google as $gid => $remote) {
         $lid = $remote['toojibee_id'];
-        if (!is_string($lid) || !isset($local[$lid]) || isset($usedLocal[$lid]) || isset($usedGoogle[$gid])) continue;
+        if (!is_string($lid) || $lid === '' || isset($usedLocal[$lid]) || isset($usedGoogle[$gid])) continue;
         $usedLocal[$lid] = true; $usedGoogle[$gid] = true;
         $plan[] = ['local_id' => $lid, 'google_id' => $gid,
-            'action' => tj_gcal_plan_pair(null, $local[$lid], $remote['event']), 'etag' => $remote['etag']];
+            'action' => isset($local[$lid]) ? tj_gcal_plan_pair(null, $local[$lid], $remote['event']) : 'confirm_local_delete',
+            'etag' => $remote['etag']];
     }
     // Identical independent records can be linked only when that exact
     // fingerprint occurs once on each side. Ambiguous duplicates stay apart.

@@ -154,6 +154,8 @@ function tj_gcal_google_resource(array $event, string $localId, string $timeZone
 
 function tj_gcal_google_event(array $event, string $timeZone = 'Asia/Tehran'): array {
     if (($event['status'] ?? '') === 'cancelled') throw new DomainException('deleted_event');
+    if (isset($event['recurringEventId']) || isset($event['originalStartTime']))
+        throw new DomainException('unsupported_google_recurrence');
     if (($event['eventType'] ?? 'default') !== 'default')
         throw new DomainException('unsupported_google_event');
     $start = $event['start'] ?? [];

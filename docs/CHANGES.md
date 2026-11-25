@@ -76,6 +76,11 @@ Update these with every change.
 
 ## Log (newest first)
 
+- 2026-11-25 — Google Calendar deletion guard — a Google event carrying a
+  Toojibee private ID cannot silently recreate a locally deleted event when
+  its link row is missing. It now requires deletion confirmation. Recurring
+  instances are excluded from the import projection to avoid duplicates.
+
 - 2026-11-25 — Google Calendar OAuth callback fix — initialize the database
   handle before storing a successful grant, avoiding a runtime error after
   Google's redirect; exercise encrypted grant insertion and replacement in CI.

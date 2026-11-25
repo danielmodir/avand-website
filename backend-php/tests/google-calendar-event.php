@@ -38,6 +38,7 @@ same([$projected['date'], $projected['startTime'], $projected['endTime']], ['202
 rejects(fn() => tj_gcal_local_event(array_replace($base, ['recurrence' => ['mode' => 'yearly', 'cal' => 'jalali']])), 'unsupported_recurrence');
 rejects(fn() => tj_gcal_local_event($base + ['groupId' => 'group-1']), 'group_event');
 rejects(fn() => tj_gcal_google_event($incoming + ['eventType' => 'outOfOffice']), 'unsupported_google_event');
+rejects(fn() => tj_gcal_google_event($incoming + ['recurringEventId' => 'series-1']), 'unsupported_google_recurrence');
 rejects(fn() => tj_gcal_google_event($incoming + ['recurrence' => ['RRULE:FREQ=MONTHLY']]), 'unsupported_google_recurrence');
 rejects(fn() => tj_gcal_google_event($incoming + ['recurrence' => ['RRULE:FREQ=DAILY;COUNT=5']]), 'unsupported_google_recurrence');
 
