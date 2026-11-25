@@ -44,6 +44,12 @@ try {
     check((int)$taken['user_id'] === $uid && tj_decrypt($taken['verifier_enc']) === $verifier, 'bound flow');
     check(tj_google_calendar_take_flow($state) === null, 'one-use state');
     check(tj_google_calendar_take_flow('invalid') === null, 'invalid state');
+    tj_google_calendar_save_grant($uid, 'first-refresh');
+    $stored = $db->query('SELECT refresh_token_enc FROM tj_google_calendar_grants')->fetchColumn();
+    check($stored !== 'first-refresh' && tj_decrypt($stored) === 'first-refresh', 'encrypted grant persisted');
+    tj_google_calendar_save_grant($uid, 'new-refresh');
+    check((int)$db->query('SELECT COUNT(*) FROM tj_google_calendar_grants')->fetchColumn() === 1, 'grant updated in place');
+    check(tj_decrypt($db->query('SELECT refresh_token_enc FROM tj_google_calendar_grants')->fetchColumn()) === 'new-refresh', 'new grant persisted');
     echo "Google Calendar grant: PASS\n";
 } finally {
     foreach (glob($dir . '/*') ?: [] as $file) unlink($file);

@@ -120,8 +120,12 @@ function tj_google_calendar_callback(): void {
     $scopes = explode(' ', (string)($tokens['scope'] ?? ''));
     if (!is_string($refresh) || $refresh === '' || strlen($refresh) > 4096 || !in_array(TJ_CALENDAR_SCOPE, $scopes, true))
         tj_google_redirect($cfg['app_url'] . '#calendar_google=permission_missing');
+    tj_google_calendar_save_grant((int)$flow['user_id'], $refresh);
+    tj_google_redirect($cfg['app_url'] . '#calendar_google=connected');
+}
+
+function tj_google_calendar_save_grant(int $uid, string $refresh): void {
     $token = tj_encrypt($refresh);
-    $uid = (int)$flow['user_id'];
     $db = tj_db();
     tj_tx_begin($db);
     try {
@@ -135,7 +139,6 @@ function tj_google_calendar_callback(): void {
                ->execute([$uid, $token, tj_now(), tj_now()]);
         tj_tx_commit($db);
     } catch (Throwable $e) { tj_tx_rollback($db); throw $e; }
-    tj_google_redirect($cfg['app_url'] . '#calendar_google=connected');
 }
 
 function tj_google_calendar_disconnect(): void {
