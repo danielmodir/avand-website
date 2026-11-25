@@ -13,6 +13,7 @@ test('planning desk omits habits while the habit desk shows the same records', (
     state:{guest:false, habits:[habit], settings:{prefs:{}}, activeDesktopIndex:0, desktopTitleMenuOpen:false},
     pref:key => key === 'occasionsEnabled' ? false : true,
     periodViews:()=>[], groupsAvailable:()=>false,
+    FinanceDesk:{renderDesk:()=>'<finance></finance>'},
     t:key=>key, dig:String,
     renderHomeCalWidget:()=>'',
     dateKey:()=> '2026-11-22',
@@ -31,7 +32,7 @@ test('planning desk omits habits while the habit desk shows the same records', (
   assert.match(html, /<planning-habits><\/planning-habits>/);
   assert.doesNotMatch(html, /stat-ring-habits|habit-color/);
   assert.match(html, /<habit-row>habit-1<\/habit-row>/);
-  assert.deepEqual(Array.from(context.deskKeys()), ['planning', 'habitsDesktop']);
+  assert.deepEqual(Array.from(context.deskKeys()), ['planning', 'habitsDesktop', 'financeDesktop']);
 });
 
 test('habit desk lists every habit and keeps today separate from other days', () => {

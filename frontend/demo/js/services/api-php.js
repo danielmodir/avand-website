@@ -109,6 +109,7 @@
     storeSession(await request('POST', '/auth/login', { email: email, password: password }, { auth: false }));
   }
   async function signOut() {
+    if (typeof FinanceDesk !== 'undefined') FinanceDesk.lock(false);
     clearTimeout(pushTimer);
     if (hasSession()) { try { await flush(); await request('POST', '/auth/logout'); } catch (e) { /* best effort */ } }
     clearSession(); clearCache();

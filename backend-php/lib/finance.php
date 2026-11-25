@@ -97,7 +97,9 @@ function tj_finance_transaction_create(): void {
     $rawDate = $b['occurred_at'] ?? null;
     if ($rawDate !== null && (!is_string($rawDate) ||
         !preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,6})?(?:Z|[+-]\d\d:\d\d)$/D', $rawDate))) tj_fail(400,'validation_error');
-    $date = $rawDate === null ? tj_now() : (new DateTimeImmutable($rawDate))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+    try {
+        $date = $rawDate === null ? tj_now() : (new DateTimeImmutable($rawDate))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+    } catch (Exception $e) { tj_fail(400,'validation_error'); }
     $hash = hash('sha256', json_encode([$kind,$amount,$accountId,$destinationId,$categoryId,$note,$sourceId,$rawDate], JSON_UNESCAPED_UNICODE));
     $db = tj_db(); tj_tx_begin($db); tj_finance_lock_user($db,$uid);
     $q = $db->prepare('SELECT id,payload_hash FROM tj_finance_transactions WHERE user_id=? AND request_id=?');
@@ -112,6 +114,17 @@ function tj_finance_transaction_create(): void {
         if ($id === null) continue;
         $q->execute([$uid,$id]);
         if (!$q->fetch()) { tj_tx_rollback($db); tj_fail(404,'account_not_found'); }
+    }
+    $max = 9000000000000000;
+    $delta = in_array($kind,['expense','transfer'],true) ? -$amount : $amount;
+    if (abs(tj_finance_balance($db,$uid,$accountId) + $delta) > $max ||
+        ($destinationId !== null && abs(tj_finance_balance($db,$uid,$destinationId) + $amount) > $max)) {
+        tj_tx_rollback($db); tj_fail(400,'balance_limit');
+    }
+    $q = $db->prepare('SELECT COALESCE(SUM(amount_toman),0) FROM tj_finance_entries WHERE user_id=?');
+    $q->execute([$uid]);
+    if (abs((int)$q->fetchColumn() + ($kind === 'transfer' ? 0 : $delta)) > $max) {
+        tj_tx_rollback($db); tj_fail(400,'balance_limit');
     }
     if ($categoryId !== null) {
         $q = $db->prepare('SELECT id FROM tj_finance_categories WHERE user_id=? AND id=? AND kind=? AND archived_at IS NULL');

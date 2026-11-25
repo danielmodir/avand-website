@@ -24,6 +24,9 @@ client: `frontend/demo/js/services/api-php.js`).
 | GET / PATCH | /me | profile basics |
 | POST | /me/delete | password → deletes the account and its data |
 | GET / PUT | /sync | the account's document `{version, data}`; PUT with a stale version → 409 + current copy |
+| GET | /finance/state | private accounts, balances and recent ledger transactions |
+| POST | /finance/accounts | idempotent account creation using `client_id` |
+| POST | /finance/transactions | atomic integer-toman opening, income, expense or transfer using `request_id` |
 
 Errors are `{"error": code}` with the same codes as the Django API
 (`invalid_credentials`, `email_taken`, `weak_password`, `throttled`,
@@ -83,3 +86,9 @@ Back up `/home/toojibee/toojibee-data/` and `toojibee-secrets.php`
 together: without the key, the period data can't be read.
 
 Requires PHP 7.4+ with PDO SQLite (or MySQL) and OpenSSL, standard on cPanel.
+
+Financial records live in separate owner-scoped tables (schema v29), outside
+the general `/sync` document. Cards reference accounts and never add another
+balance. Transfers have two opposite ledger entries. The financial API is
+still being expanded beyond manual posting; SMS imports, budgets, debts and
+savings have no public endpoints yet.

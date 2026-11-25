@@ -514,6 +514,10 @@ function renderAdminPanel(){
       <div class="desktop-manage-title">${t('habitsDesktop')}</div>
       <div class="desktop-manage-desc">${t('habitsDesktopSub')}</div>
     </div>
+    <div class="desktop-manage-card">
+      <div class="desktop-manage-title">${t('financeDesktop')}</div>
+      <div class="desktop-manage-desc">${t('financeDesktopSub')}</div>
+    </div>
     ${Cloud.supportsGroups && !REAL_LOGIN_DISABLED ? `
       <div class="desktop-manage-card">
         <div class="desktop-manage-title">${t('groupsDesktop')}</div>
@@ -623,7 +627,7 @@ function renderGeneralSettings(){
     <div class="section-title">${t('appearance')}</div>
     ${themeSelectorHtml()}
     ${state.guest ? '' : `<div class="settings-row"><div><div class="lbl">${t('mainDesk')}</div><div class="sub">${t('mainDeskSub')}</div></div>
-      <select class="settings-select" id="main-desk-select" aria-label="${escapeAttr(t('mainDesk'))}">${[['planning', 'planning'], ['habits', 'habitsDesktop'], ['occasions', 'occasionsDesktop'], ['groups', 'groupsDesktop'], ['period', 'periodDesktop']].map(([v, l]) => `<option value="${v}" ${((state.settings.prefs || {}).mainDesk || 'planning') === v ? 'selected' : ''}>${t(l)}</option>`).join('')}</select></div>`}
+      <select class="settings-select" id="main-desk-select" aria-label="${escapeAttr(t('mainDesk'))}">${[['planning', 'planning'], ['habits', 'habitsDesktop'], ['finance', 'financeDesktop'], ['occasions', 'occasionsDesktop'], ['groups', 'groupsDesktop'], ['period', 'periodDesktop']].map(([v, l]) => `<option value="${v}" ${((state.settings.prefs || {}).mainDesk || 'planning') === v ? 'selected' : ''}>${t(l)}</option>`).join('')}</select></div>`}
     ${(() => {
       // Reminders (js/core/notify.js): the switch, what the browser allows, and overdue tasks.
       const on = !!state.settings.notifications;

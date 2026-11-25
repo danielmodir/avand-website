@@ -52,6 +52,12 @@ class LedgerTests(TestCase):
             post_transaction(self.owner, "saving", 100, self.cash.id, "saving-1")
         self.assertEqual(account_balance(self.owner, self.cash.id), 0)
 
+    def test_aggregate_balance_remains_safe_for_web_integer_math(self):
+        post_transaction(self.owner, "opening", 9_000_000_000_000_000, self.cash.id, "large-opening")
+        with self.assertRaises(LedgerError):
+            post_transaction(self.owner, "income", 1, self.cash.id, "overflow")
+        self.assertEqual(account_balance(self.owner, self.cash.id), 9_000_000_000_000_000)
+
     def test_card_has_no_balance_and_purge_removes_only_owner_records(self):
         Card.objects.create(user_id=self.owner, account=self.cash, label="Debit", masked_number="****1234")
         parent = Category.objects.create(user_id=self.owner, name="Food", kind="expense")

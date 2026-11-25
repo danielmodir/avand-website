@@ -184,6 +184,7 @@
   }
 
   async function signOut() {
+    if (typeof FinanceDesk !== 'undefined') FinanceDesk.lock(false);
     if (hasSession()) { try { await request('POST', '/auth/logout'); } catch (e) { /* best effort */ } }
     clearSession();
     resetCaches();

@@ -40,6 +40,7 @@ test('event editor exposes two choices and stores both on the same event', async
 
 test('each desk renders only its visible events while retaining the same records', () => {
   const c = vm.createContext({ window: { innerWidth: 1280 }, state: {activeDesktopIndex: 0, settings: {prefs: {}}, guest: false, profile: {}},
+    FinanceDesk: { renderDesk: () => '<finance></finance>' },
     eventVisibleIn: context.eventVisibleIn, pref: key => key === 'occasionsEnabled' || key === 'occasionsShowEvents', visibleOccasionsForDate: () => [], periodViews: () => [], featureOn: () => false,
     sortEvents: x => x, eventCard: e => `<event id="${e.id}"></event>`,
     renderItemSections: (_tasks, _habits, events) => events.map(e => `<plan id="${e.id}"></plan>`).join(''),
@@ -48,7 +49,7 @@ test('each desk renders only its visible events while retaining the same records
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../frontend/demo/components/workspace/workspace.js'), 'utf8'), c);
   const events = [{id:'both'}, {id:'planning-only',showInOccasions:false}, {id:'occasions-only',showInPlanning:false}];
   const html = c.renderDesktops(new Date(2026,10,17), {tasks:[],habits:[],events});
-  const [planning, , occasions] = html.split('class="desktop-pane ').slice(1);
+  const [planning, , , occasions] = html.split('class="desktop-pane ').slice(1);
   assert.match(planning, /plan id="both"/);
   assert.match(planning, /plan id="planning-only"/);
   assert.doesNotMatch(planning, /plan id="occasions-only"/);

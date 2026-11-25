@@ -108,6 +108,22 @@ document.getElementById('device').addEventListener('click', (e) => {
     if(['daily','weekly','monthly'].includes(el.dataset.mode)){ setPref('habitDeskView', el.dataset.mode); render(); }
     return;
   }
+  if(action === 'finance-unlock'){
+    FinanceDesk.unlock(document.getElementById('finance-passphrase')?.value || ''); return;
+  }
+  if(action === 'finance-lock'){ FinanceDesk.lock(); return; }
+  if(action === 'finance-add-account'){
+    FinanceDesk.createAccount(document.getElementById('finance-account-name')?.value,
+      document.getElementById('finance-account-kind')?.value,
+      document.getElementById('finance-opening')?.value); return;
+  }
+  if(action === 'finance-post'){
+    FinanceDesk.post(document.getElementById('finance-kind')?.value,
+      document.getElementById('finance-amount')?.value,
+      document.getElementById('finance-source')?.value,
+      document.getElementById('finance-destination')?.value,
+      document.getElementById('finance-note')?.value); return;
+  }
   if(action === 'edit-item'){
     const item = findItem(el.dataset.type, el.dataset.id);
     if(!groupItemEditable(el.dataset.type === 'task' ? (findTaskOrSub(el.dataset.id).parent || item) : item)){ showToast(t('groupNotYours')); return; }

@@ -40,6 +40,11 @@ const FinanceVault = (function () {
   function aad(uid) { return encoder.encode('toojibee-finance-v1:' + uid); }
   function lock() { activeUid = null; activeKey = null; activeMode = null; activeSalt = null; }
   function hasStored(uid) { return !!localStorage.getItem(keyName(uid)); }
+  function needsPassphrase(uid) {
+    if (!androidBridge()) return true;
+    try { return JSON.parse(localStorage.getItem(keyName(uid)) || 'null')?.m === 'web'; }
+    catch (e) { return false; }
+  }
   async function open(uid, passphrase) {
     if (typeof uid !== 'string' || !uid || uid.length > 100) throw new Error('invalid_owner');
     lock();
@@ -50,7 +55,8 @@ const FinanceVault = (function () {
       if (!sealed || sealed.v !== 1) throw new Error('invalid_finance_data');
     }
     const bridge = androidBridge();
-    const mode = bridge ? 'android' : 'web';
+    const migrateToAndroid = !!bridge && !!sealed && sealed.m === 'web';
+    const mode = bridge && !migrateToAndroid ? 'android' : 'web';
     if (sealed && sealed.m !== mode) throw new Error('finance_storage_mode_changed');
     let data;
     if (mode === 'android') {
@@ -72,7 +78,10 @@ const FinanceVault = (function () {
       activeKey = key; activeSalt = salt;
     }
     activeUid = uid; activeMode = mode;
-    if (!sealed) await save(data);
+    if (migrateToAndroid) {
+      activeMode = 'android'; activeKey = null; activeSalt = null;
+      await save(data); // Replace the old web ciphertext only after successful decryption.
+    } else if (!sealed) await save(data);
     return data;
   }
   async function save(data) {
@@ -93,6 +102,6 @@ const FinanceVault = (function () {
     }
     localStorage.setItem(keyName(activeUid), JSON.stringify(sealed));
   }
-  return { open: open, save: save, lock: lock, hasStored: hasStored,
+  return { open: open, save: save, lock: lock, hasStored: hasStored, needsPassphrase: needsPassphrase,
     isUnlocked: function () { return !!activeUid; }, empty: empty };
 })();

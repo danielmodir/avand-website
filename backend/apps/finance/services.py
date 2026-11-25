@@ -6,10 +6,11 @@ from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
-from .models import Account, Card, Category, LedgerEntry, MoneyTransaction
+from .models import Account, Card, Category, LedgerEntry, MoneyTransaction, Wallet
 
 DB = "finance"
 KINDS = {"opening", "income", "expense", "transfer"}
+MAX_TOMAN = 9_000_000_000_000_000  # exact in every supported JavaScript Number
 
 
 class LedgerError(ValueError):
@@ -34,7 +35,7 @@ def post_transaction(user_id, kind, amount_toman, account_id, request_id, *, des
     """
     if kind not in KINDS:
         raise LedgerError("unsupported_kind")
-    if type(amount_toman) is not int or not 0 < amount_toman <= 9_000_000_000_000_000:
+    if type(amount_toman) is not int or not 0 < amount_toman <= MAX_TOMAN:
         raise LedgerError("invalid_amount")
     if not isinstance(request_id, str) or not 1 <= len(request_id) <= 80:
         raise LedgerError("invalid_request_id")
@@ -47,6 +48,8 @@ def post_transaction(user_id, kind, amount_toman, account_id, request_id, *, des
     digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, default=str).encode()).hexdigest()
     occurred_at = occurred_at or timezone.now()
     with transaction.atomic(using=DB):
+        Wallet.objects.using(DB).get_or_create(user_id=user_id)
+        Wallet.objects.using(DB).select_for_update().get(user_id=user_id)
         existing = MoneyTransaction.objects.using(DB).filter(user_id=user_id, request_id=request_id).first()
         if existing:
             if existing.payload_hash != digest:
@@ -58,6 +61,17 @@ def post_transaction(user_id, kind, amount_toman, account_id, request_id, *, des
         ).order_by("id"))
         if len(accounts) != len(account_ids):
             raise LedgerError("account_not_found")
+        deltas = {account_id: -amount_toman if kind in {"expense", "transfer"} else amount_toman}
+        if destination_id is not None:
+            deltas[destination_id] = amount_toman
+        balances = dict(LedgerEntry.objects.using(DB).filter(user_id=user_id, account_id__in=account_ids)
+                        .values("account_id").annotate(balance=Sum("amount_toman"))
+                        .values_list("account_id", "balance"))
+        if any(abs((balances.get(aid) or 0) + delta) > MAX_TOMAN for aid, delta in deltas.items()):
+            raise LedgerError("balance_limit")
+        wallet_balance = LedgerEntry.objects.using(DB).filter(user_id=user_id).aggregate(total=Sum("amount_toman"))["total"] or 0
+        if abs(wallet_balance + sum(deltas.values())) > MAX_TOMAN:
+            raise LedgerError("balance_limit")
         if category_id is not None:
             if kind not in {"income", "expense"} or not Category.objects.using(DB).filter(
                 id=category_id, user_id=user_id, kind=kind, archived_at__isnull=True
@@ -97,3 +111,4 @@ def purge_user(user_id):
         Card.objects.using(DB).filter(user_id=user_id).delete()
         Category.objects.using(DB).filter(user_id=user_id).delete()
         Account.objects.using(DB).filter(user_id=user_id).delete()
+        Wallet.objects.using(DB).filter(user_id=user_id).delete()

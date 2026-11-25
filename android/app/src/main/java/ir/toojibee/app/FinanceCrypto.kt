@@ -1,6 +1,5 @@
 package ir.toojibee.app
 
-import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -34,7 +33,7 @@ object FinanceCrypto {
         it.length in 1..100 && it.all { c -> c.isLetterOrDigit() || c == '-' || c == '_' }
     }?.toByteArray(StandardCharsets.UTF_8)
 
-    fun seal(context: Context, uid: String?, plain: String?): String {
+    fun seal(uid: String?, plain: String?): String {
         val aad = owner(uid) ?: return ""
         if (plain == null || plain.length > MAX_PLAIN) return ""
         return try {
@@ -46,7 +45,7 @@ object FinanceCrypto {
         } catch (e: Exception) { "" }
     }
 
-    fun open(context: Context, uid: String?, sealed: String?): String {
+    fun open(uid: String?, sealed: String?): String {
         val aad = owner(uid) ?: return ""
         if (sealed == null || sealed.length > MAX_CIPHER) return ""
         return try {

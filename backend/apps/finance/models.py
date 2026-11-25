@@ -8,6 +8,11 @@ from django.db import models
 from django.db.models import Q
 
 
+class Wallet(models.Model):
+    """One lock row per owner serializes all account postings for exact totals."""
+    user_id = models.UUIDField(unique=True)
+
+
 class Account(models.Model):
     user_id = models.UUIDField(db_index=True)
     client_id = models.CharField(max_length=80, null=True, blank=True)

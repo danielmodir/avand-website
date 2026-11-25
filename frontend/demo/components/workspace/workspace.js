@@ -121,6 +121,7 @@ function deskKeys(){
      request, 2026-10-25). Guests only browse the calendar and occasions. */
   if(!state.guest) keys.push('planning');
   if(!state.guest) keys.push('habitsDesktop');
+  if(!state.guest) keys.push('financeDesktop');
   if(pref('occasionsEnabled')) keys.push('occasionsDesktop');
   if(pref('groupsEnabled') && groupsAvailable()) keys.push('groupsDesktop'); // needs our API and an account
   if(periodViews().length) keys.push('periodDesktop'); // her own cycle and/or ones friends share with this person
@@ -196,7 +197,7 @@ function habitCalendarHtml(h,d,mode){
   </section>`;
 }
 
-const MAIN_DESKS = { planning: 'planning', habits: 'habitsDesktop', occasions: 'occasionsDesktop', groups: 'groupsDesktop', period: 'periodDesktop' };
+const MAIN_DESKS = { planning: 'planning', habits: 'habitsDesktop', finance: 'financeDesktop', occasions: 'occasionsDesktop', groups: 'groupsDesktop', period: 'periodDesktop' };
 
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;
@@ -211,6 +212,7 @@ function renderDesktops(d, data){
     ` };
     }
     if(key === 'habitsDesktop') return { key, html: renderHabitDesk(d, habits) };
+    if(key === 'financeDesktop') return { key, html: FinanceDesk.renderDesk() };
     if(key === 'groupsDesktop') return { key, html: renderGroupsPane(d) };
     return { key, html: renderPeriodPage('') + renderArticleStrip('app_period') };
   });

@@ -32,7 +32,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 - Web app core (frontend/demo/js/core/): state.js (app state), render.js,
   events.js, i18n.js (all strings), dates.js / calendars.js (Jalali, Hijri,
   Gregorian), occasions.js (calendar rules and reminder plans), groups.js, trackers.js (habit counter/timer),
-  habit-goals.js (period goals, calendar periods and streaks),
+  habit-goals.js (period goals, calendar periods and streaks), finance.js
+  (wallet pane and sealed pending queue), finance-vault.js (AES-GCM cache),
   notify.js (reminders/push), android.js (bridge to Kotlin), local-store.js,
   search.js, include.js (loads component partials), compat.js (old WebViews).
 - App themes: frontend/demo/js/core/themes.js (6 palettes × 2 appearances,
@@ -43,13 +44,13 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   contact, date-picker, day-sheet, groups, items, menu, notices, period,
   popup, toolbar, tour, workspace. The workspace now includes a separate
   Habit Tracker pane, still using the existing habit rows and records.
-- PHP lib: auth, sync (the user's synced document), social, groups, push,
+- PHP lib: auth, sync (the user's synced document), finance (private ledger), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
 - Django apps: core, calendar_data, planning, period, social,
   notifications, finance (+ common; finance currently has a private ledger
   foundation only).
-- Android Kotlin: MainActivity, AppWeb, WebFiles (offline/OTA files),
+- Android Kotlin: MainActivity, AppWeb, FinanceCrypto (Keystore vault), WebFiles (offline/OTA files),
   Reminders, PhoneActions, Widgets.
 - Deploy scripts (deploy/): build-site-zip.ps1, build-android.ps1,
   make-keystore.ps1, make-logo.js, render-logo.js, make-desk-shots.js,
@@ -62,15 +63,29 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-22.6
+- Demo asset version: 2026-11-25.1
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
 - PHP schema: v29
 - Django latest migrations: core 0012, planning 0012, social 0005,
-  notifications 0003, calendar_data 0002, period 0001, finance 0003
+  notifications 0003, calendar_data 0002, period 0001, finance 0004
 - Marketing CSS cache version: 2026-11-23.1
-- Android source: 1.4.1 (versionCode 6; APK not built or published)
+- Android source: 1.4.2 (versionCode 7; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-25 — finance web desk and verification — added the private wallet
+  pane for creating accounts and manually posting opening balances, income,
+  expenses and transfers. A separate encrypted cache and pending queue keep
+  finance out of the general local store and `/sync`. Web uses a local
+  passphrase with PBKDF2/AES-GCM; Android source uses Keystore AES-GCM and
+  is bumped to 1.4.2 (7). PHP 8.2 lint and SQLite HTTP smoke (balance,
+  idempotent retry, cross-owner 404 and amount limits), Node 66/66,
+  Django 106/106 (finance 8/8 and migration drift clear),
+  Android Kotlin compilation and browser fa/en × light/dark × 360/1280
+  pass; no overflow or external requests. Finance 0004 adds one wallet lock
+  row per user so account totals remain exact within the supported integer
+  range. Budget, debt, savings, SMS and
+  university work remain. No production deploy or APK release.
 
 - 2026-11-25 — finance foundation (PHP, Django, API clients, Android source)
   — added private account and ledger endpoints with additive PHP schema v29

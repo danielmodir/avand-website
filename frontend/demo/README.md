@@ -55,6 +55,12 @@ demo/
   Planning no longer renders habit rows or includes them in its progress card.
   `js/core/habit-goals.js` calculates period goals, streaks and success rates
   from those daily logs in the selected calendar and week-start setting.
+- The Finance pane is rendered by `js/core/finance.js` inside the existing
+  workspace. `js/core/finance-vault.js` stores only AES-GCM ciphertext in a
+  separate per-user key; a web passphrase stays in memory, while the Android
+  bridge uses Keystore. Pending account and transaction writes are sealed
+  before sending to `/finance/*` and use idempotency keys on retry. The
+  general `local-store.js` and `/sync` document do not contain finance data.
 - Partials are fetched at runtime, so open the demo over HTTP
   (`npx http-server frontend`), not from `file://`.
 
