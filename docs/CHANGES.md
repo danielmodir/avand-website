@@ -72,6 +72,13 @@ Update these with every change.
 
 ## Log (newest first)
 
+- 2026-11-25 — Google Calendar sync preparation — owner narrowed the
+  integration to two-way event sync with the primary Google calendar and
+  manual approval for unilateral deletion or simultaneous edits/deletes.
+  Added a branch-only PHP lint/test workflow so the live PHP target can be
+  checked while local PHP CLI is unavailable. No OAuth credentials, API
+  schema, frontend behavior or deployment changed in this step.
+
 - 2026-11-25 — PHP API release preparation — allowed CORS only for the
   GitHub Pages browser origin, including JSON/bearer preflight; denied
   other origins and kept cross-origin cookies disabled. The live API health

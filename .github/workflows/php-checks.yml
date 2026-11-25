@@ -1,0 +1,21 @@
+name: PHP API checks
+
+on:
+  push:
+    branches: [codex/google-calendar-sync-2026-11-25]
+  pull_request:
+    paths:
+      - 'backend-php/**'
+      - '.github/workflows/php-checks.yml'
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PHP CLI
+        run: sudo apt-get update && sudo apt-get install -y php-cli php-sqlite3 php-curl
+      - name: Lint PHP sources
+        run: find backend-php -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Test reminder windows
+        run: php backend-php/tests/reminder-windows.php
