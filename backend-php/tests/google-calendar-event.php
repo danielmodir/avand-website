@@ -38,5 +38,17 @@ same([$projected['date'], $projected['startTime'], $projected['endTime']], ['202
 rejects(fn() => tj_gcal_local_event(array_replace($base, ['recurrence' => ['mode' => 'yearly', 'cal' => 'jalali']])), 'unsupported_recurrence');
 rejects(fn() => tj_gcal_local_event($base + ['groupId' => 'group-1']), 'group_event');
 rejects(fn() => tj_gcal_google_event($incoming + ['eventType' => 'outOfOffice']), 'unsupported_google_event');
-rejects(fn() => tj_gcal_google_event($incoming + ['recurrence' => ['RRULE:FREQ=MONTHLY']]), 'unsupported_google_event');
+rejects(fn() => tj_gcal_google_event($incoming + ['recurrence' => ['RRULE:FREQ=MONTHLY']]), 'unsupported_google_recurrence');
+rejects(fn() => tj_gcal_google_event($incoming + ['recurrence' => ['RRULE:FREQ=DAILY;COUNT=5']]), 'unsupported_google_recurrence');
+
+foreach ([
+    ['mode' => 'interval', 'interval' => 3],
+    ['mode' => 'weekdays', 'interval' => 1, 'weekdays' => [1, 3, 5]],
+    ['mode' => 'monthly', 'interval' => 2, 'anchor' => '2026-11-25', 'cal' => 'gregorian'],
+    ['mode' => 'yearly', 'interval' => 1, 'anchor' => '2026-11-25', 'cal' => 'gregorian'],
+] as $rule) {
+    $local = tj_gcal_local_event(array_replace($base, ['recurrence' => $rule]));
+    $google = tj_gcal_google_resource($local, 'event-1');
+    same(tj_gcal_google_event($google), $local, 'Gregorian recurrence round trip');
+}
 echo "Google Calendar event projection: PASS\n";
