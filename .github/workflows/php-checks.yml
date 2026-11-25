@@ -14,8 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install PHP CLI
-        run: sudo apt-get update && sudo apt-get install -y php-cli php-sqlite3 php-curl
+        run: sudo apt-get update && sudo apt-get install -y php-cli php-sqlite3 php-curl php-mbstring
       - name: Lint PHP sources
         run: find backend-php -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Test reminder windows
         run: php backend-php/tests/reminder-windows.php
+      - name: Test Google Calendar grant
+        run: php backend-php/tests/google-calendar-grant.php

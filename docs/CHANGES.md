@@ -43,7 +43,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   contact, date-picker, day-sheet, groups, items, menu, notices, period,
   popup, toolbar, tour, workspace. The workspace now includes a separate
   Habit Tracker pane, still using the existing habit rows and records.
-- PHP lib: auth, sync (the user's synced document), social, groups, push,
+- PHP lib: auth, sync (the user's synced document), google_calendar (separate
+  Calendar grant and later event sync), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
 - Django apps: core, calendar_data, planning, period, social,
@@ -64,13 +65,20 @@ Update these with every change.
 
 - Demo asset version: 2026-11-22.6
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
-- PHP schema: v28
+- PHP schema: v29
 - Django latest migrations: core 0012, planning 0012, social 0005,
   notifications 0003, calendar_data 0002, period 0001, finance 0001
 - Marketing CSS cache version: 2026-11-23.1
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-25 — PHP Google Calendar grant foundation — added separate
+  account-bound consent with a one-use state, PKCE, the narrow owned-events
+  scope and encrypted refresh-token storage (schema v29). Status, connect,
+  callback and disconnect routes are present. No events are read or written
+  yet, and no Google Cloud client or live callback is configured. The PHP
+  workflow now runs a grant/migration test; live verification is pending.
 
 - 2026-11-25 — Google Calendar sync preparation — owner narrowed the
   integration to two-way event sync with the primary Google calendar and

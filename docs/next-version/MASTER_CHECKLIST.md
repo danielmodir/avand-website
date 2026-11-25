@@ -69,7 +69,7 @@
 
 | ID | Feature | Description | Priority | Status | Frontend | Backend | Database | Testing | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| NV-03-01 | Google Calendar | اتصال و همگام‌سازی واقعی، قطع اتصال، تعارض و مدیریت حذف | P2 | [ ] Not Started | N | PHP:N / DJ:N | N | Pending | GOOGLE؛ 06-01/02،00-02،01-08؛ D08؛ ICS جایگزین sync نیست |
+| NV-03-01 | Google Calendar | اتصال و همگام‌سازی واقعی، قطع اتصال، تعارض و مدیریت حذف | P2 | [ ] In Progress | N | PHP:P / DJ:N | N | PHP grant CI pending; live pending | GOOGLE؛ 2026-11-25: فقط تقویم اصلی و ایونت؛ حذف/تعارض با تأیید کاربر؛ OAuth جداگانه و schema v29، بدون موتور sync/UI/اعتبارنامه؛ ICS جایگزین sync نیست |
 | NV-03-02 | مناسبت ادمین | ثبت/ویرایش مناسبت توسط ادمین و رسیدن به برنامهٔ آنلاین/آفلاین | P1 | [ ] Not Started | P | PHP:N / DJ:E | PHP:N / DJ:E | Pending | CALDATA؛ 00-04؛ PHP فعلاً جدول شروع ماه قمری دارد |
 | NV-03-03 | مناسبت‌های باستانی | مجموعهٔ جداگانهٔ مورد تأیید با انتخاب نمایش و منبع ثبت‌شده | P2 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | CALDATA؛ 03-02؛ D09؛ مقاله دربارهٔ جشن‌ها معادل تقویم نیست |
 | NV-03-04 | اعلان مناسبت | فعال‌سازی اختیاری اعلان مناسبت با لغو/تغییر و تشخیص تکرار | P1 | [ ] In Progress | P | PHP:P / DJ:P | P | Node/Django/browser PASS; live pending | NOTIFY/CALDATA؛ 2026-11-18؛ چند یادآوری مستقل با ساعت دلخواه، ۰ تا ۵۶ روز قبل، ذخیرهٔ settings در PHP/Django، asset 2026-11-18.2؛ الگوی کشور/دسته و تحویل واقعی Android/Push باز است |

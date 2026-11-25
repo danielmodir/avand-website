@@ -515,6 +515,25 @@ function tj_migrate(PDO $db): void {
         )$tail");
         $db->exec('INSERT INTO tj_schema (version) VALUES (28)');
     }
+    if ($v < 29) {
+        // Calendar consent is separate from sign-in. Refresh tokens never
+        // enter the user's portable sync document or browser storage.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_google_calendar_flows (
+            state_hash CHAR(64) PRIMARY KEY,
+            user_id $fk NOT NULL,
+            verifier_enc TEXT NOT NULL,
+            expires_at DATETIME NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_google_calendar_grants (
+            user_id $fk PRIMARY KEY,
+            refresh_token_enc TEXT NOT NULL,
+            connected_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (29)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

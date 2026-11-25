@@ -9,5 +9,9 @@ return [
     'db_user' => 'toojibee_app',
     'db_pass' => 'PUT-THE-DATABASE-PASSWORD-HERE',
     'app_url' => 'https://toojibee.ir/demo/',
+    // Add the Google web client credentials only in this host-side file.
+    // 'google_client_id' => '...',
+    // 'google_client_secret' => '...',
+    // 'google_calendar_redirect_uri' => 'https://toojibee.ir/api/v1/calendar/google/callback',
     'mail_from' => 'توجیبی Toojibee <support@toojibee.ir>',
 ];
