@@ -122,6 +122,7 @@ function tj_google_calendar_callback(): void {
         tj_google_redirect($cfg['app_url'] . '#calendar_google=permission_missing');
     $token = tj_encrypt($refresh);
     $uid = (int)$flow['user_id'];
+    $db = tj_db();
     tj_tx_begin($db);
     try {
         $q = $db->prepare('SELECT user_id FROM tj_google_calendar_grants WHERE user_id=?');

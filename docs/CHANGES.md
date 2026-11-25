@@ -76,6 +76,10 @@ Update these with every change.
 
 ## Log (newest first)
 
+- 2026-11-25 — Google Calendar OAuth callback fix — initialize the database
+  handle before storing a successful grant, avoiding a runtime error after
+  Google's redirect. The callback still needs an end-to-end live test.
+
 - 2026-11-25 — Google Calendar read-only preview — PHP now reads all pages of
   the signed-in user's primary Google calendar, bounds the snapshot at 10,000
   events, and returns a merge plan against the user's local `/sync` document
