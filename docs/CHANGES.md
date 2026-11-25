@@ -80,6 +80,7 @@ Update these with every change.
   preflight verification and switching the Pages app to the API remain
   pending. Owner selected GitHub Pages for the site and toojibee.ir for the
   PHP API, with final publication after service-backed features are ready.
+  docs/DEPLOY.md now records the API-first checks and Pages switch order.
   No frontend release or database change.
 
 - 2026-11-23 — review and release preparation — reconciled accumulated
