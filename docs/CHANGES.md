@@ -80,8 +80,8 @@ Update these with every change.
   exclusive ends, Iran-time timed events, optional end time, location and
   meeting link; imported Google times are converted from their offsets.
   Unsupported recurrence and special Google event types are rejected
-  explicitly, not flattened. PHP CI covers round trips; recurring-event
-  mapping and actual API writes remain pending.
+  explicitly, not flattened. PHP CI run 45655943181 passed round trips;
+  recurring-event mapping and actual API writes remain pending.
 
 - 2026-11-25 — Google Calendar conflict planning — added a pure three-way
   comparison of last-synced, local and Google event snapshots. One-sided
