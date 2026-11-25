@@ -79,8 +79,8 @@ Update these with every change.
   edits can be proposed for transfer; one-sided deletes and concurrent
   divergent edits are held for user confirmation. No calendar writes occur
   in this step. Owner chose automatic initial merging, while unsupported
-  Solar Hijri/Hijri recurrence stays only in Toojibee. PHP CI covers the
-  conflict matrix; live integration remains pending.
+  Solar Hijri/Hijri recurrence stays only in Toojibee. PHP CI run
+  45655120314 passed the conflict matrix; live integration remains pending.
 
 - 2026-11-25 — PHP Google Calendar grant foundation — added separate
   account-bound consent with a one-use state, PKCE, the narrow owned-events
