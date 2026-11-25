@@ -21,3 +21,5 @@ jobs:
         run: php backend-php/tests/reminder-windows.php
       - name: Test Google Calendar grant
         run: php backend-php/tests/google-calendar-grant.php
+      - name: Test Google Calendar conflict planning
+        run: php backend-php/tests/google-calendar-diff.php

@@ -44,7 +44,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   popup, toolbar, tour, workspace. The workspace now includes a separate
   Habit Tracker pane, still using the existing habit rows and records.
 - PHP lib: auth, sync (the user's synced document), google_calendar (separate
-  Calendar grant and later event sync), social, groups, push,
+  Calendar grant and later event sync), google_calendar_diff (pure three-way
+  comparison), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
 - Django apps: core, calendar_data, planning, period, social,
@@ -72,6 +73,14 @@ Update these with every change.
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-25 — Google Calendar conflict planning — added a pure three-way
+  comparison of last-synced, local and Google event snapshots. One-sided
+  edits can be proposed for transfer; one-sided deletes and concurrent
+  divergent edits are held for user confirmation. No calendar writes occur
+  in this step. Owner chose automatic initial merging, while unsupported
+  Solar Hijri/Hijri recurrence stays only in Toojibee. PHP CI covers the
+  conflict matrix; live integration remains pending.
 
 - 2026-11-25 — PHP Google Calendar grant foundation — added separate
   account-bound consent with a one-use state, PKCE, the narrow owned-events
