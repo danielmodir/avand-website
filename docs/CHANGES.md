@@ -80,6 +80,8 @@ Update these with every change.
   Toojibee private ID cannot silently recreate a locally deleted event when
   its link row is missing. It now requires deletion confirmation. Recurring
   instances are excluded from the import projection to avoid duplicates.
+  The collection fixture distinguishes a truly independent Google event
+  from an exported event with a Toojibee private ID.
 
 - 2026-11-25 — Google Calendar OAuth callback fix — initialize the database
   handle before storing a successful grant, avoiding a runtime error after

@@ -28,7 +28,9 @@ $links = [
     ['local_id' => 'one', 'google_id' => 'g-one', 'base' => tj_gcal_local_event($one)],
     ['local_id' => 'two', 'google_id' => 'g-two', 'base' => tj_gcal_local_event($two)],
 ];
-$plan = tj_gcal_plan_collection([$one, $edited, $three, $solar], [remote($one, 'g-one'), remote($two, 'g-two'), remote($four, 'g-four')], $links);
+$independent = remote($four, 'g-four');
+unset($independent['extendedProperties']['private']['toojibeeId']);
+$plan = tj_gcal_plan_collection([$one, $edited, $three, $solar], [remote($one, 'g-one'), remote($two, 'g-two'), $independent], $links);
 equals(actions($plan), ['one/g-one' => 'none', 'two/g-two' => 'update_google', 'three/-' => 'create_google', '-/g-four' => 'create_local'], 'merge plan');
 equals($plan['skipped'][0]['reason'], 'unsupported_recurrence', 'solar recurrence stays local');
 
