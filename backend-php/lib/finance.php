@@ -35,6 +35,14 @@ function tj_finance_state(): void {
         unset($a['archived_at']); $a['balance_toman'] = tj_finance_balance($db, $uid, $a['id']);
         $accounts[] = $a;
     }
+    $q = $db->prepare('SELECT id,client_id,name,kind,parent_id,color,icon,archived_at FROM tj_finance_categories WHERE user_id=? ORDER BY id');
+    $q->execute([$uid]); $categories = [];
+    foreach ($q->fetchAll() as $c) {
+        $c['id'] = (int)$c['id'];
+        $c['parent_id'] = $c['parent_id'] === null ? null : (int)$c['parent_id'];
+        $c['archived'] = $c['archived_at'] !== null;
+        unset($c['archived_at']); $categories[] = $c;
+    }
     $q = $db->prepare('SELECT id,request_id,kind,amount_toman,occurred_at,category_id,note,source_id
         FROM tj_finance_transactions WHERE user_id=? ORDER BY occurred_at DESC,id DESC LIMIT 100');
     $q->execute([$uid]); $transactions = [];
@@ -50,7 +58,39 @@ function tj_finance_state(): void {
     }
     tj_json(['currency'=>'TOMAN',
         'wallet_balance_toman'=>array_sum(array_column($accounts, 'balance_toman')),
-        'accounts'=>$accounts, 'transactions'=>$transactions]);
+        'accounts'=>$accounts, 'categories'=>$categories, 'transactions'=>$transactions]);
+}
+
+function tj_finance_category_create(): void {
+    $me = tj_require_user(); $b = tj_body(); $uid = (int)$me['id'];
+    $clientId = tj_finance_text($b['client_id'] ?? null, 80, true);
+    $name = tj_finance_text($b['name'] ?? null, 100, true);
+    $kind = $b['kind'] ?? null;
+    if (!in_array($kind,['income','expense'],true)) tj_fail(400,'validation_error');
+    $parentId = isset($b['parent_id']) ? tj_finance_id($b['parent_id']) : null;
+    $color = tj_finance_text($b['color'] ?? '',32);
+    $icon = tj_finance_text($b['icon'] ?? '',40);
+    $db = tj_db(); tj_tx_begin($db); tj_finance_lock_user($db,$uid);
+    $q = $db->prepare('SELECT * FROM tj_finance_categories WHERE user_id=? AND client_id=?');
+    $q->execute([$uid,$clientId]); $old = $q->fetch();
+    if ($old) {
+        if ([$old['name'],$old['kind'],$old['parent_id'] === null ? null : (int)$old['parent_id'],$old['color'],$old['icon']]
+            !== [$name,$kind,$parentId,$color,$icon]) { tj_tx_rollback($db); tj_fail(409,'request_conflict'); }
+        $id = (int)$old['id']; tj_tx_commit($db);
+        tj_json(['id'=>$id,'client_id'=>$clientId,'name'=>$name,'kind'=>$kind,'parent_id'=>$parentId,
+            'color'=>$color,'icon'=>$icon,'archived'=>$old['archived_at']!==null]);
+    }
+    if ($parentId !== null) {
+        $q = $db->prepare('SELECT parent_id FROM tj_finance_categories WHERE user_id=? AND id=? AND kind=? AND archived_at IS NULL');
+        $q->execute([$uid,$parentId,$kind]); $parent = $q->fetch();
+        if (!$parent) { tj_tx_rollback($db); tj_fail(404,'category_not_found'); }
+        if ($parent['parent_id'] !== null) { tj_tx_rollback($db); tj_fail(400,'category_depth'); }
+    }
+    $db->prepare('INSERT INTO tj_finance_categories (user_id,client_id,name,kind,parent_id,color,icon) VALUES (?,?,?,?,?,?,?)')
+       ->execute([$uid,$clientId,$name,$kind,$parentId,$color,$icon]);
+    $id = (int)$db->lastInsertId(); tj_tx_commit($db);
+    tj_json(['id'=>$id,'client_id'=>$clientId,'name'=>$name,'kind'=>$kind,'parent_id'=>$parentId,
+        'color'=>$color,'icon'=>$icon,'archived'=>false],201);
 }
 
 function tj_finance_account_create(): void {

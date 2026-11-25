@@ -112,3 +112,21 @@ class FinanceApiTests(ApiTestCase):
             body["amount_toman"] = bad
             self.assertEqual(self.client.post("/api/v1/finance/transactions", body, format="json").status_code, 400)
         self.assertEqual(self.client.get("/api/v1/finance/state").json()["wallet_balance_toman"], 0)
+
+    def test_custom_parent_category_and_transaction_link(self):
+        url = "/api/v1/finance/categories"
+        parent = self.client.post(url, {"client_id": "food", "name": "Food", "kind": "expense"}, format="json")
+        self.assertEqual(parent.status_code, 201, parent.content)
+        self.assertEqual(self.client.post(url, {"client_id": "food", "name": "Food", "kind": "expense"}, format="json").json()["id"], parent.json()["id"])
+        child = self.client.post(url, {"client_id": "cafe", "name": "Cafe", "kind": "expense", "parent_id": parent.json()["id"]}, format="json")
+        self.assertEqual(child.status_code, 201, child.content)
+        account = self.client.post("/api/v1/finance/accounts", {"client_id": "cash", "name": "Cash", "kind": "cash"}, format="json").json()["id"]
+        expense = self.client.post("/api/v1/finance/transactions", {"request_id": "coffee", "kind": "expense", "amount_toman": 500,
+            "account_id": account, "category_id": child.json()["id"]}, format="json")
+        self.assertEqual(expense.status_code, 201, expense.content)
+        state = self.client.get("/api/v1/finance/state").json()
+        self.assertEqual(state["transactions"][0]["category_id"], child.json()["id"])
+        self.assertEqual(len(state["categories"]), 2)
+        other = self.register(email="category-other@example.com")
+        denied = other.post(url, {"client_id": "foreign-child", "name": "Child", "kind": "expense", "parent_id": parent.json()["id"]}, format="json")
+        self.assertEqual(denied.status_code, 404)

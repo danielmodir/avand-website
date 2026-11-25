@@ -565,6 +565,18 @@ function tj_migrate(PDO $db): void {
         $db->exec('CREATE INDEX tj_finance_tx_owner_date ON tj_finance_transactions (user_id, occurred_at)');
         $db->exec('INSERT INTO tj_schema (version) VALUES (29)');
     }
+    if ($v < 30) {
+        // Stable client id for offline category creation and retries.
+        try { $db->exec('ALTER TABLE tj_finance_categories ADD COLUMN client_id VARCHAR(80) NULL'); }
+        catch (PDOException $e) {
+            if (!preg_match('/duplicate column/i', $e->getMessage())) throw $e;
+        }
+        try { $db->exec('CREATE UNIQUE INDEX tj_finance_category_client_once ON tj_finance_categories (user_id, client_id)'); }
+        catch (PDOException $e) {
+            if (!preg_match('/already exists|duplicate key name/i', $e->getMessage())) throw $e;
+        }
+        $db->exec('INSERT INTO tj_schema (version) VALUES (30)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

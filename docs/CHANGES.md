@@ -63,15 +63,24 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-25.1
+- Demo asset version: 2026-11-25.2
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
-- PHP schema: v29
+- PHP schema: v30
 - Django latest migrations: core 0012, planning 0012, social 0005,
-  notifications 0003, calendar_data 0002, period 0001, finance 0004
+  notifications 0003, calendar_data 0002, period 0001, finance 0005
 - Marketing CSS cache version: 2026-11-23.1
 - Android source: 1.4.2 (versionCode 7; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-25 — finance categories — added seeded income and expense
+  categories, private custom parent/child categories, and category links on
+  transactions. PHP schema v30 and Django finance 0005 add per-owner client
+  IDs for offline idempotence. Both API clients and the encrypted queue sync
+  parents before children and transactions. PHP SQLite HTTP smoke, PHP lint,
+  Django 107/107, Node 66/66, migration drift check, and browser checks at
+  360/1280 px in fa/en and light/dark pass; no external requests. The other
+  phase-two finance and university features remain open.
 
 - 2026-11-25 — finance web desk and verification — added the private wallet
   pane for creating accounts and manually posting opening balances, income,

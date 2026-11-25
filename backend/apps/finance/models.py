@@ -38,12 +38,16 @@ class Card(models.Model):
 
 class Category(models.Model):
     user_id = models.UUIDField(db_index=True)
+    client_id = models.CharField(max_length=80, null=True, blank=True)
     name = models.CharField(max_length=100)
     kind = models.CharField(max_length=10, choices=[("income", "income"), ("expense", "expense")])
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
     color = models.CharField(max_length=32, blank=True)
     icon = models.CharField(max_length=40, blank=True)
     archived_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user_id", "client_id"], name="finance_category_request_once")]
 
 
 class MoneyTransaction(models.Model):

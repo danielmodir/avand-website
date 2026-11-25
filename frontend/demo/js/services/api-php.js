@@ -343,6 +343,7 @@
   Object.assign(api, {
     financeState: function () { return request('GET', '/finance/state'); },
     financeCreateAccount: function (body) { return request('POST', '/finance/accounts', body); },
+    financeCreateCategory: function (body) { return request('POST', '/finance/categories', body); },
     financePostTransaction: function (body) { return request('POST', '/finance/transactions', body); },
     uuid: base.uuid, isConfigured: function () { return true; }, hasSession: hasSession,
     // Changes made here that haven't reached the server yet (the connection dot, app-error.js).

@@ -117,12 +117,18 @@ document.getElementById('device').addEventListener('click', (e) => {
       document.getElementById('finance-account-kind')?.value,
       document.getElementById('finance-opening')?.value); return;
   }
+  if(action === 'finance-add-category'){
+    FinanceDesk.createCategory(document.getElementById('finance-category-name')?.value,
+      document.getElementById('finance-category-kind')?.value,
+      document.getElementById('finance-parent-category')?.value); return;
+  }
   if(action === 'finance-post'){
     FinanceDesk.post(document.getElementById('finance-kind')?.value,
       document.getElementById('finance-amount')?.value,
       document.getElementById('finance-source')?.value,
       document.getElementById('finance-destination')?.value,
-      document.getElementById('finance-note')?.value); return;
+      document.getElementById('finance-note')?.value,
+      document.getElementById('finance-transaction-category')?.value); return;
   }
   if(action === 'edit-item'){
     const item = findItem(el.dataset.type, el.dataset.id);

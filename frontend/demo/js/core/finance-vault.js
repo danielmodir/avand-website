@@ -24,10 +24,11 @@ const FinanceVault = (function () {
     const bridge = window.ToojibeeAndroid;
     return bridge && typeof bridge.financeSeal === 'function' && typeof bridge.financeOpen === 'function' ? bridge : null;
   }
-  function empty() { return { v: 1, currency: 'TOMAN', accounts: [], transactions: [], pending: [] }; }
+  function empty() { return { v: 1, currency: 'TOMAN', accounts: [], categories: [], transactions: [], pending: [] }; }
   function checkData(data) {
+    if (data && data.v === 1 && data.categories === undefined) data.categories = [];
     if (!data || data.v !== 1 || data.currency !== 'TOMAN' || !Array.isArray(data.accounts)
-      || !Array.isArray(data.transactions) || !Array.isArray(data.pending)) throw new Error('invalid_finance_data');
+      || !Array.isArray(data.categories) || !Array.isArray(data.transactions) || !Array.isArray(data.pending)) throw new Error('invalid_finance_data');
     return data;
   }
   async function derive(passphrase, salt) {

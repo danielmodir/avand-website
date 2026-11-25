@@ -92,6 +92,7 @@ $routes = [
     'PUT /sync'                 => 'tj_sync_put',
     'GET /finance/state'        => 'tj_finance_state',
     'POST /finance/accounts'    => 'tj_finance_account_create',
+    'POST /finance/categories'  => 'tj_finance_category_create',
     'POST /finance/transactions'=> 'tj_finance_transaction_create',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header
     // carries the panel's secret address.

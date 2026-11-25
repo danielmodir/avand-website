@@ -6,6 +6,8 @@
 .finance-summary{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2)}
 .finance-summary strong{font-size:1.4rem;margin-inline-end:auto}
 .finance-account-list,.finance-transaction-list{display:grid;gap:var(--space-2)}
+.finance-category-list{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.finance-category{border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-1) var(--space-2);background:var(--bg-soft)}
 .finance-account,.finance-transaction{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:var(--space-2);align-items:center}
 .finance-account span,.finance-transaction span{min-width:0;overflow-wrap:anywhere}
 .finance-account small,.finance-transaction small{grid-column:1;color:var(--text-muted)}

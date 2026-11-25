@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from apps.common.exceptions import ApiError
 
-from .models import Account, LedgerEntry, MoneyTransaction
+from .models import Account, Category, LedgerEntry, MoneyTransaction
 from .services import LedgerError, account_balance, post_transaction
 
 DB = "finance"
@@ -34,10 +34,17 @@ def _account_row(row, balances):
             "balance_toman": balances.get(row.id, 0)}
 
 
+def _category_row(row):
+    return {"id": row.id, "client_id": row.client_id, "name": row.name, "kind": row.kind,
+            "parent_id": row.parent_id, "color": row.color, "icon": row.icon,
+            "archived": row.archived_at is not None}
+
+
 class FinanceStateView(APIView):
     def get(self, request):
         uid = request.user.id
         accounts = list(Account.objects.using(DB).filter(user_id=uid).order_by("id"))
+        categories = list(Category.objects.using(DB).filter(user_id=uid).order_by("id"))
         balances = dict(LedgerEntry.objects.using(DB).filter(user_id=uid).values("account_id")
                         .annotate(balance=Sum("amount_toman")).values_list("account_id", "balance"))
         txs = MoneyTransaction.objects.using(DB).filter(user_id=uid).order_by("-occurred_at", "-id")[:100]
@@ -50,6 +57,7 @@ class FinanceStateView(APIView):
                                  "entries": entries})
         return Response({"currency": "TOMAN", "wallet_balance_toman": sum(balances.values()),
                          "accounts": [_account_row(a, balances) for a in accounts],
+                         "categories": [_category_row(c) for c in categories],
                          "transactions": transactions})
 
 
@@ -73,6 +81,37 @@ class AccountsView(APIView):
             row = Account.objects.using(DB).create(user_id=uid, client_id=client_id, name=name,
                                                    kind=kind, color=color, icon=icon)
         return Response(_account_row(row, {}), status=201)
+
+
+class CategoriesView(APIView):
+    def post(self, request):
+        uid = request.user.id
+        body = request.data
+        client_id = _text(body.get("client_id"), limit=80, required=True)
+        name = _text(body.get("name"), limit=100, required=True)
+        kind = body.get("kind")
+        if kind not in {"income", "expense"}:
+            raise ApiError("validation_error")
+        parent_id = body.get("parent_id")
+        if parent_id is not None:
+            parent_id = _positive_id(parent_id)
+        color = _text(body.get("color", ""), limit=32)
+        icon = _text(body.get("icon", ""), limit=40)
+        with transaction.atomic(using=DB):
+            existing = Category.objects.using(DB).filter(user_id=uid, client_id=client_id).first()
+            if existing:
+                if (existing.name, existing.kind, existing.parent_id, existing.color, existing.icon) != (name, kind, parent_id, color, icon):
+                    raise ApiError("request_conflict", 409)
+                return Response(_category_row(existing))
+            if parent_id is not None:
+                parent = Category.objects.using(DB).filter(id=parent_id, user_id=uid, kind=kind, archived_at__isnull=True).first()
+                if parent is None:
+                    raise ApiError("category_not_found", 404)
+                if parent.parent_id is not None:
+                    raise ApiError("category_depth")
+            row = Category.objects.using(DB).create(user_id=uid, client_id=client_id, name=name,
+                                                    kind=kind, parent_id=parent_id, color=color, icon=icon)
+        return Response(_category_row(row), status=201)
 
 
 class TransactionsView(APIView):

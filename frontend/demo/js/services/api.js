@@ -770,6 +770,7 @@
   Object.assign(api, {
     financeState: function () { return request('GET', '/finance/state'); },
     financeCreateAccount: function (body) { return request('POST', '/finance/accounts', body); },
+    financeCreateCategory: function (body) { return request('POST', '/finance/categories', body); },
     financePostTransaction: function (body) { return request('POST', '/finance/transactions', body); },
     sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread, notices: notices, noticesSeen: noticesSeen, savePeriod: savePeriod,
     pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,
