@@ -3,6 +3,9 @@
  * enters the web app; the eventual event sync runs on this API. */
 declare(strict_types=1);
 
+require_once __DIR__ . '/google_calendar_remote.php';
+require_once __DIR__ . '/google_calendar_plan.php';
+
 const TJ_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events.owned';
 
 function tj_google_calendar_enabled(): bool {
@@ -35,6 +38,33 @@ function tj_google_calendar_status(): void {
     $row = $q->fetch();
     tj_json(['available' => $enabled, 'connected' => (bool)$row,
         'calendar' => $row ? 'primary' : null, 'connected_at' => $row['connected_at'] ?? null]);
+}
+
+/* Preview is read-only: it never persists links or changes either calendar.
+ * The document version lets the later apply endpoint reject stale choices. */
+function tj_google_calendar_preview(): void {
+    $user = tj_require_user();
+    if (!tj_google_calendar_enabled()) tj_fail(503, 'google_calendar_disabled');
+    $userId = (int)$user['id'];
+    $token = tj_gcal_access_token($userId);
+    try { $remote = tj_gcal_remote_events($token); }
+    catch (DomainException $e) { tj_fail(502, $e->getMessage()); }
+    $q = tj_db()->prepare('SELECT data,version FROM tj_user_data WHERE user_id=?');
+    $q->execute([$userId]);
+    $document = $q->fetch();
+    $data = $document ? json_decode($document['data'], true) : [];
+    $local = is_array($data['events'] ?? null) ? $data['events'] : [];
+    $q = tj_db()->prepare('SELECT local_id,google_id,base_json,google_etag FROM tj_google_calendar_links WHERE user_id=?');
+    $q->execute([$userId]);
+    $links = [];
+    foreach ($q->fetchAll() as $row) {
+        $base = json_decode($row['base_json'], true);
+        $links[] = ['local_id' => $row['local_id'], 'google_id' => $row['google_id'],
+            'base' => is_array($base) ? $base : null];
+    }
+    $plan = tj_gcal_plan_collection($local, $remote, $links);
+    tj_json(['version' => $document ? (int)$document['version'] : 0,
+        'actions' => $plan['actions'], 'skipped' => $plan['skipped']]);
 }
 
 function tj_google_calendar_connect(): void {

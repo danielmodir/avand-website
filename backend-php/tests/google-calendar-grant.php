@@ -22,7 +22,8 @@ require __DIR__ . '/../lib/google_calendar.php';
 function check(bool $ok, string $why): void { if (!$ok) throw new RuntimeException($why); }
 try {
     $db = tj_db();
-    check((int)$db->query('SELECT MAX(version) FROM tj_schema')->fetchColumn() === 29, 'schema version');
+    check((int)$db->query('SELECT MAX(version) FROM tj_schema')->fetchColumn() === 30, 'schema version');
+    check($db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='tj_google_calendar_links'")->fetchColumn() === 'tj_google_calendar_links', 'link table');
     $db->prepare('INSERT INTO tj_users (email,password_hash,public_id,display_id,created_at,updated_at) VALUES (?,?,?,?,?,?)')
        ->execute(['calendar@example.test', '!', bin2hex(random_bytes(16)), 'TJ-GCAL1234', tj_now(), tj_now()]);
     $uid = (int)$db->lastInsertId();

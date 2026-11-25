@@ -534,6 +534,23 @@ function tj_migrate(PDO $db): void {
         )$tail");
         $db->exec('INSERT INTO tj_schema (version) VALUES (29)');
     }
+    if ($v < 30) {
+        // A link records the last agreed event projection. Google IDs are
+        // unbounded enough that a SHA-256 index is safer on MySQL utf8mb4.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_google_calendar_links (
+            user_id $fk NOT NULL,
+            local_id VARCHAR(80) NOT NULL,
+            google_id $text NOT NULL,
+            google_id_hash CHAR(64) NOT NULL,
+            base_json $text NOT NULL,
+            google_etag VARCHAR(255) NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY (user_id,local_id),
+            UNIQUE (user_id,google_id_hash),
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (30)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

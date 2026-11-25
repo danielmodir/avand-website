@@ -62,6 +62,7 @@ $routes = [
     'GET /auth/google/callback' => 'tj_google_callback',
     'POST /auth/google/exchange' => 'tj_google_exchange',
     'GET /calendar/google/status' => 'tj_google_calendar_status',
+    'GET /calendar/google/preview' => 'tj_google_calendar_preview',
     'POST /calendar/google/connect' => 'tj_google_calendar_connect',
     'GET /calendar/google/callback' => 'tj_google_calendar_callback',
     'DELETE /calendar/google' => 'tj_google_calendar_disconnect',

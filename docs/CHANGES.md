@@ -46,7 +46,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 - PHP lib: auth, sync (the user's synced document), google_calendar (separate
   Calendar grant and later event sync), google_calendar_event (safe event
   projection), google_calendar_diff (pure three-way comparison),
-  google_calendar_plan (read-only collection merge), social, groups, push,
+  google_calendar_plan (read-only collection merge), google_calendar_remote
+  (Google API transport and paginated primary-calendar read), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
 - Django apps: core, calendar_data, planning, period, social,
@@ -67,13 +68,20 @@ Update these with every change.
 
 - Demo asset version: 2026-11-22.6
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
-- PHP schema: v29
+- PHP schema: v30
 - Django latest migrations: core 0012, planning 0012, social 0005,
   notifications 0003, calendar_data 0002, period 0001, finance 0001
 - Marketing CSS cache version: 2026-11-23.1
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-25 — Google Calendar read-only preview — PHP now reads all pages of
+  the signed-in user's primary Google calendar, bounds the snapshot at 10,000
+  events, and returns a merge plan against the user's local `/sync` document
+  and stored event links. Schema v30 holds the last agreed event projection
+  for later conflict-safe apply. The preview makes no event writes; apply,
+  conflict UI, Google Cloud credentials and deployment remain pending.
 
 - 2026-11-25 — Google Calendar collection planning — a read-only PHP
   merge plan now matches known event links, reconnects by stable private

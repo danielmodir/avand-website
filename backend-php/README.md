@@ -25,6 +25,7 @@ client: `frontend/demo/js/services/api-php.js`).
 | POST | /me/delete | password → deletes the account and its data |
 | GET / PUT | /sync | the account's document `{version, data}`; PUT with a stale version → 409 + current copy |
 | GET | /calendar/google/status | Availability and connection status, never tokens |
+| GET | /calendar/google/preview | Read-only merge plan for primary-calendar events; includes current `/sync` version and conflict actions |
 | POST | /calendar/google/connect | Signed-in user receives a one-use Google consent URL |
 | GET | /calendar/google/callback | Google returns to the API; encrypted grant is saved for that user |
 | DELETE | /calendar/google | Revoke and remove the user's grant |
@@ -39,8 +40,10 @@ existing Google web client ID and secret plus
 `google_calendar_redirect_uri=https://toojibee.ir/api/v1/calendar/google/callback`
 outside Git, and register that exact callback in Google Cloud. The host's
 `app_url` determines where the callback returns. Schema v29 stores only an
-encrypted refresh token; it is never part of `/sync` or a portable backup.
-These routes do not synchronize events until the sync engine and conflict UI
+encrypted refresh token; schema v30 adds per-event links and last agreed
+projections. Neither token nor links are part of `/sync` or a portable backup.
+The preview reads all primary-calendar pages and does not write anything.
+The routes do not synchronize events until the apply engine and conflict UI
 are implemented and tested.
 
 ## Account ids

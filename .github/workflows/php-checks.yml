@@ -27,3 +27,5 @@ jobs:
         run: php backend-php/tests/google-calendar-event.php
       - name: Test Google Calendar collection plan
         run: php backend-php/tests/google-calendar-plan.php
+      - name: Test Google Calendar remote pagination
+        run: php backend-php/tests/google-calendar-remote.php
