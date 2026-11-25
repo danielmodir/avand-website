@@ -25,3 +25,5 @@ jobs:
         run: php backend-php/tests/google-calendar-diff.php
       - name: Test Google Calendar event projection
         run: php backend-php/tests/google-calendar-event.php
+      - name: Test Google Calendar collection plan
+        run: php backend-php/tests/google-calendar-plan.php

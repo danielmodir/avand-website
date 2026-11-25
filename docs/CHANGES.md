@@ -45,8 +45,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   Habit Tracker pane, still using the existing habit rows and records.
 - PHP lib: auth, sync (the user's synced document), google_calendar (separate
   Calendar grant and later event sync), google_calendar_event (safe event
-  projection), google_calendar_diff (pure three-way
-  comparison), social, groups, push,
+  projection), google_calendar_diff (pure three-way comparison),
+  google_calendar_plan (read-only collection merge), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
 - Django apps: core, calendar_data, planning, period, social,
@@ -74,6 +74,13 @@ Update these with every change.
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-25 — Google Calendar collection planning — a read-only PHP
+  merge plan now matches known event links, reconnects by stable private
+  ID, pairs only unique exact matches, and proposes imports/exports for
+  new events. Unsupported local/Google events remain on their original
+  side; a mapped unsupported event is never mistaken for deletion.
+  Applying the plan, persistence and live Google requests remain pending.
 
 - 2026-11-25 — Google Calendar recurrence projection — the mapper now
   round-trips bounded daily, weekday, Gregorian monthly and Gregorian
