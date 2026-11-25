@@ -78,7 +78,8 @@ Update these with every change.
   scope and encrypted refresh-token storage (schema v29). Status, connect,
   callback and disconnect routes are present. No events are read or written
   yet, and no Google Cloud client or live callback is configured. The PHP
-  workflow now runs a grant/migration test; live verification is pending.
+  workflow run 45553647948 passed PHP lint and grant/migration tests;
+  live verification is pending.
 
 - 2026-11-25 — Google Calendar sync preparation — owner narrowed the
   integration to two-way event sync with the primary Google calendar and

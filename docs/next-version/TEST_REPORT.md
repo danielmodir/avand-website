@@ -1,5 +1,10 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۲۵ — مجوز مستقل Google Calendar در PHP
+
+- GitHub Actions اجرای `45553647948` روی commit `5ce4dd8` موفق شد: lint همهٔ فایل‌های PHP، تست یادآوری و تست تازهٔ Migration v29، scope محدود، PKCE، رمزگذاری verifier و مصرف یک‌بارهٔ state.
+- تبادل واقعی OAuth با Google، اعتبارنامهٔ Cloud، ذخیرهٔ refresh token روی هاست، اتصال مرورگر، همگام‌سازی رویدادها و تعارض‌ها هنوز آزموده یا پیاده‌سازی نشده‌اند.
+
 ## ۲۰۲۶-۱۱-۲۵ — آماده‌سازی اتصال Pages به PHP
 
 - API زندهٔ `https://toojibee.ir/api/v1/health` پاسخ 200 داد. پاسخ `/auth/providers` با Origin مربوط به Pages هدر `Access-Control-Allow-Origin` نداشت؛ preflight ورود با OPTIONS پاسخ 405 داد. بنابراین اتصال مستقیم Pages در وضعیت فعلی مرورگر کار نمی‌کند.
