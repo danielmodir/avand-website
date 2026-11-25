@@ -24,6 +24,7 @@ require __DIR__ . '/../lib/notices.php';
 require __DIR__ . '/../lib/groups.php';
 require __DIR__ . '/../lib/mcp.php';
 require __DIR__ . '/../lib/stats.php';
+require __DIR__ . '/../lib/finance.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -89,6 +90,9 @@ $routes = [
     'DELETE /me/mcp'            => 'tj_mcp_link_delete',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
+    'GET /finance/state'        => 'tj_finance_state',
+    'POST /finance/accounts'    => 'tj_finance_account_create',
+    'POST /finance/transactions'=> 'tj_finance_transaction_create',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header
     // carries the panel's secret address.
     'GET /admin/state'          => 'tj_admin_state',

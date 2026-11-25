@@ -515,6 +515,56 @@ function tj_migrate(PDO $db): void {
         )$tail");
         $db->exec('INSERT INTO tj_schema (version) VALUES (28)');
     }
+    if ($v < 29) {
+        // Private finance tables: never put money in tj_user_data. A card
+        // points to an account and therefore cannot add a second balance.
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_finance_accounts (
+            id $id, user_id $fk NOT NULL, client_id VARCHAR(80) NOT NULL,
+            name VARCHAR(100) NOT NULL, kind VARCHAR(20) NOT NULL,
+            color VARCHAR(32) NOT NULL DEFAULT '', icon VARCHAR(40) NOT NULL DEFAULT '',
+            archived_at DATETIME NULL, created_at DATETIME NOT NULL,
+            UNIQUE(user_id, client_id),
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_finance_cards (
+            id $id, user_id $fk NOT NULL, account_id $fk NOT NULL,
+            label VARCHAR(100) NOT NULL, masked_number VARCHAR(32) NOT NULL DEFAULT '',
+            archived_at DATETIME NULL,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY (account_id) REFERENCES tj_finance_accounts(id)
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_finance_categories (
+            id $id, user_id $fk NOT NULL, parent_id $fk NULL,
+            name VARCHAR(100) NOT NULL, kind VARCHAR(10) NOT NULL,
+            color VARCHAR(32) NOT NULL DEFAULT '', icon VARCHAR(40) NOT NULL DEFAULT '',
+            archived_at DATETIME NULL,
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY (parent_id) REFERENCES tj_finance_categories(id) ON DELETE SET NULL
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_finance_transactions (
+            id $id, user_id $fk NOT NULL, request_id VARCHAR(80) NOT NULL,
+            payload_hash CHAR(64) NOT NULL, kind VARCHAR(16) NOT NULL,
+            amount_toman BIGINT NOT NULL, occurred_at DATETIME NOT NULL,
+            category_id $fk NULL, note $text NOT NULL, source_id VARCHAR(120) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL,
+            UNIQUE(user_id, request_id),
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES tj_finance_categories(id),
+            CHECK (amount_toman > 0)
+        )$tail");
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_finance_entries (
+            id $id, user_id $fk NOT NULL, transaction_id $fk NOT NULL,
+            account_id $fk NOT NULL, amount_toman BIGINT NOT NULL,
+            UNIQUE(transaction_id, account_id),
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY (transaction_id) REFERENCES tj_finance_transactions(id),
+            FOREIGN KEY (account_id) REFERENCES tj_finance_accounts(id),
+            CHECK (amount_toman <> 0)
+        )$tail");
+        $db->exec('CREATE INDEX tj_finance_entries_owner_account ON tj_finance_entries (user_id, account_id)');
+        $db->exec('CREATE INDEX tj_finance_tx_owner_date ON tj_finance_transactions (user_id, occurred_at)');
+        $db->exec('INSERT INTO tj_schema (version) VALUES (29)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

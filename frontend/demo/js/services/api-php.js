@@ -340,6 +340,9 @@
   function unsupported() { var e = new Error('not_available'); e.status = 501; e.code = 'not_available'; return Promise.reject(e); }
 
   Object.assign(api, {
+    financeState: function () { return request('GET', '/finance/state'); },
+    financeCreateAccount: function (body) { return request('POST', '/finance/accounts', body); },
+    financePostTransaction: function (body) { return request('POST', '/finance/transactions', body); },
     uuid: base.uuid, isConfigured: function () { return true; }, hasSession: hasSession,
     // Changes made here that haven't reached the server yet (the connection dot, app-error.js).
     syncPending: function () { return loaded && dirty && hasSession(); },

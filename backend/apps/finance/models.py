@@ -9,7 +9,8 @@ from django.db.models import Q
 
 
 class Account(models.Model):
-    user_id = models.BigIntegerField(db_index=True)
+    user_id = models.UUIDField(db_index=True)
+    client_id = models.CharField(max_length=80, null=True, blank=True)
     name = models.CharField(max_length=100)
     kind = models.CharField(max_length=20, choices=[(x, x) for x in ("bank", "cash", "savings", "other")])
     color = models.CharField(max_length=32, blank=True)
@@ -19,10 +20,11 @@ class Account(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["user_id", "archived_at"])]
+        constraints = [models.UniqueConstraint(fields=["user_id", "client_id"], name="finance_account_request_once")]
 
 
 class Card(models.Model):
-    user_id = models.BigIntegerField(db_index=True)
+    user_id = models.UUIDField(db_index=True)
     account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="cards")
     label = models.CharField(max_length=100)
     masked_number = models.CharField(max_length=32, blank=True)
@@ -30,7 +32,7 @@ class Card(models.Model):
 
 
 class Category(models.Model):
-    user_id = models.BigIntegerField(db_index=True)
+    user_id = models.UUIDField(db_index=True)
     name = models.CharField(max_length=100)
     kind = models.CharField(max_length=10, choices=[("income", "income"), ("expense", "expense")])
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
@@ -40,7 +42,7 @@ class Category(models.Model):
 
 
 class MoneyTransaction(models.Model):
-    user_id = models.BigIntegerField(db_index=True)
+    user_id = models.UUIDField(db_index=True)
     request_id = models.CharField(max_length=80)
     payload_hash = models.CharField(max_length=64)
     kind = models.CharField(max_length=16, choices=[(x, x) for x in ("opening", "income", "expense", "transfer", "adjustment", "debt_payment", "debt_receipt")])
@@ -60,7 +62,7 @@ class MoneyTransaction(models.Model):
 
 
 class LedgerEntry(models.Model):
-    user_id = models.BigIntegerField(db_index=True)
+    user_id = models.UUIDField(db_index=True)
     transaction = models.ForeignKey(MoneyTransaction, on_delete=models.PROTECT, related_name="entries")
     account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="entries")
     amount_toman = models.BigIntegerField()  # signed: debit negative, credit positive

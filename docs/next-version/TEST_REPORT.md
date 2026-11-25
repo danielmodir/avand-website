@@ -1,5 +1,12 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۲۵ — زیرساخت مالی
+
+- `node --test tests/finance-vault.test.js`: 1/1 PASS؛ `node --check frontend/demo/js/core/finance-vault.js`: PASS.
+- `backend/.venv/Scripts/python.exe manage.py test apps.finance --settings=config.settings.test`: 7/7 PASS.
+- `manage.py makemigrations --check --dry-run --settings=config.settings.test`: no changes detected.
+- `git diff --check`: بدون خطای محتوایی. PHP CLI، Android build/device و استفادهٔ واقعی UI اجرا نشده‌اند.
+
 ## ۲۰۲۶-۱۱-۲۳ — بازبینی یکپارچه پیش از انتشار تست
 
 - `node --test tests/*.test.js`: 64/64 PASS.

@@ -296,6 +296,12 @@ class MainActivity : Activity() {
     private inner class Bridge {
         private val ok get() = AppWeb.trustedPage
 
+        @JavascriptInterface fun financeSeal(uid: String?, plain: String?): String =
+            if (ok) FinanceCrypto.seal(this@MainActivity, uid, plain) else ""
+
+        @JavascriptInterface fun financeOpen(uid: String?, sealed: String?): String =
+            if (ok) FinanceCrypto.open(this@MainActivity, uid, sealed) else ""
+
         @JavascriptInterface fun permission(): String = if (ok) notifyPermission() else "denied"
 
         @JavascriptInterface fun requestPermission() { if (!ok) return; ui.post {

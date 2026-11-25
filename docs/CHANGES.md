@@ -64,13 +64,22 @@ Update these with every change.
 
 - Demo asset version: 2026-11-22.6
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
-- PHP schema: v28
+- PHP schema: v29
 - Django latest migrations: core 0012, planning 0012, social 0005,
-  notifications 0003, calendar_data 0002, period 0001, finance 0001
+  notifications 0003, calendar_data 0002, period 0001, finance 0003
 - Marketing CSS cache version: 2026-11-23.1
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-25 — finance foundation (PHP, Django, API clients, Android source)
+  — added private account and ledger endpoints with additive PHP schema v29
+  and Django finance migrations 0002–0003. Added an encrypted local vault
+  module and Android Keystore bridge; the vault is not yet loaded by the app,
+  and no finance UI or live deployment is included. Focused Node 1/1 and
+  Django finance 7/7 pass; migration drift check reports no changes. PHP CLI
+  and Android build/device verification remain open. Committed to the review
+  branch as work in progress.
 
 - 2026-11-23 — review and release preparation — reconciled accumulated
   web, API, Android-source and documentation changes for team review. Added
