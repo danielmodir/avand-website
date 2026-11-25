@@ -72,6 +72,14 @@ Update these with every change.
 
 ## Log (newest first)
 
+- 2026-11-25 — PHP API release preparation — allowed CORS only for the
+  GitHub Pages browser origin, including JSON/bearer preflight; denied
+  other origins and kept cross-origin cookies disabled. The live API health
+  endpoint returned 200 before this patch, but its Pages-origin request had
+  no Allow-Origin header and OPTIONS returned 405. Host upload, live
+  preflight verification and switching the Pages app to the API remain
+  pending. No frontend release or database change.
+
 - 2026-11-23 — review and release preparation — reconciled accumulated
   web, API, Android-source and documentation changes for team review. Added
   core 0012 for the previously unrecorded EmailOutbox template choice,

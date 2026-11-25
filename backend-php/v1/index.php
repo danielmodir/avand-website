@@ -4,6 +4,25 @@
  * where they overlap, so the app's auth code works unchanged. */
 declare(strict_types=1);
 
+/* GitHub Pages serves the app from a different origin than this API. Only
+ * that project's browser origin may read responses. Sessions use bearer
+ * tokens, so cross-origin cookies are deliberately not enabled. */
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin === 'https://danielmodir.github.io') {
+    header('Access-Control-Allow-Origin: https://danielmodir.github.io');
+    header('Vary: Origin');
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE');
+        header('Access-Control-Allow-Headers: Authorization, Content-Type');
+        header('Access-Control-Max-Age: 600');
+        http_response_code(204);
+        exit;
+    }
+} elseif (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    http_response_code(403);
+    exit;
+}
+
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/auth.php';
 require __DIR__ . '/../lib/google_oauth.php';

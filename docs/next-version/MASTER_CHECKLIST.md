@@ -23,7 +23,7 @@
 | NV-00-02 | همگام‌سازی امن | حفظ ویرایش/حذف هم‌زمان، صف آفلاین پایدار و بازیابی تعارض | P0 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | SYNC؛ R01/R02؛ D22 |
 | NV-00-03 | مجوز مشترک | کنترل مالکیت و مجوز workspace/share/AI/Premium در سرور | P0 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | AUTH؛ پیش‌نیاز 07/08/10؛ D14/D16/D17 |
 | NV-00-04 | قرارداد و Migration | نسخه‌گذاری داده و API، نگاشت دو کلاینت، مهاجرت افزایشی و بازیابی | P0 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | DATA؛ R03/R06؛ پیش‌نیاز مدل‌های جدید |
-| NV-00-05 | تست قرارداد و امنیت | پوشش PHP و دو کلاینت، ownership، validation، خطا و سناریوی آفلاین | P0 | [ ] Not Started | P | PHP:N / DJ:P | P | Pending | QA؛ تست‌های موجود محدودند |
+| NV-00-05 | تست قرارداد و امنیت | پوشش PHP و دو کلاینت، ownership، validation، خطا و سناریوی آفلاین | P0 | [ ] In Progress | P | PHP:P / DJ:P | P | PHP CORS live pending | QA؛ 2026-11-25: Pages-origin CORS/preflight patch prepared; PHP CLI and live host verification unavailable; broader contract/security work remains |
 | NV-00-06 | سازگاری و کارایی | حفظ دادهٔ قبلی، fa/en، 360/1280، دو تم، WebView قدیمی و شبکهٔ کند | P0 | [ ] Not Started | P | PHP:P / DJ:P | P | Pending | QA؛ معیار پذیرش همهٔ قابلیت‌ها |
 | NV-00-07 | دروازهٔ بررسی و انتشار | بررسی شناسه‌به‌شناسه، فقط مالک Approved، انتشار جداگانه و قابل بازگشت | P0 | [ ] Not Started | — | — | — | Pending | DOC؛ دستور C01/C02؛ هیچ deploy در این مرحله |
 

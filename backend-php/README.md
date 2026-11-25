@@ -73,6 +73,22 @@ SQLite database at `/home/toojibee/toojibee-data/toojibee.sqlite`
 (outside the web root, created with its tables on the first request).
 Check `https://toojibee.ir/api/v1/health` → `{"ok":true,"backend":"php"}`.
 
+### GitHub Pages client
+
+The API allows browser requests from the exact origin
+`https://danielmodir.github.io`. `OPTIONS` preflights for JSON and bearer
+tokens return 204; all other cross-origin preflights are denied. No
+cross-origin cookies are enabled. Deploy this API change and verify both an
+allowed preflight and a denied foreign origin before pointing the Pages app
+at `https://toojibee.ir/api/v1`.
+
+For Google sign-in from Pages, set `app_url` in the host-only
+`toojibee-config.php` to
+`https://danielmodir.github.io/avand-website/demo/`, then register the
+configured HTTPS callback with the provider. Do not put provider secrets in
+the site or this repository. Until the API and provider are ready, keep the
+Pages app's `apiBase` empty so its offline mode remains available.
+
 Moving to MySQL later (more users): cPanel → **MySQL Database Wizard**
 (database and user `toojibee_app`, ALL PRIVILEGES), then copy
 `config.sample.php` to `/home/toojibee/toojibee-config.php` with that
