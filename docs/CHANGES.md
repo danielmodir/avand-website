@@ -44,7 +44,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   popup, toolbar, tour, workspace. The workspace now includes a separate
   Habit Tracker pane, still using the existing habit rows and records.
 - PHP lib: auth, sync (the user's synced document), google_calendar (separate
-  Calendar grant and later event sync), google_calendar_diff (pure three-way
+  Calendar grant and later event sync), google_calendar_event (safe event
+  projection), google_calendar_diff (pure three-way
   comparison), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
@@ -73,6 +74,14 @@ Update these with every change.
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-25 — Google Calendar event projection — added a pure PHP mapper
+  for ordinary single events and date ranges. It preserves all-day
+  exclusive ends, Iran-time timed events, optional end time, location and
+  meeting link; imported Google times are converted from their offsets.
+  Unsupported recurrence and special Google event types are rejected
+  explicitly, not flattened. PHP CI covers round trips; recurring-event
+  mapping and actual API writes remain pending.
 
 - 2026-11-25 — Google Calendar conflict planning — added a pure three-way
   comparison of last-synced, local and Google event snapshots. One-sided

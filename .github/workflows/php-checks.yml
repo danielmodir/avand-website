@@ -23,3 +23,5 @@ jobs:
         run: php backend-php/tests/google-calendar-grant.php
       - name: Test Google Calendar conflict planning
         run: php backend-php/tests/google-calendar-diff.php
+      - name: Test Google Calendar event projection
+        run: php backend-php/tests/google-calendar-event.php
