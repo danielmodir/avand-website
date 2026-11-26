@@ -6,7 +6,9 @@ declare(strict_types=1);
 
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/auth.php';
+require __DIR__ . '/../lib/google_oauth.php';
 require __DIR__ . '/../lib/sync.php';
+require __DIR__ . '/../lib/task-shares.php';
 require __DIR__ . '/../lib/mail.php';
 require __DIR__ . '/../lib/admin.php';
 require __DIR__ . '/../lib/admin_users.php';
@@ -22,6 +24,8 @@ require __DIR__ . '/../lib/notices.php';
 require __DIR__ . '/../lib/groups.php';
 require __DIR__ . '/../lib/mcp.php';
 require __DIR__ . '/../lib/stats.php';
+require __DIR__ . '/../lib/finance.php';
+require __DIR__ . '/../lib/university.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -34,8 +38,12 @@ $path = preg_replace('#^.*?/api/v1#', '', $path) ?: '/';
 
 $routes = [
     'GET /health'               => function () { tj_db(); tj_json(['ok' => true, 'backend' => 'php']); },
+    'GET /university/state'     => 'tj_university_state',
     'POST /stats'               => 'tj_stats_post',        // anonymous, opt-in counts (lib/stats.php)
-    'GET /auth/providers'       => function () { tj_json(['password' => true, 'google' => false]); },
+    'GET /auth/providers'       => function () { tj_json(['password' => true, 'google' => tj_google_enabled()]); },
+    'GET /auth/google/start'    => 'tj_google_start',
+    'GET /auth/google/callback' => 'tj_google_callback',
+    'POST /auth/google/exchange' => 'tj_google_exchange',
     'POST /auth/register'       => 'tj_register',
     'POST /auth/login'          => 'tj_login',
     'POST /auth/refresh'        => 'tj_refresh',
@@ -57,6 +65,8 @@ $routes = [
     'GET /social/invite'        => 'tj_social_invite',
     'POST /social/invite/reset' => 'tj_social_invite_reset',
     'POST /social/invite/accept'=> 'tj_social_invite_accept',
+    'GET /social/task-shares' => 'tj_task_shares_list',
+    'POST /social/task-shares' => 'tj_task_shares_save',
     'GET /groups'               => 'tj_groups_list',
     'POST /groups'              => 'tj_group_create',
     'POST /groups/join'         => 'tj_group_join',
@@ -82,6 +92,12 @@ $routes = [
     'DELETE /me/mcp'            => 'tj_mcp_link_delete',
     'GET /sync'                 => 'tj_sync_get',
     'PUT /sync'                 => 'tj_sync_put',
+    'GET /finance/state'        => 'tj_finance_state',
+    'POST /finance/accounts'    => 'tj_finance_account_create',
+    'POST /finance/categories'  => 'tj_finance_category_create',
+    'GET /finance/budgets'      => 'tj_finance_budget_list',
+    'POST /finance/budgets'     => 'tj_finance_budget_create',
+    'POST /finance/transactions'=> 'tj_finance_transaction_create',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header
     // carries the panel's secret address.
     'GET /admin/state'          => 'tj_admin_state',
@@ -157,14 +173,21 @@ if (preg_match('#^/social/(connections|blocks)/([a-f0-9]{32})(?:/(request|respon
     tj_fail(405, 'method_not_allowed');
 }
 
+if (preg_match('#^/social/task-shares/([a-f0-9]{32})$#', $path, $m)) {
+    if ($method === 'PATCH') tj_task_share_edit($m[1]);
+    if ($method === 'DELETE') tj_task_share_revoke($m[1]);
+    tj_fail(405, 'method_not_allowed');
+}
+
 // Group planning (lib/groups.php): /groups/<id>[/leave|/invite/reset] and
 // /groups/<id>/items/<item id>[/marks].
-if (preg_match('#^/groups/([a-f0-9]{32})(?:/(leave|invite/reset)|/items/([A-Za-z0-9-]{8,64})(/marks)?)?$#', $path, $m)) {
-    $act = $m[2] ?? ''; $item = $m[3] ?? ''; $marks = !empty($m[4]);
+if (preg_match('#^/groups/([a-f0-9]{32})(?:/(leave|invite/reset)|/items/([A-Za-z0-9-]{8,64})(/marks|/progress)?)?$#', $path, $m)) {
+    $act = $m[2] ?? ''; $item = $m[3] ?? ''; $suffix = $m[4] ?? '';
     if ($item !== '') {
-        if ($marks && $method === 'PUT') tj_group_item_mark($m[1], $item);
-        if (!$marks && $method === 'PUT') tj_group_item_put($m[1], $item);
-        if (!$marks && $method === 'DELETE') tj_group_item_delete($m[1], $item);
+        if ($suffix === '/progress' && $method === 'PUT') tj_group_item_progress($m[1], $item);
+        if ($suffix === '/marks' && $method === 'PUT') tj_group_item_mark($m[1], $item);
+        if ($suffix === '' && $method === 'PUT') tj_group_item_put($m[1], $item);
+        if ($suffix === '' && $method === 'DELETE') tj_group_item_delete($m[1], $item);
     } elseif ($act === 'leave') {
         if ($method === 'POST') tj_group_leave($m[1]);
     } elseif ($act === 'invite/reset') {
@@ -191,6 +214,9 @@ if (preg_match('#^/notifications/subscriptions/([a-f0-9]{32})$#', $path, $m)) {
 if (preg_match('#^/mcp/u/([A-Za-z0-9_-]{8,100})$#', $path, $m)) tj_mcp_handle($m[1]);
 if ($path === '/mcp') tj_mcp_handle();
 
+foreach (TJ_UNIVERSITY_KINDS as $kind) {
+    $routes["POST /university/$kind"] = static fn() => tj_university_save($kind);
+}
 $handler = $routes["$method $path"] ?? null;
 if ($handler === null) {
     $known = array_filter(array_keys($routes), function ($r) use ($path) { return substr($r, strpos($r, ' ') + 1) === $path; });

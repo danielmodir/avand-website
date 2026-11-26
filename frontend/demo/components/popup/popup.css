@@ -48,18 +48,27 @@
 .subtask-edit-row:last-child:not(:focus-within){ border-bottom:none; padding-bottom:0; }
 .subtask-edit-row:focus-within{ border-bottom:1px solid var(--primary); padding-bottom:5px; }
 .device.lang-fa .subtask-edit-row input{ text-align:right; direction:rtl; padding-right:20px; }
-.remove-x{ order:-1; width:19px; height:19px; border-radius:0; border:none; background:transparent; color:#D98B8B; cursor:pointer; flex:0 0 auto; font-size:11px; }
+.remove-x{ order:-1; width:19px; height:19px; border-radius:0; border:none; background:transparent; color:var(--error); cursor:pointer; flex:0 0 auto; font-size:11px; }
 .add-ghost-btn{ display:block; width:100%; text-align:center; border:none; background:transparent; color:var(--primary-text); padding:6px 2px; font-size:10px; font-weight:700; cursor:pointer; font-family:inherit; }
 .add-ghost-btn.plus-only{ font-size:18px; }
 .photo-add-row{ display:flex; gap:8px; flex-wrap:wrap; }
 .photo-thumb{ position:relative; width:56px; height:56px; }
 .photo-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:10px; border:1px solid var(--border); }
-.photo-thumb .rm{ position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#D98B8B; color:#1B262C; border:none; font-size:11px; cursor:pointer; line-height:1; }
+.photo-thumb .rm{ position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:var(--error); color:var(--on-error); border:none; font-size:11px; cursor:pointer; line-height:1; }
 .device.lang-fa .photo-thumb .rm{ right:auto; left:-6px; }
 .photo-add-btn{ width:56px; height:56px; border-radius:10px; border:1.5px dashed var(--border); background:var(--bg-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
 .photo-add-btn svg{ width:18px; height:18px; }
 /* popup icon row + subviews */
 .popup-icon-row{ display:flex; justify-content:center; gap:4px; margin-bottom:14px; }
+.event-visibility-row{ display:flex; gap:10px; flex-wrap:wrap; border:1px solid var(--border); border-radius:var(--radius-md); padding:8px 12px 12px; margin:0 0 14px; color:var(--text); }
+.event-visibility-row legend{ color:var(--text-muted); font-size:12px; font-weight:700; padding:0 4px; }
+.event-visibility-row label{ display:flex; align-items:center; gap:6px; min-height:44px; font-size:13px; cursor:pointer; }
+.event-visibility-row input{ accent-color:var(--primary); width:18px; height:18px; }
+.event-location-row{ display:grid; gap:var(--space-2); margin-bottom:var(--space-4); }
+.event-location-row label{ color:var(--text-muted); font-size:12px; font-weight:700; }
+.event-location-row input{ width:100%; min-width:0; min-height:44px; padding:var(--space-2) var(--space-3); border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--card); color:var(--text); font:inherit; }
+.event-location-row input:focus-visible{ outline:2px solid var(--focus-ring); outline-offset:2px; }
+.details-row a{ color:var(--primary-text); text-decoration:underline; overflow-wrap:anywhere; }
 .popup-icon-btn{ flex:0 0 auto; width:46px; height:46px; border-radius:14px; background:transparent; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); }
 .popup-icon-btn svg{ width:18px; height:18px; }
 .popup-icon-btn.set{ color:var(--primary-text); background:transparent; border-color:transparent; }
@@ -132,3 +141,8 @@
 .tracker-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
 .tracker-chip{ border:1px solid var(--border); background:var(--bg-soft); color:var(--text); font:inherit; font-size:12.5px; font-weight:700; padding:6px 12px; border-radius:999px; cursor:pointer; }
 .tracker-chip.active{ background:var(--primary); color:var(--on-primary); border-color:var(--primary); }
+/* Custom interval fields remain readable and touchable in a narrow popup. */
+.window-interval{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-2); }
+.window-interval .field-label{ grid-column:1 / -1; }
+.window-interval label{ display:grid; gap:var(--space-1); min-width:0; }
+.rec-block.window-interval input[type="number"]{ width:100%; min-width:0; min-height:44px; padding:var(--space-2); font:inherit; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--card); color:var(--text); }

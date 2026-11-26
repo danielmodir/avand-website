@@ -9,7 +9,7 @@
    Pages lets browsers cache files for 10 minutes, so after a deploy a
    phone kept the old CSS/JS. Bump both (one find-and-replace) on every
    frontend change to /demo/. */
-const ASSET_VERSION = '2026-10-27.15';
+const ASSET_VERSION = '2026-11-25.2';
 
 async function loadComponents(){
   const slots = [...document.querySelectorAll('[data-include]')];
@@ -20,4 +20,7 @@ async function loadComponents(){
     })
   ));
   slots.forEach((el, i) => { el.outerHTML = htmls[i]; });
+  document.querySelectorAll('[data-theme-logo]').forEach(img => {
+    img.src = AppThemes.logoUrl(document.documentElement.dataset.palette, document.documentElement.dataset.theme, img.dataset.themeLogo);
+  });
 }

@@ -3,6 +3,8 @@
 
     <!-- The project's own API (toojibee.ir/api/v1) and app-file updates. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Optional bank transaction drafts from future SMS, after in-app opt-in. -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <!-- Reminders: shown by the phone, at their time, after a restart too. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -47,6 +49,10 @@
         <provider android:name=".ShareFiles" android:authorities="ir.toojibee.app.share" android:exported="false" android:grantUriPermissions="true" />
         <receiver android:name=".ReminderReceiver" android:exported="false" />
         <receiver android:name=".ActionReceiver" android:exported="false" />
+        <receiver android:name=".BankSmsReceiver" android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter><action android:name="android.provider.Telephony.SMS_RECEIVED" /></intent-filter>
+        </receiver>
         <!-- The hidden page that applies ticks made while the app is closed (PhoneActions.kt). -->
         <service android:name=".ActionJob" android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />

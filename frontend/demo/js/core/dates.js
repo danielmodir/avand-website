@@ -27,6 +27,16 @@ const addDays = (d,n) => { const r = new Date(d); r.setDate(r.getDate()+n); retu
 
 const WEEKDAY_INDEX = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
 
+const WEEKEND_PREF_KEYS = ['weekendSunday','weekendMonday','weekendTuesday','weekendWednesday','weekendThursday','weekendFriday','weekendSaturday'];
+function isWeekendOn(date){ return !!pref(WEEKEND_PREF_KEYS[date.getDay()]); }
+function calendarDayAriaLabel(date){
+  return escapeAttr(dayLabel(date) + (isWeekendOn(date) ? ' — ' + t('weekendDay') : ''));
+}
+function calendarWeekdayHeader(index){
+  const weekend = !!pref(WEEKEND_PREF_KEYS[index]);
+  return `<span class="${weekend ? 'weekend-label' : ''}" aria-label="${escapeAttr(weekdayFull(index) + (weekend ? ' — ' + t('weekendDay') : ''))}">${weekdayShort(index)}</span>`;
+}
+
 function weekStartIndex(){ return WEEKDAY_INDEX[state.settings.weekStartDay] ?? 6; }
 
 function weekdayOrder(){

@@ -56,6 +56,7 @@ function dpFinish(){
   let picked = null;
   if(time){
     picked = { start: time.start || '', end: time.hasEnd ? (time.end || '') : '' };
+    if(time.hasEnd && !picked.start){ showToast(t('startTimeRequired')); return; }
     if(time.hasEnd && !picked.end){ showToast(t('endTimeRequired')); return; }
     // Same day: the end can't come before the start.
     if(picked.start && picked.end && (!range || (end || value) === value) && picked.end <= picked.start){ showToast(t('endBeforeStart')); return; }
@@ -90,8 +91,8 @@ function dpCellHtml(d){
   const isEdge = key === lo || key === hi;
   const between = dp.range && lo && hi && key > lo && key < hi;
   const cls = ['day-cell', inMonth ? '' : 'other-month', sameDay(d, today) ? 'today' : '', isEdge ? 'selected' : '',
-    between ? 'dp-between' : '', off ? 'dp-off' : ''].join(' ');
-  return `<button type="button" class="${cls}" data-dp-date="${key}" ${off ? 'disabled' : ''} aria-label="${dayLabel(d)}" aria-pressed="${isEdge}">
+    between ? 'dp-between' : '', off ? 'dp-off' : '', isWeekendOn(d) ? 'weekend' : ''].join(' ');
+  return `<button type="button" class="${cls}" data-dp-date="${key}" ${off ? 'disabled' : ''} aria-label="${calendarDayAriaLabel(d)}" aria-pressed="${isEdge}">
     <span class="day-cell-bg" aria-hidden="true"></span>${dayCellDateHtml(d)}</button>`;
 }
 
@@ -112,7 +113,7 @@ function renderDatePicker(){
     body = `<div class="dp-pick-grid dp-years">${dpYears().map(y => `<button type="button" class="${y === cur ? 'active' : ''}" data-dp-year="${y}">${toSysDigits(y, primarySystem())}</button>`).join('')}</div>`;
   } else {
     body = `
-      <div class="weekday-header">${weekdayOrder().map(i => `<span>${weekdayShort(i)}</span>`).join('')}</div>
+      <div class="weekday-header">${weekdayOrder().map(calendarWeekdayHeader).join('')}</div>
       <div class="month-grid dp-grid" id="dp-grid">${monthMatrix(dp.cursor).map(dpCellHtml).join('')}</div>
       ${dp.range ? `<div class="dp-hint">${t('tapOrDrag')}</div>` : ''}
       ${dp.time ? dpTimeHtml() : ''}`;

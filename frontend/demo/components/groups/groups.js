@@ -26,7 +26,10 @@ function groupRowBadge(item, key){
   const g = groupById(item.groupId);
   if(!g) return '';
   let count = '';
-  if(item.doneMode === 'each' && key){
+  if(item.groupProgress){
+    const member = g.members.find(m => String(m.id) === item.groupAssignee);
+    count = ' <span class="group-assignee">' + escapeHtml(member ? member.name : t('groupUnassigned')) + '</span>';
+  } else if(item.doneMode === 'each' && key){
     const c = groupDoneCount(item, groupMarkKeyFor(item, key));
     if(c && c.total > 1) count = `<span class="group-count" title="${escapeAttr(t('groupDoneOf'))}">${dig(c.done)}/${dig(c.total)}</span>`;
   }
@@ -71,7 +74,7 @@ function groupTile(g, items){
       data-action="group-view" data-id="${escapeAttr(g.id)}" role="button" tabindex="0">
     <span class="group-tile-dot" aria-hidden="true">${ICONS.peopleIcon}</span>
     <span class="group-tile-name">${escapeHtml(g.name)}</span>
-    <span class="group-tile-meta">${t('groupMembersN').replace('{n}', dig(g.members.length || 1))}${role ? ` · ${role}` : ''}</span>
+    <span class="group-tile-meta">${g.supergroup ? t('supergroup') + ' · ' : ''}${t('groupMembersN').replace('{n}', dig(g.members.length || 1))}${role ? ` · ${role}` : ''}</span>
     <span class="group-tile-count">${n ? t('groupTodayN').replace('{n}', dig(n)) : t('groupNothingToday')}</span>
   </div>`;
 }
@@ -129,6 +132,37 @@ function renderGroupView(){
     else if(b.dataset.gv === 'add') openGroupAddMenu(b, g.id);
   });
 }
+
+const GROUP_PROGRESS_LABELS = { not_started: 'groupNotStarted', in_progress: 'groupInProgress', done: 'groupFinished' };
+
+function groupProgressControl(task){
+  const g = groupById(task.groupId);
+  if(!g || !g.members.some(m => m.me && String(m.id) === task.groupAssignee)){
+    return `<span class="group-progress">${t(GROUP_PROGRESS_LABELS[task.groupProgress])}</span>`;
+  }
+  return `<select class="settings-select group-progress" data-group-progress="${escapeAttr(task.id)}" aria-label="${escapeAttr(t('groupProgress') + ' · ' + task.title)}">
+    ${Object.keys(GROUP_PROGRESS_LABELS).map(value => `<option value="${value}" ${task.groupProgress === value ? 'selected' : ''}>${t(GROUP_PROGRESS_LABELS[value])}</option>`).join('')}</select>`;
+}
+
+document.addEventListener('change', async e => {
+  const control = e.target.closest('[data-group-progress]');
+  if(!control) return;
+  const task = state.tasks.find(x => x.id === control.dataset.groupProgress);
+  if(!task) return;
+  const progress = control.value;
+  control.disabled = true;
+  try {
+    await Cloud.setGroupProgress(task.groupId, task.id, progress);
+    task.groupProgress = progress;
+    task.done = progress === 'done';
+    render();
+    await loadGroups();
+  } catch(err){
+    control.value = task.groupProgress;
+    showToast(groupErrorText(err));
+    await loadGroups();
+  } finally { control.disabled = false; }
+});
 
 function groupMemberChip(m){
   const role = m.owner ? t('groupOwnerBadge') : m.admin ? t('groupAdmin') : '';
@@ -258,7 +292,7 @@ function openGroupDialog(id){
   const choices = groupColorChoices();
   groupDraft = {
     id: g ? g.id : null, owner: g ? g.owner : true,
-    name: g ? g.name : '',
+    name: g ? g.name : '', groupType: g && g.supergroup ? 'supergroup' : 'ordinary',
     color: g ? g.color : (choices[0] || ITEM_COLOR_CHOICES[0]),
     members: new Set(g ? g.members.filter(m => !m.me).map(m => String(m.id)) : []),
     admins: new Set(g ? g.members.filter(m => !m.me && m.admin).map(m => String(m.id)) : []),
@@ -308,6 +342,12 @@ function renderGroupDialog(){
       ${canEdit
         ? `<div class="float-field"><input type="text" id="group-name" placeholder=" " maxlength="60" value="${escapeAttr(d.name)}" autocomplete="off"><label for="group-name">${t('groupName')}</label></div>`
         : `<h3 class="group-dialog-name">${escapeHtml(d.name)}</h3>`}
+      ${!g ? `<label class="field-label" for="group-type">${t('groupType')}</label>
+        <select class="settings-select" id="group-type">
+          <option value="ordinary">${t('ordinaryGroup')}</option>
+          <option value="supergroup" ${d.groupType === 'supergroup' ? 'selected' : ''}>${t('supergroup')}</option>
+        </select>` : ''}
+      ${d.groupType === 'supergroup' ? `<div class="profile-hint">${t('supergroupHint')}</div>` : ''}
       <div class="field-label">${t('groupMembers')}</div>
       ${canEdit ? `
         <button type="button" class="group-friends-toggle ${d.friendsOpen ? 'open' : ''}" data-gd="friends" aria-expanded="${d.friendsOpen}">
@@ -349,6 +389,7 @@ function renderGroupDialog(){
 function wireGroupDialog(el){
   const d = groupDraft;
   document.getElementById('group-name')?.addEventListener('input', e => { d.name = e.target.value; });
+  el.querySelector('#group-type')?.addEventListener('change', e => { d.groupType = e.target.value; renderGroupDialog(); });
   // An admin is a member too; someone who isn't a member isn't an admin.
   el.querySelectorAll('[data-role]').forEach(cb => cb.addEventListener('change', () => {
     const id = cb.dataset.friend;
@@ -390,7 +431,7 @@ function saveGroupDialog(){
   d.busy = true; renderGroupDialog();
   const members = [...d.members], admins = [...d.admins].filter(id => d.members.has(id));
   const call = !d.id
-    ? () => Cloud.createGroup({ name, color: d.color, members, admins })
+    ? () => Cloud.createGroup({ name, color: d.color, members, admins, group_type: d.groupType })
     : d.owner ? () => Cloud.updateGroup(d.id, { name, color: d.color, members, admins })
     : () => Cloud.updateGroup(d.id, { color: d.color });
   groupCall(call, t(d.id ? 'groupSaved' : 'groupCreated')).then(() => {
@@ -406,6 +447,10 @@ function saveGroupDialog(){
 function groupDoneHtml(item, type, day){
   const g = item.groupId ? groupById(item.groupId) : null;
   if(!g || type === 'event') return '';
+  if(item.groupProgress){
+    const member = g.members.find(m => String(m.id) === item.groupAssignee);
+    return `<div class="group-done-shared">${t('groupAssignee')} · ${escapeHtml(member ? member.name : t('groupUnassigned'))} · ${t(GROUP_PROGRESS_LABELS[item.groupProgress])}</div>`;
+  }
   if(type === 'habit' && item.challenge) return challengeHtml(item); // js/core/challenge.js
   const key = groupMarkKeyFor(item, day);
   const marks = (item.groupMarks || []).filter(m => m.key === key && m.status === 'done');

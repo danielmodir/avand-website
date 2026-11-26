@@ -121,6 +121,7 @@ class Group(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     name = models.CharField(max_length=60)
     owner_user_id = models.UUIDField(db_index=True)
+    supergroup = models.BooleanField(default=False)
     invite_token = models.CharField(max_length=20, unique=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
@@ -157,6 +158,13 @@ class GroupItem(models.Model):
     kind = models.CharField(max_length=8, choices=Kind.choices)
     data = models.JSONField(default=dict)
     done_mode = models.CharField(max_length=8, choices=DoneMode.choices, default=DoneMode.EACH)
+    class Progress(models.TextChoices):
+        NOT_STARTED = "not_started"
+        IN_PROGRESS = "in_progress"
+        DONE = "done"
+
+    assignee = models.ForeignKey(GroupMember, null=True, blank=True, on_delete=models.SET_NULL)
+    progress = models.CharField(max_length=12, choices=Progress.choices, default=Progress.NOT_STARTED)
     created_by = models.UUIDField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
@@ -174,3 +182,14 @@ class GroupMark(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["item", "user_id", "key"], name="social_group_mark_uq")]
+
+class TaskGrant(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    connection = models.ForeignKey(Connection, on_delete=models.CASCADE)
+    owner = models.UUIDField(db_index=True)
+    recipient = models.UUIDField(db_index=True)
+    task_id = models.UUIDField()
+    role = models.CharField(max_length=6, choices=[("viewer", "Viewer"), ("editor", "Editor")])
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["owner", "recipient", "task_id"], name="social_task_grant_uq")]

@@ -12,6 +12,7 @@ folder only holds the one-time server setup.
 | `toojibee_period` | `period` | encrypted cycle data (per-user key, crypto-shredding) |
 | `toojibee_social` | `social` | connections, invites, abuse reports |
 | `toojibee_notifications` | `notifications` | push devices, quiet hours, delivery log (inactive until the app exists) |
+| `toojibee_finance` | `finance` | private accounts, cards, categories and integer-toman ledger (foundation only) |
 
 Requires **MySQL 8.0.16+** (CHECK constraints are enforced from 8.0.16).
 

@@ -18,7 +18,7 @@
    soon as the connection is back (the 'online' event, or the app coming
    to the front), by the same versioned write and 409 rule as above.
 
-   Not available on this backend (yet): Google sign-in, server-side
+   Not available on this backend (yet): server-side
    occasions (the app falls back to its static
    dataset). Only talks to the project's own API (CLAUDE.md exception).
    ========================================================================= */
@@ -109,6 +109,7 @@
     storeSession(await request('POST', '/auth/login', { email: email, password: password }, { auth: false }));
   }
   async function signOut() {
+    if (typeof FinanceDesk !== 'undefined') FinanceDesk.lock(false);
     clearTimeout(pushTimer);
     if (hasSession()) { try { await flush(); await request('POST', '/auth/logout'); } catch (e) { /* best effort */ } }
     clearSession(); clearCache();
@@ -340,14 +341,20 @@
   function unsupported() { var e = new Error('not_available'); e.status = 501; e.code = 'not_available'; return Promise.reject(e); }
 
   Object.assign(api, {
+    financeState: function () { return request('GET', '/finance/state'); },
+    financeCreateAccount: function (body) { return request('POST', '/finance/accounts', body); },
+    financeCreateCategory: function (body) { return request('POST', '/finance/categories', body); },
+    financeBudgets: function () { return request('GET', '/finance/budgets'); },
+    financeCreateBudget: function (body) { return request('POST', '/finance/budgets', body); },
+    financePostTransaction: function (body) { return request('POST', '/finance/transactions', body); },
     uuid: base.uuid, isConfigured: function () { return true; }, hasSession: hasSession,
     // Changes made here that haven't reached the server yet (the connection dot, app-error.js).
     syncPending: function () { return loaded && dirty && hasSession(); },
     signUp: signUp, signIn: signIn, signOut: signOut, verifyEmailCode: verifyEmailCode,
     resendVerifyCode: function (email) { return request('POST', '/auth/email/code/resend', { email: email }, { auth: false }); },
-    signInWithGoogle: function () { /* not on this backend */ },
-    consumeOAuthRedirect: function () { return Promise.resolve(false); },
-    authProviders: function () { return Promise.resolve({ password: true, google: false }); },
+    signInWithGoogle: base.signInWithGoogle,
+    consumeOAuthRedirect: base.consumeOAuthRedirect,
+    authProviders: function () { return request('GET', '/auth/providers', undefined, { auth: false }); },
     forgotPassword: function (email) { return request('POST', '/auth/password/forgot', { email: email }, { auth: false }); },
     resetPassword: function (token, password) { return request('POST', '/auth/password/reset', { token: token, password: password }, { auth: false }); },
     verifyEmail: function (token) { return request('POST', '/auth/email/verify', { token: token }, { auth: false }); },
@@ -399,8 +406,13 @@
     leaveGroup: function (id) { return request('POST', '/groups/' + id + '/leave'); },
     resetGroupLink: function (id) { return request('POST', '/groups/' + id + '/invite/reset'); },
     joinGroup: function (token) { return request('POST', '/groups/join', { token: token }); },
-    saveGroupItem: function (gid, kind, data, mode) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode }); },
+    saveGroupItem: function (gid, kind, data, mode, assignee) {
+    return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode, assignee: assignee });
+  },
     deleteGroupItem: function (gid, id) { return request('DELETE', '/groups/' + gid + '/items/' + encodeURIComponent(id)); },
+    setGroupProgress: function(gid, id, progress) {
+    return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/progress', { progress: progress });
+  },
     markGroupItem: function (gid, id, key, status) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/marks', { key: key, status: status }); },
     periodShares: function () { return request('GET', '/period/shares').then(socialRows); },
     savePeriodShares: function (ids) { return request('PUT', '/period/shares', { viewers: ids }).then(socialRows); },

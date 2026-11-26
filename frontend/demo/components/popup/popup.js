@@ -1,5 +1,12 @@
 function typeLabel(type){ return t(type); }
 
+/* Keep task creation's existing lower bound; events can document the past.
+   A stored older date must remain selectable while editing. */
+function popupDateMinimum(type, editing, value){
+  const min = type === 'event' ? dateYearsAgo(100) : editing ? dateYearsAgo(1) : dateKey(today);
+  return (type === 'event' || editing) && value && value < min ? value : min;
+}
+
 let formPhotos = [];
 
 let formSubtasks = [];
@@ -24,6 +31,10 @@ function resetFormDraft(type, existing){
     category: existing ? (existing.category || '') : '',
     kind: existing ? (existing.kind || '') : '', // an event's kind: '' | 'birthday' | 'countdown'
     color: existing ? (existing.color || '') : '', // an event's own colour ('' = the default)
+    showInPlanning: existing ? existing.showInPlanning !== false : true,
+    showInOccasions: existing ? existing.showInOccasions !== false : true,
+    location: existing ? (existing.location || '') : '',
+    meetingUrl: existing ? (existing.meetingUrl || '') : '',
     description: existing ? (existing.description || '') : '',
     timeMode: existing ? (existing.timeMode || 'single') : 'single',
     // A new item goes on the day picked in the calendar (homeDate), not today.
@@ -32,6 +43,8 @@ function resetFormDraft(type, existing){
     // 'HH:MM' or '' — the end time only when "end time" was ticked.
     startTime: existing ? (existing.startTime || '') : '',
     endTime: existing ? (existing.endTime || '') : '',
+    endAlarm: existing?.endAlarm !== false,
+    reminderQuiet: Object.assign({ mode: 'on', start: '22:00', end: '07:00' }, existing?.reminderQuiet || {}),
     recurrence: {
       mode: existing ? (existing.recurrence?.mode || null) : (type === 'habit' ? 'interval' : null),
       interval: existing ? (existing.recurrence?.interval || 1) : 1,
@@ -43,6 +56,8 @@ function resetFormDraft(type, existing){
       time: existing ? (existing.notification?.time || '09:00') : '09:00',
       date: existing ? (existing.notification?.date || null) : null,
       repeatHours: existing ? (existing.notification?.repeatHours || 1) : 1,
+      windowEnd: existing ? (existing.notification?.windowEnd || null) : null,
+      windowSince: existing ? (existing.notification?.windowSince || null) : null,
       minutesBefore: existing ? (existing.notification?.minutesBefore || 15) : 15,
       leadMinutes: existing ? (existing.notification?.leadMinutes || 1440) : 1440,
       everyMinutes: existing ? (existing.notification?.everyMinutes || 60) : 60,
@@ -50,11 +65,14 @@ function resetFormDraft(type, existing){
     },
     // Group planning: which group (none = just me) and how it's ticked.
     groupId: existing ? (existing.groupId || '') : (popupPresetGroup || ''),
+    groupAssignee: existing?.groupAssignee || '',
+    originalAssignee: existing?.groupAssignee || '',
     doneMode: existing?.doneMode === 'shared' ? 'shared' : 'each',
     // A group habit as a challenge: 7, 21 or 30 days from its start (js/core/challenge.js).
     challenge: existing && existing.challenge ? existing.challenge.days : 0,
     // A habit's counter or timer (js/core/trackers.js); null = a plain tick.
     tracker: existing && habitTracker(existing) ? Object.assign({}, existing.tracker) : null,
+    goal: existing?.goal ? Object.assign({}, existing.goal) : {period:'daily',target:1},
   };
   popupPresetGroup = null;
   formPhotos = existing ? [...(existing.photos||[])] : [];
@@ -127,11 +145,14 @@ function itemDetailsHtml(type, item, day){
     rows.push([ICONS.calendarIcon, (type === 'habit' ? t('detailsFrom') + ' ' : '') + formatDateLabel(date) + (range ? ' – ' + formatDateLabel(item.endDate) : '')]);
   }
   if(item.startTime) rows.push([ICONS.clockIcon, `<span dir="ltr">${itemTimeLabel(item)}</span>`]);
+  if(type === 'event' && item.location) rows.push([ICONS.pinIcon, escapeHtml(item.location)]);
+  if(type === 'event' && safeEventWebUrl(item.meetingUrl)) rows.push([ICONS.linkIcon,
+    `<a href="${escapeAttr(item.meetingUrl)}" target="_blank" rel="noopener noreferrer">${t('eventOpenMeeting')}</a>`]);
   const rep = repeatSummary(item.recurrence);
   if(rep) rows.push([ICONS.repeatIcon, rep]);
   const n = item.notification || {};
   if(n.type === 'time') rows.push([ICONS.bellIcon, t('reminderAt') + ' ' + `<span dir="ltr">${dig(n.time)}</span>`]);
-  if(n.type === 'repeat') rows.push([ICONS.bellIcon, t('reminderEveryNHours').replace('{n}', dig(n.repeatHours || 1))]);
+  if(n.type === 'repeat') rows.push([ICONS.bellIcon, n.windowEnd ? t('reminderWindowSummary').replace('{from}', dig(n.time)).replace('{to}', dig(n.windowEnd)).replace('{every}', durationLabel(n.everyMinutes)) : t('reminderEveryNHours').replace('{n}', dig(n.repeatHours || 1))]);
   if(n.type === 'before') rows.push([ICONS.bellIcon, t('reminderMinutesBefore').replace('{n}', dig(n.minutesBefore || 15))]);
   if(type === 'habit' && habitTracker(item)) rows.push([item.tracker.kind === 'counter' ? ICONS.counterIcon : ICONS.timerIcon,
     trackerSummary(item) + ' · ' + t('trackerToday').replace('{v}', trackerLabel(item, dateKey(state.homeDate || today)))]);
@@ -225,7 +246,7 @@ function subtasksListHtml(){
 function formBody(type){
   const parts = [popupIconRow(type)];
   if(type === 'task') parts.push(descriptionBlock());
-  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(eventColorRow(), descriptionBlock(false)); } // events: a kind, a description, no photos
+  if(type === 'event'){ parts.unshift(eventKindRow()); parts.push(eventColorRow(), eventVisibilityRow(), eventLocationRow(), descriptionBlock(false)); } // events: a kind, a description, no photos
   return parts.join('');
 }
 
@@ -245,6 +266,25 @@ function eventColorRow(){
     <button type="button" class="color-swatch ${cur ? '' : 'active'}" data-ecolor="" style="--c:var(--event-color)" role="radio" aria-checked="${!cur}" aria-label="${t('defaultColor')}"></button>
     ${ITEM_COLOR_CHOICES.map(c => `<button type="button" class="color-swatch ${cur === c ? 'active' : ''}" data-ecolor="${c}" style="--c:${c}" role="radio" aria-checked="${cur === c}" aria-label="${c}"></button>`).join('')}
   </div></div>`;
+}
+function eventVisibilityRow(){
+  return `<fieldset class="event-visibility-row"><legend>${t('eventShowIn')}</legend>
+    <label><input type="checkbox" id="f-show-in-planning" ${formDraft.showInPlanning !== false ? 'checked' : ''}> ${t('planning')}</label>
+    <label><input type="checkbox" id="f-show-in-occasions" ${formDraft.showInOccasions !== false ? 'checked' : ''}> ${t('occasionsDesktop')}</label>
+  </fieldset>`;
+}
+function safeEventWebUrl(value){
+  if(!value) return false;
+  try { const url = new URL(value); return (url.protocol === 'https:' || url.protocol === 'http:') && !!url.hostname; }
+  catch(e){ return false; }
+}
+function eventLocationRow(){
+  return `<div class="event-location-row">
+    <label for="f-event-location">${t('eventLocation')}</label>
+    <input id="f-event-location" type="text" maxlength="500" value="${escapeAttr(formDraft.location || '')}" placeholder="${t('eventLocationHint')}">
+    <label for="f-event-meeting-url">${t('eventMeetingUrl')}</label>
+    <input id="f-event-meeting-url" type="url" inputmode="url" dir="ltr" maxlength="2048" value="${escapeAttr(formDraft.meetingUrl || '')}" placeholder="https://…">
+  </div>`;
 }
 function applyEventKind(k){
   formDraft.kind = k;
@@ -369,9 +409,10 @@ function startReminderDraft(){
   reminderDraft = {
     type: n.type || 'time', time: n.time || formDraft.startTime || '09:00', date: n.date || null,
     repeatHours: Math.min(12, Math.max(1, Number(n.repeatHours) || 1)),
+    windowEnd: n.windowEnd || null,
     minutesBefore: n.minutesBefore || 15, text: n.text || '',
     leadMinutes: Math.min(COUNTDOWN_MAX_LEAD, Math.max(15, Number(n.leadMinutes) || 1440)),
-    everyMinutes: COUNTDOWN_EVERY.includes(Number(n.everyMinutes)) ? Number(n.everyMinutes) : 60,
+    everyMinutes: n.type === 'repeat' ? (n.windowEnd ? Number(n.everyMinutes) : (Number(n.repeatHours) || 1) * 60) : (COUNTDOWN_EVERY.includes(Number(n.everyMinutes)) ? Number(n.everyMinutes) : 60),
   };
 }
 
@@ -391,6 +432,15 @@ function notificationSubviewHtml(){
       ${reminderSpans() ? `data-base="${formDraft.date}" data-span="${REMINDER_MAX_DAYS}" data-date="${n.date || formDraft.date}"` : ''}></div>
       ${reminderSpans() && n.date && n.date > formDraft.date ? `<div class="profile-hint">${t('reminderNextDayHint').replace('{d}', tjDayLabel(n.date))}</div>` : ''}` : ''}
     ${n.type === 'repeat' ? `
+      <label class="rec-block dp-time-check"><input type="checkbox" id="notif-window" ${n.windowEnd ? 'checked' : ''}><span>${t('reminderWindow')}</span></label>
+      ${n.windowEnd ? `
+        <label class="rec-block rec-every"><span>${t('startTime')}</span><input type="time" id="f-window-start" value="${escapeAttr(n.time)}"></label>
+        <label class="rec-block rec-every"><span>${t('endTime')}</span><input type="time" id="f-window-end" value="${escapeAttr(n.windowEnd)}"></label>
+        <div class="rec-block window-interval"><span class="field-label">${t('repeatEvery')}</span>
+          <label>${t('windowHours')} <input type="number" id="f-window-hours" min="0" max="24" step="1" inputmode="numeric" value="${Math.floor(n.everyMinutes / 60)}"></label>
+          <label>${t('windowMinutes')} <input type="number" id="f-window-minutes" min="0" max="59" step="1" inputmode="numeric" value="${n.everyMinutes % 60}"></label>
+        </div><p class="profile-hint">${t('reminderWindowHint')}</p>
+      ` : `
       <div class="rec-block rec-every">
         <span>${t('repeatEvery')}</span>
         <div class="rec-stepper" dir="ltr">
@@ -398,7 +448,7 @@ function notificationSubviewHtml(){
         </div>
         <span>${t('reminderHoursUnit')}</span>
       </div>
-      <div class="profile-hint">${t('reminderRepeatHint').replace('{t}', `<span dir="ltr">${dig(formDraft.startTime || n.time)}</span>`)}</div>` : ''}
+      <div class="profile-hint">${t('reminderRepeatHint').replace('{t}', `<span dir="ltr">${dig(formDraft.startTime || n.time)}</span>`)}</div>`}` : ''}
     ${n.type === 'before' ? (formDraft.startTime ? `
       <div class="rec-block"><select class="settings-select" id="notif-before-select" style="width:100%;">
         ${REMINDER_BEFORE_CHOICES.map(m => `<option value="${m}" ${n.minutesBefore === m ? 'selected' : ''}>${beforeLabel(m)}</option>`).join('')}
@@ -526,15 +576,44 @@ function renderPopupBody(){
     <div class="float-field"><input type="text" id="f-title" placeholder=" " value="${escapeAttr(formDraft.title)}" autocomplete="off"><label>${t('titleLabel')}</label></div>
     ${state.popupType === 'task' && !state.editingParentId ? subtasksBlock() : ''}
     ${formBody(state.popupType)}
+    ${state.popupType === 'task' && !state.editingParentId && formDraft.endTime ? `<label class="field-label"><input type="checkbox" id="f-end-alarm" ${formDraft.endAlarm ? 'checked' : ''}> ${t('taskEndAlarm')}</label>` : ''}
+    ${state.popupType === 'habit' ? habitGoalFields() + habitQuietFields() : ''}
     ${groupFieldHtml()}
   `;
   wireMainFormInteractivity();
+  document.getElementById('f-habit-goal-period')?.addEventListener('change', e => {
+    formDraft.goal = {period:e.target.value, target:1}; renderPopupBody();
+  });
+  document.getElementById('f-habit-goal-target')?.addEventListener('input', e => {
+    formDraft.goal.target = Number(e.target.value);
+  });
   // The Save button always sits at the bottom; it only works with a title.
   const titleInput = document.getElementById('f-title');
   const submitBtn = document.getElementById('popup-submit');
   const paint = () => submitBtn.classList.toggle('needs-title', !titleInput.value.trim());
   paint();
   titleInput.addEventListener('input', () => { formDraft.title = titleInput.value; paint(); });
+}
+
+function habitGoalFields(){
+  const goal = formDraft.goal || {period:'daily',target:1};
+  const limit = goal.period === 'weekly' ? 7 : 31;
+  return `<div class="field"><label for="f-habit-goal-period">${t('habitGoalPeriod')}</label>
+    <select class="settings-select" id="f-habit-goal-period">
+      ${[['daily','day'],['weekly','week'],['monthly','month']].map(([value,label]) => `<option value="${value}" ${goal.period === value ? 'selected' : ''}>${t(label)}</option>`).join('')}
+    </select></div>
+    ${goal.period !== 'daily' ? `<div class="field"><label for="f-habit-goal-target">${t('habitGoalSessions')}</label>
+      <input id="f-habit-goal-target" type="number" inputmode="numeric" min="1" max="${limit}" step="1" value="${goal.target}"></div>` : ''}`;
+}
+
+function habitQuietFields(){
+  const rule = formDraft.reminderQuiet;
+  return `<div class="field"><label for="f-habit-quiet">${t('habitDelivery')}</label>
+    <select class="settings-select" id="f-habit-quiet">
+      ${[['on','habitAsScheduled'], ['off','habitMuted'], ['quiet','habitQuiet']].map(([v,k]) => `<option value="${v}" ${rule.mode === v ? 'selected' : ''}>${t(k)}</option>`).join('')}
+    </select>
+    ${rule.mode === 'quiet' ? ['start','end'].map(k => `<label class="field-label" for="f-quiet-${k}">${t(k === 'start' ? 'quietFrom' : 'quietUntil')}</label>
+      <input type="time" id="f-quiet-${k}" value="${escapeAttr(rule[k])}">`).join('') : ''}</div>`;
 }
 
 /* The group drop-down (only with groups, never for a subtask) and, for a
@@ -551,7 +630,12 @@ function groupFieldHtml(){
           ${state.groups.filter(x => groupCanAdd(x) || x.id === formDraft.groupId).map(x => `<option value="${escapeAttr(x.id)}" ${x.id === formDraft.groupId ? 'selected' : ''}>${escapeHtml(x.name)}</option>`).join('')}
         </select>
       </div>
-      ${g && state.popupType !== 'event' ? `
+      ${g?.supergroup && state.popupType === 'task' ? `
+        <label class="field-label" for="f-assignee">${t('groupAssignee')}</label>
+        <select class="settings-select" id="f-assignee" required>
+          <option value="">${t('groupChooseAssignee')}</option>
+          ${g.members.map(m => `<option value="${escapeAttr(String(m.id))}" ${String(m.id) === formDraft.groupAssignee ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}
+        </select>` : g && state.popupType !== 'event' ? `
         <label class="field-label" for="f-done-mode" style="margin-top:10px;">${t('groupDoneMode')}</label>
         <select class="settings-select" id="f-done-mode" style="width:100%;">
           <option value="each" ${formDraft.doneMode !== 'shared' ? 'selected' : ''}>${t('groupDoneEach')}</option>
@@ -562,11 +646,19 @@ function groupFieldHtml(){
 }
 
 function wireMainFormInteractivity(){
-  document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; renderPopupBody(); });
+  document.getElementById('f-end-alarm')?.addEventListener('change', e => { formDraft.endAlarm = e.target.checked; });
+  document.getElementById('f-habit-quiet')?.addEventListener('change', e => { formDraft.reminderQuiet.mode = e.target.value; renderPopupBody(); });
+  ['start','end'].forEach(k => document.getElementById('f-quiet-' + k)?.addEventListener('input', e => { formDraft.reminderQuiet[k] = e.target.value; }));
+  document.getElementById('f-group')?.addEventListener('change', e => { formDraft.groupId = e.target.value; formDraft.groupAssignee = ''; renderPopupBody(); });
   document.querySelectorAll('[data-ecolor]').forEach(b => b.addEventListener('click', () => { formDraft.color = b.dataset.ecolor; renderPopupBody(); }));
+  document.getElementById('f-show-in-planning')?.addEventListener('change', e => { formDraft.showInPlanning = e.target.checked; });
+  document.getElementById('f-show-in-occasions')?.addEventListener('change', e => { formDraft.showInOccasions = e.target.checked; });
+  document.getElementById('f-event-location')?.addEventListener('input', e => { formDraft.location = e.target.value; });
+  document.getElementById('f-event-meeting-url')?.addEventListener('input', e => { formDraft.meetingUrl = e.target.value; });
   document.querySelectorAll('[data-ekind]').forEach(b => b.addEventListener('click', () => { applyEventKind(b.dataset.ekind); renderPopupBody(); }));
   document.querySelectorAll('[data-epreset]').forEach(b => b.addEventListener('click', () => { applyEventPreset(b.dataset.epreset); renderPopupBody(); }));
   document.getElementById('f-challenge')?.addEventListener('change', e => { formDraft.challenge = Number(e.target.value) || 0; });
+  document.getElementById('f-assignee')?.addEventListener('change', e => { formDraft.groupAssignee = e.target.value; });
   document.getElementById('f-done-mode')?.addEventListener('change', e => { formDraft.doneMode = e.target.value === 'shared' ? 'shared' : 'each'; });
   document.getElementById('f-description')?.addEventListener('input', e => { formDraft.description = e.target.value; });
   document.getElementById('desc-clip-btn')?.addEventListener('click', () => document.getElementById('f-photo-input').click());
@@ -633,6 +725,18 @@ function wireSubviewInteractivity(){
     wireTrackerSubview();
   } else if(sub === 'notification'){
     const n = reminderDraft;
+    document.getElementById('notif-window')?.addEventListener('change', e => {
+      n.windowEnd = e.target.checked ? (formDraft.endTime || '18:00') : null;
+      if(e.target.checked) n.time = formDraft.startTime || n.time;
+      renderPopupBody();
+    });
+    document.getElementById('f-window-start')?.addEventListener('input', e => { n.time = e.target.value; });
+    document.getElementById('f-window-end')?.addEventListener('input', e => { n.windowEnd = e.target.value; });
+    const readWindowInterval = () => {
+      const hours = Number(document.getElementById('f-window-hours').value), minutes = Number(document.getElementById('f-window-minutes').value);
+      n.everyMinutes = Number.isInteger(hours) && hours >= 0 && hours <= 24 && Number.isInteger(minutes) && minutes >= 0 && minutes <= 59 ? hours * 60 + minutes : NaN;
+    };
+    ['f-window-hours','f-window-minutes'].forEach(id => document.getElementById(id)?.addEventListener('input', readWindowInterval));
     document.getElementById('notif-type-select')?.addEventListener('change', e => { n.type = e.target.value; renderPopupBody(); });
     document.getElementById('f-notif-time')?.addEventListener('input', e => {
       const had = n.date;
@@ -664,6 +768,7 @@ function wireSubviewInteractivity(){
     });
     document.getElementById('f-notif-text')?.addEventListener('input', e => { n.text = e.target.value; });
     document.getElementById('notif-confirm')?.addEventListener('click', () => {
+      if(n.type === 'repeat' && document.getElementById('notif-window')?.checked && !reminderWindowSpec(n)){ showToast(t('reminderWindowInvalid')); return; }
       if(n.type === 'time' && !n.time){ showToast(t('reminderTimeRequired')); return; }
       if((n.type === 'before' || n.type === 'countdown') && !formDraft.startTime){ showToast(t('reminderNeedsStart')); return; }
       let day = null;
@@ -676,6 +781,7 @@ function wireSubviewInteractivity(){
         }
       }
       formDraft.notification = { type: n.type, time: n.time || '09:00', date: day && day > formDraft.date ? day : null, repeatHours: n.repeatHours, minutesBefore: n.minutesBefore,
+        windowEnd: n.type === 'repeat' ? n.windowEnd : null,
         leadMinutes: n.leadMinutes, everyMinutes: n.everyMinutes, text: n.text.trim() };
       reminderDraft = null; state.popupSubView = null;
       askNotificationPermission(); // the first reminder asks the browser once (js/core/notify.js)
@@ -689,13 +795,34 @@ function wireSubviewInteractivity(){
   }
 }
 
-function submitPopup(){
+function windowOccurrenceSignature(item, type){
+  if(!item?.notification?.windowEnd || item.notification.type !== 'repeat') return null;
+  const r = item.recurrence || {}, n = item.notification;
+  const mode = r.mode || null, monthly = mode === 'monthly' || mode === 'yearly';
+  return JSON.stringify([type === 'habit' ? item.startDate : item.date,
+    item.endDate || null, mode, mode ? Number(r.interval) || 1 : 1,
+    mode === 'weekdays' ? [...(r.weekdays || [])].sort((a,b)=>a-b) : [],
+    monthly ? r.anchor || null : null, monthly ? r.cal || 'jalali' : null,
+    n.time, n.windowEnd, Number(n.everyMinutes)]);
+}
+function reminderWindowActivation(previous, next, type, now){
+  const since = Number(previous?.notification?.windowSince);
+  return previous && windowOccurrenceSignature(previous, type) === windowOccurrenceSignature(next, type)
+    && Number.isFinite(since) && since > 0 ? since : now;
+}
+
+async function submitPopup(){
+  if(formDraft.savingAssignedTask) return;
   const title = (formDraft.title||'').trim();
   // The title is required: say so and put the cursor there.
   if(!title){ showToast(t('titleRequired')); haptic(20); document.getElementById('f-title')?.focus(); return; }
   if(state.popupSubView) return; // finish (or leave) the repeat / reminder page first
   const type = state.popupType;
   const rec = formDraft.recurrence;
+  const quiet = formDraft.reminderQuiet;
+  if(type === 'habit' && quiet.mode === 'quiet' && (!quiet.start || !quiet.end || quiet.start === quiet.end)){
+    showToast(t('quietTimeRequired')); return;
+  }
   const recurrence = { mode: rec.mode, interval: rec.interval, weekdays: Array.from(formWeekdays), anchor: rec.anchor || null, cal: rec.cal || null };
   // Repeat settings that would hide the item or make no sense: say so
   // instead of saving something that never shows up.
@@ -706,11 +833,18 @@ function submitPopup(){
     recurrence.interval = n;
   }
   if(type !== 'habit' && recurrence.mode && formDraft.timeMode === 'range' && formDraft.endDate !== formDraft.date){ showToast(t('rangeNoRepeat')); return; }
-  // A new task or event can't be put on a day that has already passed.
-  // (A birthday is the day someone was born: any past day.)
+  // Events may record past activity; birthdays still repeat every year.
   if(type === 'event' && formDraft.kind === 'birthday'){ recurrence.mode = 'yearly'; recurrence.interval = 1; recurrence.anchor = formDraft.date; recurrence.cal = recurrence.cal || (isHijriPrimary() ? 'jalali' : primarySystem()); }
-  if(!state.editingId && (type === 'task' || (type === 'event' && formDraft.kind !== 'birthday')) && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
+  if(!state.editingId && type === 'task' && formDraft.date < dateKey(today)){ showToast(t('pastDateNotAllowed')); haptic(20); return; }
   const notification = { ...formDraft.notification };
+  if(notification.type === 'repeat' && notification.windowEnd && !reminderWindowSpec(notification)){ showToast(t('reminderWindowInvalid')); return; }
+  if(notification.type === 'repeat' && notification.windowEnd){
+    const previous = state.editingId ? findItem(type, state.editingId) : null;
+    const next = { ...formDraft, notification, recurrence,
+      startDate: type === 'habit' ? previous?.startDate || dateKey(state.homeDate || today) : undefined,
+      endDate: type === 'habit' ? previous?.endDate || null : formDraft.timeMode === 'range' ? formDraft.endDate : null };
+    notification.windowSince = reminderWindowActivation(previous, next, type, Date.now());
+  }
   // A reminder's own day only for a one-time task, and only inside its days.
   if(notification.date && (type !== 'task' || recurrence.mode || notification.type !== 'time' || notification.date <= formDraft.date
     || notification.date > (formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date))) notification.date = null;
@@ -759,35 +893,61 @@ function submitPopup(){
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
       ...times,
+      endAlarm: formDraft.endAlarm,
       recurrence, notification
     };
     // A new, unticked subtask makes a finished parent unfinished again.
     if(obj.subtasks.length && !obj.recurrence.mode){ obj.done = obj.subtasks.every(s => s.done); if(obj.done) obj.skipped = false; }
-    upsert('tasks', obj);
+    const group = groupById(formDraft.groupId);
+    if(group?.supergroup){
+      if(!group.members.some(m => String(m.id) === formDraft.groupAssignee)){
+        showToast(t('groupChooseAssignee')); document.getElementById('f-assignee')?.focus(); return;
+      }
+      const draft = formDraft;
+      draft.savingAssignedTask = true;
+      try {
+        await saveAssignedTask(group, obj, existing, draft);
+      } catch(err){
+        showToast(groupErrorText(err)); loadGroups(); return;
+      } finally { draft.savingAssignedTask = false; }
+      if(formDraft !== draft) return;
+    } else upsert('tasks', obj);
     if(!state.editingId) trackEvent('first_task', true); // opt-in anonymous count (js/core/stats.js)
   } else if(type === 'habit'){
+    const selectedGoal = formDraft.goal || {period:'daily',target:1};
+    const goalLimit = selectedGoal.period === 'weekly' ? 7 : selectedGoal.period === 'monthly' ? 31 : 1;
+    const targetValue = selectedGoal.period === 'daily' ? 1 : Number(selectedGoal.target);
+    if(!['daily','weekly','monthly'].includes(selectedGoal.period) || !Number.isInteger(targetValue) || targetValue < 1 || targetValue > goalLimit){ showToast(t('habitGoalInvalid')); return; }
     const obj = {
       id: state.editingId || uid(),
       title,
       recurrence, notification,
       // A new habit starts on the day picked in the calendar.
       startDate: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(state.homeDate || today),
+      reminderQuiet: quiet.mode === 'on' ? null : quiet.mode === 'off' ? { mode: 'off' } : { ...quiet },
       endDate: state.editingId ? (findItem('habit', state.editingId).endDate || null) : null, // kept when edited (a template's last day)
       completedDates: state.editingId ? findItem('habit', state.editingId).completedDates : [],
       skippedDates: state.editingId ? (findItem('habit', state.editingId).skippedDates || []) : [],
       tracker: formDraft.tracker || null,
+      goal: {period:selectedGoal.period,target:targetValue},
       challenge: formDraft.groupId && formDraft.challenge ? { days: formDraft.challenge, start: state.editingId ? findItem('habit', state.editingId).startDate : dateKey(state.homeDate || today) } : null,
       progress: state.editingId ? (findItem('habit', state.editingId).progress || {}) : {},
     };
     upsert('habits', obj);
     if(!state.editingId) trackEvent('first_habit', true);
   } else if(type === 'event'){
+    const meetingUrl = (formDraft.meetingUrl || '').trim();
+    if(meetingUrl && !safeEventWebUrl(meetingUrl)){ showToast(t('eventMeetingUrlInvalid')); return; }
     const obj = {
       id: state.editingId || uid(),
       title,
       description: (formDraft.description||'').trim(),
       kind: formDraft.kind || '',
       color: formDraft.color || '',
+      showInPlanning: formDraft.showInPlanning !== false,
+      showInOccasions: formDraft.showInOccasions !== false,
+      location: (formDraft.location || '').trim().slice(0, 500),
+      meetingUrl,
       timeMode: formDraft.timeMode,
       date: formDraft.date,
       endDate: formDraft.timeMode==='range' ? formDraft.endDate : null,
@@ -805,6 +965,20 @@ const CLOUD_DELETE_BY_ARRKEY = { tasks: Cloud.deleteTask, habits: Cloud.deleteHa
 
 /* Saves to the person's own data, or to a group (js/core/groups.js); an
    item moved between the two (or between groups) leaves the old place. */
+async function saveAssignedTask(group, obj, prev, draft){
+  // A stable id makes a retry safe if the server saved before the connection dropped.
+  const sameGroup = prev && prev.groupId === group.id;
+  if(!sameGroup) obj.id = draft.assignedTaskId || (draft.assignedTaskId = uid());
+  const assignee = !sameGroup || draft.groupAssignee !== draft.originalAssignee ? draft.groupAssignee : undefined;
+  await Cloud.saveGroupItem(group.id, 'task', groupItemData(obj), 'each', assignee);
+  if(prev && !sameGroup){
+    if(prev.groupId) await Cloud.deleteGroupItem(prev.groupId, prev.id);
+    else await Cloud.deleteTask(prev.id);
+    state.tasks = state.tasks.filter(x => x.id !== prev.id);
+  }
+  await loadGroups();
+}
+
 function upsert(arrKey, obj){
   const arr = state[arrKey];
   const idx = arr.findIndex(x => x.id === obj.id);
@@ -825,4 +999,6 @@ function upsert(arrKey, obj){
   if(left) groupCloud(() => Cloud.deleteGroupItem(left.groupId, left.id).then(() => gid ? Cloud.saveGroupItem(gid, kind, groupItemData(obj), obj.doneMode) : null));
   else if(gid) groupSaveItem(kind, obj);
   if(!gid) cloudSync(() => CLOUD_SAVE_BY_ARRKEY[arrKey](obj));
+  syncAndroidSchedule(false);
+  syncPushSchedule(false);
 }

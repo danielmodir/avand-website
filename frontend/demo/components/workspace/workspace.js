@@ -12,9 +12,15 @@ function renderHome(){
 function renderOccasionsPane(d, events){
   const items = visibleOccasionsForDate(d); // null while still loading
   const occasionsHtml = items === null ? `<div class="empty-hint">…</div>` : (() => {
-    return items.length ? items.map(it => `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}${escapeHtml(it.event_name)}</div>`).join('') : '';
+    return items.length ? items.map(it => {
+      const list = state.settings.prefs?.occasionReminders?.[it.key] || [];
+      const open = state.occasionEditorKey === it.key;
+      return `<div class="occasion-row ${it.is_holiday?'holiday':''}">${it.is_holiday?`<span class="occasion-holiday-dot"></span>`:''}<span class="occasion-name">${escapeHtml(it.event_name)}</span>
+        <button type="button" class="occasion-reminder-open ${list.some(r => r.enabled)?'active':''}" data-action="occasion-reminder-open" data-key="${escapeAttr(it.key)}" aria-expanded="${open}" aria-label="${escapeAttr(t('occasionReminder'))}: ${escapeAttr(it.event_name)}">${ICONS.bellIcon}<span>${dig(list.length)}</span></button></div>
+        ${open ? renderOccasionReminderEditor(it.key, list) : ''}`;
+    }).join('') : '';
   })();
-  const dayEvents = pref('occasionsShowEvents') ? (events || []) : [];
+  const dayEvents = pref('occasionsShowEvents') ? (events || []).filter(e => eventVisibleIn(e, 'occasions')) : [];
   const eventsHtml = dayEvents.length ? `
     <div class="section-title">${t('events')} <span class="count">${dig(dayEvents.length)}</span></div>
     <div class="events-scroll">${sortEvents(dayEvents).map(e=>eventCard(e)).join('')}</div>
@@ -22,6 +28,25 @@ function renderOccasionsPane(d, events){
   const share = `<div class="occ-share-row">${shareCardBtn('day', '', 'cardDay')}</div>`;
   if(!occasionsHtml && !eventsHtml) return `<div class="empty-hint">${t('noOccasionsToday')}</div>` + countdownsHtml() + prayerBlockHtml(d) + share;
   return occasionsHtml + eventsHtml + countdownsHtml() + prayerBlockHtml(d) + share;
+}
+
+function renderOccasionReminderEditor(key, list){
+  const row = r => `<div class="occasion-reminder-row" data-reminder-id="${escapeAttr(r.id)}">
+    <label>${t('occasionReminderDays')}<input class="occ-days" type="number" min="0" max="56" step="1" value="${r.daysBefore}" inputmode="numeric"></label>
+    <label>${t('occasionReminderTime')}<input class="occ-time" type="time" value="${escapeAttr(r.time)}"></label>
+    <button type="button" class="btn" data-action="occasion-reminder-toggle" data-key="${escapeAttr(key)}" data-id="${escapeAttr(r.id)}" aria-pressed="${!!r.enabled}">${t(r.enabled ? 'occasionReminderOn' : 'occasionReminderOff')}</button>
+    <button type="button" class="btn" data-action="occasion-reminder-save" data-key="${escapeAttr(key)}" data-id="${escapeAttr(r.id)}">${t('occasionReminderSave')}</button>
+    <button type="button" class="btn" data-action="occasion-reminder-delete" data-key="${escapeAttr(key)}" data-id="${escapeAttr(r.id)}">${t('occasionReminderDelete')}</button>
+  </div>`;
+  return `<div class="occasion-reminder-editor" data-key="${escapeAttr(key)}">
+    <div class="section-title">${t('occasionReminder')}</div>
+    ${list.map(row).join('')}
+    ${list.length < 10 ? `<div class="occasion-reminder-row occasion-reminder-new">
+      <label>${t('occasionReminderDays')}<input class="occ-days" type="number" min="0" max="56" step="1" value="0" inputmode="numeric"></label>
+      <label>${t('occasionReminderTime')}<input class="occ-time" type="time" value="" required></label>
+      <button type="button" class="btn btn-primary" data-action="occasion-reminder-add" data-key="${escapeAttr(key)}">${t('occasionReminderAdd')}</button>
+    </div>` : ''}
+  </div>`;
 }
 
 /* The day's prayer times (js/core/prayer.js) for the chosen city; on today
@@ -95,6 +120,8 @@ function deskKeys(){
      first, so signing in or opening the app lands on it (the owner's
      request, 2026-10-25). Guests only browse the calendar and occasions. */
   if(!state.guest) keys.push('planning');
+  if(!state.guest) keys.push('habitsDesktop');
+  if(!state.guest) keys.push('financeDesktop');
   if(pref('occasionsEnabled')) keys.push('occasionsDesktop');
   if(pref('groupsEnabled') && groupsAvailable()) keys.push('groupsDesktop'); // needs our API and an account
   if(periodViews().length) keys.push('periodDesktop'); // her own cycle and/or ones friends share with this person
@@ -104,17 +131,88 @@ function deskKeys(){
   return keys;
 }
 
-const MAIN_DESKS = { planning: 'planning', occasions: 'occasionsDesktop', groups: 'groupsDesktop', period: 'periodDesktop' };
+function renderHabitDesk(d, todayHabits){
+  const all = state.habits || [];
+  const selected = all.find(h => h.id === state.habitDeskSelectedId);
+  const mode = (state.settings.prefs || {}).habitDeskView || 'daily';
+  return `<section class="habit-desk">
+    <div class="section-title">${t('habitsToday')} <span class="count">${dig(todayHabits.length)}</span></div>
+    ${todayHabits.length ? todayHabits.map(h => habitRow(h, d)).join('') : `<div class="empty-hint">${t('noHabitsToday')}</div>`}
+    <div class="section-title">${t('allHabits')} <span class="count">${dig(all.length)}</span></div>
+    ${all.length ? `<div class="habit-desk-list">${all.map(h => {
+      const stats = habitGoalStats(h, new Date());
+      const tracker = habitTracker(h);
+      const totalValue = tracker ? habitTotalValue(h,new Date()) : 0;
+      return `<div class="habit-desk-link">
+        <strong>${escapeHtml(h.title)}</strong>
+        <span>${t('habitCurrentStreak')} ${dig(stats.currentStreak)} · ${t('habitBestStreak')} ${dig(stats.bestStreak)}</span>
+        <span>${t('habitCurrentProgress')} ${dig(stats.current.done)}/${dig(stats.current.target)}${stats.successRate === null ? '' : ` · ${t('habitSuccessRate')} ${dig(Math.round(stats.successRate * 100))}%`}</span>
+        <span>${t('habitTotalDone')} ${dig(stats.totalDone)}${tracker ? ` · ${t(tracker.kind === 'timer' ? 'habitTotalDuration' : 'habitTotalCount')} ${dig(tracker.kind === 'timer' ? clockText(Math.round(totalValue)) : totalValue)}` : ''}</span>
+        <div class="habit-desk-actions"><button type="button" class="btn btn-outline btn-small" data-action="habit-cal-select" data-id="${escapeAttr(h.id)}">${t('habitProgressCalendar')}</button>
+        <button type="button" class="btn btn-outline btn-small" data-action="view-item" data-type="habit" data-id="${escapeAttr(h.id)}">${t('details')}</button></div>
+      </div>`;
+    }).join('')}</div>` : `<div class="empty-hint">${t('noHabitsYet')}</div>`}
+    ${selected ? habitCalendarHtml(selected,d,mode) : ''}
+  </section>`;
+}
+
+function habitCalendarHtml(h,d,mode){
+  const view = ['daily','weekly','monthly'].includes(mode) ? mode : 'daily';
+  const todayKey = dateKey(new Date());
+  let dates = [];
+  if(view === 'daily'){
+    const first = startOfWeek(d);
+    dates = Array.from({length:7},(_,i)=>addDays(first,i));
+  } else if(view === 'weekly'){
+    const first = startOfWeek(d);
+    dates = Array.from({length:5},(_,i)=>addDays(first,(i-4)*7));
+  } else {
+    let month = habitPeriodBounds(d,'monthly').start;
+    for(let i=0;i<5;i++) month = habitPeriodBounds(addDays(month,-1),'monthly').start;
+    for(let i=0;i<6;i++){
+      dates.push(month);
+      month = habitPeriodBounds(addDays(habitPeriodBounds(month,'monthly').end,1),'monthly').start;
+    }
+  }
+  const cells = dates.map(day => {
+    const key = dateKey(day);
+    if(view === 'daily'){
+      const required = key >= h.startDate && (!h.endDate || key <= h.endDate) && habitOccursOnDate(h,day);
+      const done = (h.completedDates || []).includes(key);
+      const partial = !done && Number(habitProgressMap(h)[key]) > 0;
+      const status = key > todayKey ? 'future' : !required ? 'off' : done ? 'done' : partial ? 'partial' : 'open';
+      return `<div class="habit-cal-cell ${status}" aria-label="${escapeAttr(dayLabel(day) + ': ' + t('habitCal'+status))}"><span>${dayLabel(day)}</span><b>${t('habitCal'+status)}</b></div>`;
+    }
+    const bounds = habitPeriodBounds(day,view);
+    const progress = habitCalendarProgress(h,view,day,new Date());
+    const status = key > todayKey ? 'future' : progress.required === 0 ? 'off' : progress.complete ? 'done' : progress.closed ? 'open' : 'partial';
+    const label = view === 'weekly' ? dayLabel(bounds.start) : displayMonthYear(bounds.start);
+    const amount = `${dig(progress.done)}/${dig(progress.target)}`;
+    return `<div class="habit-cal-cell ${status}" aria-label="${escapeAttr(label + ': ' + amount)}"><span>${label}</span><b>${amount}</b></div>`;
+  }).join('');
+  return `<section class="habit-calendar" data-mode="${view}"><div class="section-title">${t('habitProgressCalendar')}: ${escapeHtml(h.title)}</div>
+    <div class="habit-cal-tabs" role="group" aria-label="${escapeAttr(t('habitCalendarView'))}">
+      ${[['daily','day'],['weekly','week'],['monthly','month']].map(([value,label])=>`<button type="button" class="btn btn-small ${view===value?'btn-primary':'btn-outline'}" data-action="habit-cal-mode" data-mode="${value}" aria-pressed="${view===value}">${t(label)}</button>`).join('')}
+    </div><div class="habit-cal-grid">${cells}</div>
+  </section>`;
+}
+
+const MAIN_DESKS = { planning: 'planning', habits: 'habitsDesktop', finance: 'financeDesktop', occasions: 'occasionsDesktop', groups: 'groupsDesktop', period: 'periodDesktop' };
 
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = deskKeys().map(key => {
     if(key === 'occasionsDesktop') return { key, html: renderOccasionsPane(d, events) };
-    if(key === 'planning') return { key, html:`
+    if(key === 'planning'){
+      const shownEvents = events.filter(e => eventVisibleIn(e, 'planning'));
+      return { key, html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
-      ${pref('planningDaySummary') ? renderDayStatsCard(tasks, habits, events, d) : ''}
-      ${renderItemSections(tasks, habits, events, d)}
+      ${pref('planningDaySummary') ? renderDayStatsCard(tasks, [], shownEvents, d) : ''}
+      ${renderItemSections(tasks, [], shownEvents, d)}
     ` };
+    }
+    if(key === 'habitsDesktop') return { key, html: renderHabitDesk(d, habits) };
+    if(key === 'financeDesktop') return { key, html: FinanceDesk.renderDesk() };
     if(key === 'groupsDesktop') return { key, html: renderGroupsPane(d) };
     return { key, html: renderPeriodPage('') + renderArticleStrip('app_period') };
   });
@@ -287,36 +385,31 @@ function attachDesktopPager(){
    animateDayStats() (called from render()), not just on first paint. */
 const STAT_RING_CIRC = 2 * Math.PI * 42;
 
-/* The day's numbers for the card: what share of the ring each kind's
-   done items fill (tasks then habits, each in its own color). */
+/* The planning card counts tasks only; habits have their own desk. */
 function dayStats(d){
   const key = dateKey(d);
-  const { tasks, habits } = itemsForDate(d);
+  const { tasks } = itemsForDate(d);
   const doneTasks = tasks.filter(x => taskStatusOn(x, key) === 'done').length;
-  const doneHabits = habits.filter(h => h.completedDates.includes(key)).length;
-  const total = tasks.length + habits.length;
   return {
-    tasks, habits, doneTasks, doneHabits,
-    pct: total ? Math.round((doneTasks + doneHabits) / total * 100) : 0,
-    taskFrac: total ? doneTasks / total : 0, habitFrac: total ? doneHabits / total : 0,
+    tasks, doneTasks,
+    pct: tasks.length ? Math.round(doneTasks / tasks.length * 100) : 0,
+    taskFrac: tasks.length ? doneTasks / tasks.length : 0,
   };
 }
 
 function renderDayStatsCard(tasks, habits, events, d){
   const s = dayStats(d);
   return `
-    <div class="stat-card" id="day-stat-card" data-pct="${s.pct}" data-task-frac="${s.taskFrac}" data-habit-frac="${s.habitFrac}">
+    <div class="stat-card" id="day-stat-card" data-pct="${s.pct}" data-task-frac="${s.taskFrac}">
       <div class="stat-ring-wrap">
         <svg viewBox="0 0 100 100" class="stat-ring">
           <circle cx="50" cy="50" r="42" class="stat-ring-track"></circle>
-          <circle cx="50" cy="50" r="42" class="stat-ring-progress stat-ring-habits" id="stat-ring-habits" stroke-dasharray="0 ${STAT_RING_CIRC}"></circle>
           <circle cx="50" cy="50" r="42" class="stat-ring-progress stat-ring-tasks" id="stat-ring-progress" stroke-dasharray="0 ${STAT_RING_CIRC}"></circle>
         </svg>
         <div class="stat-ring-label"><span id="stat-ring-pct">0%</span></div>
       </div>
       <div class="stat-mini-list">
         <div class="stat-mini"><span class="stat-dot" style="background:var(--task-color)"></span>${t('tasks')} <b>${dig(s.doneTasks)}/${dig(tasks.length)}</b></div>
-        <div class="stat-mini"><span class="stat-dot" style="background:var(--habit-color)"></span>${t('habits')} <b>${dig(s.doneHabits)}/${dig(habits.length)}</b></div>
         <div class="stat-mini"><span class="stat-dot" style="background:var(--event-color)"></span>${t('events')} <b>${dig(events.length)}</b></div>
       </div>
     </div>
@@ -326,16 +419,12 @@ function renderDayStatsCard(tasks, habits, events, d){
 function animateDayStats(){
   const card = document.getElementById('day-stat-card');
   const ring = document.getElementById('stat-ring-progress');
-  const habitRing = document.getElementById('stat-ring-habits');
   const label = document.getElementById('stat-ring-pct');
   if(!card || !ring || !label) return;
   const pct = Number(card.dataset.pct) || 0;
-  // Tasks' arc first, the habits' arc right after it.
   const taskLen = STAT_RING_CIRC * (Number(card.dataset.taskFrac) || 0);
-  const habitLen = STAT_RING_CIRC * (Number(card.dataset.habitFrac) || 0);
   requestAnimationFrame(() => {
     ring.style.strokeDasharray = `${taskLen} ${STAT_RING_CIRC}`;
-    if(habitRing){ habitRing.style.strokeDasharray = `${habitLen} ${STAT_RING_CIRC}`; habitRing.style.strokeDashoffset = -taskLen; }
   });
 
   const start = Number(label.dataset.animFrom || 0);
@@ -351,7 +440,7 @@ function animateDayStats(){
 }
 
 /* Recomputes and animates the stat card's ring/percentage and the
-   tasks/habits mini-counts in place, without touching any other DOM —
+   task mini-count in place, without touching any other DOM —
    used after toggling a task/habit so the whole page never re-renders
    just because a checkbox was tapped (see the toggle-task/habit/pin
    action handlers). The card node persists, so animateDayStats() eases
@@ -362,11 +451,9 @@ function updateDayStatsInPlace(){
   const s = dayStats(state.homeDate);
   card.dataset.pct = s.pct;
   card.dataset.taskFrac = s.taskFrac;
-  card.dataset.habitFrac = s.habitFrac;
   animateDayStats();
   const counts = card.querySelectorAll('.stat-mini b');
   if(counts[0]) counts[0].textContent = `${dig(s.doneTasks)}/${dig(s.tasks.length)}`;
-  if(counts[1]) counts[1].textContent = `${dig(s.doneHabits)}/${dig(s.habits.length)}`;
 }
 
 /* Expand/collapse the merged calendar widget — reversed from the old

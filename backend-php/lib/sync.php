@@ -9,6 +9,27 @@ declare(strict_types=1);
 
 const TJ_SYNC_KEYS = ['profile', 'settings', 'tasks', 'habits', 'events', 'period'];
 
+/* New custom windows are validated without changing legacy reminders or
+ * the JSON document schema. One activity still owns all of its slots. */
+function tj_validate_reminder_windows(array $data): void {
+    foreach (['tasks', 'habits', 'events'] as $kind) {
+        $items = is_array($data[$kind] ?? null) ? $data[$kind] : [];
+        foreach ($items as $item) {
+            if (!is_array($item)) continue;
+            $rows = [$item];
+            if ($kind === 'tasks' && is_array($item['subtasks'] ?? null)) $rows = array_merge($rows, $item['subtasks']);
+            foreach ($rows as $row) {
+                $n = is_array($row) ? ($row['notification'] ?? null) : null;
+                if (!is_array($n) || ($n['type'] ?? '') !== 'repeat' || !isset($n['windowEnd']) || $n['windowEnd'] === '') continue;
+                $start = $n['time'] ?? null; $end = $n['windowEnd']; $step = $n['everyMinutes'] ?? null;
+                $clock = '/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/D';
+                if (!is_string($start) || !is_string($end) || !preg_match($clock, $start) || !preg_match($clock, $end)
+                    || $start === $end || !is_int($step) || $step < 1 || $step > 1440) tj_fail(400, 'reminder_window_invalid');
+            }
+        }
+    }
+}
+
 /* $forApp: decoded as objects, so what goes back to the app keeps an
  * empty {} as {} (as arrays it would turn into [], see tj_sync_put). */
 function tj_sync_read(int $userId, bool $forApp = false): array {
@@ -47,6 +68,7 @@ function tj_sync_put(): void {
     $base = $b['version'] ?? null;
     $incoming = $b['data'] ?? null;
     if (!is_int($base) || !is_array($incoming)) tj_fail(400, 'validation_error');
+    tj_validate_reminder_windows($incoming);
 
     // Only known sections, each of the expected JSON type.
     $clean = [];

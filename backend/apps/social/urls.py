@@ -1,8 +1,10 @@
 from django.urls import path
 
-from . import groups, views
+from . import groups, task_grants, views
 
 urlpatterns = [
+    path("social/task-shares", task_grants.Grants.as_view()),
+    path("social/task-shares/<uuid:pk>", task_grants.Detail.as_view()),
     path("social/connections", views.ConnectionListView.as_view()),
     path("social/connections/<uuid:user_id>", views.ConnectionDetailView.as_view()),
     path("social/connections/<uuid:user_id>/request", views.RequestView.as_view()),
@@ -19,5 +21,6 @@ urlpatterns = [
     path("groups/<uuid:group_id>/leave", groups.GroupLeaveView.as_view()),
     path("groups/<uuid:group_id>/invite/reset", groups.GroupInviteResetView.as_view()),
     path("groups/<uuid:group_id>/items/<str:item_id>", groups.GroupItemView.as_view()),
+    path("groups/<uuid:group_id>/items/<str:item_id>/progress", groups.GroupProgressView.as_view()),
     path("groups/<uuid:group_id>/items/<str:item_id>/marks", groups.GroupMarkView.as_view()),
 ]

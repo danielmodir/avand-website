@@ -77,8 +77,11 @@ def _add_member(group, user_id, color):
     GroupMember.objects.get_or_create(group=group, user_id=user_id, defaults={"color": color})
 
 
-def _mine(me, group_id):
-    member = GroupMember.objects.select_related("group").filter(group_id=group_id, user_id=me).first()
+def _mine(me, group_id, lock=False):
+    members = GroupMember.objects.select_related("group")
+    if lock:
+        members = members.select_for_update()
+    member = members.filter(group_id=group_id, user_id=me).first()
     if member is None:
         raise ApiError("not_found", 404)
     return member.group, member
@@ -110,7 +113,7 @@ def payload(me):
     if not groups:
         return {"groups": [], "items": []}
     members = list(GroupMember.objects.filter(group_id__in=groups).order_by("joined_at"))
-    items = list(GroupItem.objects.filter(group_id__in=groups).order_by("id"))
+    items = list(GroupItem.objects.select_related("assignee").filter(group_id__in=groups).order_by("id"))
     marks = list(GroupMark.objects.filter(item__in=items))
     people = _people({m.user_id for m in members} | {k.user_id for k in marks})
     out = []
@@ -118,7 +121,7 @@ def payload(me):
         g = m.group
         out.append({
             "id": str(g.id), "name": g.name, "color": m.color, "owner": str(g.owner_user_id) == str(me), "admin": m.role == "admin",
-            "token": g.invite_token,
+            "token": g.invite_token, "group_type": "supergroup" if g.supergroup else "ordinary",
             "members": [{**people[str(x.user_id)], "status": "member", "owner": str(x.user_id) == str(g.owner_user_id),
                          "admin": x.role == "admin", "me": str(x.user_id) == str(me)}
                         for x in members if x.group_id == gid and str(x.user_id) in people],
@@ -130,6 +133,8 @@ def payload(me):
                                                   "name": p.get("name", ""), "me": str(k.user_id) == str(me)})
     return {"groups": out, "items": [
         {"id": i.item_id, "group": str(i.group_id), "kind": i.kind, "data": i.data, "done_mode": i.done_mode,
+         "assignee": str(i.assignee.user_id) if i.assignee_id else None,
+         "progress": i.progress if groups[i.group_id].group.supergroup and i.kind == "task" else None,
          "by": str(i.created_by) if i.created_by else None, "mine": str(i.created_by) == str(me), "marks": by_item.get(i.id, [])}
         for i in items
     ]}
@@ -144,13 +149,16 @@ class GroupListView(APIView):
     def post(self, request):
         me = request.user.id
         name, color = _name(request.data.get("name")), _color(request.data.get("color"))
+        group_type = request.data.get("group_type", "ordinary")
+        if group_type not in ("ordinary", "supergroup"):
+            raise ApiError("validation_error", extra={"fields": {"group_type": ["invalid"]}})
         friends = _friend_ids(me, request.data.get("members", []))
         if len(friends) + 1 > MEMBERS_MAX:
             raise ApiError("too_many", extra={"max": MEMBERS_MAX})
         if _groups_count(me) >= GROUPS_MAX:
             raise ApiError("too_many_groups", 429, extra={"max": GROUPS_MAX})
         with transaction.atomic(using=DB):
-            group = Group.objects.create(name=name, owner_user_id=me, invite_token=_token())
+            group = Group.objects.create(name=name, supergroup=group_type == "supergroup", owner_user_id=me, invite_token=_token())
             _add_member(group, me, color)
             for f in friends:  # same color to start with; each can change their own
                 if _groups_count(f) < GROUPS_MAX:
@@ -251,14 +259,21 @@ def _item(group, item_id):
     return GroupItem.objects.filter(group=group, item_id=item_id).first()
 
 
-def _may_edit(group, item, me):
+def _workflow(group, kind):
+    return group.supergroup and kind == GroupItem.Kind.TASK
+
+
+def _may_edit(group, item, me, member):
+    if _workflow(group, item.kind):
+        return str(group.owner_user_id) == str(me) or member.role == "admin"
     return str(item.created_by) == str(me) or str(group.owner_user_id) == str(me)
 
 
 class GroupItemView(APIView):
+    @transaction.atomic(using=DB)
     def put(self, request, group_id, item_id):
         me = request.user.id
-        group, member = _mine(me, group_id)
+        group, member = _mine(me, group_id, lock=True)
         row = _item(group, item_id)
         kind, data = request.data.get("kind"), request.data.get("data")
         if kind not in GroupItem.Kind.values:
@@ -268,13 +283,29 @@ class GroupItemView(APIView):
         if len(json.dumps(data, ensure_ascii=False).encode()) > ITEM_BYTES:
             raise ApiError("too_large", 413)
         mode = "shared" if request.data.get("done_mode") == "shared" else "each"
+        workflow = _workflow(group, kind)
+        if "progress" in request.data or ("assignee" in request.data and not workflow):
+            raise ApiError("validation_error")
+        if workflow and str(group.owner_user_id) != str(me) and member.role != "admin":
+            raise ApiError("not_admin", 403)
+        assignee = None
+        set_assignee = workflow and ("assignee" in request.data or not row)
+        if set_assignee:
+            pid = request.data.get("assignee")
+            assignee = next((m for m in group.members.select_for_update() if str(m.user_id) == pid), None)
+            if not assignee:
+                raise ApiError("invalid_assignee")
         if row:
-            if not _may_edit(group, row, me):
+            if not _may_edit(group, row, me, member):
                 raise ApiError("not_yours", 403)
             if row.kind != kind:
                 raise ApiError("validation_error", extra={"fields": {"kind": ["invalid"]}})
             row.data, row.done_mode = data, mode
-            row.save(update_fields=["data", "done_mode", "updated_at"])
+            fields = ["data", "done_mode", "updated_at"]
+            if set_assignee:
+                row.assignee = assignee
+                fields.append("assignee")
+            row.save(update_fields=fields)
         else:
             if str(group.owner_user_id) != str(me) and member.role != "admin":
                 raise ApiError("not_admin", 403)
@@ -282,17 +313,34 @@ class GroupItemView(APIView):
                 raise ApiError("id_taken", 409)
             if group.items.count() >= ITEMS_MAX:
                 raise ApiError("too_many", extra={"max": ITEMS_MAX})
-            GroupItem.objects.create(group=group, item_id=item_id, kind=kind, data=data, done_mode=mode, created_by=me)
+            GroupItem.objects.create(group=group, item_id=item_id, kind=kind, data=data, done_mode=mode, created_by=me, assignee=assignee)
         return Response({"ok": True})
 
     def delete(self, request, group_id, item_id):
         me = request.user.id
-        group, _ = _mine(me, group_id)
+        group, member = _mine(me, group_id)
         row = _item(group, item_id)
         if row:
-            if not _may_edit(group, row, me):
+            if not _may_edit(group, row, me, member):
                 raise ApiError("not_yours", 403)
             row.delete()
+        return Response({"ok": True})
+
+
+class GroupProgressView(APIView):
+    @transaction.atomic(using=DB)
+    def put(self, request, group_id, item_id):
+        group, member = _mine(request.user.id, group_id, lock=True)
+        row = _item(group, item_id)
+        if not row or not _workflow(group, row.kind):
+            raise ApiError("not_found", 404)
+        if row.assignee_id != member.pk:
+            raise ApiError("not_assignee", 403)
+        progress = request.data.get("progress")
+        if progress not in GroupItem.Progress.values:
+            raise ApiError("validation_error", extra={"fields": {"progress": ["invalid"]}})
+        row.progress = progress
+        row.save(update_fields=["progress", "updated_at"])
         return Response({"ok": True})
 
 
@@ -303,6 +351,8 @@ class GroupMarkView(APIView):
         row = _item(group, item_id)
         if row is None:
             raise ApiError("not_found", 404)
+        if _workflow(group, row.kind):
+            raise ApiError("use_task_progress", 400)
         key, status = str(request.data.get("key") or ""), request.data.get("status")
         if not MARK_KEY_RE.match(key):
             raise ApiError("validation_error", extra={"fields": {"key": ["invalid"]}})

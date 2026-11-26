@@ -79,3 +79,53 @@ class GroupTests(ApiTestCase):
         self.assertEqual(self.neda.patch(f"/api/v1/groups/{gid}", {"color": "#E5484D"}, format="json").status_code, 404)
         url = f"/api/v1/groups/{gid}/items/0193e7a0-aaaa-7bbb-8ccc-000000000002"
         self.assertEqual(self.neda.put(url, {"kind": "task", "data": {}}, format="json").status_code, 404)
+
+    def test_supergroup_task_assignment_and_progress_permissions(self):
+        ids = self.ids
+        group = self.sara.post("/api/v1/groups", {
+            "name": "Project", "color": "#123456", "group_type": "supergroup",
+            "members": [ids[self.ali]], "admins": [ids[self.ali]],
+        }, format="json").json()["groups"][0]
+        self.assertEqual(group["group_type"], "supergroup")
+        gid = group["id"]
+        url = f"/api/v1/groups/{gid}/items/design-1234"
+        task = {"kind": "task", "data": {"title": "Draft"}}
+        self.assertEqual(self.sara.put(url, task, format="json").status_code, 400)
+        self.assertEqual(self.ali.put(url, {**task, "assignee": ids[self.neda]}, format="json").status_code, 400)
+        self.assertEqual(self.neda.put(url + "/progress", {"progress": "done"}, format="json").status_code, 404)
+        self.neda.post("/api/v1/groups/join", {"token": group["token"]}, format="json")
+        self.assertEqual(self.ali.put(url, {**task, "assignee": ids[self.neda]}, format="json").status_code, 200)
+        item = self.sara.get("/api/v1/groups").json()["items"][0]
+        self.assertEqual((item["assignee"], item["progress"]), (ids[self.neda], "not_started"))
+        self.assertEqual(self.neda.put(url, {**task, "assignee": ids[self.neda]}, format="json").status_code, 403)
+        self.assertEqual(self.sara.put(url, {**task, "progress": "done"}, format="json").status_code, 400)
+        for actor in (self.ali, self.sara):
+            self.assertEqual(actor.put(url + "/progress", {"progress": "done"}, format="json").status_code, 403)
+        self.assertEqual(self.neda.put(url + "/progress", {"progress": "other"}, format="json").status_code, 400)
+        self.assertEqual(self.ali.put(url + "/marks", {"status": "done", "key": "once"}, format="json").status_code, 400)
+        for progress in ("in_progress", "done", "not_started", "in_progress"):
+            self.assertEqual(self.neda.put(url + "/progress", {"progress": progress}, format="json").status_code, 200)
+            self.assertEqual(self.ali.get("/api/v1/groups").json()["items"][0]["progress"], progress)
+        self.assertEqual(self.sara.put(url, {**task, "assignee": ids[self.ali]}, format="json").status_code, 200)
+        self.assertEqual(self.neda.put(url + "/progress", {"progress": "done"}, format="json").status_code, 403)
+        self.assertEqual(self.ali.put(url + "/progress", {"progress": "done"}, format="json").status_code, 200)
+        self.sara.patch(f"/api/v1/groups/{gid}", {"admins": []}, format="json")
+        self.assertEqual(self.ali.put(url, task, format="json").status_code, 403)
+        self.assertEqual(self.ali.delete(url).status_code, 403)
+        self.sara.patch(f"/api/v1/groups/{gid}", {"members": [ids[self.neda]]}, format="json")
+        item = self.neda.get("/api/v1/groups").json()["items"][0]
+        self.assertEqual((item["assignee"], item["progress"]), (None, "done"))
+        self.assertEqual(self.ali.put(url + "/progress", {"progress": "done"}, format="json").status_code, 404)
+        self.ali.post("/api/v1/groups/join", {"token": group["token"]}, format="json")
+        self.assertEqual(self.ali.put(url + "/progress", {"progress": "done"}, format="json").status_code, 403)
+        self.assertEqual(self.sara.put(url, {**task, "assignee": ids[self.neda]}, format="json").status_code, 200)
+
+    def test_ordinary_group_has_no_assignment_workflow(self):
+        gid, body = self.create()
+        self.assertEqual(body["groups"][0]["group_type"], "ordinary")
+        url = f"/api/v1/groups/{gid}/items/ordinary-1234"
+        task = {"kind": "task", "data": {}}
+        self.assertEqual(self.sara.put(url, {**task, "assignee": self.ids[self.ali]}, format="json").status_code, 400)
+        self.assertEqual(self.sara.put(url, task, format="json").status_code, 200)
+        self.assertEqual(self.ali.put(url + "/progress", {"progress": "done"}, format="json").status_code, 404)
+        self.assertEqual(self.ali.put(url + "/marks", {"status": "done", "key": "once"}, format="json").status_code, 200)

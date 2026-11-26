@@ -281,7 +281,9 @@ function loadSiteContent(){
 
 async function start(){
   // Last palette/mode used on this device, until the account's settings load.
-  state.settings.palette = document.documentElement.getAttribute('data-palette') === 'classic' ? 'classic' : 'toojibee';
+  const appearance = AppThemes.read();
+  state.settings.palette = appearance.id;
+  state.settings.theme = appearance.appearance;
   loadLocalPrefs();
   try{ const l = localStorage.getItem('toojibee-lang'); if(l === 'fa' || l === 'en') state.settings.language = l; }catch(e){}
   applyAppearance();

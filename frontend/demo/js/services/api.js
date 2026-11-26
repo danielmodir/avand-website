@@ -25,6 +25,7 @@
   var CONFIG = global.TOOJIBEE_CONFIG || {};
   var BASE = (CONFIG.apiBase || '').replace(/\/$/, '');
   var SESSION_KEY = 'toojibee_session';
+  var GOOGLE_VERIFIER_KEY = 'toojibee-google-verifier';
 
   function uuid() {
     if (global.crypto && global.crypto.randomUUID) return global.crypto.randomUUID();
@@ -139,9 +140,16 @@
     storeSession(await request('POST', '/auth/login', Object.assign({ email: email, password: password }, deviceMeta()), { auth: false }));
   }
 
-  function signInWithGoogle() {
+  async function signInWithGoogle() {
+    if (!global.crypto || !global.crypto.getRandomValues || !global.crypto.subtle) throw new Error('google_sign_in_unavailable');
+    var bytes = new Uint8Array(32);
+    global.crypto.getRandomValues(bytes);
+    var verifier = Array.from(bytes, function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+    var digest = await global.crypto.subtle.digest('SHA-256', Uint8Array.from(verifier, function (ch) { return ch.charCodeAt(0); }));
+    var challenge = Array.from(new Uint8Array(digest), function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+    sessionStorage.setItem(GOOGLE_VERIFIER_KEY, verifier);
     var back = global.location.origin + global.location.pathname;
-    global.location.href = BASE + '/auth/google/start?next=' + encodeURIComponent(back);
+    global.location.href = BASE + '/auth/google/start?next=' + encodeURIComponent(back) + '&challenge=' + challenge;
   }
 
   /* After the Google redirect the URL carries #login_code=… (one-time,
@@ -151,8 +159,11 @@
     var err = /[#&]login_error=([^&]+)/.exec(global.location.hash);
     if (!m && !err) return false;
     history.replaceState(null, '', global.location.pathname + global.location.search);
+    var verifier = sessionStorage.getItem(GOOGLE_VERIFIER_KEY);
+    sessionStorage.removeItem(GOOGLE_VERIFIER_KEY);
     if (!m) { var e = new Error('google_failed'); e.code = err ? decodeURIComponent(err[1]) : 'google_failed'; throw e; }
-    storeSession(await request('POST', '/auth/google/exchange', { code: decodeURIComponent(m[1]) }, { auth: false }));
+    if (!verifier) throw new Error('google_verifier_missing');
+    storeSession(await request('POST', '/auth/google/exchange', { code: decodeURIComponent(m[1]), verifier: verifier }, { auth: false }));
     return true;
   }
 
@@ -173,6 +184,7 @@
   }
 
   async function signOut() {
+    if (typeof FinanceDesk !== 'undefined') FinanceDesk.lock(false);
     if (hasSession()) { try { await request('POST', '/auth/logout'); } catch (e) { /* best effort */ } }
     clearSession();
     resetCaches();
@@ -244,11 +256,12 @@
       reminder_time: type === 'none' || type === 'before_start' || type === 'countdown' ? null : (n.time || '09:00'),
       // A one-time task's reminder on a later day of its range.
       reminder_date: type === 'at_time' && n.date ? n.date : null,
-      reminder_every_hours: type === 'repeating' ? Math.min(24, Math.max(1, Number(n.repeatHours) || 1)) : null,
+      reminder_every_hours: type === 'repeating' && !n.windowEnd ? Math.min(24, Math.max(1, Number(n.repeatHours) || 1)) : null,
+      reminder_window_end: type === 'repeating' && n.windowEnd ? n.windowEnd : null,
       reminder_text: (n && n.text) || '',
       // "Over and over until it starts": from N minutes before, every M minutes.
       reminder_lead_minutes: type === 'countdown' ? Math.min(10080, Math.max(15, Number(n.leadMinutes) || 1440)) : null,
-      reminder_every_minutes: type === 'countdown' ? Math.min(1440, Math.max(15, Number(n.everyMinutes) || 60)) : null,
+      reminder_every_minutes: type === 'repeating' && n.windowEnd ? Number(n.everyMinutes) : type === 'countdown' ? Math.min(1440, Math.max(15, Number(n.everyMinutes) || 60)) : null,
     };
   }
   function reminderFromApi(row) {
@@ -257,6 +270,8 @@
       time: row.reminder_time ? row.reminder_time.slice(0, 5) : '09:00',
       date: row.reminder_date || null,
       repeatHours: row.reminder_every_hours || 1,
+      windowEnd: row.reminder_window_end ? row.reminder_window_end.slice(0, 5) : null,
+      windowSince: row.reminder_window_end ? Date.parse(row.updated_at) || Date.now() : null,
       minutesBefore: row.reminder_minutes_before || 15,
       leadMinutes: row.reminder_lead_minutes || 1440,
       everyMinutes: row.reminder_every_minutes || 60,
@@ -338,7 +353,7 @@
       return {
         id: row.id, title: row.title, startDate: row.start_date, endDate: row.end_date || null,
         recurrence: recurrenceFromApi(row), notification: reminderFromApi(row),
-        tracker: row.tracker || null, progress: progress[row.id] || {},
+        tracker: row.tracker || null, goal: row.goal || null, progress: progress[row.id] || {},
         completedDates: own.filter(function (l) { return l.status === 'done'; }).map(function (l) { return l.log_date; }),
         skippedDates: own.filter(function (l) { return l.status === 'skipped'; }).map(function (l) { return l.log_date; }),
       };
@@ -347,7 +362,10 @@
     var events = sync.events.map(function (row) {
       versions['events:' + row.id] = row.version;
       return {
-        id: row.id, title: row.title, description: row.description || '', kind: row.kind || '', color: row.color || '', timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
+        id: row.id, title: row.title, description: row.description || '', kind: row.kind || '', color: row.color || '',
+        location: row.location || '', meetingUrl: row.meeting_url || '',
+        showInPlanning: row.show_in_planning !== false, showInOccasions: row.show_in_occasions !== false,
+        timeMode: row.end_date ? 'range' : 'single', date: row.start_date, endDate: row.end_date,
         startTime: row.start_time ? row.start_time.slice(0, 5) : null, endTime: row.end_time ? row.end_time.slice(0, 5) : null,
         recurrence: recurrenceFromApi(row), notification: reminderFromApi(row),
       };
@@ -377,7 +395,7 @@
         language: st.language, calendarSystem: st.calendar_primary,
         calendarEnabled: { gregorian: enabled.indexOf('gregorian') >= 0, jalali: enabled.indexOf('jalali') >= 0, hijri: enabled.indexOf('hijri') >= 0 },
         planningEnabled: planning ? planning.enabled : true,
-        theme: st.theme, palette: st.palette || 'toojibee',
+        theme: st.theme || 'system', palette: st.palette || 'sustainable-tangerine',
         prefs: prefsFromApi(st.preferences || {}),
         itemColors: st.item_colors || {},
       },
@@ -501,7 +519,7 @@
 
   function saveHabit(habit) {
     return enqueue('habit:' + habit.id, async function () {
-      await putVersioned('habits', habit.id, Object.assign({ title: habit.title, start_date: habit.startDate, end_date: habit.endDate || null, tracker: habit.tracker || null },
+      await putVersioned('habits', habit.id, Object.assign({ title: habit.title, start_date: habit.startDate, end_date: habit.endDate || null, tracker: habit.tracker || null, goal: habit.goal || null },
         recurrenceToApi(habit.recurrence, false), reminderToApi(habit.notification)));
       var values = habit.progress || {};
       var want = {};
@@ -533,7 +551,9 @@
       // A start time makes it a timed event (the API needs start_time then).
       var timed = !!evt.startTime;
       var before = timed && evt.notification && evt.notification.type === 'before';
-      return putVersioned('events', evt.id, Object.assign({ title: evt.title, description: evt.description || '', kind: evt.kind || '', color: evt.color || '', all_day: !timed,
+      return putVersioned('events', evt.id, Object.assign({ title: evt.title, description: evt.description || '', kind: evt.kind || '', color: evt.color || '',
+        location: evt.location || '', meeting_url: evt.meetingUrl || '',
+        show_in_planning: evt.showInPlanning !== false, show_in_occasions: evt.showInOccasions !== false, all_day: !timed,
         start_time: timed ? evt.startTime : null, end_time: timed && evt.endTime ? evt.endTime : null },
         datesToApi(evt), recurrenceToApi(evt.recurrence, true),
         // "Minutes before" needs a start time; without one it isn't sent.
@@ -576,11 +596,27 @@
   function prefsFromApi(p) {
     var out = {};
     Object.keys(p).forEach(function (k) { out[k.replace(/_([a-z])/g, function (_, c) { return c.toUpperCase(); })] = p[k]; });
+    if (p.occasion_reminders) {
+      out.occasionReminders = {};
+      Object.keys(p.occasion_reminders).forEach(function (key) {
+        out.occasionReminders[key] = (p.occasion_reminders[key] || []).map(function (r) {
+          return { id: r.id, daysBefore: r.days_before, time: r.time, enabled: r.enabled };
+        });
+      });
+    }
     return out;
   }
   function prefsToApi(p) {
     var out = {};
     Object.keys(p).forEach(function (k) { out[k.replace(/[A-Z]/g, function (c) { return '_' + c.toLowerCase(); })] = typeof p[k] === 'string' ? p[k] : !!p[k]; }); // prayerCity is text
+    if (p.occasionReminders) {
+      out.occasion_reminders = {};
+      Object.keys(p.occasionReminders).forEach(function (key) {
+        out.occasion_reminders[key] = (p.occasionReminders[key] || []).map(function (r) {
+          return { id: r.id, days_before: r.daysBefore, time: r.time, enabled: !!r.enabled };
+        });
+      });
+    }
     return out;
   }
 
@@ -592,9 +628,9 @@
       var body = {
         language: s.language, calendar_primary: s.calendarSystem, calendars_enabled: enabled,
         week_start: s.weekStartDay, notifications_enabled: !!s.notifications, show_add_menu_labels: !!s.showAddMenuLabels,
-        palette: s.palette || 'toojibee', preferences: prefsToApi(s.prefs || {}), item_colors: s.itemColors || {},
+        palette: s.palette || 'sustainable-tangerine', preferences: prefsToApi(s.prefs || {}), item_colors: s.itemColors || {},
       };
-      if (s.theme === 'light' || s.theme === 'dark') body.theme = s.theme;
+      if (s.theme === 'light' || s.theme === 'dark' || s.theme === 'system') body.theme = s.theme;
       var send = function (v) { return request('PATCH', '/me/settings', Object.assign({ version: v }, body)); };
       var row;
       try { row = await send(meVersions.settings); }
@@ -645,8 +681,13 @@
   function leaveGroup(id) { return request('POST', '/groups/' + id + '/leave'); }
   function resetGroupLink(id) { return request('POST', '/groups/' + id + '/invite/reset'); }
   function joinGroup(token) { return request('POST', '/groups/join', { token: token }); }
-  function saveGroupItem(gid, kind, data, mode) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode }); }
+  function saveGroupItem(gid, kind, data, mode, assignee) {
+    return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(data.id), { kind: kind, data: data, done_mode: mode, assignee: assignee });
+  }
   function deleteGroupItem(gid, id) { return request('DELETE', '/groups/' + gid + '/items/' + encodeURIComponent(id)); }
+  function setGroupProgress(gid, id, progress) {
+    return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/progress', { progress: progress });
+  }
   function markGroupItem(gid, id, key, status) { return request('PUT', '/groups/' + gid + '/items/' + encodeURIComponent(id) + '/marks', { key: key, status: status }); }
 
   // ── public calendar data ─────────────────────────────────────────────
@@ -727,6 +768,12 @@
   function noticesSeen(ids) { return request('POST', '/me/notices/seen', ids ? { ids: ids } : {}); }
 
   Object.assign(api, {
+    financeState: function () { return request('GET', '/finance/state'); },
+    financeCreateAccount: function (body) { return request('POST', '/finance/accounts', body); },
+    financeCreateCategory: function (body) { return request('POST', '/finance/categories', body); },
+    financeBudgets: function () { return request('GET', '/finance/budgets'); },
+    financeCreateBudget: function (body) { return request('POST', '/finance/budgets', body); },
+    financePostTransaction: function (body) { return request('POST', '/finance/transactions', body); },
     sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread, notices: notices, noticesSeen: noticesSeen, savePeriod: savePeriod,
     pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,
     changePassword: changePassword, deleteAccount: deleteAccount, usernameAvailable: usernameAvailable,
@@ -746,7 +793,7 @@
     removeMcpLink: function () { return request('DELETE', '/me/mcp'); },
     calendarYear: calendarYear,
     supportsGroups: true, groups: groups, createGroup: createGroup, updateGroup: updateGroup, deleteGroup: deleteGroup, leaveGroup: leaveGroup,
-    resetGroupLink: resetGroupLink, joinGroup: joinGroup, saveGroupItem: saveGroupItem, deleteGroupItem: deleteGroupItem, markGroupItem: markGroupItem,
+    resetGroupLink: resetGroupLink, joinGroup: joinGroup, saveGroupItem: saveGroupItem, deleteGroupItem: deleteGroupItem, markGroupItem: markGroupItem, setGroupProgress: setGroupProgress,
   });
   global.Cloud = api;
 })(window);

@@ -79,6 +79,15 @@
 }
 .occasion-row{ padding:12px 14px; border-radius:12px; background:var(--card); border:1px solid var(--border); margin-bottom:8px; font-size:13px; display:flex; align-items:center; gap:8px; }
 .occasion-row.holiday{ color:var(--danger); border-color:var(--danger-soft); }
+.occasion-name{ min-width:0; flex:1; }
+.occasion-reminder-open{ display:inline-flex; align-items:center; justify-content:center; gap:var(--space-1); min-width:44px; min-height:44px; padding:var(--space-2); border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-soft); color:var(--text); font:inherit; cursor:pointer; }
+.occasion-reminder-open.active{ color:var(--primary-text); border-color:var(--primary); background:var(--primary-soft); }
+.occasion-reminder-open svg{ width:18px; height:18px; }
+.occasion-reminder-editor{ margin:0 0 var(--space-3); padding:var(--space-3); border:1px solid var(--border); border-radius:var(--radius-md); background:var(--card); }
+.occasion-reminder-row{ display:flex; flex-wrap:wrap; align-items:end; gap:var(--space-2); margin-top:var(--space-2); }
+.occasion-reminder-row label{ display:flex; flex-direction:column; gap:var(--space-1); min-width:110px; flex:1; font-size:12px; color:var(--text-muted); }
+.occasion-reminder-row input{ width:100%; min-height:44px; padding:var(--space-2); border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font:inherit; }
+.occasion-reminder-row .btn{ min-height:44px; }
 /* Prayer times (prayerBlockHtml): six small cells, the next one marked. */
 .prayer-block{ margin:4px 0 8px; }
 .prayer-block .section-title{ display:flex; align-items:center; gap:8px; }
@@ -111,7 +120,7 @@
   fill:none; stroke:var(--task-color, var(--primary)); stroke-width:9; stroke-linecap:butt;
   transition:stroke-dasharray .6s cubic-bezier(.4,0,.2,1), stroke-dashoffset .6s cubic-bezier(.4,0,.2,1);
 }
-.stat-ring-habits{ stroke:var(--habit-color, #4CC38A); }
+.stat-ring-habits{ stroke:var(--habit-color, var(--success)); }
 .stat-ring-label{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   font-size:15px; font-weight:800;
@@ -138,6 +147,27 @@
 .device.lang-fa .stat-card{ flex-direction:row-reverse; }
 .device.lang-fa .stat-mini{ flex-direction:row-reverse; }
 .device.lang-fa .stat-mini b{ margin-inline-start:0; margin-right:auto; }
+
+.habit-desk .section-title:not(:first-child){ margin-top:var(--space-5); }
+.habit-desk-list{ display:grid; gap:var(--space-2); }
+.habit-desk-link{
+  display:flex; flex-direction:column; gap:var(--space-1); width:100%; padding:var(--space-3) var(--space-4);
+  border:1px solid var(--border); border-radius:var(--radius-md);
+  background:var(--card); color:var(--text); font:inherit; text-align:start; cursor:pointer;
+}
+.habit-desk-link span{ color:var(--text-muted); font-size:.85em; }
+.habit-desk-actions{ display:flex; flex-wrap:wrap; gap:var(--space-2); margin-top:var(--space-2); }
+.habit-calendar{ margin-top:var(--space-5); }
+.habit-cal-tabs{ display:flex; flex-wrap:wrap; gap:var(--space-2); margin-bottom:var(--space-3); }
+.habit-cal-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:var(--space-2); }
+.habit-cal-cell{ display:flex; flex-direction:column; gap:var(--space-1); padding:var(--space-3); border:1px solid var(--border); border-radius:var(--radius-md); background:var(--card); color:var(--text); }
+.habit-cal-cell b{ color:var(--text-muted); }
+.habit-cal-cell.done{ border-color:var(--success); }
+.habit-cal-cell.done b{ color:var(--success); }
+.habit-cal-cell.partial{ border-color:var(--warning); }
+.habit-cal-cell.partial b{ color:var(--warning); }
+.habit-cal-cell.future,.habit-cal-cell.off{ opacity:.7; }
+.habit-desk-link:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
 
 /* Share-as-a-picture buttons (js/core/share-card.js). */
 .occ-share-row{ flex-wrap:wrap; gap:8px; }

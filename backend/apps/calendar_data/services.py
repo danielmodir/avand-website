@@ -11,7 +11,7 @@ CACHE_SECONDS = 600
 
 
 def occasions_for_jalali_year(jy):
-    key = f"calendar:occasions:{jy}"
+    key = f"calendar:occasions:v2:{jy}"
     cached = cache.get(key)
     if cached is not None:
         return cached
@@ -34,6 +34,7 @@ def occasions_for_jalali_year(jy):
         for o, est in matches:
             result.append({
                 "date": day.isoformat(), "calendar": o.calendar, "title_fa": o.title_fa, "title_en": o.title_en,
+                "rule_month": o.month, "rule_day": o.day,
                 "is_holiday": o.is_holiday,
                 # Hijri occasions outside the officially announced months are
                 # placed with arithmetic and may be a day off.
@@ -52,4 +53,4 @@ def hijri_months_between(start, end):
 
 
 def clear_cache():
-    cache.delete_many([f"calendar:occasions:{y}" for y in range(1395, 1430)])
+    cache.delete_many([f"calendar:occasions:v2:{y}" for y in range(1395, 1430)])

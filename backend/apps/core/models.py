@@ -167,6 +167,7 @@ class AuthToken(models.Model):
     services/accounts.py). A code dies after CODE_TRIES wrong attempts."""
 
     class Purpose(models.TextChoices):
+        GOOGLE_LOGIN = "google_login"
         VERIFY_EMAIL = "verify_email"
         RESET_PASSWORD = "reset_password"
         CHANGE_EMAIL = "change_email"
@@ -314,18 +315,27 @@ class UserSettings(models.Model):
         LIGHT = "light"
 
     class Palette(models.TextChoices):
-        TOOJIBEE = "toojibee", "Toojibee (olive / orange)"
-        CLASSIC = "classic", "Classic (navy / orange)"
+        TANGERINE = "sustainable-tangerine", "Sustainable Tangerine"
+        EMERALD = "emerald-nature", "Emerald Nature"
+        OCEAN = "ocean-contrast", "Ocean Contrast"
+        EARTHY = "earthy-harmony", "Earthy Harmony"
+        APRICOT = "organic-apricot", "Organic Apricot"
+        MIDNIGHT = "midnight-luxe", "Midnight Luxe"
 
     # Per-desktop display options (the gear on each Management card).
     # Stored as one JSON object so a new switch needs no migration; only
     # these keys are accepted (SettingsSerializer.validate_preferences)
     # and missing keys read as these defaults.
     PREFERENCE_DEFAULTS = {
+        # Display-only weekend selection, independent of week_start/scheduling.
+        "weekend_sunday": False, "weekend_monday": False, "weekend_tuesday": False,
+        "weekend_wednesday": False, "weekend_thursday": False,
+        "weekend_friday": False, "weekend_saturday": False,
         "planning_day_summary": True,       # the "Day summary" progress card
         "planning_calendar_dots": True,     # dot under days that have plans
         "planning_show_events": True,
         "planning_show_habits": True,
+        "habit_desk_view": "daily",
         "occasions_enabled": True,          # the Occasions desktop itself
         "occasions_jalali": True,           # Iranian (solar) occasions
         "occasions_hijri": True,            # religious (lunar) occasions
@@ -333,6 +343,7 @@ class UserSettings(models.Model):
         "occasions_holidays_only": False,
         "occasions_mark_holidays": True,    # holidays in red on the calendar
         "occasions_show_events": True,      # my events under the occasions
+        "occasion_reminders": {},            # opt-in per-rule plans, no reminders by default
         "notify_overdue": True,             # a reminder when a task turns "not done"
         "groups_enabled": True,             # the Group planning desktop
         "ongoing_notification": True,       # Android app: today's date and what's left, always in the notification shade
@@ -360,7 +371,7 @@ class UserSettings(models.Model):
     calendars_enabled = models.CharField(max_length=40, default="jalali,gregorian,hijri")
     week_start = models.CharField(max_length=10, choices=WeekStart.choices, default=WeekStart.SATURDAY)
     theme = models.CharField(max_length=10, choices=Theme.choices, default=Theme.SYSTEM)
-    palette = models.CharField(max_length=10, choices=Palette.choices, default=Palette.TOOJIBEE)
+    palette = models.CharField(max_length=24, choices=Palette.choices, default=Palette.TANGERINE)
     preferences = models.JSONField(default=dict, blank=True)
     # Color of tasks / habits / events (ticks, day summary, chart):
     # {"task": "#RRGGBB" | null, ...}; null or missing = the default.

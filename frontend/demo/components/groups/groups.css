@@ -148,3 +148,6 @@
 .challenge-bar{ flex:1; height:8px; border-radius:999px; background:var(--border); overflow:hidden; }
 .challenge-bar i{ display:block; height:100%; background:var(--primary); border-radius:inherit; }
 .challenge-row .num{ font-weight:700; min-width:44px; text-align:center; }
+
+.group-progress{ max-width:45%; flex:0 1 auto; font-size:inherit; color:var(--text); }
+.group-assignee{ color:var(--text-muted); overflow-wrap:anywhere; }

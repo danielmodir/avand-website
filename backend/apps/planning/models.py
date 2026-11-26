@@ -64,6 +64,7 @@ class Reminder(models.Model):
     reminder_text = models.CharField(max_length=200, blank=True)
     reminder_lead_minutes = models.PositiveIntegerField(null=True, blank=True)
     reminder_every_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
+    reminder_window_end = models.TimeField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -82,7 +83,12 @@ def _common_checks(prefix, allow_none_recurrence=True):
             condition=(
                 Q(reminder_type="none")
                 | Q(reminder_type="at_time", reminder_time__isnull=False)
-                | Q(reminder_type="repeating", reminder_time__isnull=False, reminder_every_hours__gte=1, reminder_every_hours__lte=24)
+                | (Q(reminder_type="repeating", reminder_time__isnull=False) & (
+                    Q(reminder_window_end__isnull=True, reminder_every_hours__gte=1, reminder_every_hours__lte=24)
+                    | (Q(reminder_window_end__isnull=False, reminder_every_minutes__isnull=False,
+                         reminder_every_minutes__gte=1, reminder_every_minutes__lte=1440)
+                       & ~Q(reminder_time=F("reminder_window_end")))
+                ))
                 | Q(reminder_type="before_start")
                 | Q(reminder_type="countdown", reminder_lead_minutes__gte=15, reminder_lead_minutes__lte=10080,
                     reminder_every_minutes__gte=15, reminder_every_minutes__lte=1440)
@@ -228,6 +234,8 @@ class Habit(UserOwnedSyncModel, Recurrence, Reminder):
     # Counter or timer (the app's habit form): {"kind": "counter", "target": N | null}
     # or {"kind": "timer", "mode": "up" | "down", "minutes": N}; null = a plain tick.
     tracker = models.JSONField(null=True, blank=True)
+    # Period target for the existing daily logs; null means the legacy daily check.
+    goal = models.JSONField(null=True, blank=True)
 
     class Meta(UserOwnedSyncModel.Meta):
         constraints = _common_checks("planning_habit", allow_none_recurrence=False) + [
@@ -268,6 +276,10 @@ class Event(UserOwnedSyncModel, Recurrence, Reminder):
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
+    show_in_planning = models.BooleanField(default=True)
+    show_in_occasions = models.BooleanField(default=True)
+    location = models.CharField(max_length=500, blank=True, default="")
+    meeting_url = models.URLField(max_length=2048, blank=True, default="")
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     all_day = models.BooleanField(default=True)

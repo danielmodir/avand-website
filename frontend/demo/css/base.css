@@ -17,103 +17,11 @@
   font-weight: 400 800; font-style: normal; font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-200B, U+200F-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
-/*
-  Brand palette: https://coolors.co/palette/000000-14213d-fca311-e5e5e5-ffffff
-  — same tokens as the marketing site's tokens.css, swapped in here too so
-  the demo matches it graphically (repo owner's request). --primary flips
-  per theme for contrast, same accessible-pair pattern as tokens.css'
-  --color-accent: navy-on-white in light, orange-on-black in dark (plain
-  orange text/bg fails WCAG against both white and black). --on-primary is
-  the text color for anything with background:var(--primary).
-*/
 :root{
-  /* Without this, native form controls (the week-start-day <select>'s
-     own dropdown list, scrollbars, etc.) default to the OS/browser's
-     light chrome regardless of our custom colors — a plain white
-     dropdown panel popping up over this otherwise all-dark app. */
-  color-scheme: dark;
-  --bg:#000000;
-  --bg-soft:#0D0D0D;
-  --card:#14213D;
-  --primary:#FCA311;
-  --primary-soft:rgba(252,163,17,0.16);
-  /* Primary used as text or a small icon; a palette whose primary is too
-     light for its canvas sets a darker one (4.5:1). */
-  --primary-text:var(--primary);
-  --on-primary:#000000;
-  --secondary:#FFFFFF;
-  --text:#FFFFFF;
-  --text-muted:rgba(255,255,255,0.6);
-  --border:rgba(255,255,255,0.12);
-  --nav-bg:#0D0D0D;
-  --nav-icon:rgba(255,255,255,0.45);
-  --overlay:rgba(0,0,0,0.55);
-  --shadow:0 10px 30px rgba(0,0,0,0.45);
-  --danger:#E08578;
-  --danger-soft:rgba(224,133,120,0.16);
-  --pms:#E0A458;
-  --pms-soft:rgba(224,164,88,0.16);
-  /* Selected task/subtask/habit row (long-press / right-click) and task
-     date ranges on the calendar: brand orange in both themes. */
-  --select-ring:rgba(252,163,17,0.85);
-  --select-glow:rgba(252,163,17,0.45);
-  --select-lift:0 16px 34px -12px rgba(0,0,0,0.65);
-  --range-band:rgba(252,163,17,0.16);
-  --period-ring-rest:rgba(255,255,255,0.14);
-  /* header buttons sit on the navy banner in both themes */
-  --on-banner:#FFFFFF;
-  --banner-btn-bg:rgba(255,255,255,0.12);
-  --banner-btn-bg-hover:rgba(255,255,255,0.22);
-  --banner-btn-border:rgba(255,255,255,0.35);
-  --range-mark:#FCA311;
-  --on-range-mark:#000000;
-  /* Google's brand button is fixed white/dark-grey by their own brand
-     guidelines, independent of app theme — not a themed surface. */
-  --google-btn-bg:#FFFFFF;
-  --google-btn-text:#1F1F1F;
-  /* Theme picker previews (Settings > General): each palette's own four
-     colors, fixed whatever palette is active. */
-  --swatch-toojibee-1:#2E2910; --swatch-toojibee-2:#2C5745; --swatch-toojibee-3:#EBE3A7; --swatch-toojibee-4:#EB7D00;
-  --swatch-classic-1:#000000; --swatch-classic-2:#14213D; --swatch-classic-3:#E5E5E5; --swatch-classic-4:#FCA311;
-  --holiday:#E08578;
-  /* Period phase colors (period.css' palette), also needed outside the
-     period desk: the calendar's phase capsules (calendar.css). */
-  --period-flow:#FF84BA; --period-pms:#FFDF82; --period-fertile:#99C2FF;
-  --period-blood:#E5484D; /* the period days themselves (ring, legend, calendar): red, not the desk's pink */
-  --phase-capsule-strength:13%; /* just a shadow of the phase color */
-  --phase-focus-strength:26%;   /* the phase picked on the period ring */
+ --google-btn-bg:#FFFFFF;--google-btn-text:#1F1F1F;
+ --phase-capsule-strength:13%;--phase-focus-strength:26%;
 }
-:root[data-theme="light"]{
-  color-scheme: light;
-  --bg:#E5E5E5;
-  --bg-soft:#EFEFEF;
-  --card:#FFFFFF;
-  --primary:#14213D;
-  --primary-soft:rgba(20,33,61,0.12);
-  --on-primary:#FFFFFF;
-  --secondary:#FCA311;
-  --text:#000000;
-  --text-muted:rgba(0,0,0,0.6);
-  --border:rgba(20,33,61,0.16);
-  --nav-bg:#FFFFFF;
-  --nav-icon:rgba(0,0,0,0.45);
-  --overlay:rgba(0,0,0,0.35);
-  --shadow:0 10px 30px rgba(20,33,61,0.18);
-  /* The dark-theme coral/amber are too pale for text on white (~2-2.6:1);
-     darker shades of the same hues reach ~4.5:1. */
-  --danger:#C0492F;
-  --danger-soft:rgba(192,73,47,0.14);
-  --pms:#A86A12;
-  --pms-soft:rgba(168,106,18,0.14);
-  --select-ring:rgba(232,137,10,0.9);
-  --select-glow:rgba(252,163,17,0.40);
-  --select-lift:0 16px 30px -12px rgba(20,33,61,0.35);
-  --range-band:rgba(252,163,17,0.20);
-  --period-ring-rest:rgba(20,33,61,0.12);
-  --holiday:#C0492F;
-  --phase-capsule-strength:20%;
-  --phase-focus-strength:36%;
-}
+:root[data-theme="light"]{--phase-capsule-strength:20%;--phase-focus-strength:36%;}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{

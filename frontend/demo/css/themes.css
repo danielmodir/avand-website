@@ -1,0 +1,39 @@
+/* Semantic component states and the six-theme selector. No theme-name conditions. */
+.theme-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-4);margin-block:var(--space-4) var(--space-5)}
+.theme-option{font:inherit;text-align:start;min-width:0;padding:var(--space-4);border:2px solid var(--divider);border-radius:var(--radius-lg);background:var(--surface);color:var(--text-primary);cursor:pointer;display:flex;flex-direction:column;gap:var(--space-3);box-shadow:none}
+.theme-option.active{border-color:var(--primary)}
+.theme-heading{display:flex;justify-content:space-between;gap:var(--space-2);font-size:15px;font-weight:800;line-height:1.5}
+.theme-check{color:var(--primary);font-size:20px;flex:none}
+.theme-description{font-size:12px;line-height:1.7;color:var(--text-secondary)}
+.theme-swatches{display:flex;height:12px;border-radius:var(--radius-sm);overflow:hidden}
+.theme-swatches i{flex:1;background:var(--swatch)}
+.theme-previews{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2)}
+.theme-preview{display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-2);border-radius:var(--radius-sm);background:var(--preview-bg);color:var(--preview-text);font-size:12px;line-height:1.6;min-width:0}
+.theme-preview-card{display:block;padding:var(--space-2);border-radius:var(--radius-sm);background:var(--preview-surface);font-weight:700;overflow-wrap:anywhere}
+.theme-preview-card small{display:block;color:var(--preview-muted);font-weight:400;font-size:11px}
+.theme-preview-button{display:block;text-align:center;padding:var(--space-1);border-radius:var(--radius-sm);background:var(--preview-primary);color:var(--preview-on);font-weight:700}
+.theme-selected{font-size:12px;font-weight:700;color:var(--text-primary)}
+.appearance-picker{display:flex;gap:var(--space-2);padding:var(--space-1);background:var(--surface-variant);border-radius:var(--radius-lg)}
+.appearance-picker button{flex:1;min-height:44px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);color:var(--text-primary);font:inherit;cursor:pointer}
+.appearance-picker button.active{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+:where(button,[role="button"],input,select,textarea,a,[tabindex]):focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}
+:where(input,textarea,select){border-color:var(--input-border)}
+:where(input,textarea,select):focus{border-color:var(--input-focus-border)}
+:where(input,textarea,select)[aria-invalid="true"]{border-color:var(--error);outline:2px solid var(--error)}
+:where(button,input,select,textarea):disabled{cursor:not-allowed;opacity:.65}
+.theme-option:hover{background:var(--hover-background)}
+.theme-option:active{border-color:var(--primary-pressed)}
+.appearance-picker button:active{background:var(--primary-pressed);color:var(--on-primary)}
+/* Solid layered surfaces preserve legibility and avoid decorative glow. */
+.device{background:var(--background)}
+#app-splash{--s-bg:var(--background);--s-ring:var(--divider);--s-arc:var(--primary);--s-text:var(--text-secondary)}
+@media(max-width:600px){.theme-grid{grid-template-columns:minmax(0,1fr)}.theme-option{padding:var(--space-3)}.theme-preview{padding:var(--space-3)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.device .field input:not([type=checkbox]):not([type=radio]),.device .field textarea,.device .settings-select,.device .tj-select,.device .tj-time{border-color:var(--input-border)}
+.device .field input:focus-visible,.device .field textarea:focus-visible,.device .settings-select:focus-visible,.device .tj-select:focus-visible,.device .tj-time:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px;border-color:var(--input-focus-border)}
+.device .field [aria-invalid="true"]{border-color:var(--error)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-primary:active{background:var(--primary-pressed)}
+.device input::placeholder,.device textarea::placeholder{color:var(--text-muted);opacity:1}
+
+@media(min-width:960px){.device.menu-maximized .theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

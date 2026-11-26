@@ -28,6 +28,40 @@ document.getElementById('device').addEventListener('click', (e) => {
   // Guests may browse; anything that needs an account opens the sign-in popup.
   if(state.guest && !GUEST_ACTIONS.has(action)){ e.preventDefault(); requireAccount(); return; }
 
+  if(action === 'occasion-reminder-open'){
+    state.occasionEditorKey = state.occasionEditorKey === el.dataset.key ? null : el.dataset.key;
+    render(); return;
+  }
+  if(['occasion-reminder-add','occasion-reminder-save','occasion-reminder-delete','occasion-reminder-toggle'].includes(action)){
+    const key = el.dataset.key;
+    const list = (state.settings.prefs?.occasionReminders?.[key] || []).map(r => ({ ...r }));
+    const id = el.dataset.id;
+    const row = el.closest('.occasion-reminder-row');
+    if(action === 'occasion-reminder-delete'){
+      const index = list.findIndex(r => r.id === id);
+      if(index >= 0) list.splice(index, 1);
+    }
+    else if(action === 'occasion-reminder-toggle'){
+      const target = list.find(r => r.id === id);
+      if(target) target.enabled = !target.enabled;
+    } else {
+      const rawDays = row?.querySelector('.occ-days')?.value;
+      const time = row?.querySelector('.occ-time')?.value || '';
+      const daysBefore = rawDays === '' ? NaN : Number(rawDays);
+      if(!Number.isInteger(daysBefore) || daysBefore < 0 || daysBefore > 56 || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){
+        showToast(t('occasionReminderInvalid')); return;
+      }
+      if(action === 'occasion-reminder-add') list.push({ id: uid(), daysBefore, time, enabled: true });
+      else {
+        const target = list.find(r => r.id === id);
+        if(target) Object.assign(target, { daysBefore, time });
+      }
+    }
+    if(!saveOccasionReminderList(key, list)) showToast(t('occasionReminderInvalid'));
+    else render();
+    return;
+  }
+
   // Leaving the profile edit page with unsaved changes asks first (menu.js).
   if(['open-menu', 'close-menu-overlay', 'menu-back', 'menu-nav'].includes(action) && !leaveProfileEditOk()) return;
 
@@ -69,6 +103,52 @@ document.getElementById('device').addEventListener('click', (e) => {
 
   if(action === 'open-popup'){ openPopup(el.dataset.type, el, null); return; }
   if(action === 'view-item'){ openItemDetails(el.dataset.type, el.dataset.id, el); return; } // tap: details first (popup.js)
+  if(action === 'habit-cal-select'){ state.habitDeskSelectedId = el.dataset.id; render(); return; }
+  if(action === 'habit-cal-mode'){
+    if(['daily','weekly','monthly'].includes(el.dataset.mode)){ setPref('habitDeskView', el.dataset.mode); render(); }
+    return;
+  }
+  if(action === 'finance-unlock'){
+    FinanceDesk.unlock(document.getElementById('finance-passphrase')?.value || ''); return;
+  }
+  if(action === 'finance-lock'){ FinanceDesk.lock(); return; }
+  if(action === 'finance-add-account'){
+    FinanceDesk.createAccount(document.getElementById('finance-account-name')?.value,
+      document.getElementById('finance-account-kind')?.value,
+      document.getElementById('finance-opening')?.value); return;
+  }
+  if(action === 'finance-add-category'){
+    FinanceDesk.createCategory(document.getElementById('finance-category-name')?.value,
+      document.getElementById('finance-category-kind')?.value,
+      document.getElementById('finance-parent-category')?.value); return;
+  }
+  if(action === 'finance-add-budget'){
+    FinanceDesk.createBudget(document.getElementById('finance-budget-name')?.value,
+      document.getElementById('finance-budget-amount')?.value,
+      document.getElementById('finance-budget-category')?.value,
+      document.getElementById('finance-budget-period')?.value,
+      document.getElementById('finance-budget-start')?.value,
+      document.getElementById('finance-budget-end')?.value,
+      !!document.getElementById('finance-budget-rollover')?.checked); return;
+  }
+  if(action === 'finance-sms-enable'){ FinanceDesk.smsSetEnabled(true); return; }
+  if(action === 'finance-sms-disable'){ FinanceDesk.smsSetEnabled(false); return; }
+  if(action === 'finance-sms-dismiss'){
+    FinanceDesk.smsDismiss(el.closest('.finance-sms-draft')?.dataset.smsId); return;
+  }
+  if(action === 'finance-sms-confirm'){
+    const draft = el.closest('.finance-sms-draft');
+    FinanceDesk.smsConfirm(draft?.dataset.smsId, draft?.querySelector('.finance-sms-amount')?.value,
+      draft?.querySelector('.finance-sms-account')?.value); return;
+  }
+  if(action === 'finance-post'){
+    FinanceDesk.post(document.getElementById('finance-kind')?.value,
+      document.getElementById('finance-amount')?.value,
+      document.getElementById('finance-source')?.value,
+      document.getElementById('finance-destination')?.value,
+      document.getElementById('finance-note')?.value,
+      document.getElementById('finance-transaction-category')?.value); return;
+  }
   if(action === 'edit-item'){
     const item = findItem(el.dataset.type, el.dataset.id);
     if(!groupItemEditable(el.dataset.type === 'task' ? (findTaskOrSub(el.dataset.id).parent || item) : item)){ showToast(t('groupNotYours')); return; }
@@ -114,9 +194,8 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'open-subview' && el.dataset.sub === 'calendar'){
     // The item's date (or a range: press and drag) in the small date picker.
     openDatePicker({
-      // Within a year back and five years ahead (it used to allow 1926).
-      // A new task or event can't go on a day that has passed.
-      title: t('dateTitle'), range: true, min: state.editingId ? dateYearsAgo(1) : dateKey(today), max: dateKey(stepYear(today, 5)), value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
+      // Events can record past activity; task creation keeps its current rule.
+      title: t('dateTitle'), range: true, min: popupDateMinimum(state.popupType, !!state.editingId, formDraft.date), max: dateKey(stepYear(today, 5)), value: formDraft.date, end: formDraft.timeMode === 'range' ? formDraft.endDate : formDraft.date,
       time: { start: formDraft.startTime, end: formDraft.endTime },
       onPick: (start, end, time) => {
         formDraft.date = start; formDraft.endDate = end;
@@ -201,7 +280,14 @@ document.getElementById('device').addEventListener('click', (e) => {
   if(action === 'contact-send'){ sendContactMessage(); return; }
   if(action === 'articles-cat'){ articlesView.cat = el.dataset.val; render(); return; }
   if(action === 'start-tour'){ startTour(el.dataset.tourId); return; }
-  if(action === 'auth-google'){ Cloud.signInWithGoogle(); return; }  if(action === 'remove-profile-photo'){
+  if(action === 'auth-google'){
+    Promise.resolve().then(() => Cloud.signInWithGoogle()).catch(() => {
+      authErrors.general = t('errGoogleDisabled');
+      renderAuth();
+    });
+    return;
+  }
+  if(action === 'remove-profile-photo'){
     if(profileDraft) profileDraft.photo = null; // edit page: waits for "Save changes"
     else { state.profile.photo = null; cloudSync(() => Cloud.saveProfile(state.profile)); }
     render(); return;
@@ -222,16 +308,20 @@ document.getElementById('device').addEventListener('click', (e) => {
     switchThemeAnimated(r.left + r.width / 2, r.top + r.height / 2, () => {
       state.settings.theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       applyAppearance();
+      cloudSync(() => Cloud.saveSettings(state.settings));
       render();
     });
-    cloudSync(() => Cloud.saveSettings(state.settings));
     return;
   }
-  if(action === 'set-palette'){
-    state.settings.palette = el.dataset.val === 'classic' ? 'classic' : 'toojibee';
+  if(action === 'set-palette' || action === 'set-appearance'){
+    const focusAction = action, focusVal = el.dataset.val;
+    if(action === 'set-palette') state.settings.palette = AppThemes.validId(el.dataset.val);
+    else state.settings.theme = AppThemes.validMode(el.dataset.val);
     applyAppearance();
     cloudSync(() => Cloud.saveSettings(state.settings));
+    // Refresh only the settings panel; preserve the surrounding app state.
     render();
+    document.querySelector('[data-action="'+focusAction+'"][data-val="'+focusVal+'"]')?.focus({preventScroll:true});
     return;
   }
   if(action === 'toggle-notifications'){
@@ -361,7 +451,6 @@ document.getElementById('device').addEventListener('click', (e) => {
     return;
   }
   if(action === 'share-item-link'){ shareItemLink(el.dataset.kind, el.dataset.id); return; } // components/items
-  if(action === 'set-accent'){ if(accentUnlocked(el.dataset.val)){ setPref('accent', el.dataset.val); applyAppearance(); scheduleWidgetData(); render(); } return; } // css/palette-accents.css
   if(action === 'start-quickstart'){ state.menuPanelOpen = false; render(); startQuickStart(true); return; } // js/core/onboarding.js
   // Ready-made plans and the focus timer (js/core/templates.js)
   if(action === 'apply-template'){ applyTemplate(el.dataset.key); return; }

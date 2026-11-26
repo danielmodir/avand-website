@@ -41,6 +41,8 @@ api_v1 = [
     path("", include("apps.period.urls")),
     path("", include("apps.social.urls")),
     path("", include("apps.notifications.urls")),
+    path("", include("apps.finance.urls")),
+    path("", include("apps.university.urls")),
 ]
 
 urlpatterns = [

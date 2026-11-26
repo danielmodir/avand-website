@@ -5,7 +5,7 @@
 
    1. Serve frontend/ on port 8080 (the "avand-site" launch config).
    2. node deploy/make-desk-shots.js
-   3. python -I deploy/webp.py  (PNG -> WebP, see the end of this file)
+   3. node deploy/webp.js  (PNG -> WebP)
 
    The app runs offline (no apiBase on localhost) with a few example items
    added in memory for the picture; nothing is saved anywhere. */

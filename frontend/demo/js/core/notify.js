@@ -70,18 +70,77 @@ function atTimeOn(day, hm){
   return d.getTime();
 }
 
+// null allows delivery, 0 mutes it, otherwise the timestamp is the next
+// quiet-period start. Delayed deliveries expire at that boundary too.
+function habitReminderLimit(rule, at){
+  if(!rule) return null;
+  if(rule.mode === 'off') return 0;
+  if(rule.mode !== 'quiet' || ![rule.start, rule.end].every(v => /^([01]\d|2[0-3]):[0-5]\d$/.test(v))) return null;
+  const day = new Date(at);
+  const start = atTimeOn(day, rule.start), end = atTimeOn(day, rule.end);
+  if(start < end ? at >= start && at < end : at >= start || at < end) return 0;
+  return at < start ? start : atTimeOn(addDays(day, 1), rule.start);
+}
+
+const REMINDER_SOUNDS = ['system', 'chime', 'pulse'];
+function reminderSound(){
+  const sound = state.settings.prefs?.reminderSound;
+  return REMINDER_SOUNDS.includes(sound) ? sound : 'system';
+}
+let reminderAudio = null;
+function playReminderSound(sound){
+  if(!['chime', 'pulse'].includes(sound)) return;
+  if(reminderAudio) reminderAudio.pause();
+  reminderAudio = new Audio('../assets/sounds/' + sound + '.wav');
+  return reminderAudio.play();
+}
+
+/* A custom reminder window is a single activity with several wall-clock
+   reminders. End is inclusive; an earlier end belongs to the next day. */
+function reminderWindowSpec(n){
+  const clock = value => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  if(!clock(n.time) || !clock(n.windowEnd) || n.time === n.windowEnd) return null;
+  const step = Number(n.everyMinutes);
+  if(!Number.isInteger(step) || step < 1 || step > 1440) return null;
+  const minute = value => Number(value.slice(0,2)) * 60 + Number(value.slice(3));
+  const start = minute(n.time), end = minute(n.windowEnd);
+  return { start, end: end < start ? end + 1440 : end, step, overnight: end < start };
+}
+function reminderWindowTimes(day, n){
+  const spec = reminderWindowSpec(n);
+  if(!spec) return [];
+  const result = [], seen = new Set();
+  for(let minute = spec.start; minute <= spec.end; minute += spec.step){
+    const hour = Math.floor(minute % 1440 / 60), min = minute % 60;
+    const at = new Date(day.getFullYear(), day.getMonth(), day.getDate() + Math.floor(minute / 1440), hour, min);
+    // A DST gap has no such local time; don't shift it into another slot.
+    if(at.getHours() !== hour || at.getMinutes() !== min || seen.has(at.getTime()) || at.getTime() < (Number(n.windowSince) || 0)) continue;
+    seen.add(at.getTime()); result.push(at.getTime());
+  }
+  return result;
+}
+
 /* Every reminder slot of `day`: { slot, kind, id, title, body, at }. */
 function reminderSlots(day){
   const key = dateKey(day);
   const out = [];
-  const push = (kind, item, type, at, body) => { if(at != null) out.push({ slot: `${type}|${kind}|${item.id}|${key}|${at}`, kind, id: item.id, date: key, title: item.title, body, at, item }); };
-  const forItem = (kind, item, done) => {
+  const push = (kind, item, type, at, body, occurrenceKey = key) => {
+    if(at == null) return;
+    const expires = kind === 'habit' ? habitReminderLimit(item.reminderQuiet, at) : null;
+    if(expires !== 0) out.push({ slot: `${type}|${kind}|${item.id}|${occurrenceKey}|${at}`, kind, id: item.id, date: occurrenceKey, title: item.title, body, at, item, expires });
+  };
+  const forItem = (kind, item, done, occurrence = day) => {
     const n = item.notification || {};
     if(!n.type || done) return;
     const text = n.text || '';
     // A one-time task's reminder may sit on a later day of its range (n.date).
     if(n.type === 'time' && (!n.date || n.date === key)) push(kind, item, 'time', atTimeOn(day, n.time), text || dig(n.time));
-    if(n.type === 'repeat'){
+    if(n.type === 'repeat' && n.windowEnd){
+      const lo = new Date(day).setHours(0,0,0,0), hi = new Date(day).setHours(24,0,0,0);
+      reminderWindowTimes(occurrence, n).forEach(at => {
+        if(at >= lo && at < hi) push(kind, item, 'window', at, text || t('notifRepeatBody'), dateKey(occurrence));
+      });
+    } else if(n.type === 'repeat'){
       const start = atTimeOn(day, item.startTime || n.time);
       const step = Math.max(1, Number(n.repeatHours) || 1) * 3600000;
       const end = new Date(day).setHours(24, 0, 0, 0);
@@ -115,9 +174,29 @@ function reminderSlots(day){
   };
   state.tasks.forEach(x => countdown('task', x, k => taskStatusOn(x, k) === 'done'));
   state.events.forEach(e => countdown('event', e, () => false));
-  state.tasks.filter(x => occursOnDate(x, day)).forEach(x => forItem('task', x, taskStatusOn(x, key) === 'done'));
-  state.habits.filter(h => habitOccursOnDate(h, day)).forEach(h => forItem('habit', h, h.completedDates.includes(key)));
+  state.tasks.filter(x => occursOnDate(x, day)).forEach(x => {
+    if(isRecurringTask(x) ? ['done', 'not_done'].includes(x.statusByDate?.[key]) : x.done || x.skipped) return;
+    forItem('task', x, false);
+    if(x.endTime && x.endAlarm !== false && (isRecurringTask(x) || key === (x.endDate || x.date))){
+      const at = atTimeOn(day, x.endTime);
+      if(!out.some(r => r.item === x && r.at === at)) push('task', x, 'end', at, t('taskEndBody').replace('{t}', dig(x.endTime)));
+    }
+  });
+  state.habits.filter(h => habitOccursOnDate(h, day)).forEach(h => forItem('habit', h, h.completedDates.includes(key) || h.skippedDates?.includes(key)));
   state.events.filter(e => occursOnDate(e, day)).forEach(e => forItem('event', e, false));
+  // The after-midnight tail belongs to yesterday's occurrence (including
+  // its completion state), even when the activity doesn't occur today.
+  const previous = addDays(day, -1), previousKey = dateKey(previous);
+  const tail = (kind, item, done) => {
+    const spec = item.notification?.type === 'repeat' && reminderWindowSpec(item.notification);
+    if(spec && spec.overnight) forItem(kind, item, done, previous);
+  };
+  state.tasks.filter(x => occursOnDate(x, previous)).forEach(x => tail('task', x,
+    isRecurringTask(x) ? ['done','not_done'].includes(x.statusByDate?.[previousKey]) : x.done || x.skipped));
+  state.habits.filter(x => habitOccursOnDate(x, previous)).forEach(x => tail('habit', x,
+    x.completedDates.includes(previousKey) || (x.skippedDates || []).includes(previousKey)));
+  state.events.filter(x => occursOnDate(x, previous)).forEach(x => tail('event', x, false));
+  if(typeof occasionReminderSlots === 'function') out.push(...occasionReminderSlots(day));
   // Adhan at dawn, noon and maghrib for the chosen city (js/core/prayer.js).
   if(featureOn('prayer') && pref('prayerNotify')){
     const times = prayerTimesFor(day, prayerCityId()), city = prayerCity(prayerCityId());
@@ -154,6 +233,7 @@ function overdueSlots(day){
   const add = (task, key, at) => out.push({ slot: `overdue|task|${task.id}|${key}`, kind: 'task', id: task.id, date: key,
     title: t('notifOverdueTitle').replace('{title}', task.title), body: t('notifOverdueBody'), at, item: task });
   state.tasks.forEach(task => {
+    if(task.endTime && task.endAlarm !== false) return;
     if(occursOnDate(task, day) && !explicit(task, todayKey) && taskOverdue(task, todayKey)){
       const hm = task.endTime || task.startTime;
       if(hm) add(task, todayKey, atTimeOn(day, hm));
@@ -168,16 +248,20 @@ function overdueSlots(day){
 
 function reminderBody(r){
   if(!r.kind) return r.body;
-  const kindLabel = t(r.kind === 'event' ? 'searchEvent' : r.kind === 'habit' ? 'habit' : 'task');
+  const kindLabel = t(r.kind === 'occasion' ? 'occasionsDesktop' : r.kind === 'event' ? 'searchEvent' : r.kind === 'habit' ? 'habit' : 'task');
   return `${kindLabel} · ${r.body}`;
 }
 
 function showReminder(r, missed){
   const body = (missed ? t('notifMissedPrefix') + ' · ' : '') + reminderBody(r);
-  const opts = { body, tag: r.slot, lang: lang(), dir: lang() === 'fa' ? 'rtl' : 'ltr', icon: '../assets/icons/icon-192.png?v=tj5',
-    badge: '../assets/icons/favicon-48.png?v=tj5', data: { kind: r.kind, id: r.id, date: r.date } };
+  const opts = { body, tag: r.slot, lang: lang(), dir: lang() === 'fa' ? 'rtl' : 'ltr', icon: '../assets/icons/icon-192.png?v=tj7',
+    badge: '../assets/icons/favicon-48.png?v=tj7', data: { kind: r.kind, id: r.id, date: r.date } };
   if(androidApp && notifyAllowed()) androidApp.show(r.title, body, r.slot, r.kind || '', r.id || '', r.date || '');
   else if(notifyAllowed()){
+    if(!document.hidden && reminderSound() !== 'system'){
+      opts.silent = true;
+      playReminderSound(reminderSound())?.catch(() => {});
+    }
     if(notifyReg) notifyReg.showNotification(r.title, opts).catch(() => {});
     else try{ const n = new Notification(r.title, opts); n.onclick = () => { window.focus(); openReminderTarget(opts.data); }; }catch(e){ /* phones need sw.js */ }
   }
@@ -193,7 +277,7 @@ async function reminderTick(){
   // Already shown by sw.js from a push while the app was closed.
   (await shownByWorker()).forEach(slot => { if(!fired[slot]) fired[slot] = now; });
   const due = reminderSlots(day).concat(overdueSlots(day))
-    .filter(r => r.at <= now && now - r.at < NOTIFY_CATCHUP_MS && !fired[r.slot]);
+    .filter(r => r.at <= now && (!r.expires || now < r.expires) && now - r.at < NOTIFY_CATCHUP_MS && !fired[r.slot]);
   syncPushSchedule(false);
   if(!due.length){ saveNotified(fired); return; }
   due.forEach(r => { fired[r.slot] = now; });
@@ -218,6 +302,10 @@ function openReminderTarget(d){
     const day = parseDateKey(d.date);
     state.homeDate = day; state.selectedDate = day; state.calCursor = new Date(day);
     state.menuPanelOpen = false; state.calFull = false;
+    if(d.kind === 'occasion' && pref('occasionsEnabled')){
+      const desk = deskKeys().indexOf('occasionsDesktop');
+      if(desk >= 0){ state.activeDesktopIndex = desk; state.occasionEditorKey = d.id; }
+    }
     render();
   }
   if(d.kind && d.id && findItem(d.kind, d.id)) openItemDetails(d.kind, d.id, null);
@@ -331,6 +419,7 @@ function overdueAheadSlots(day){
   const key = dateKey(day), out = [];
   const explicit = task => isRecurringTask(task) ? task.statusByDate?.[key] : (task.done || task.skipped);
   state.tasks.forEach(task => {
+    if(task.endTime && task.endAlarm !== false) return;
     if(!occursOnDate(task, day) || explicit(task)) return;
     const deadline = isRecurringTask(task) ? key : (task.timeMode === 'range' && task.endDate ? task.endDate : task.date);
     if(deadline !== key) return;
@@ -349,7 +438,7 @@ function pushScheduleItems(){
   for(let i = -1; i < PUSH_DAYS; i++){ // -1: yesterday's day-only deadlines come due this morning
     const day = addDays(today, i);
     const list = (i < 0 ? [] : reminderSlots(day)).concat(overdueAheadSlots(day));
-    list.forEach(r => { if(r.at > now - 60000) items.push({ slot: r.slot, at: r.at, title: r.title, body: reminderBody(r), kind: r.kind, id: r.id, date: r.date }); });
+    list.forEach(r => { if(r.at > now - 60000) items.push({ slot: r.slot, at: r.at, title: r.title, body: reminderBody(r), kind: r.kind, id: r.id, date: r.date, expires: r.expires || undefined }); });
   }
   return items.sort((a, b) => a.at - b.at).slice(0, 400);
 }
@@ -360,7 +449,7 @@ async function syncPushSchedule(force){
   const p = loadPush();
   if(!p.id) return;
   const items = pushScheduleItems();
-  const sig = JSON.stringify(items.map(i => [i.slot, i.title, i.body]));
+  const sig = JSON.stringify(items.map(i => [i.slot, i.title, i.body, i.expires]));
   if(!force && sig === p.sent && Date.now() - (p.sentAt || 0) < PUSH_REFRESH_MS) return;
   try{
     await Cloud.pushSchedule(items);
@@ -400,6 +489,7 @@ function syncAndroidSchedule(force){
   // notification gets no «انجام شد» button (APK 1.1+ reads it).
   const items = (on ? pushScheduleItems() : []).map(r => r.kind === 'habit' && habitTracker(state.habits.find(h => h.id === r.id)) ? Object.assign({}, r, { tick: false }) : r);
   const json = JSON.stringify(items);
+  try{ if(androidApp.setReminderSound) androidApp.setReminderSound(reminderSound()); }catch(e){}
   if(!force && json === androidSent) return;
   androidSent = json;
   // The notification's buttons speak the app's language (APK 1.1+).

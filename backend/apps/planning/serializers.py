@@ -12,7 +12,7 @@ from .models import Category, Event, Habit, HabitLog, Task, TaskOccurrence
 COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 RECURRENCE_FIELDS = ["rec_mode", "rec_interval", "rec_weekdays", "rec_until", "rec_anchor", "rec_calendar"]
 REPEAT_KINDS = ("interval", "weekdays", "monthly", "yearly")
-REMINDER_FIELDS = ["reminder_type", "reminder_time", "reminder_every_hours", "reminder_text", "reminder_lead_minutes", "reminder_every_minutes"]
+REMINDER_FIELDS = ["reminder_type", "reminder_time", "reminder_every_hours", "reminder_text", "reminder_lead_minutes", "reminder_every_minutes", "reminder_window_end"]
 SYNC_FIELDS = ["id", "version", "created_at", "updated_at", "deleted_at"]
 READ_ONLY = ["id", "created_at", "updated_at", "deleted_at"]
 
@@ -60,8 +60,18 @@ class OwnedSerializer(serializers.ModelSerializer):
         rtype = merged(attrs, inst, "reminder_type", "none")
         if rtype in ("at_time", "repeating") and not merged(attrs, inst, "reminder_time"):
             raise ApiError("reminder_time_required")
-        if rtype == "repeating" and not 1 <= (merged(attrs, inst, "reminder_every_hours") or 0) <= 24:
-            raise ApiError("reminder_every_hours_invalid")
+        window_end = merged(attrs, inst, "reminder_window_end")
+        if rtype == "repeating":
+            if window_end is not None:
+                if (window_end == merged(attrs, inst, "reminder_time")
+                        or window_end.second or window_end.microsecond
+                        or merged(attrs, inst, "reminder_time").second or merged(attrs, inst, "reminder_time").microsecond
+                        or not 1 <= (merged(attrs, inst, "reminder_every_minutes") or 0) <= 1440):
+                    raise ApiError("reminder_window_invalid")
+            elif not 1 <= (merged(attrs, inst, "reminder_every_hours") or 0) <= 24:
+                raise ApiError("reminder_every_hours_invalid")
+        else:
+            attrs["reminder_window_end"] = None
         if rtype == "countdown" and not (15 <= (merged(attrs, inst, "reminder_lead_minutes") or 0) <= 10080
                                          and 15 <= (merged(attrs, inst, "reminder_every_minutes") or 0) <= 1440):
             raise ApiError("reminder_countdown_invalid")
@@ -145,11 +155,22 @@ class HabitSerializer(OwnedSerializer):
 
     class Meta:
         model = Habit
-        fields = SYNC_FIELDS + ["category_id", "title", "start_date", "end_date", "sort_order", "tracker"] + RECURRENCE_FIELDS + REMINDER_FIELDS
+        fields = SYNC_FIELDS + ["category_id", "title", "start_date", "end_date", "sort_order", "tracker", "goal"] + RECURRENCE_FIELDS + REMINDER_FIELDS
         read_only_fields = READ_ONLY
 
     def validate_category_id(self, category):
         return self.validate_category(category)
+
+    def validate_goal(self, value):
+        if value is None:
+            return None
+        if not isinstance(value, dict) or set(value) != {"period", "target"}:
+            raise ApiError("invalid_habit_goal")
+        limits = {"daily": 1, "weekly": 7, "monthly": 31}
+        period, target = value["period"], value["target"]
+        if period not in limits or type(target) is not int or not 1 <= target <= limits[period]:
+            raise ApiError("invalid_habit_goal")
+        return {"period": period, "target": target}
 
     def validate_tracker(self, t):
         """None, a counter (target 1-999 or none) or a timer (up, or down from 1-600 minutes)."""
@@ -184,12 +205,17 @@ class EventSerializer(OwnedSerializer):
 
     class Meta:
         model = Event
-        fields = SYNC_FIELDS + ["category_id", "title", "description", "start_date", "end_date", "all_day", "start_time", "end_time"] \
+        fields = SYNC_FIELDS + ["category_id", "title", "description", "show_in_planning", "show_in_occasions", "location", "meeting_url", "start_date", "end_date", "all_day", "start_time", "end_time"] \
             + RECURRENCE_FIELDS + REMINDER_FIELDS + ["reminder_minutes_before", "kind", "color", "origin_event_id", "origin_date"]
         read_only_fields = READ_ONLY
 
     def validate_category_id(self, category):
         return self.validate_category(category)
+
+    def validate_meeting_url(self, value):
+        if value and not value.lower().startswith(("https://", "http://")):
+            raise ApiError("invalid_meeting_url")
+        return value
 
     def validate(self, attrs):
         self.check_schedule(attrs)

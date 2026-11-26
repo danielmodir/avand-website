@@ -1,0 +1,1877 @@
+{
+  "generated": "2026-11-16",
+  "scope": "Application semantic tokens; disabled content is exempt from WCAG minimum contrast.",
+  "configurations": [
+    {
+      "id": "sustainable-tangerine",
+      "mode": "light",
+      "original": [
+        "#FAF3E1",
+        "#F5E7C6",
+        "#FF6D1F",
+        "#222222"
+      ],
+      "tokens": {
+        "background": "#FAF3E1",
+        "backgroundSecondary": "#F5E7C6",
+        "surface": "#FFFDF7",
+        "surfaceVariant": "#F5E7C6",
+        "surfaceElevated": "#FFFDF7",
+        "surfaceOverlay": "#FFFDF7",
+        "primary": "#B84412",
+        "primaryHover": "#A94012",
+        "primaryPressed": "#9C3C12",
+        "onPrimary": "#FFFFFF",
+        "secondary": "#F5E7C6",
+        "onSecondary": "#141414",
+        "accent": "#FF6D1F",
+        "onAccent": "#141414",
+        "textPrimary": "#222222",
+        "textSecondary": "#5F584B",
+        "textMuted": "#5F584B",
+        "textDisabled": "#9C9A97",
+        "textInverse": "#FFFFFF",
+        "textOnPrimary": "#FFFFFF",
+        "cardBackground": "#FFFDF7",
+        "inputBackground": "#FFFDF7",
+        "inputBorder": "#5B5B59",
+        "inputFocusBorder": "#B84412",
+        "buttonBackground": "#B84412",
+        "buttonText": "#FFFFFF",
+        "iconPrimary": "#222222",
+        "iconSecondary": "#5F584B",
+        "divider": "#CECDC8",
+        "border": "#5B5B59",
+        "focusRing": "#B84412",
+        "selectedBackground": "#B84412",
+        "selectedText": "#FFFFFF",
+        "hoverBackground": "#F5E7C6",
+        "disabledBackground": "#F5E7C6",
+        "success": "#23603B",
+        "onSuccess": "#FFFFFF",
+        "warning": "#795006",
+        "onWarning": "#FFFFFF",
+        "error": "#A52626",
+        "onError": "#FFFFFF",
+        "info": "#185878",
+        "onInfo": "#FFFFFF",
+        "shadow": "#302A20",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#A94012": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#9C3C12": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#9C9A97": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#5B5B59": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#CECDC8": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#23603B": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#795006": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A52626": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#185878": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#302A20": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 14.374,
+        "textSecondary/background": 6.358,
+        "textMuted/background": 6.358,
+        "inputBorder/background": 6.149,
+        "focusRing/background": 4.898,
+        "textPrimary/surface": 15.641,
+        "textSecondary/surface": 6.918,
+        "textMuted/surface": 6.918,
+        "inputBorder/surface": 6.691,
+        "focusRing/surface": 5.33,
+        "textPrimary/surfaceVariant": 12.977,
+        "textSecondary/surfaceVariant": 5.74,
+        "textMuted/surfaceVariant": 5.74,
+        "inputBorder/surfaceVariant": 5.551,
+        "focusRing/surfaceVariant": 4.422,
+        "onPrimary/primary": 5.421,
+        "onPrimary/primaryHover": 6.124,
+        "onPrimary/primaryPressed": 6.843,
+        "onSuccess/success": 7.479,
+        "onWarning/warning": 7.087,
+        "onError/error": 7.229,
+        "onInfo/info": 7.761,
+        "onSecondary/secondary": 15.026,
+        "onAccent/accent": 6.544
+      }
+    },
+    {
+      "id": "sustainable-tangerine",
+      "mode": "dark",
+      "original": [
+        "#FAF3E1",
+        "#F5E7C6",
+        "#FF6D1F",
+        "#222222"
+      ],
+      "tokens": {
+        "background": "#141414",
+        "backgroundSecondary": "#302B24",
+        "surface": "#222222",
+        "surfaceVariant": "#302B24",
+        "surfaceElevated": "#222222",
+        "surfaceOverlay": "#222222",
+        "primary": "#FF6D1F",
+        "primaryHover": "#FF7A33",
+        "primaryPressed": "#FF8645",
+        "onPrimary": "#141414",
+        "secondary": "#F5E7C6",
+        "onSecondary": "#141414",
+        "accent": "#FF995C",
+        "onAccent": "#141414",
+        "textPrimary": "#FAF3E1",
+        "textSecondary": "#D4C5A8",
+        "textMuted": "#D4C5A8",
+        "textDisabled": "#838078",
+        "textInverse": "#141414",
+        "textOnPrimary": "#141414",
+        "cardBackground": "#222222",
+        "inputBackground": "#222222",
+        "inputBorder": "#C2BDAF",
+        "inputFocusBorder": "#FF6D1F",
+        "buttonBackground": "#FF6D1F",
+        "buttonText": "#141414",
+        "iconPrimary": "#FAF3E1",
+        "iconSecondary": "#D4C5A8",
+        "divider": "#52504C",
+        "border": "#C2BDAF",
+        "focusRing": "#FF6D1F",
+        "selectedBackground": "#FF6D1F",
+        "selectedText": "#141414",
+        "hoverBackground": "#302B24",
+        "disabledBackground": "#302B24",
+        "success": "#97D5AA",
+        "onSuccess": "#141414",
+        "warning": "#F2CF80",
+        "onWarning": "#141414",
+        "error": "#FFB4AB",
+        "onError": "#141414",
+        "info": "#9CD1EC",
+        "onInfo": "#141414",
+        "shadow": "#000000",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#FF7A33": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#FF8645": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#838078": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#C2BDAF": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#52504C": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#97D5AA": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#F2CF80": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#FFB4AB": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#9CD1EC": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#000000": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 16.644,
+        "textSecondary/background": 10.835,
+        "textMuted/background": 10.835,
+        "inputBorder/background": 9.818,
+        "focusRing/background": 6.544,
+        "textPrimary/surface": 14.374,
+        "textSecondary/surface": 9.358,
+        "textMuted/surface": 9.358,
+        "inputBorder/surface": 8.479,
+        "focusRing/surface": 5.651,
+        "textPrimary/surfaceVariant": 12.676,
+        "textSecondary/surfaceVariant": 8.252,
+        "textMuted/surfaceVariant": 8.252,
+        "inputBorder/surfaceVariant": 7.478,
+        "focusRing/surfaceVariant": 4.984,
+        "onPrimary/primary": 6.544,
+        "onPrimary/primaryHover": 7.091,
+        "onPrimary/primaryPressed": 7.674,
+        "onSuccess/success": 10.89,
+        "onWarning/warning": 12.292,
+        "onError/error": 10.85,
+        "onInfo/info": 11.181,
+        "onSecondary/secondary": 15.026,
+        "onAccent/accent": 8.74
+      }
+    },
+    {
+      "id": "emerald-nature",
+      "mode": "light",
+      "original": [
+        "#F4F1EB",
+        "#7AA05A",
+        "#2D5A4A",
+        "#0D4C3C"
+      ],
+      "tokens": {
+        "background": "#F4F1EB",
+        "backgroundSecondary": "#E2EAD9",
+        "surface": "#FFFFFF",
+        "surfaceVariant": "#E2EAD9",
+        "surfaceElevated": "#FFFFFF",
+        "surfaceOverlay": "#FFFFFF",
+        "primary": "#2D5A4A",
+        "primaryHover": "#2B5445",
+        "primaryPressed": "#294E41",
+        "onPrimary": "#FFFFFF",
+        "secondary": "#7AA05A",
+        "onSecondary": "#141414",
+        "accent": "#0D4C3C",
+        "onAccent": "#FFFFFF",
+        "textPrimary": "#0D4C3C",
+        "textSecondary": "#516457",
+        "textMuted": "#516457",
+        "textDisabled": "#92AEA7",
+        "textInverse": "#FFFFFF",
+        "textOnPrimary": "#FFFFFF",
+        "cardBackground": "#FFFFFF",
+        "inputBackground": "#FFFFFF",
+        "inputBorder": "#4C7B6F",
+        "inputFocusBorder": "#2D5A4A",
+        "buttonBackground": "#2D5A4A",
+        "buttonText": "#FFFFFF",
+        "iconPrimary": "#0D4C3C",
+        "iconSecondary": "#516457",
+        "divider": "#CAD8D4",
+        "border": "#4C7B6F",
+        "focusRing": "#2D5A4A",
+        "selectedBackground": "#2D5A4A",
+        "selectedText": "#FFFFFF",
+        "hoverBackground": "#E2EAD9",
+        "disabledBackground": "#E2EAD9",
+        "success": "#23603B",
+        "onSuccess": "#FFFFFF",
+        "warning": "#795006",
+        "onWarning": "#FFFFFF",
+        "error": "#A52626",
+        "onError": "#FFFFFF",
+        "info": "#185878",
+        "onInfo": "#FFFFFF",
+        "shadow": "#302A20",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#2B5445": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#294E41": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onSecondary",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#92AEA7": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#4C7B6F": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#CAD8D4": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#23603B": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#795006": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A52626": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#185878": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#302A20": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 8.803,
+        "textSecondary/background": 5.627,
+        "textMuted/background": 5.627,
+        "inputBorder/background": 4.263,
+        "focusRing/background": 6.969,
+        "textPrimary/surface": 9.924,
+        "textSecondary/surface": 6.344,
+        "textMuted/surface": 6.344,
+        "inputBorder/surface": 4.805,
+        "focusRing/surface": 7.857,
+        "textPrimary/surfaceVariant": 8.036,
+        "textSecondary/surfaceVariant": 5.137,
+        "textMuted/surfaceVariant": 5.137,
+        "inputBorder/surfaceVariant": 3.891,
+        "focusRing/surfaceVariant": 6.362,
+        "onPrimary/primary": 7.857,
+        "onPrimary/primaryHover": 8.548,
+        "onPrimary/primaryPressed": 9.291,
+        "onSuccess/success": 7.479,
+        "onWarning/warning": 7.087,
+        "onError/error": 7.229,
+        "onInfo/info": 7.761,
+        "onSecondary/secondary": 6.144,
+        "onAccent/accent": 9.924
+      }
+    },
+    {
+      "id": "emerald-nature",
+      "mode": "dark",
+      "original": [
+        "#F4F1EB",
+        "#7AA05A",
+        "#2D5A4A",
+        "#0D4C3C"
+      ],
+      "tokens": {
+        "background": "#0E1C18",
+        "backgroundSecondary": "#214137",
+        "surface": "#162D26",
+        "surfaceVariant": "#214137",
+        "surfaceElevated": "#162D26",
+        "surfaceOverlay": "#162D26",
+        "primary": "#96BE74",
+        "primaryHover": "#9FC481",
+        "primaryPressed": "#A8C98C",
+        "onPrimary": "#0E1C18",
+        "secondary": "#7AA05A",
+        "onSecondary": "#141414",
+        "accent": "#2D5A4A",
+        "onAccent": "#FFFFFF",
+        "textPrimary": "#F4F1EB",
+        "textSecondary": "#C9D8CA",
+        "textMuted": "#C9D8CA",
+        "textDisabled": "#7A857F",
+        "textInverse": "#141414",
+        "textOnPrimary": "#0E1C18",
+        "cardBackground": "#162D26",
+        "inputBackground": "#162D26",
+        "inputBorder": "#BABEB8",
+        "inputFocusBorder": "#96BE74",
+        "buttonBackground": "#96BE74",
+        "buttonText": "#0E1C18",
+        "iconPrimary": "#F4F1EB",
+        "iconSecondary": "#C9D8CA",
+        "divider": "#475851",
+        "border": "#BABEB8",
+        "focusRing": "#96BE74",
+        "selectedBackground": "#96BE74",
+        "selectedText": "#0E1C18",
+        "hoverBackground": "#214137",
+        "disabledBackground": "#214137",
+        "success": "#97D5AA",
+        "onSuccess": "#141414",
+        "warning": "#F2CF80",
+        "onWarning": "#141414",
+        "error": "#FFB4AB",
+        "onError": "#141414",
+        "info": "#9CD1EC",
+        "onInfo": "#141414",
+        "shadow": "#000000",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#9FC481": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A8C98C": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onSecondary",
+            "textInverse",
+            "onSuccess",
+            "onWarning",
+            "onError",
+            "onInfo",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#7A857F": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#BABEB8": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#475851": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#97D5AA": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#F2CF80": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#FFB4AB": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#9CD1EC": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#000000": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 15.55,
+        "textSecondary/background": 11.819,
+        "textMuted/background": 11.819,
+        "inputBorder/background": 9.304,
+        "focusRing/background": 8.276,
+        "textPrimary/surface": 12.959,
+        "textSecondary/surface": 9.85,
+        "textMuted/surface": 9.85,
+        "inputBorder/surface": 7.754,
+        "focusRing/surface": 6.897,
+        "textPrimary/surfaceVariant": 9.93,
+        "textSecondary/surfaceVariant": 7.547,
+        "textMuted/surfaceVariant": 7.547,
+        "inputBorder/surfaceVariant": 5.941,
+        "focusRing/surfaceVariant": 5.285,
+        "onPrimary/primary": 8.276,
+        "onPrimary/primaryHover": 8.921,
+        "onPrimary/primaryPressed": 9.515,
+        "onSuccess/success": 10.89,
+        "onWarning/warning": 12.292,
+        "onError/error": 10.85,
+        "onInfo/info": 11.181,
+        "onSecondary/secondary": 6.144,
+        "onAccent/accent": 7.857
+      }
+    },
+    {
+      "id": "ocean-contrast",
+      "mode": "light",
+      "original": [
+        "#F9F9F9",
+        "#004E72",
+        "#FF6E42",
+        "#092634"
+      ],
+      "tokens": {
+        "background": "#F9F9F9",
+        "backgroundSecondary": "#E6F0F5",
+        "surface": "#FFFFFF",
+        "surfaceVariant": "#E6F0F5",
+        "surfaceElevated": "#FFFFFF",
+        "surfaceOverlay": "#FFFFFF",
+        "primary": "#004E72",
+        "primaryHover": "#02496A",
+        "primaryPressed": "#034462",
+        "onPrimary": "#FFFFFF",
+        "secondary": "#004E72",
+        "onSecondary": "#FFFFFF",
+        "accent": "#FF6E42",
+        "onAccent": "#141414",
+        "textPrimary": "#092634",
+        "textSecondary": "#52636D",
+        "textMuted": "#52636D",
+        "textDisabled": "#909DA4",
+        "textInverse": "#FFFFFF",
+        "textOnPrimary": "#FFFFFF",
+        "cardBackground": "#FFFFFF",
+        "inputBackground": "#FFFFFF",
+        "inputBorder": "#495E69",
+        "inputFocusBorder": "#004E72",
+        "buttonBackground": "#004E72",
+        "buttonText": "#FFFFFF",
+        "iconPrimary": "#092634",
+        "iconSecondary": "#52636D",
+        "divider": "#C9CFD2",
+        "border": "#495E69",
+        "focusRing": "#004E72",
+        "selectedBackground": "#004E72",
+        "selectedText": "#FFFFFF",
+        "hoverBackground": "#E6F0F5",
+        "disabledBackground": "#E6F0F5",
+        "success": "#23603B",
+        "onSuccess": "#FFFFFF",
+        "warning": "#795006",
+        "onWarning": "#FFFFFF",
+        "error": "#A52626",
+        "onError": "#FFFFFF",
+        "info": "#185878",
+        "onInfo": "#FFFFFF",
+        "shadow": "#302A20",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#02496A": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#034462": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onAccent",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#909DA4": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#495E69": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#C9CFD2": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#23603B": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#795006": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A52626": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#185878": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#302A20": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 14.902,
+        "textSecondary/background": 5.929,
+        "textMuted/background": 5.929,
+        "inputBorder/background": 6.458,
+        "focusRing/background": 8.551,
+        "textPrimary/surface": 15.69,
+        "textSecondary/surface": 6.242,
+        "textMuted/surface": 6.242,
+        "inputBorder/surface": 6.8,
+        "focusRing/surface": 9.002,
+        "textPrimary/surfaceVariant": 13.558,
+        "textSecondary/surfaceVariant": 5.394,
+        "textMuted/surfaceVariant": 5.394,
+        "inputBorder/surfaceVariant": 5.876,
+        "focusRing/surfaceVariant": 7.779,
+        "onPrimary/primary": 9.002,
+        "onPrimary/primaryHover": 9.706,
+        "onPrimary/primaryPressed": 10.463,
+        "onSuccess/success": 7.479,
+        "onWarning/warning": 7.087,
+        "onError/error": 7.229,
+        "onInfo/info": 7.761,
+        "onSecondary/secondary": 9.002,
+        "onAccent/accent": 6.633
+      }
+    },
+    {
+      "id": "ocean-contrast",
+      "mode": "dark",
+      "original": [
+        "#F9F9F9",
+        "#004E72",
+        "#FF6E42",
+        "#092634"
+      ],
+      "tokens": {
+        "background": "#081B27",
+        "backgroundSecondary": "#12394B",
+        "surface": "#092634",
+        "surfaceVariant": "#12394B",
+        "surfaceElevated": "#092634",
+        "surfaceOverlay": "#092634",
+        "primary": "#62BFDD",
+        "primaryHover": "#70C5E0",
+        "primaryPressed": "#7DCAE3",
+        "onPrimary": "#092634",
+        "secondary": "#004E72",
+        "onSecondary": "#FFFFFF",
+        "accent": "#FF8E6B",
+        "onAccent": "#141414",
+        "textPrimary": "#F9F9F9",
+        "textSecondary": "#BCD2DC",
+        "textMuted": "#BCD2DC",
+        "textDisabled": "#75858D",
+        "textInverse": "#141414",
+        "textOnPrimary": "#092634",
+        "cardBackground": "#092634",
+        "inputBackground": "#092634",
+        "inputBorder": "#BBC2C6",
+        "inputFocusBorder": "#62BFDD",
+        "buttonBackground": "#62BFDD",
+        "buttonText": "#092634",
+        "iconPrimary": "#F9F9F9",
+        "iconSecondary": "#BCD2DC",
+        "divider": "#3E545F",
+        "border": "#BBC2C6",
+        "focusRing": "#62BFDD",
+        "selectedBackground": "#62BFDD",
+        "selectedText": "#092634",
+        "hoverBackground": "#12394B",
+        "disabledBackground": "#12394B",
+        "success": "#97D5AA",
+        "onSuccess": "#141414",
+        "warning": "#F2CF80",
+        "onWarning": "#141414",
+        "error": "#FFB4AB",
+        "onError": "#141414",
+        "info": "#9CD1EC",
+        "onInfo": "#141414",
+        "shadow": "#000000",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#70C5E0": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#7DCAE3": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onAccent",
+            "textInverse",
+            "onSuccess",
+            "onWarning",
+            "onError",
+            "onInfo",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#75858D": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#BBC2C6": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#3E545F": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#97D5AA": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#F2CF80": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#FFB4AB": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#9CD1EC": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#000000": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 16.672,
+        "textSecondary/background": 11.192,
+        "textMuted/background": 11.192,
+        "inputBorder/background": 9.734,
+        "focusRing/background": 8.372,
+        "textPrimary/surface": 14.902,
+        "textSecondary/surface": 10.004,
+        "textMuted/surface": 10.004,
+        "inputBorder/surface": 8.7,
+        "focusRing/surface": 7.483,
+        "textPrimary/surfaceVariant": 11.647,
+        "textSecondary/surfaceVariant": 7.819,
+        "textMuted/surfaceVariant": 7.819,
+        "inputBorder/surfaceVariant": 6.8,
+        "focusRing/surfaceVariant": 5.848,
+        "onPrimary/primary": 7.483,
+        "onPrimary/primaryHover": 8.033,
+        "onPrimary/primaryPressed": 8.539,
+        "onSuccess/success": 10.89,
+        "onWarning/warning": 12.292,
+        "onError/error": 10.85,
+        "onInfo/info": 11.181,
+        "onSecondary/secondary": 9.002,
+        "onAccent/accent": 8.188
+      }
+    },
+    {
+      "id": "earthy-harmony",
+      "mode": "light",
+      "original": [
+        "#EFE9D7",
+        "#7D2826",
+        "#898861",
+        "#343723"
+      ],
+      "tokens": {
+        "background": "#EFE9D7",
+        "backgroundSecondary": "#DADBC6",
+        "surface": "#FFF9ED",
+        "surfaceVariant": "#DADBC6",
+        "surfaceElevated": "#FFF9ED",
+        "surfaceOverlay": "#FFF9ED",
+        "primary": "#7D2826",
+        "primaryHover": "#742624",
+        "primaryPressed": "#6B2523",
+        "onPrimary": "#FFFFFF",
+        "secondary": "#898861",
+        "onSecondary": "#141414",
+        "accent": "#343723",
+        "onAccent": "#FFFFFF",
+        "textPrimary": "#343723",
+        "textSecondary": "#575846",
+        "textMuted": "#575846",
+        "textDisabled": "#A4A292",
+        "textInverse": "#FFFFFF",
+        "textOnPrimary": "#FFFFFF",
+        "cardBackground": "#FFF9ED",
+        "inputBackground": "#FFF9ED",
+        "inputBorder": "#696958",
+        "inputFocusBorder": "#7D2826",
+        "buttonBackground": "#7D2826",
+        "buttonText": "#FFFFFF",
+        "iconPrimary": "#343723",
+        "iconSecondary": "#575846",
+        "divider": "#D2CEC1",
+        "border": "#696958",
+        "focusRing": "#7D2826",
+        "selectedBackground": "#7D2826",
+        "selectedText": "#FFFFFF",
+        "hoverBackground": "#DADBC6",
+        "disabledBackground": "#DADBC6",
+        "success": "#23603B",
+        "onSuccess": "#FFFFFF",
+        "warning": "#795006",
+        "onWarning": "#FFFFFF",
+        "error": "#A52626",
+        "onError": "#FFFFFF",
+        "info": "#185878",
+        "onInfo": "#FFFFFF",
+        "shadow": "#302A20",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#742624": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#6B2523": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onSecondary",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A4A292": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#696958": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#D2CEC1": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#23603B": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#795006": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A52626": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#185878": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#302A20": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 10.081,
+        "textSecondary/background": 5.989,
+        "textMuted/background": 5.989,
+        "inputBorder/background": 4.6,
+        "focusRing/background": 7.854,
+        "textPrimary/surface": 11.665,
+        "textSecondary/surface": 6.93,
+        "textMuted/surface": 6.93,
+        "inputBorder/surface": 5.323,
+        "focusRing/surface": 9.088,
+        "textPrimary/surfaceVariant": 8.696,
+        "textSecondary/surfaceVariant": 5.167,
+        "textMuted/surfaceVariant": 5.167,
+        "inputBorder/surfaceVariant": 3.968,
+        "focusRing/surfaceVariant": 6.775,
+        "onPrimary/primary": 9.53,
+        "onPrimary/primaryHover": 10.267,
+        "onPrimary/primaryPressed": 10.971,
+        "onSuccess/success": 7.479,
+        "onWarning/warning": 7.087,
+        "onError/error": 7.229,
+        "onInfo/info": 7.761,
+        "onSecondary/secondary": 5.051,
+        "onAccent/accent": 12.232
+      }
+    },
+    {
+      "id": "earthy-harmony",
+      "mode": "dark",
+      "original": [
+        "#EFE9D7",
+        "#7D2826",
+        "#898861",
+        "#343723"
+      ],
+      "tokens": {
+        "background": "#1D2118",
+        "backgroundSecondary": "#44482F",
+        "surface": "#343723",
+        "surfaceVariant": "#44482F",
+        "surfaceElevated": "#343723",
+        "surfaceOverlay": "#343723",
+        "primary": "#E5A19C",
+        "primaryHover": "#E7A9A5",
+        "primaryPressed": "#E9B1AD",
+        "onPrimary": "#1D2118",
+        "secondary": "#B5B38C",
+        "onSecondary": "#141414",
+        "accent": "#7D2826",
+        "onAccent": "#FFFFFF",
+        "textPrimary": "#EFE9D7",
+        "textSecondary": "#D2C9AF",
+        "textMuted": "#D2C9AF",
+        "textDisabled": "#888774",
+        "textInverse": "#141414",
+        "textOnPrimary": "#1D2118",
+        "cardBackground": "#343723",
+        "inputBackground": "#343723",
+        "inputBorder": "#BEBBA8",
+        "inputFocusBorder": "#E5A19C",
+        "buttonBackground": "#E5A19C",
+        "buttonText": "#1D2118",
+        "iconPrimary": "#EFE9D7",
+        "iconSecondary": "#D2C9AF",
+        "divider": "#5D5E4B",
+        "border": "#BEBBA8",
+        "focusRing": "#E5A19C",
+        "selectedBackground": "#E5A19C",
+        "selectedText": "#1D2118",
+        "hoverBackground": "#44482F",
+        "disabledBackground": "#44482F",
+        "success": "#97D5AA",
+        "onSuccess": "#141414",
+        "warning": "#F2CF80",
+        "onWarning": "#141414",
+        "error": "#FFB4AB",
+        "onError": "#141414",
+        "info": "#9CD1EC",
+        "onInfo": "#141414",
+        "shadow": "#000000",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#E7A9A5": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#E9B1AD": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onSecondary",
+            "textInverse",
+            "onSuccess",
+            "onWarning",
+            "onError",
+            "onInfo",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#888774": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#BEBBA8": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#5D5E4B": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#97D5AA": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#F2CF80": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#FFB4AB": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#9CD1EC": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#000000": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 13.49,
+        "textSecondary/background": 9.91,
+        "textMuted/background": 9.91,
+        "inputBorder/background": 8.467,
+        "focusRing/background": 7.724,
+        "textPrimary/surface": 10.081,
+        "textSecondary/surface": 7.406,
+        "textMuted/surface": 7.406,
+        "inputBorder/surface": 6.328,
+        "focusRing/surface": 5.772,
+        "textPrimary/surfaceVariant": 7.818,
+        "textSecondary/surfaceVariant": 5.743,
+        "textMuted/surfaceVariant": 5.743,
+        "inputBorder/surfaceVariant": 4.907,
+        "focusRing/surfaceVariant": 4.476,
+        "onPrimary/primary": 7.724,
+        "onPrimary/primaryHover": 8.275,
+        "onPrimary/primaryPressed": 8.852,
+        "onSuccess/success": 10.89,
+        "onWarning/warning": 12.292,
+        "onError/error": 10.85,
+        "onInfo/info": 11.181,
+        "onSecondary/secondary": 8.59,
+        "onAccent/accent": 9.53
+      }
+    },
+    {
+      "id": "organic-apricot",
+      "mode": "light",
+      "original": [
+        "#F5E6C5",
+        "#D78B30",
+        "#9F886F",
+        "#3F422E"
+      ],
+      "tokens": {
+        "background": "#F5E6C5",
+        "backgroundSecondary": "#E7D5B8",
+        "surface": "#FFF8E8",
+        "surfaceVariant": "#E7D5B8",
+        "surfaceElevated": "#FFF8E8",
+        "surfaceOverlay": "#FFF8E8",
+        "primary": "#A35D16",
+        "primaryHover": "#965616",
+        "primaryPressed": "#8B5116",
+        "onPrimary": "#FFFFFF",
+        "secondary": "#9F886F",
+        "onSecondary": "#141414",
+        "accent": "#D78B30",
+        "onAccent": "#141414",
+        "textPrimary": "#3F422E",
+        "textSecondary": "#625B4B",
+        "textMuted": "#625B4B",
+        "textDisabled": "#A9A694",
+        "textInverse": "#FFFFFF",
+        "textOnPrimary": "#FFFFFF",
+        "cardBackground": "#FFF8E8",
+        "inputBackground": "#FFF8E8",
+        "inputBorder": "#71715E",
+        "inputFocusBorder": "#A35D16",
+        "buttonBackground": "#A35D16",
+        "buttonText": "#FFFFFF",
+        "iconPrimary": "#3F422E",
+        "iconSecondary": "#625B4B",
+        "divider": "#D5D0BF",
+        "border": "#71715E",
+        "focusRing": "#A35D16",
+        "selectedBackground": "#A35D16",
+        "selectedText": "#FFFFFF",
+        "hoverBackground": "#E7D5B8",
+        "disabledBackground": "#E7D5B8",
+        "success": "#23603B",
+        "onSuccess": "#FFFFFF",
+        "warning": "#795006",
+        "onWarning": "#FFFFFF",
+        "error": "#A52626",
+        "onError": "#FFFFFF",
+        "info": "#185878",
+        "onInfo": "#FFFFFF",
+        "shadow": "#302A20",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#965616": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#8B5116": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onSecondary",
+            "onAccent",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A9A694": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#71715E": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#D5D0BF": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#23603B": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#795006": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A52626": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#185878": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#302A20": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 8.378,
+        "textSecondary/background": 5.456,
+        "textMuted/background": 5.456,
+        "inputBorder/background": 4.025,
+        "focusRing/background": 4.113,
+        "textPrimary/surface": 9.775,
+        "textSecondary/surface": 6.366,
+        "textMuted/surface": 6.366,
+        "inputBorder/surface": 4.696,
+        "focusRing/surface": 4.8,
+        "textPrimary/surfaceVariant": 7.196,
+        "textSecondary/surfaceVariant": 4.686,
+        "textMuted/surfaceVariant": 4.686,
+        "inputBorder/surfaceVariant": 3.457,
+        "focusRing/surfaceVariant": 3.533,
+        "onPrimary/primary": 5.079,
+        "onPrimary/primaryHover": 5.77,
+        "onPrimary/primaryPressed": 6.39,
+        "onSuccess/success": 7.479,
+        "onWarning/warning": 7.087,
+        "onError/error": 7.229,
+        "onInfo/info": 7.761,
+        "onSecondary/secondary": 5.461,
+        "onAccent/accent": 6.689
+      }
+    },
+    {
+      "id": "organic-apricot",
+      "mode": "dark",
+      "original": [
+        "#F5E6C5",
+        "#D78B30",
+        "#9F886F",
+        "#3F422E"
+      ],
+      "tokens": {
+        "background": "#1B1E16",
+        "backgroundSecondary": "#3F422E",
+        "surface": "#2B3022",
+        "surfaceVariant": "#3F422E",
+        "surfaceElevated": "#2B3022",
+        "surfaceOverlay": "#2B3022",
+        "primary": "#E7A94D",
+        "primaryHover": "#E9B15D",
+        "primaryPressed": "#EBB86B",
+        "onPrimary": "#1B1E16",
+        "secondary": "#B5A089",
+        "onSecondary": "#141414",
+        "accent": "#D78B30",
+        "onAccent": "#141414",
+        "textPrimary": "#F5E6C5",
+        "textSecondary": "#D7C2A1",
+        "textMuted": "#D7C2A1",
+        "textDisabled": "#86826B",
+        "textInverse": "#141414",
+        "textOnPrimary": "#1B1E16",
+        "cardBackground": "#2B3022",
+        "inputBackground": "#2B3022",
+        "inputBorder": "#C0B79B",
+        "inputFocusBorder": "#E7A94D",
+        "buttonBackground": "#E7A94D",
+        "buttonText": "#1B1E16",
+        "iconPrimary": "#F5E6C5",
+        "iconSecondary": "#D7C2A1",
+        "divider": "#575846",
+        "border": "#C0B79B",
+        "focusRing": "#E7A94D",
+        "selectedBackground": "#E7A94D",
+        "selectedText": "#1B1E16",
+        "hoverBackground": "#3F422E",
+        "disabledBackground": "#3F422E",
+        "success": "#97D5AA",
+        "onSuccess": "#141414",
+        "warning": "#F2CF80",
+        "onWarning": "#141414",
+        "error": "#FFB4AB",
+        "onError": "#141414",
+        "info": "#9CD1EC",
+        "onInfo": "#141414",
+        "shadow": "#000000",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#E9B15D": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#EBB86B": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onSecondary",
+            "onAccent",
+            "textInverse",
+            "onSuccess",
+            "onWarning",
+            "onError",
+            "onInfo",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#86826B": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#C0B79B": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#575846": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#97D5AA": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#F2CF80": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#FFB4AB": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#9CD1EC": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#000000": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 13.673,
+        "textSecondary/background": 9.744,
+        "textMuted/background": 9.744,
+        "inputBorder/background": 8.432,
+        "focusRing/background": 8.184,
+        "textPrimary/surface": 10.982,
+        "textSecondary/surface": 7.827,
+        "textMuted/surface": 7.827,
+        "inputBorder/surface": 6.773,
+        "focusRing/surface": 6.574,
+        "textPrimary/surfaceVariant": 8.378,
+        "textSecondary/surfaceVariant": 5.971,
+        "textMuted/surfaceVariant": 5.971,
+        "inputBorder/surfaceVariant": 5.166,
+        "focusRing/surfaceVariant": 5.015,
+        "onPrimary/primary": 8.184,
+        "onPrimary/primaryHover": 8.772,
+        "onPrimary/primaryPressed": 9.326,
+        "onSuccess/success": 10.89,
+        "onWarning/warning": 12.292,
+        "onError/error": 10.85,
+        "onInfo/info": 11.181,
+        "onSecondary/secondary": 7.329,
+        "onAccent/accent": 6.689
+      }
+    },
+    {
+      "id": "midnight-luxe",
+      "mode": "light",
+      "original": [
+        "#171717",
+        "#6B7280",
+        "#D4AF37",
+        "#F5E6C8"
+      ],
+      "tokens": {
+        "background": "#FBF8F1",
+        "backgroundSecondary": "#F1E8D7",
+        "surface": "#FFFFFF",
+        "surfaceVariant": "#F1E8D7",
+        "surfaceElevated": "#FFFFFF",
+        "surfaceOverlay": "#FFFFFF",
+        "primary": "#8C6B15",
+        "primaryHover": "#816315",
+        "primaryPressed": "#785C15",
+        "onPrimary": "#FFFFFF",
+        "secondary": "#6B7280",
+        "onSecondary": "#FFFFFF",
+        "accent": "#D4AF37",
+        "onAccent": "#141414",
+        "textPrimary": "#171717",
+        "textSecondary": "#4B5563",
+        "textMuted": "#4B5563",
+        "textDisabled": "#979797",
+        "textInverse": "#FFFFFF",
+        "textOnPrimary": "#FFFFFF",
+        "cardBackground": "#FFFFFF",
+        "inputBackground": "#FFFFFF",
+        "inputBorder": "#535353",
+        "inputFocusBorder": "#8C6B15",
+        "buttonBackground": "#8C6B15",
+        "buttonText": "#FFFFFF",
+        "iconPrimary": "#171717",
+        "iconSecondary": "#4B5563",
+        "divider": "#CCCCCC",
+        "border": "#535353",
+        "focusRing": "#8C6B15",
+        "selectedBackground": "#8C6B15",
+        "selectedText": "#FFFFFF",
+        "hoverBackground": "#F1E8D7",
+        "disabledBackground": "#F1E8D7",
+        "success": "#23603B",
+        "onSuccess": "#FFFFFF",
+        "warning": "#795006",
+        "onWarning": "#FFFFFF",
+        "error": "#A52626",
+        "onError": "#FFFFFF",
+        "info": "#185878",
+        "onInfo": "#FFFFFF",
+        "shadow": "#302A20",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#816315": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#785C15": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onAccent",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#979797": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#535353": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#CCCCCC": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#23603B": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#795006": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#A52626": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#185878": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#302A20": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 16.903,
+        "textSecondary/background": 7.125,
+        "textMuted/background": 7.125,
+        "inputBorder/background": 7.252,
+        "focusRing/background": 4.682,
+        "textPrimary/surface": 17.928,
+        "textSecondary/surface": 7.557,
+        "textMuted/surface": 7.557,
+        "inputBorder/surface": 7.692,
+        "focusRing/surface": 4.966,
+        "textPrimary/surfaceVariant": 14.738,
+        "textSecondary/surfaceVariant": 6.213,
+        "textMuted/surfaceVariant": 6.213,
+        "inputBorder/surfaceVariant": 6.324,
+        "focusRing/surfaceVariant": 4.082,
+        "onPrimary/primary": 4.966,
+        "onPrimary/primaryHover": 5.632,
+        "onPrimary/primaryPressed": 6.287,
+        "onSuccess/success": 7.479,
+        "onWarning/warning": 7.087,
+        "onError/error": 7.229,
+        "onInfo/info": 7.761,
+        "onSecondary/secondary": 4.834,
+        "onAccent/accent": 8.761
+      }
+    },
+    {
+      "id": "midnight-luxe",
+      "mode": "dark",
+      "original": [
+        "#171717",
+        "#6B7280",
+        "#D4AF37",
+        "#F5E6C8"
+      ],
+      "tokens": {
+        "background": "#171717",
+        "backgroundSecondary": "#303030",
+        "surface": "#242424",
+        "surfaceVariant": "#303030",
+        "surfaceElevated": "#242424",
+        "surfaceOverlay": "#242424",
+        "primary": "#D4AF37",
+        "primaryHover": "#D8B649",
+        "primaryPressed": "#DBBD59",
+        "onPrimary": "#171717",
+        "secondary": "#6B7280",
+        "onSecondary": "#FFFFFF",
+        "accent": "#F5E6C8",
+        "onAccent": "#141414",
+        "textPrimary": "#F5E6C8",
+        "textSecondary": "#D0C4AD",
+        "textMuted": "#D0C4AD",
+        "textDisabled": "#827B6E",
+        "textInverse": "#141414",
+        "textOnPrimary": "#171717",
+        "cardBackground": "#242424",
+        "inputBackground": "#242424",
+        "inputBorder": "#BFB49D",
+        "inputFocusBorder": "#D4AF37",
+        "buttonBackground": "#D4AF37",
+        "buttonText": "#171717",
+        "iconPrimary": "#F5E6C8",
+        "iconSecondary": "#D0C4AD",
+        "divider": "#524F48",
+        "border": "#BFB49D",
+        "focusRing": "#D4AF37",
+        "selectedBackground": "#D4AF37",
+        "selectedText": "#171717",
+        "hoverBackground": "#303030",
+        "disabledBackground": "#303030",
+        "success": "#97D5AA",
+        "onSuccess": "#141414",
+        "warning": "#F2CF80",
+        "onWarning": "#141414",
+        "error": "#FFB4AB",
+        "onError": "#141414",
+        "info": "#9CD1EC",
+        "onInfo": "#141414",
+        "shadow": "#000000",
+        "overlay": "#141414",
+        "scrim": "#141414"
+      },
+      "supplements": {
+        "#D8B649": {
+          "roles": [
+            "primaryHover"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#DBBD59": {
+          "roles": [
+            "primaryPressed"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#141414": {
+          "roles": [
+            "onAccent",
+            "textInverse",
+            "onSuccess",
+            "onWarning",
+            "onError",
+            "onInfo",
+            "overlay",
+            "scrim"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#827B6E": {
+          "roles": [
+            "textDisabled"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#BFB49D": {
+          "roles": [
+            "inputBorder",
+            "border"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#524F48": {
+          "roles": [
+            "divider"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#97D5AA": {
+          "roles": [
+            "success"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#F2CF80": {
+          "roles": [
+            "warning"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#FFB4AB": {
+          "roles": [
+            "error"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#9CD1EC": {
+          "roles": [
+            "info"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        },
+        "#000000": {
+          "roles": [
+            "shadow"
+          ],
+          "reason": "Semantic state, control separation or layered effect; preserves the original palette."
+        }
+      },
+      "contrast": {
+        "textPrimary/background": 14.543,
+        "textSecondary/background": 10.399,
+        "textMuted/background": 10.399,
+        "inputBorder/background": 8.734,
+        "focusRing/background": 8.526,
+        "textPrimary/surface": 12.592,
+        "textSecondary/surface": 9.004,
+        "textMuted/surface": 9.004,
+        "inputBorder/surface": 7.562,
+        "focusRing/surface": 7.382,
+        "textPrimary/surfaceVariant": 10.706,
+        "textSecondary/surfaceVariant": 7.656,
+        "textMuted/surfaceVariant": 7.656,
+        "inputBorder/surfaceVariant": 6.43,
+        "focusRing/surfaceVariant": 6.276,
+        "onPrimary/primary": 8.526,
+        "onPrimary/primaryHover": 9.141,
+        "onPrimary/primaryPressed": 9.762,
+        "onSuccess/success": 10.89,
+        "onWarning/warning": 12.292,
+        "onError/error": 10.85,
+        "onInfo/info": 11.181,
+        "onSecondary/secondary": 4.834,
+        "onAccent/accent": 14.944
+      }
+    }
+  ]
+}

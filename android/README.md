@@ -15,12 +15,33 @@ app. The native side only adds what a WebView can't do:
 | Back button, share sheet, clipboard, status bar colors, file picker | `MainActivity.kt` + `js/core/android.js` |
 | «انجام شد» / «بعداً یادم بنداز» on reminders; ticks applied while the app is closed (hidden page run as a job) | `PhoneActions.kt` + `applyPhoneActions` in `js/core/android.js` |
 | Home-screen widgets: today's date, month, planning desk (tickable), period ring | `Widgets.kt` + `widgetData` in `js/core/android.js` |
+| Encrypt/decrypt the offline finance vault with a non-exportable device key | `FinanceCrypto.kt` + guarded bridge methods in `MainActivity.kt` |
+| Receive future bank SMS as private drafts after opt-in | `BankSms.kt`, `BankSmsParser.kt`, and the finance bridge in `MainActivity.kt` |
 | Smoothness: splash, WebView pre-raster, lighter effects on weak phones (`html[data-lite]`) | `MainActivity.kt`, `css/theme.css`, `index.html` |
 
 Widgets and notification buttons never compute dates or items natively: the
 web app hands over ready data (days ahead), so they always agree with it.
 New bridge methods are only called when they exist (`typeof … === 'function'`),
 so app-file updates keep working on older APKs.
+
+## Bank SMS drafts
+
+Bank SMS capture starts after the user turns it on in Finance and grants Android's
+SMS permission. The APK processes future broadcasts locally. It recognizes
+structured transaction alerts with an amount and a credit or debit indicator.
+The draft keeps the SMS timestamp, amount and unit when stated, last four account
+digits and reported balance when available, and a source fingerprint for duplicate
+delivery. Unrecognized alerts, personal messages, and messages containing a
+one-time code are discarded. The queue is encrypted with Android Keystore and
+accessible from the account that enabled capture. Turning it off clears its local
+draft queue. The user reviews and confirms each draft in Finance before posting.
+
+Run the synthetic parser checks with `gradlew.bat :app:checkBankSmsParser`.
+Before distributing the APK, test permission grant, denial and revocation using
+the intended installer on real phones, and verify recognition with anonymized
+alerts from supported bank senders. Android restricts `RECEIVE_SMS` to grants
+allowed by the installer of record.
+[Android permission reference](https://developer.android.com/reference/android/Manifest.permission#RECEIVE_SMS)
 
 ## How it fits together
 

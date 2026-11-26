@@ -250,19 +250,22 @@ def authenticate_password(request, email, password):
 @transaction.atomic
 def google_sign_in(request, claims):
     """claims: a verified Google ID token (see views.GoogleLoginView)."""
-    subject, email = claims["sub"], (claims.get("email") or "").lower()
+    subject, email = claims.get("sub"), (claims.get("email") or "").lower()
+    if not isinstance(subject, str) or not 1 <= len(subject) <= 255:
+        raise ApiError("invalid_google_token", 401)
     link = OAuthAccount.objects.select_related("user").filter(provider="google", provider_user_id=subject).first()
     if link:
         user = link.user
         link.last_used_at = timezone.now()
         link.save(update_fields=["last_used_at"])
     else:
-        if not email or not claims.get("email_verified"):
+        if not email or claims.get("email_verified") is not True:
             raise ApiError("google_email_unverified", 400)
         user = User.objects.filter(email=email).first()
-        if user is None:
-            user = User.objects.create_user(email, None, email_verified_at=timezone.now())
-            provision_user(user, claims.get("given_name", ""), claims.get("family_name", ""))
+        if user is not None:
+            raise ApiError("google_account_exists", 409)
+        user = User.objects.create_user(email, None, email_verified_at=timezone.now())
+        provision_user(user, claims.get("given_name", "")[:60], claims.get("family_name", "")[:60])
         OAuthAccount.objects.create(user=user, provider="google", provider_user_id=subject, provider_email=email, last_used_at=timezone.now())
     if user.status == User.Status.SUSPENDED:
         raise ApiError("account_suspended", 403)
