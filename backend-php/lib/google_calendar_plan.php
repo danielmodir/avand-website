@@ -73,5 +73,13 @@ function tj_gcal_plan_collection(array $localRows, array $googleRows, array $lin
         }
         $plan[] = ['local_id' => null, 'google_id' => $gid, 'action' => 'create_local', 'etag' => $row['etag']];
     }
+    foreach ($plan as &$row) {
+        $lid = $row['local_id']; $gid = $row['google_id'];
+        $left = $lid !== null ? ($local[$lid] ?? null) : null;
+        $right = $gid !== null ? ($google[$gid]['event'] ?? null) : null;
+        $row['local_event'] = $left;
+        $row['google_event'] = $right;
+    }
+    unset($row);
     return ['actions' => $plan, 'skipped' => $skipped];
 }

@@ -668,7 +668,137 @@ function renderCalendarSettings(){
       <p class="sub">${t('weekendDaysHint')}</p>
       ${weekdayOrder().map(i => `<label class="settings-row"><span class="lbl">${weekdayFull(i)}</span><input type="checkbox" data-weekend="${i}" ${pref(WEEKEND_PREF_KEYS[i]) ? 'checked' : ''}></label>`).join('')}
     </fieldset>
+    ${renderGoogleCalendarSettings()}
   `;
+}
+
+const googleCalendarUi = { status:null, plan:null, busy:false, error:null, done:0 };
+const GOOGLE_AUTO_ACTIONS = new Set(['create_google', 'create_local', 'link_equal', 'update_google', 'update_local', 'unlink']);
+let googleCalendarBackgroundTimer = null;
+let googleCalendarPeriodicStarted = false;
+let googleCalendarLastConflict = '';
+
+function scheduleGoogleCalendarBackground(delay = 2500){
+  if(!Cloud.googleCalendarStatus || !Cloud.hasSession()) return;
+  if(googleCalendarBackgroundTimer) clearTimeout(googleCalendarBackgroundTimer);
+  googleCalendarBackgroundTimer = setTimeout(async () => {
+    googleCalendarBackgroundTimer = null;
+    if(!Cloud.hasSession() || state.guest || state.popupOpen || document.hidden || !navigator.onLine) return;
+    try {
+      const status = await Cloud.googleCalendarStatus();
+      googleCalendarUi.status = status;
+      if(!status.available || !status.connected) return;
+      await syncGoogleCalendar();
+      const conflicts = (googleCalendarUi.plan?.actions || []).filter(row => row.action.startsWith('confirm_') || row.action.startsWith('conflict_'));
+      const signature = conflicts.map(row => `${row.local_id}/${row.google_id}/${row.action}`).join('|');
+      if(signature && signature !== googleCalendarLastConflict && state.menuSubView !== 'settings-calendar') showToast(t('gcalNeedsChoice'));
+      googleCalendarLastConflict = signature;
+    } catch(err) { /* Offline and provider errors remain visible in Calendar Settings. */ }
+  }, delay);
+  if(!googleCalendarPeriodicStarted){
+    googleCalendarPeriodicStarted = true;
+    setInterval(() => scheduleGoogleCalendarBackground(), 10 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) scheduleGoogleCalendarBackground(); });
+  }
+}
+
+function googleCalendarEventSummary(event){
+  if(!event) return t('gcalDeleted');
+  const time = event.startTime ? ` ${event.startTime}${event.endTime ? '–' + event.endTime : ''}` : '';
+  return `${escapeHtml(event.title || '')} · ${escapeHtml(event.date || '')}${escapeHtml(time)}${event.description ? `<small>${escapeHtml(event.description.slice(0, 200))}</small>` : ''}`;
+}
+
+function googleCalendarConflict(row){
+  const action = row.action;
+  const choices = action === 'confirm_local_delete' ? [['keep_google','gcalRestoreLocal'],['delete_google','gcalDeleteGoogle']]
+    : action === 'confirm_google_delete' ? [['keep_local','gcalRestoreGoogle'],['delete_local','gcalDeleteLocal']]
+    : [['local','gcalKeepLocal'],['google','gcalKeepGoogle']];
+  return `<div class="gcal-conflict">
+    <strong>${t('gcalConflict_' + action)}</strong>
+    <div class="gcal-sides"><div><b>${t('gcalToojibee')}</b>${googleCalendarEventSummary(row.local_event)}</div>
+      <div><b>Google</b>${googleCalendarEventSummary(row.google_event)}</div></div>
+    <div class="gcal-choices">${choices.map(([value,label]) => `<button type="button" class="btn btn-outline" data-action="gcal-choice" data-local-id="${escapeAttr(row.local_id || '')}" data-google-id="${escapeAttr(row.google_id || '')}" data-choice="${value}">${t(label)}</button>`).join('')}</div>
+  </div>`;
+}
+
+function renderGoogleCalendarSettings(){
+  if(!Cloud.googleCalendarStatus || !Cloud.isConfigured() || state.guest) return '';
+  const status = googleCalendarUi.status;
+  const plan = googleCalendarUi.plan;
+  const actions = plan?.actions || [];
+  const automatic = actions.filter(row => GOOGLE_AUTO_ACTIONS.has(row.action));
+  const conflicts = actions.filter(row => row.action.startsWith('confirm_') || row.action.startsWith('conflict_'));
+  return `<section class="gcal-settings" aria-label="${escapeAttr(t('gcalTitle'))}">
+    <div class="section-title">${t('gcalTitle')}</div>
+    <p class="sub">${t('gcalPrimaryOnly')}</p>
+    ${googleCalendarUi.error ? `<p class="gcal-error" role="alert">${escapeHtml(googleCalendarUi.error)}</p>` : ''}
+    ${!status ? `<p class="sub">${t('gcalLoading')}</p>` : !status.available ? `<p class="sub">${t('gcalUnavailable')}</p>`
+      : !status.connected ? `<button type="button" class="btn btn-primary" data-action="gcal-connect" ${googleCalendarUi.busy?'disabled':''}>${t('gcalConnect')}</button>`
+      : `<p class="sub">${t('gcalConnected')}</p>
+         ${!plan ? `<p class="sub">${t('gcalLoading')}</p>` : `<p class="sub">${t('gcalPlanSummary').replace('{auto}',dig(automatic.length)).replace('{conflicts}',dig(conflicts.length)).replace('{skipped}',dig(plan.skipped.length))}</p>`}
+         ${googleCalendarUi.busy ? `<p class="sub" role="status">${t('gcalSyncing').replace('{n}',dig(googleCalendarUi.done))}</p>` : ''}
+         <div class="gcal-choices"><button type="button" class="btn btn-primary" data-action="gcal-sync" ${googleCalendarUi.busy || !automatic.length ? 'disabled' : ''}>${t('gcalSyncNow')}</button>
+         <button type="button" class="btn btn-outline" data-action="gcal-refresh" ${googleCalendarUi.busy ? 'disabled' : ''}>${t('gcalRefresh')}</button>
+         <button type="button" class="btn btn-outline" data-action="gcal-connect" ${googleCalendarUi.busy ? 'disabled' : ''}>${t('gcalReconnect')}</button></div>
+         ${conflicts.map(googleCalendarConflict).join('')}
+         <button type="button" class="btn btn-outline" data-action="gcal-disconnect" ${googleCalendarUi.busy ? 'disabled' : ''}>${t('gcalDisconnect')}</button>`}
+  </section>`;
+}
+
+async function refreshGoogleCalendar(){
+  if(!Cloud.googleCalendarStatus || !Cloud.hasSession()) return;
+  try {
+    googleCalendarUi.error = null;
+    googleCalendarUi.status = await Cloud.googleCalendarStatus();
+    googleCalendarUi.plan = googleCalendarUi.status.connected ? await Cloud.googleCalendarPreview() : null;
+  } catch(err) { googleCalendarUi.error = t('gcalLoadError'); }
+  if(state.menuSubView === 'settings-calendar') render();
+}
+
+async function syncGoogleCalendar(){
+  if(googleCalendarUi.busy) return;
+  googleCalendarUi.busy = true; googleCalendarUi.error = null; googleCalendarUi.done = 0;
+  try {
+    await Cloud.googleCalendarPrepare();
+    render();
+    for(let i=0; i<20000; i++) {
+      if(state.popupOpen || !Cloud.hasSession()) throw new Error('sync interrupted');
+      const plan = await Cloud.googleCalendarPreview();
+      googleCalendarUi.plan = plan;
+      const action = plan.actions.find(row => GOOGLE_AUTO_ACTIONS.has(row.action));
+      if(!action) break;
+      if(Cloud.syncPending()) throw new Error('local changes during sync');
+      await Cloud.googleCalendarApply(action, plan.version);
+      await Cloud.googleCalendarRefresh();
+      googleCalendarUi.done++;
+      if(state.menuSubView === 'settings-calendar') render();
+    }
+    googleCalendarUi.plan = await Cloud.googleCalendarPreview();
+    if(googleCalendarUi.plan.actions.some(row => GOOGLE_AUTO_ACTIONS.has(row.action)))
+      googleCalendarUi.error = t('gcalSyncError');
+  } catch(err) { googleCalendarUi.error = t('gcalSyncError'); }
+  Cloud.googleCalendarEnd();
+  googleCalendarUi.busy = false;
+  if(state.menuSubView === 'settings-calendar') render();
+}
+
+async function decideGoogleCalendar(localId, googleId, choice){
+  if(googleCalendarUi.busy) return;
+  googleCalendarUi.busy = true; googleCalendarUi.error = null;
+  try {
+    await Cloud.googleCalendarPrepare();
+    render();
+    const plan = await Cloud.googleCalendarPreview();
+    const action = plan.actions.find(row => row.local_id === localId && row.google_id === googleId);
+    if(!action) throw new Error('stale plan');
+    if(Cloud.syncPending()) throw new Error('local changes during sync');
+    await Cloud.googleCalendarApply(action, plan.version, choice);
+    await Cloud.googleCalendarRefresh();
+    googleCalendarUi.plan = await Cloud.googleCalendarPreview();
+  } catch(err) { googleCalendarUi.error = t('gcalSyncError'); }
+  Cloud.googleCalendarEnd();
+  googleCalendarUi.busy = false;
+  if(state.menuSubView === 'settings-calendar') render();
 }
 
 /* Fixed previews describe each identity independently of the current appearance. */

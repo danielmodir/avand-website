@@ -19,10 +19,14 @@ function tj_gcal_http(string $url, ?string $accessToken = null, ?array $form = n
 }
 
 function tj_gcal_access_token(int $userId): string {
-    $q = tj_db()->prepare('SELECT refresh_token_enc FROM tj_google_calendar_grants WHERE user_id=?');
+    $q = tj_db()->prepare('SELECT refresh_token_enc,access_token_enc,access_expires_at FROM tj_google_calendar_grants WHERE user_id=?');
     $q->execute([$userId]);
     $row = $q->fetch();
     if (!$row) tj_fail(409, 'google_calendar_not_connected');
+    if (!empty($row['access_token_enc']) && !empty($row['access_expires_at']) && $row['access_expires_at'] > tj_now()) {
+        $cached = tj_decrypt($row['access_token_enc']);
+        if (is_string($cached) && $cached !== '') return $cached;
+    }
     $refresh = tj_decrypt($row['refresh_token_enc']);
     if ($refresh === null) tj_fail(500, 'calendar_grant_unreadable');
     $cfg = tj_config();
@@ -32,6 +36,10 @@ function tj_gcal_access_token(int $userId): string {
     $token = $result['data']['access_token'] ?? null;
     if ($result['status'] !== 200 || !is_string($token) || $token === '')
         tj_fail(502, 'google_calendar_reconnect_required');
+    $expires = $result['data']['expires_in'] ?? null;
+    if (is_int($expires) && $expires > 120)
+        tj_db()->prepare('UPDATE tj_google_calendar_grants SET access_token_enc=?,access_expires_at=?,updated_at=? WHERE user_id=?')
+            ->execute([tj_encrypt($token), tj_now(min($expires, 3600) - 60), tj_now(), $userId]);
     return $token;
 }
 

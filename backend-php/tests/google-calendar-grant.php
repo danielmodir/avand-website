@@ -22,7 +22,7 @@ require __DIR__ . '/../lib/google_calendar.php';
 function check(bool $ok, string $why): void { if (!$ok) throw new RuntimeException($why); }
 try {
     $db = tj_db();
-    check((int)$db->query('SELECT MAX(version) FROM tj_schema')->fetchColumn() === 30, 'schema version');
+    check((int)$db->query('SELECT MAX(version) FROM tj_schema')->fetchColumn() === 31, 'schema version');
     check($db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='tj_google_calendar_links'")->fetchColumn() === 'tj_google_calendar_links', 'link table');
     $db->prepare('INSERT INTO tj_users (email,password_hash,public_id,display_id,created_at,updated_at) VALUES (?,?,?,?,?,?)')
        ->execute(['calendar@example.test', '!', bin2hex(random_bytes(16)), 'TJ-GCAL1234', tj_now(), tj_now()]);
@@ -44,9 +44,10 @@ try {
     check((int)$taken['user_id'] === $uid && tj_decrypt($taken['verifier_enc']) === $verifier, 'bound flow');
     check(tj_google_calendar_take_flow($state) === null, 'one-use state');
     check(tj_google_calendar_take_flow('invalid') === null, 'invalid state');
-    tj_google_calendar_save_grant($uid, 'first-refresh');
+    tj_google_calendar_save_grant($uid, 'first-refresh', 'short-lived-access', 3600);
     $stored = $db->query('SELECT refresh_token_enc FROM tj_google_calendar_grants')->fetchColumn();
     check($stored !== 'first-refresh' && tj_decrypt($stored) === 'first-refresh', 'encrypted grant persisted');
+    check(tj_gcal_access_token($uid) === 'short-lived-access', 'cached access token used');
     tj_google_calendar_save_grant($uid, 'new-refresh');
     check((int)$db->query('SELECT COUNT(*) FROM tj_google_calendar_grants')->fetchColumn() === 1, 'grant updated in place');
     check(tj_decrypt($db->query('SELECT refresh_token_enc FROM tj_google_calendar_grants')->fetchColumn()) === 'new-refresh', 'new grant persisted');

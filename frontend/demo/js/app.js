@@ -57,6 +57,8 @@ async function loadFromCloud(){
   state.tasks = data.tasks.map(t => ({ ...t, subtasks: (t.subtasks || []).map(s => normalizeSubtask(s, t)) }));
   state.habits = data.habits;
   state.events = data.events;
+  if(Cloud.noteLoadedSnapshot) Cloud.noteLoadedSnapshot();
+  if(Cloud.googleCalendarStatus) scheduleGoogleCalendarBackground();
 }
 
 let sessionJustExpired = false; // set true for the duration of a boot() that onSessionExpired fired during
@@ -171,6 +173,13 @@ async function boot(){
   handleEmailLink();
   openAuthFromLink();
   if(!state.guest && !state.bootError){ acceptPendingInvite(); loadGroups().then(joinPendingGroup); loadSharedPeriods(); startReminders(); takeReminderFromLink(); refreshContactUnread(); welcomeChain(); takeItemFromLink(); }
+  if(!state.guest && /[#&]calendar_google=/.test(location.hash)){
+    const googleReturn = /[#&]calendar_google=([^&]+)/.exec(location.hash)?.[1];
+    history.replaceState(null, '', location.pathname + location.search);
+    state.menuPanelOpen = true; state.menuSubView = 'settings-calendar'; render();
+    await refreshGoogleCalendar();
+    if(googleReturn === 'connected' && googleCalendarUi.status?.connected) syncGoogleCalendar();
+  }
   else if(state.guest && (pendingInvite() || pendingGroup()) && !state.authOpen) openAuth('signup', pendingInvite() ? 'inviteSignInFirst' : 'groupSignInFirst');
   trackReturn(); // opt-in anonymous "came back on day 1/7/30" (js/core/stats.js)
   // The installable web app's offline copy (sw.js); the Android app has its own files.

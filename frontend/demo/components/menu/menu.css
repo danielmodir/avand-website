@@ -315,3 +315,13 @@
 .weekend-settings{ border:0; padding:0; margin:var(--space-4) 0; min-width:0; }
 .weekend-settings .settings-row{ min-height:44px; cursor:pointer; }
 .weekend-settings input{ accent-color:var(--primary); width:20px; height:20px; }
+.gcal-settings{margin-top:24px;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--card)}
+.gcal-settings .section-title{margin-top:0}
+.gcal-error{color:var(--danger);margin:10px 0}
+.gcal-choices{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.gcal-choices .btn{min-width:0;white-space:normal}
+.gcal-conflict{border-top:1px solid var(--border);padding:16px 0}
+.gcal-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.gcal-sides>div{background:var(--bg-soft);border-radius:12px;padding:10px;overflow-wrap:anywhere}
+.gcal-sides b,.gcal-sides small{display:block;margin-bottom:4px}
+@media(max-width:600px){.gcal-sides{grid-template-columns:1fr}}

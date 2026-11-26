@@ -474,8 +474,26 @@ document.getElementById('device').addEventListener('click', (e) => {
   }
   if(action === 'menu-nav'){
     state.menuSubView = el.dataset.sub; render();
+    if(state.menuSubView === 'settings-calendar') refreshGoogleCalendar();
     if(state.menuSubView === 'friends') refreshConnections();
     if(state.menuSubView === 'ai-connect') refreshMcpLink();
+    return;
+  }
+  if(action === 'gcal-connect'){
+    Cloud.googleCalendarConnect().then(result => { location.href = result.auth_url; })
+      .catch(() => { googleCalendarUi.error = t('gcalLoadError'); render(); });
+    return;
+  }
+  if(action === 'gcal-refresh'){ refreshGoogleCalendar(); return; }
+  if(action === 'gcal-sync'){ syncGoogleCalendar(); return; }
+  if(action === 'gcal-choice'){
+    decideGoogleCalendar(el.dataset.localId || null, el.dataset.googleId || null, el.dataset.choice);
+    return;
+  }
+  if(action === 'gcal-disconnect'){
+    if(!confirm(t('gcalDisconnectConfirm'))) return;
+    Cloud.googleCalendarDisconnect().then(refreshGoogleCalendar)
+      .catch(() => { googleCalendarUi.error = t('gcalLoadError'); render(); });
     return;
   }
   if(action === 'menu-back'){

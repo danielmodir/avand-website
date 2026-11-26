@@ -43,6 +43,8 @@ outside Git, and register that exact callback in Google Cloud. The host's
 `app_url` determines where the callback returns. Schema v29 stores only an
 encrypted refresh token; schema v30 adds per-event links and last agreed
 projections. Neither token nor links are part of `/sync` or a portable backup.
+Schema v31 caches the short-lived access token encrypted until shortly before
+expiration, so the initial merge does not refresh it for every event.
 The preview reads all primary-calendar pages and does not write anything.
 The apply endpoint repeats the plan check, locks the local document, and
 uses Google event etags for changes. The app must still provide the conflict

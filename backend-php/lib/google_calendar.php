@@ -120,23 +120,28 @@ function tj_google_calendar_callback(): void {
     $scopes = explode(' ', (string)($tokens['scope'] ?? ''));
     if (!is_string($refresh) || $refresh === '' || strlen($refresh) > 4096 || !in_array(TJ_CALENDAR_SCOPE, $scopes, true))
         tj_google_redirect($cfg['app_url'] . '#calendar_google=permission_missing');
-    tj_google_calendar_save_grant((int)$flow['user_id'], $refresh);
+    tj_google_calendar_save_grant((int)$flow['user_id'], $refresh,
+        is_string($tokens['access_token'] ?? null) ? $tokens['access_token'] : null,
+        is_int($tokens['expires_in'] ?? null) ? $tokens['expires_in'] : null);
     tj_google_redirect($cfg['app_url'] . '#calendar_google=connected');
 }
 
-function tj_google_calendar_save_grant(int $uid, string $refresh): void {
+function tj_google_calendar_save_grant(int $uid, string $refresh, ?string $access = null, ?int $expiresIn = null): void {
     $token = tj_encrypt($refresh);
+    $cached = is_string($access) && $access !== '' && strlen($access) <= 4096 && $expiresIn !== null && $expiresIn > 120;
+    $accessEnc = $cached ? tj_encrypt($access) : null;
+    $expiresAt = $cached ? tj_now(min($expiresIn, 3600) - 60) : null;
     $db = tj_db();
     tj_tx_begin($db);
     try {
         $q = $db->prepare('SELECT user_id FROM tj_google_calendar_grants WHERE user_id=?');
         $q->execute([$uid]);
         if ($q->fetch())
-            $db->prepare('UPDATE tj_google_calendar_grants SET refresh_token_enc=?,updated_at=? WHERE user_id=?')
-               ->execute([$token, tj_now(), $uid]);
+            $db->prepare('UPDATE tj_google_calendar_grants SET refresh_token_enc=?,access_token_enc=?,access_expires_at=?,updated_at=? WHERE user_id=?')
+               ->execute([$token, $accessEnc, $expiresAt, tj_now(), $uid]);
         else
-            $db->prepare('INSERT INTO tj_google_calendar_grants (user_id,refresh_token_enc,connected_at,updated_at) VALUES (?,?,?,?)')
-               ->execute([$uid, $token, tj_now(), tj_now()]);
+            $db->prepare('INSERT INTO tj_google_calendar_grants (user_id,refresh_token_enc,access_token_enc,access_expires_at,connected_at,updated_at) VALUES (?,?,?,?,?,?)')
+               ->execute([$uid, $token, $accessEnc, $expiresAt, tj_now(), tj_now()]);
         tj_tx_commit($db);
     } catch (Throwable $e) { tj_tx_rollback($db); throw $e; }
 }

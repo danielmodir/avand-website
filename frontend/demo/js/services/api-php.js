@@ -210,8 +210,17 @@
     return { profile: state.profile, settings: state.settings, tasks: state.tasks.filter(own), habits: state.habits.filter(own), events: state.events.filter(own), period: period };
   }
 
+  var calendarSyncActive = false;
+  var calendarSyncSnapshot = null;
+  var lastSyncedSnapshot = null;
+
   function schedulePush() {
     if (!loaded || !hasSession()) return;
+    if (calendarSyncActive) {
+      if (JSON.stringify(snapshot()) !== calendarSyncSnapshot) dirty = true;
+      return;
+    }
+    if (!dirty && lastSyncedSnapshot !== null && JSON.stringify(snapshot()) === lastSyncedSnapshot) return;
     dirty = true;
     clearTimeout(pushTimer);
     pushTimer = setTimeout(function () { saveCache(true); flush().catch(onSaveError); }, 800);
@@ -235,6 +244,11 @@
         version = (await request('PUT', '/sync', { version: version, data: snapshot() })).version;
       }
       saveCache(dirty); // still "not sent" if something changed meanwhile
+      if (!dirty) lastSyncedSnapshot = JSON.stringify(snapshot());
+      if (!dirty && calendarEventDirty && global.scheduleGoogleCalendarBackground) {
+        calendarEventDirty = false;
+        global.scheduleGoogleCalendarBackground();
+      }
     })();
     try { await pushing; } finally { pushing = null; }
   }
@@ -260,6 +274,9 @@
 
   // Everything the app saves goes through one debounced document write.
   function queued() { schedulePush(); return Promise.resolve(); }
+  var calendarEventDirty = false;
+  function queuedEvent() { calendarEventDirty = true; return queued(); }
+  function queuedDeleteEvent(id) { calendarEventDirty = true; return queuedDelete(id); }
 
   /* The account's own fields as the server last confirmed them. */
   var server = { username: '', gender: '', dob: '' };
@@ -326,6 +343,8 @@
     state.habits = (data.habits || []).concat(inGroups('habits'));
     state.events = (data.events || []).concat(inGroups('events'));
     version = doc.version;
+    lastSyncedSnapshot = JSON.stringify(snapshot());
+    if (calendarSyncActive) calendarSyncSnapshot = JSON.stringify(snapshot());
     saveCache(false);
     if (global.render) global.render();
   }
@@ -343,6 +362,29 @@
     uuid: base.uuid, isConfigured: function () { return true; }, hasSession: hasSession,
     // Changes made here that haven't reached the server yet (the connection dot, app-error.js).
     syncPending: function () { return loaded && dirty && hasSession(); },
+    googleCalendarStatus: function () { return request('GET', '/calendar/google/status'); },
+    googleCalendarConnect: function () { return request('POST', '/calendar/google/connect', {}); },
+    googleCalendarPreview: function () { return request('GET', '/calendar/google/preview'); },
+    googleCalendarApply: function (action, version, choice) {
+      return request('POST', '/calendar/google/apply', {
+        version: version, local_id: action.local_id, google_id: action.google_id,
+        choice: choice || undefined,
+      });
+    },
+    googleCalendarDisconnect: function () { return request('DELETE', '/calendar/google'); },
+    googleCalendarPrepare: async function () {
+      await flush();
+      if (dirty || pushing) throw ApiError(409, { error: 'sync_pending' });
+      clearTimeout(pushTimer);
+      calendarSyncActive = true;
+      calendarSyncSnapshot = JSON.stringify(snapshot());
+    },
+    googleCalendarEnd: function () {
+      calendarSyncActive = false; calendarSyncSnapshot = null;
+      if (dirty) schedulePush();
+    },
+    googleCalendarRefresh: pullIfNewer,
+    noteLoadedSnapshot: function () { if (!dirty) lastSyncedSnapshot = JSON.stringify(snapshot()); },
     signUp: signUp, signIn: signIn, signOut: signOut, verifyEmailCode: verifyEmailCode,
     resendVerifyCode: function (email) { return request('POST', '/auth/email/code/resend', { email: email }, { auth: false }); },
     signInWithGoogle: base.signInWithGoogle,
@@ -368,7 +410,7 @@
     syncNow: function () { clearTimeout(pushTimer); if (dirty) saveCache(true); return flush(); },
     onStateChanged: schedulePush,
     saveTask: queued, deleteTask: queuedDelete, saveHabit: queued, deleteHabit: queuedDelete,
-    saveEvent: queued, deleteEvent: queuedDelete, saveProfile: saveProfile, saveSettings: queued,
+    saveEvent: queuedEvent, deleteEvent: queuedDeleteEvent, saveProfile: saveProfile, saveSettings: queued,
     // The period setup lives in the synced document too: saving it sends the document.
     savePeriod: queued,
     usernameAvailable: function (name) { return request('GET', '/me/profile/username-available?username=' + encodeURIComponent(name)).then(function (r) { return !!r.available; }); },

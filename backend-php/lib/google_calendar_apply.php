@@ -34,6 +34,13 @@ function tj_gcal_remote_checked(string $token, string $id, ?string $etag): array
     return $response['data'];
 }
 
+function tj_gcal_deleted_checked(string $token, string $id): void {
+    $response = tj_gcal_event_request('GET', $token, $id);
+    if (in_array($response['status'], [404, 410], true)) return;
+    if ($response['status'] === 200 && ($response['data']['status'] ?? '') === 'cancelled') return;
+    throw new DomainException('google_calendar_stale');
+}
+
 function tj_gcal_write_checked(string $method, string $token, ?string $id,
     ?array $resource, ?string $etag): array {
     $response = tj_gcal_event_request($method, $token, $id, $resource, $etag);
@@ -141,6 +148,7 @@ function tj_google_calendar_apply(): void {
             tj_gcal_write_checked('DELETE', $token, $googleId, null, $action['etag']);
             $db->prepare('DELETE FROM tj_google_calendar_links WHERE user_id=? AND local_id=?')->execute([$userId, $localId]);
         } elseif ($kind === 'confirm_google_delete' && $choice === 'delete_local') {
+            tj_gcal_deleted_checked($token, $googleId);
             $document->events = array_values(array_filter($document->events,
                 fn($row) => ($row->id ?? null) !== $localId));
             $newVersion++;

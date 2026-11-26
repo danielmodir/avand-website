@@ -43,6 +43,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   contact, date-picker, day-sheet, groups, items, menu, notices, period,
   popup, toolbar, tour, workspace. The workspace now includes a separate
   Habit Tracker pane, still using the existing habit rows and records.
+  Calendar settings in components/menu/menu.js now hosts Google connection,
+  preview, automatic merge and manual conflict decisions (PHP backend only).
 - PHP lib: auth, sync (the user's synced document), google_calendar (separate
   Calendar grant and later event sync), google_calendar_event (safe event
   projection), google_calendar_diff (pure three-way comparison),
@@ -67,15 +69,28 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-22.6
+- Demo asset version: 2026-11-26.1
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
-- PHP schema: v30
+- PHP schema: v31
 - Django latest migrations: core 0012, planning 0012, social 0005,
   notifications 0003, calendar_data 0002, period 0001, finance 0001
 - Marketing CSS cache version: 2026-11-23.1
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-26 — Google Calendar token cache — PHP schema v31 stores the
+  short-lived access token encrypted with a safety margin before expiry.
+  The first merge now reuses it instead of refreshing OAuth for each event.
+
+- 2026-11-26 — Google Calendar app controls — the PHP client exposes
+  status/consent/preview/apply/disconnect; Calendar Settings shows both
+  event versions for deletion and competing-edit decisions. The first
+  successful connection starts automatic merge; a foreground check runs
+  later and local event saves schedule another pass. Unchanged renders no
+  longer write the whole PHP sync document, and a user edit during Calendar
+  sync stops further apply actions. Unsupported recurrence stays local.
+  Live service and host configuration and publication remain pending.
 
 - 2026-11-26 — Google Calendar apply API — added one-action execution for
   new/equal/changed events using local document version checks and Google

@@ -551,6 +551,13 @@ function tj_migrate(PDO $db): void {
         )$tail");
         $db->exec('INSERT INTO tj_schema (version) VALUES (30)');
     }
+    if ($v < 31) {
+        // Avoid refreshing the OAuth access token for every event in the
+        // first merge. Both tokens stay encrypted and outside /sync.
+        $db->exec('ALTER TABLE tj_google_calendar_grants ADD COLUMN access_token_enc TEXT NULL');
+        $db->exec('ALTER TABLE tj_google_calendar_grants ADD COLUMN access_expires_at DATETIME NULL');
+        $db->exec('INSERT INTO tj_schema (version) VALUES (31)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,
