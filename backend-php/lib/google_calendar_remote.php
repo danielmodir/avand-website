@@ -65,3 +65,35 @@ function tj_gcal_remote_events(string $accessToken): array {
         return $result['data'];
     });
 }
+
+function tj_gcal_event_url(?string $id = null): string {
+    $url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+    return $id === null ? $url : $url . '/' . rawurlencode($id);
+}
+
+/* The caller supplies the current Google etag for every mutation of an
+ * existing event. A 412 response means the preview is stale. */
+function tj_gcal_event_request(string $method, string $accessToken, ?string $id = null,
+    ?array $resource = null, ?string $etag = null): array {
+    if (!in_array($method, ['GET', 'POST', 'PATCH', 'DELETE'], true))
+        throw new InvalidArgumentException('google_calendar_bad_method');
+    $curl = curl_init(tj_gcal_event_url($id));
+    $headers = ['Accept: application/json', 'Authorization: Bearer ' . $accessToken];
+    if ($resource !== null) $headers[] = 'Content-Type: application/json; charset=utf-8';
+    if ($etag !== null) $headers[] = 'If-Match: ' . $etag;
+    curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20,
+        CURLOPT_PROTOCOLS => CURLPROTO_HTTPS, CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_CUSTOMREQUEST => $method]);
+    if ($resource !== null) curl_setopt($curl, CURLOPT_POSTFIELDS,
+        json_encode($resource, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+    $body = curl_exec($curl);
+    $status = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
+    $data = is_string($body) ? json_decode($body, true) : null;
+    return ['status' => $status, 'data' => is_array($data) ? $data : []];
+}
+
+function tj_gcal_stable_id(int $userId, string $localId): string {
+    // Google permits base32hex lowercase IDs; SHA-256 hex is a subset.
+    return 'tj' . hash('sha256', $userId . ':' . $localId);
+}

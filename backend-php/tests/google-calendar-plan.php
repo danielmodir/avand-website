@@ -43,4 +43,8 @@ $match = tj_gcal_plan_collection([$one], [remote($one, 'g-one')], []);
 equals(actions($match), ['one/g-one' => 'link_equal'], 'reconnect by stable ID');
 $missingLocal = tj_gcal_plan_collection([], [remote($one, 'g-one')], []);
 equals(actions($missingLocal), ['one/g-one' => 'confirm_local_delete'], 'private ID with missing local event requires confirmation');
+$duplicateMarker = tj_gcal_plan_collection([$one], [remote($one, 'g-old'), remote($one, 'g-restored')],
+    [['local_id' => 'one', 'google_id' => 'g-old', 'base' => tj_gcal_local_event($one)]]);
+equals(actions($duplicateMarker), ['one/g-old' => 'none'], 'second marker never imports duplicate');
+equals($duplicateMarker['skipped'][0]['reason'], 'linked_elsewhere', 'duplicate marker surfaced');
 echo "Google Calendar collection plan: PASS\n";

@@ -26,6 +26,7 @@ client: `frontend/demo/js/services/api-php.js`).
 | GET / PUT | /sync | the account's document `{version, data}`; PUT with a stale version → 409 + current copy |
 | GET | /calendar/google/status | Availability and connection status, never tokens |
 | GET | /calendar/google/preview | Read-only merge plan for primary-calendar events; includes current `/sync` version and conflict actions |
+| POST | /calendar/google/apply | Apply one current plan action with `{version, local_id, google_id, choice?}`; deletion and competing edits require an explicit choice |
 | POST | /calendar/google/connect | Signed-in user receives a one-use Google consent URL |
 | GET | /calendar/google/callback | Google returns to the API; encrypted grant is saved for that user |
 | DELETE | /calendar/google | Revoke and remove the user's grant |
@@ -43,8 +44,10 @@ outside Git, and register that exact callback in Google Cloud. The host's
 encrypted refresh token; schema v30 adds per-event links and last agreed
 projections. Neither token nor links are part of `/sync` or a portable backup.
 The preview reads all primary-calendar pages and does not write anything.
-The routes do not synchronize events until the apply engine and conflict UI
-are implemented and tested.
+The apply endpoint repeats the plan check, locks the local document, and
+uses Google event etags for changes. The app must still provide the conflict
+UI and refresh its local document after an import; live OAuth, Google writes
+and host deployment remain to be tested.
 
 ## Account ids
 The numeric row id never leaves the server. The API returns `public_id`

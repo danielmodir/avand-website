@@ -27,6 +27,7 @@ require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/auth.php';
 require __DIR__ . '/../lib/google_oauth.php';
 require __DIR__ . '/../lib/google_calendar.php';
+require __DIR__ . '/../lib/google_calendar_apply.php';
 require __DIR__ . '/../lib/sync.php';
 require __DIR__ . '/../lib/task-shares.php';
 require __DIR__ . '/../lib/mail.php';
@@ -63,6 +64,7 @@ $routes = [
     'POST /auth/google/exchange' => 'tj_google_exchange',
     'GET /calendar/google/status' => 'tj_google_calendar_status',
     'GET /calendar/google/preview' => 'tj_google_calendar_preview',
+    'POST /calendar/google/apply' => 'tj_google_calendar_apply',
     'POST /calendar/google/connect' => 'tj_google_calendar_connect',
     'GET /calendar/google/callback' => 'tj_google_calendar_callback',
     'DELETE /calendar/google' => 'tj_google_calendar_disconnect',

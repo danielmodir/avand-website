@@ -47,7 +47,8 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   Calendar grant and later event sync), google_calendar_event (safe event
   projection), google_calendar_diff (pure three-way comparison),
   google_calendar_plan (read-only collection merge), google_calendar_remote
-  (Google API transport and paginated primary-calendar read), social, groups, push,
+  (Google API transport and paginated primary-calendar read),
+  google_calendar_apply (one-action version/etag checked execution), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
 - Django apps: core, calendar_data, planning, period, social,
@@ -75,6 +76,12 @@ Update these with every change.
 - Android source: 1.4.1 (versionCode 6; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-26 — Google Calendar apply API — added one-action execution for
+  new/equal/changed events using local document version checks and Google
+  event etags. Deletion or competing edits require an explicit choice.
+  The web app conflict UI, end-to-end live Google test and deployment remain
+  pending; the endpoint is not exposed to users yet.
 
 - 2026-11-25 — Google Calendar deletion guard — a Google event carrying a
   Toojibee private ID cannot silently recreate a locally deleted event when

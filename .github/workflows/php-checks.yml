@@ -29,3 +29,5 @@ jobs:
         run: php backend-php/tests/google-calendar-plan.php
       - name: Test Google Calendar remote pagination
         run: php backend-php/tests/google-calendar-remote.php
+      - name: Test Google Calendar apply rules
+        run: php backend-php/tests/google-calendar-apply.php

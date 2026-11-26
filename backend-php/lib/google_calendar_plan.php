@@ -18,6 +18,11 @@ function tj_gcal_plan_collection(array $localRows, array $googleRows, array $lin
     foreach ($googleRows as $row) {
         if (!is_array($row) || !is_string($row['id'] ?? null) || $row['id'] === '') continue;
         if (($row['status'] ?? '') === 'cancelled') continue;
+        if (!is_string($row['etag'] ?? null) || $row['etag'] === '') {
+            $unsupportedGoogle[$row['id']] = true;
+            $skipped[] = ['side' => 'google', 'id' => $row['id'], 'reason' => 'missing_google_etag'];
+            continue;
+        }
         try { $google[$row['id']] = ['event' => tj_gcal_google_event($row),
             'toojibee_id' => $row['extendedProperties']['private']['toojibeeId'] ?? null,
             'etag' => $row['etag'] ?? null]; }
@@ -60,7 +65,13 @@ function tj_gcal_plan_collection(array $localRows, array $googleRows, array $lin
     }
     foreach ($local as $lid => $event) if (!isset($usedLocal[$lid]))
         $plan[] = ['local_id' => $lid, 'google_id' => null, 'action' => 'create_google', 'etag' => null];
-    foreach ($google as $gid => $row) if (!isset($usedGoogle[$gid]))
+    foreach ($google as $gid => $row) if (!isset($usedGoogle[$gid])) {
+        $marker = $row['toojibee_id'];
+        if (is_string($marker) && isset($usedLocal[$marker])) {
+            $skipped[] = ['side' => 'google', 'id' => $gid, 'reason' => 'linked_elsewhere'];
+            continue;
+        }
         $plan[] = ['local_id' => null, 'google_id' => $gid, 'action' => 'create_local', 'etag' => $row['etag']];
+    }
     return ['actions' => $plan, 'skipped' => $skipped];
 }
