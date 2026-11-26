@@ -784,6 +784,7 @@ async function syncGoogleCalendar(){
 
 async function decideGoogleCalendar(localId, googleId, choice){
   if(googleCalendarUi.busy) return;
+  const shown = googleCalendarUi.plan?.actions.find(row => row.local_id === localId && row.google_id === googleId);
   googleCalendarUi.busy = true; googleCalendarUi.error = null;
   try {
     await Cloud.googleCalendarPrepare();
@@ -791,6 +792,10 @@ async function decideGoogleCalendar(localId, googleId, choice){
     const plan = await Cloud.googleCalendarPreview();
     const action = plan.actions.find(row => row.local_id === localId && row.google_id === googleId);
     if(!action) throw new Error('stale plan');
+    if(!shown || JSON.stringify(shown) !== JSON.stringify(action)) {
+      googleCalendarUi.plan = plan;
+      throw new Error('changed since displayed');
+    }
     if(Cloud.syncPending()) throw new Error('local changes during sync');
     await Cloud.googleCalendarApply(action, plan.version, choice);
     await Cloud.googleCalendarRefresh();

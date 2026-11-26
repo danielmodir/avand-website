@@ -48,3 +48,8 @@ $duplicateMarker = tj_gcal_plan_collection([$one], [remote($one, 'g-old'), remot
 equals(actions($duplicateMarker), ['one/g-old' => 'none'], 'second marker never imports duplicate');
 equals($duplicateMarker['skipped'][0]['reason'], 'linked_elsewhere', 'duplicate marker surfaced');
 echo "Google Calendar collection plan: PASS\n";
+$series = remote($one, 'series');
+$exception = ['id' => 'exception', 'status' => 'cancelled', 'recurringEventId' => 'series'];
+$withException = tj_gcal_plan_collection([$one], [$series, $exception],
+    [['local_id' => 'one', 'google_id' => 'series', 'base' => tj_gcal_local_event($one)]]);
+equals(actions($withException), ['one/series' => 'unsupported_link'], 'series with exception is protected');

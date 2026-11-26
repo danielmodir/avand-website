@@ -100,6 +100,8 @@ function tj_google_calendar_apply(): void {
     $plan = tj_gcal_plan_collection($local, $remote, $links);
     $action = tj_gcal_matching_action($plan, $localId, $googleId);
     if ($action === null || !tj_gcal_action_allowed($action['action'], $choice)) tj_fail(409, 'google_calendar_plan_changed');
+    if (($body['expected_action'] ?? null) !== $action['action']
+        || ($body['expected_etag'] ?? null) !== $action['etag']) tj_fail(409, 'google_calendar_plan_changed');
     $kind = $action['action'];
     $localRow = null; $remoteRow = null;
     foreach ($local as $row) if (($row['id'] ?? null) === $localId) { $localRow = $row; break; }

@@ -10,6 +10,9 @@ require_once __DIR__ . '/google_calendar_event.php';
 function tj_gcal_plan_collection(array $localRows, array $googleRows, array $links): array {
     $local = []; $google = []; $skipped = []; $plan = [];
     $unsupportedLocal = []; $unsupportedGoogle = [];
+    $exceptionParents = [];
+    foreach ($googleRows as $row) if (is_array($row) && is_string($row['recurringEventId'] ?? null))
+        $exceptionParents[$row['recurringEventId']] = true;
     foreach ($localRows as $row) {
         if (!is_array($row) || !is_string($row['id'] ?? null) || $row['id'] === '') continue;
         try { $local[$row['id']] = tj_gcal_local_event($row); }
@@ -18,6 +21,11 @@ function tj_gcal_plan_collection(array $localRows, array $googleRows, array $lin
     foreach ($googleRows as $row) {
         if (!is_array($row) || !is_string($row['id'] ?? null) || $row['id'] === '') continue;
         if (($row['status'] ?? '') === 'cancelled') continue;
+        if (isset($exceptionParents[$row['id']])) {
+            $unsupportedGoogle[$row['id']] = true;
+            $skipped[] = ['side' => 'google', 'id' => $row['id'], 'reason' => 'unsupported_google_recurrence'];
+            continue;
+        }
         if (!is_string($row['etag'] ?? null) || $row['etag'] === '') {
             $unsupportedGoogle[$row['id']] = true;
             $skipped[] = ['side' => 'google', 'id' => $row['id'], 'reason' => 'missing_google_etag'];

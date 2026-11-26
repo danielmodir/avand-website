@@ -79,6 +79,13 @@ Update these with every change.
 
 ## Log (newest first)
 
+- 2026-11-26 — Calendar decision freshness — apply requires the expected
+  action and Google etag; the UI rejects a manual decision if the displayed
+  event versions changed during refresh. Live OAuth and deployment remain blocked
+  by unavailable account-browser control.
+  Series with Google exceptions are excluded as a whole. The handoff prompt
+  is in docs/next-version/GOOGLE-CALENDAR-HANDOFF.md.
+
 - 2026-11-26 — Google Calendar token cache — PHP schema v31 stores the
   short-lived access token encrypted with a safety margin before expiry.
   The first merge now reuses it instead of refreshing OAuth for each event.

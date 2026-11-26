@@ -368,6 +368,7 @@
     googleCalendarApply: function (action, version, choice) {
       return request('POST', '/calendar/google/apply', {
         version: version, local_id: action.local_id, google_id: action.google_id,
+        expected_action: action.action, expected_etag: action.etag,
         choice: choice || undefined,
       });
     },
