@@ -577,6 +577,31 @@ function tj_migrate(PDO $db): void {
         }
         $db->exec('INSERT INTO tj_schema (version) VALUES (30)');
     }
+    if ($v < 31) {
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_finance_budgets (
+            id $id, user_id $fk NOT NULL, client_id VARCHAR(80) NOT NULL,
+            name VARCHAR(100) NOT NULL, amount_toman BIGINT NOT NULL,
+            category_id $fk NULL, period VARCHAR(7) NOT NULL,
+            start_date DATE NOT NULL, end_date DATE NULL, rollover SMALLINT NOT NULL DEFAULT 0,
+            UNIQUE(user_id, client_id),
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES tj_finance_categories(id) ON DELETE CASCADE,
+            CHECK (amount_toman > 0)
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (31)');
+    }
+    if ($v < 32) {
+        $db->exec("CREATE TABLE IF NOT EXISTS tj_university_records (
+            id $id,
+            user_id $fk NOT NULL,
+            kind VARCHAR(16) NOT NULL,
+            client_id VARCHAR(80) NOT NULL,
+            data $text NOT NULL,
+            UNIQUE (user_id,kind,client_id),
+            FOREIGN KEY (user_id) REFERENCES tj_users(id) ON DELETE CASCADE
+        )$tail");
+        $db->exec('INSERT INTO tj_schema (version) VALUES (32)');
+    }
 }
 
 /* data/articles/*.md: a front matter block (lang, slug, title, summary,

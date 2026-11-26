@@ -16,6 +16,7 @@ object FinanceCrypto {
     private const val MAX_PLAIN = 2_000_000
     private const val MAX_CIPHER = 3_000_000
 
+    @Synchronized
     private fun key(create: Boolean): SecretKey? {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (store.getKey(ALIAS, null) as? SecretKey)?.let { return it }

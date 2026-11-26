@@ -771,6 +771,8 @@
     financeState: function () { return request('GET', '/finance/state'); },
     financeCreateAccount: function (body) { return request('POST', '/finance/accounts', body); },
     financeCreateCategory: function (body) { return request('POST', '/finance/categories', body); },
+    financeBudgets: function () { return request('GET', '/finance/budgets'); },
+    financeCreateBudget: function (body) { return request('POST', '/finance/budgets', body); },
     financePostTransaction: function (body) { return request('POST', '/finance/transactions', body); },
     sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread, notices: notices, noticesSeen: noticesSeen, savePeriod: savePeriod,
     pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,

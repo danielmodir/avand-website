@@ -10,8 +10,9 @@ from rest_framework.views import APIView
 
 from apps.common.exceptions import ApiError
 
-from .models import Account, Category, LedgerEntry, MoneyTransaction
-from .services import LedgerError, account_balance, post_transaction
+from .budgets import BUDGET_ZONE, budget_periods, parse_budget_date
+from .models import Account, Budget, Category, LedgerEntry, MoneyTransaction, Wallet
+from .services import MAX_TOMAN, LedgerError, account_balance, post_transaction
 
 DB = "finance"
 
@@ -145,3 +146,66 @@ class TransactionsView(APIView):
             code = str(exc)
             raise ApiError(code, 409 if code == "request_conflict" else 404 if code.endswith("not_found") else 400)
         return Response({"id": row.id, "request_id": row.request_id}, status=200 if exists else 201)
+
+
+def _budget_row(row):
+    return {
+        "id": row.id, "client_id": row.client_id, "name": row.name,
+        "amount_toman": row.amount_toman, "category_id": row.category_id,
+        "period": row.period, "start_date": row.start_date.isoformat(),
+        "end_date": row.end_date.isoformat() if row.end_date else None, "rollover": row.rollover,
+    }
+
+
+class BudgetsView(APIView):
+    def get(self, request):
+        as_of = parse_budget_date(request.query_params.get("as_of", timezone.localdate(timezone=BUDGET_ZONE).isoformat()))
+        raw_periods = request.query_params.get("periods", "6")
+        if raw_periods not in {str(number) for number in range(1, 25)}:
+            raise ApiError("validation_error")
+        periods = int(raw_periods)
+        budgets = Budget.objects.using(DB).filter(user_id=request.user.id).order_by("id")
+        return Response({
+            "as_of": as_of.isoformat(), "timezone": BUDGET_ZONE.key,
+            "budgets": [{**_budget_row(row), "periods": budget_periods(row, as_of, periods)} for row in budgets],
+        })
+
+    def post(self, request):
+        uid = request.user.id
+        body = request.data
+        client_id = _text(body.get("client_id"), limit=80, required=True)
+        name = _text(body.get("name"), limit=100, required=True)
+        amount = body.get("amount_toman")
+        if type(amount) is not int or not 0 < amount <= MAX_TOMAN:
+            raise ApiError("invalid_amount")
+        category_id = body.get("category_id")
+        if category_id is not None:
+            category_id = _positive_id(category_id)
+        period = body.get("period")
+        rollover = body.get("rollover", False)
+        if period not in ("weekly", "monthly", "custom") or type(rollover) is not bool:
+            raise ApiError("validation_error")
+        start = parse_budget_date(body.get("start_date"))
+        end = body.get("end_date")
+        if period == "custom":
+            end = parse_budget_date(end)
+            if end < start or rollover:
+                raise ApiError("validation_error")
+        elif end is not None:
+            raise ApiError("validation_error")
+        fields = dict(name=name, amount_toman=amount, category_id=category_id,
+                      period=period, start_date=start, end_date=end, rollover=rollover)
+        with transaction.atomic(using=DB):
+            Wallet.objects.using(DB).get_or_create(user_id=uid)
+            Wallet.objects.using(DB).select_for_update().get(user_id=uid)
+            existing = Budget.objects.using(DB).filter(user_id=uid, client_id=client_id).first()
+            if existing:
+                if any(getattr(existing, key) != value for key, value in fields.items()):
+                    raise ApiError("request_conflict", 409)
+                return Response(_budget_row(existing))
+            if category_id is not None and not Category.objects.using(DB).filter(
+                id=category_id, user_id=uid, kind="expense", archived_at__isnull=True
+            ).exists():
+                raise ApiError("category_not_found", 404)
+            row = Budget.objects.using(DB).create(user_id=uid, client_id=client_id, **fields)
+        return Response(_budget_row(row), status=201)

@@ -1,8 +1,9 @@
 import uuid
+from datetime import datetime, timezone
 
 from django.test import TestCase
 
-from .models import Account, Card, Category, LedgerEntry, MoneyTransaction
+from .models import Account, Budget, Card, Category, LedgerEntry, MoneyTransaction
 from .services import LedgerError, account_balance, post_transaction, purge_user
 from apps.common.testing import ApiTestCase
 
@@ -62,6 +63,8 @@ class LedgerTests(TestCase):
         Card.objects.create(user_id=self.owner, account=self.cash, label="Debit", masked_number="****1234")
         parent = Category.objects.create(user_id=self.owner, name="Food", kind="expense")
         Category.objects.create(user_id=self.owner, name="Cafe", kind="expense", parent=parent)
+        Budget.objects.create(user_id=self.owner, client_id="food", name="Food", category=parent,
+                              period="weekly", start_date="2026-01-01", amount_toman=200)
         post_transaction(self.owner, "opening", 1200, self.cash.id, "opening")
         post_transaction(self.stranger, "opening", 900, self.other.id, "other-opening")
         self.assertEqual(account_balance(self.owner, self.cash.id), 1200)
@@ -69,6 +72,7 @@ class LedgerTests(TestCase):
         self.assertFalse(Account.objects.filter(user_id=self.owner).exists())
         self.assertFalse(Card.objects.filter(user_id=self.owner).exists())
         self.assertFalse(Category.objects.filter(user_id=self.owner).exists())
+        self.assertFalse(Budget.objects.filter(user_id=self.owner).exists())
         self.assertEqual(account_balance(self.stranger, self.other.id), 900)
 
 
@@ -130,3 +134,95 @@ class FinanceApiTests(ApiTestCase):
         other = self.register(email="category-other@example.com")
         denied = other.post(url, {"client_id": "foreign-child", "name": "Child", "kind": "expense", "parent_id": parent.json()["id"]}, format="json")
         self.assertEqual(denied.status_code, 404)
+
+
+class BudgetApiTests(ApiTestCase):
+    url = "/api/v1/finance/budgets"
+
+    def setUp(self):
+        self.client = self.register()
+        self.definition = {
+            "client_id": "budget", "name": "Budget", "amount_toman": 100,
+            "period": "weekly", "start_date": "2026-01-01", "rollover": True,
+        }
+
+    def create_budget(self, **changes):
+        return self.client.post(self.url, {**self.definition, **changes}, format="json")
+
+    def report(self, as_of, periods=6):
+        response = self.client.get(self.url, {"as_of": as_of, "periods": periods})
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["timezone"], "Asia/Tehran")
+        return {row["client_id"]: row["periods"] for row in response.json()["budgets"]}
+
+    def test_idempotence_validation_and_owner_scope(self):
+        category = self.client.post("/api/v1/finance/categories",
+            {"name": "Food", "client_id": "food", "kind": "expense"}, format="json").json()["id"]
+        created = self.create_budget(category_id=category)
+        self.assertEqual(created.status_code, 201)
+        retry = self.create_budget(category_id=category)
+        self.assertEqual(retry.status_code, 200)
+        self.assertEqual(retry.json(), created.json())
+        self.assertEqual(self.create_budget(category_id=category, amount_toman=110).status_code, 409)
+        second = self.register(email="budget-other@example.com")
+        self.assertEqual(second.get(self.url).json()["budgets"], [])
+        self.assertEqual(second.post(self.url, {**self.definition, "category_id": category}, format="json").status_code, 404)
+        self.assertEqual(second.post(self.url, self.definition, format="json").status_code, 201)
+        for changes in (
+            {"start_date": "2026-02-30"}, {"period": "yearly"}, {"rollover": "true"},
+            {"end_date": "2026-01-02"}, {"period": "custom", "end_date": "2026-01-02"},
+            {"period": "custom", "end_date": "2025-12-31", "rollover": False},
+        ):
+            self.assertEqual(self.create_budget(**changes).status_code, 400)
+        self.assertEqual(self.client.get(self.url, {"periods": 25}).status_code, 400)
+
+    def test_full_expense_history_scope_rollover_and_corrections(self):
+        categories = "/api/v1/finance/categories"
+        parent = self.client.post(categories,
+            {"name": "Food", "client_id": "food", "kind": "expense"}, format="json").json()["id"]
+        child = self.client.post(categories,
+            {"name": "Cafe", "client_id": "cafe", "parent_id": parent, "kind": "expense"}, format="json").json()["id"]
+        for key, category in (("global", None), ("parent", parent), ("child", child)):
+            self.assertEqual(self.create_budget(client_id=key, category_id=category, amount_toman=200).status_code, 201)
+        owner = Category.objects.get(id=parent).user_id
+        template = {"user_id": owner, "kind": "expense", "amount_toman": 1,
+                    "occurred_at": datetime(2026, 1, 1, tzinfo=timezone.utc), "category_id": child}
+        MoneyTransaction.objects.bulk_create([MoneyTransaction(request_id=f"expense-{n}", **template) for n in range(101)])
+        MoneyTransaction.objects.create(request_id="parent", **{**template, "category_id": parent, "amount_toman": 20})
+        MoneyTransaction.objects.create(request_id="uncategorized", **{**template, "category_id": None, "amount_toman": 39})
+        MoneyTransaction.objects.create(request_id="excluded-transfer", **{**template, "kind": "transfer", "amount_toman": 99})
+        # 20:30 UTC starts Jan 8 in Tehran, exactly at the weekly boundary.
+        MoneyTransaction.objects.create(request_id="boundary", **{**template, "amount_toman": 400,
+            "occurred_at": datetime(2026, 1, 7, 20, 30, tzinfo=timezone.utc)})
+        rows = self.report("2026-01-15")
+        self.assertEqual([rows[key][2]["spent_toman"] for key in ("global", "parent", "child")], [160, 121, 101])
+        self.assertEqual(rows["global"][2]["status"], "near_limit")
+        self.assertEqual(rows["global"][1]["rollover_toman"], 40)
+        self.assertEqual(rows["global"][1]["remaining_toman"], -160)
+        self.assertEqual(rows["global"][1]["status"], "over_limit")
+        self.assertEqual(rows["global"][0]["rollover_toman"], 0)
+        # A later expense that was entered with a historical date changes the
+        # affected closed period and its dependent period immediately.
+        MoneyTransaction.objects.filter(request_id="boundary").update(amount_toman=100)
+        self.assertEqual(self.report("2026-01-15", periods=1)["global"][0]["rollover_toman"], 140)
+        self.assertEqual(self.report("2026-01-07")["global"][0]["spent_toman"], 160)
+
+    def test_monthly_anniversary_custom_end_and_no_rollover(self):
+        self.assertEqual(self.create_budget(client_id="monthly", period="monthly", start_date="2026-01-31",
+                                            rollover=False).status_code, 201)
+        self.assertEqual(self.create_budget(client_id="custom", period="custom", start_date="2026-03-01",
+                                            end_date="2026-03-01", rollover=False).status_code, 201)
+        self.assertEqual(self.report("2026-01-01"), {"monthly": [], "custom": []})
+        reports = self.report("2026-03-31")
+        self.assertEqual([(row["start_date"], row["end_date"], row["rollover_toman"]) for row in reports["monthly"]],
+                         [("2026-03-31", "2026-04-29", 0), ("2026-02-28", "2026-03-30", 0), ("2026-01-31", "2026-02-27", 0)])
+        self.assertEqual([(row["start_date"], row["end_date"]) for row in reports["custom"]], [("2026-03-01", "2026-03-01")])
+
+    def test_report_rejects_aggregates_outside_exact_wire_range(self):
+        limit = 9_000_000_000_000_000
+        self.assertEqual(self.create_budget(amount_toman=limit + 1).status_code, 400)
+        self.assertEqual(self.create_budget(amount_toman=limit).status_code, 201)
+        self.assertEqual(self.report("2026-01-07")["budget"][0]["limit_toman"], limit)
+        response = self.client.get(self.url, {"as_of": "2026-01-08"})
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(response.json()["error"], "budget_total_limit")

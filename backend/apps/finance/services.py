@@ -6,7 +6,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
-from .models import Account, Card, Category, LedgerEntry, MoneyTransaction, Wallet
+from .models import Account, Budget, Card, Category, LedgerEntry, MoneyTransaction, Wallet
 
 DB = "finance"
 KINDS = {"opening", "income", "expense", "transfer"}
@@ -108,6 +108,7 @@ def purge_user(user_id):
     with transaction.atomic(using=DB):
         LedgerEntry.objects.using(DB).filter(user_id=user_id).delete()
         MoneyTransaction.objects.using(DB).filter(user_id=user_id).delete()
+        Budget.objects.using(DB).filter(user_id=user_id).delete()
         Card.objects.using(DB).filter(user_id=user_id).delete()
         Category.objects.using(DB).filter(user_id=user_id).delete()
         Account.objects.using(DB).filter(user_id=user_id).delete()

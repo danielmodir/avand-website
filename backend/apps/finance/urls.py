@@ -6,5 +6,6 @@ urlpatterns = [
     path("finance/state", views.FinanceStateView.as_view()),
     path("finance/accounts", views.AccountsView.as_view()),
     path("finance/categories", views.CategoriesView.as_view()),
+    path("finance/budgets", views.BudgetsView.as_view()),
     path("finance/transactions", views.TransactionsView.as_view()),
 ]

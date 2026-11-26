@@ -65,13 +65,22 @@ Update these with every change.
 
 - Demo asset version: 2026-11-25.2
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
-- PHP schema: v30
+- PHP schema: v32
 - Django latest migrations: core 0012, planning 0012, social 0005,
-  notifications 0003, calendar_data 0002, period 0001, finance 0005
+  notifications 0003, calendar_data 0002, period 0001, finance 0006,
+  university 0001
 - Marketing CSS cache version: 2026-11-23.1
-- Android source: 1.4.2 (versionCode 7; APK not built or published)
+- Android source: 1.5.0 (versionCode 8; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-26 — finance budgets, bank SMS and university foundations —
+  checkpointed additive PHP schema v31–v32, Django finance 0006 and
+  university 0001, finance budget logic/API, Android bank SMS parser/bridge,
+  and university API work on the review branch. Node budget/vault tests 4/4
+  and git diff check passed. Django run stalled before reporting results;
+  PHP, Android build/device and browser verification were not completed.
+  This is a work-in-progress source checkpoint, not a release.
 
 - 2026-11-25 — finance categories — added seeded income and expense
   categories, private custom parent/child categories, and category links on

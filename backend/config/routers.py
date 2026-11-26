@@ -17,6 +17,7 @@ APP_DATABASES = {
     "social": "social",
     "notifications": "notifications",
     "finance": "finance",
+    "university": "university",
 }
 
 

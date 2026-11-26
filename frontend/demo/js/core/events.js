@@ -122,6 +122,25 @@ document.getElementById('device').addEventListener('click', (e) => {
       document.getElementById('finance-category-kind')?.value,
       document.getElementById('finance-parent-category')?.value); return;
   }
+  if(action === 'finance-add-budget'){
+    FinanceDesk.createBudget(document.getElementById('finance-budget-name')?.value,
+      document.getElementById('finance-budget-amount')?.value,
+      document.getElementById('finance-budget-category')?.value,
+      document.getElementById('finance-budget-period')?.value,
+      document.getElementById('finance-budget-start')?.value,
+      document.getElementById('finance-budget-end')?.value,
+      !!document.getElementById('finance-budget-rollover')?.checked); return;
+  }
+  if(action === 'finance-sms-enable'){ FinanceDesk.smsSetEnabled(true); return; }
+  if(action === 'finance-sms-disable'){ FinanceDesk.smsSetEnabled(false); return; }
+  if(action === 'finance-sms-dismiss'){
+    FinanceDesk.smsDismiss(el.closest('.finance-sms-draft')?.dataset.smsId); return;
+  }
+  if(action === 'finance-sms-confirm'){
+    const draft = el.closest('.finance-sms-draft');
+    FinanceDesk.smsConfirm(draft?.dataset.smsId, draft?.querySelector('.finance-sms-amount')?.value,
+      draft?.querySelector('.finance-sms-account')?.value); return;
+  }
   if(action === 'finance-post'){
     FinanceDesk.post(document.getElementById('finance-kind')?.value,
       document.getElementById('finance-amount')?.value,

@@ -41,6 +41,7 @@ class MainActivity : Activity() {
         private const val REQ_NOTIFY = 2
         private const val REQ_LOCK = 3
         private const val REQ_SAVE = 4
+        private const val REQ_BANK_SMS = 5
         private const val LOCK_AFTER_MS = 60_000L
         private const val MAX_SAVE = 8_000_000 // characters of a saved file
         private const val RELOAD_AFTER_MS = 10 * 60_000L
@@ -53,6 +54,7 @@ class MainActivity : Activity() {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     /** A file waiting for the Save screen's answer (saveFile). */
     private var pendingSave: String? = null
+    private var pendingSmsOwner: String? = null
     private var pageReady = false
     private var pageVisible = false
     private var canvas = 0 // the theme's background color (status bar, splash, behind the page)
@@ -62,6 +64,7 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingSmsOwner = savedInstanceState?.getString("pendingSmsOwner")
         WebFiles.init(this)
         // Splash: the logo on the app's last theme color (the theme's own
         // splash, drawable/splash.xml, covers the moment before this), shown
@@ -92,6 +95,7 @@ class MainActivity : Activity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+        outState.putString("pendingSmsOwner", pendingSmsOwner)
         web.saveState(outState)
     }
 
@@ -154,6 +158,7 @@ class MainActivity : Activity() {
             web.loadUrl(WebFiles.START)
         }
         leftAt = 0
+        financeSmsChanged()
         WebFiles.checkForUpdate()
     }
 
@@ -274,7 +279,19 @@ class MainActivity : Activity() {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQ_NOTIFY) answerPermission()
+        if (requestCode == REQ_BANK_SMS) {
+            pendingSmsOwner?.let { BankSms.setEnabled(this, it, true) }
+            pendingSmsOwner = null
+            financeSmsChanged()
+        }
+    }
+
+    internal fun financeSmsChanged() {
+        if (pageReady && AppWeb.trustedPage) {
+            web.evaluateJavascript("typeof window.toojibeeFinanceSmsChanged==='function'&&window.toojibeeFinanceSmsChanged()", null)
+        }
     }
 
     private fun notifyPermission(): String {
@@ -301,6 +318,33 @@ class MainActivity : Activity() {
 
         @JavascriptInterface fun financeOpen(uid: String?, sealed: String?): String =
             if (ok) FinanceCrypto.open(uid, sealed) else ""
+
+        @JavascriptInterface fun financeSmsStatus(uid: String?): String =
+            if (ok) BankSms.status(this@MainActivity, uid) else "disabled"
+
+        @JavascriptInterface fun financeSmsDrafts(uid: String?): String =
+            if (ok) BankSms.drafts(this@MainActivity, uid) else "[]"
+
+        @JavascriptInterface fun financeSmsDismiss(uid: String?, id: String?): Boolean =
+            ok && BankSms.dismiss(this@MainActivity, uid, id)
+
+        @JavascriptInterface fun financeSmsSetEnabled(uid: String?, enabled: Boolean) {
+            if (!ok || !BankSms.validOwner(uid)) return
+            ui.post {
+                if (!ok || BankSms.status(this@MainActivity, uid) == "other-account") return@post
+                if (!enabled) {
+                    if (pendingSmsOwner == uid) pendingSmsOwner = null
+                    BankSms.setEnabled(this@MainActivity, uid, false)
+                    financeSmsChanged()
+                } else if (BankSms.permitted(this@MainActivity)) {
+                    BankSms.setEnabled(this@MainActivity, uid, true)
+                    financeSmsChanged()
+                } else if (pendingSmsOwner == null) {
+                    pendingSmsOwner = uid
+                    requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), REQ_BANK_SMS)
+                }
+            }
+        }
 
         @JavascriptInterface fun permission(): String = if (ok) notifyPermission() else "denied"
 

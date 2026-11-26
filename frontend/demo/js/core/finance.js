@@ -28,6 +28,43 @@ const FinanceDesk = (function () {
   function money(n) { return dig(Number(n || 0).toLocaleString('en-US')) + ' ' + t('financeToman'); }
   function accountByClient(id) { return data.accounts.find(a => a.client_id === id); }
   function accountById(id) { return data.accounts.find(a => String(a.id) === String(id)); }
+  function smsBridge() {
+    const bridge = window.ToojibeeAndroid;
+    return bridge && typeof bridge.financeSmsStatus === 'function'
+      && typeof bridge.financeSmsDrafts === 'function' ? bridge : null;
+  }
+  function smsState() {
+    const bridge = smsBridge();
+    if (!bridge || !data || !owner) return null;
+    try {
+      const status = bridge.financeSmsStatus(owner);
+      const drafts = status === 'enabled' ? JSON.parse(bridge.financeSmsDrafts(owner)) : [];
+      return { status: status, drafts: Array.isArray(drafts) ? drafts : [] };
+    } catch (e) { return { status: 'denied', drafts: [] }; }
+  }
+  function smsSetEnabled(enabled) {
+    const bridge = smsBridge();
+    if (!bridge || !data || !owner) return;
+    bridge.financeSmsSetEnabled(owner, !!enabled);
+    render();
+  }
+  function smsDismiss(id) {
+    const bridge = smsBridge();
+    if (!bridge || !owner || !/^sms-[a-f0-9]{64}$/.test(id || '')) return;
+    bridge.financeSmsDismiss(owner, id);
+    render();
+  }
+  async function smsConfirm(id, rawAmount, accountClientId) {
+    const bridge = smsBridge(), current = smsState();
+    const draft = current?.drafts.find(d => d.id === id);
+    if (!bridge || !draft || !accountByClient(accountClientId)) return;
+    let value = amount(rawAmount);
+    if (!value) { error = 'invalid_amount'; render(); return; }
+    if (data.transactions.some(row => row.request_id === id)) { smsDismiss(id); return; }
+    const saved = await post(draft.direction === 'credit' ? 'income' : 'expense',
+      String(value), accountClientId, null, '', null, id);
+    if (saved) smsDismiss(id);
+  }
   function categoryByClient(id) { return data.categories.find(c => c.client_id === id); }
   function categoryById(id) { return data.categories.find(c => String(c.id) === String(id)); }
   function categoryName(category) {
@@ -107,13 +144,32 @@ const FinanceDesk = (function () {
     error = '';
     try { await save(); render(); await sync(); } catch (e) { error = 'financeSaveError'; render(); }
   }
-  function addLocalTransaction(kind, value, accountClientId, destinationClientId, note, categoryClientId) {
+  async function createBudget(name, rawAmount, categoryClientId, period, startDate, endDate, rollover) {
+    if (!data || busy) return;
+    name = String(name || '').trim();
+    const value = amount(rawAmount);
+    const category = categoryClientId ? categoryByClient(categoryClientId) : null;
+    if (!name || name.length > 100 || !value || (categoryClientId && (!category || category.kind !== 'expense'))
+      || !['weekly','monthly','custom'].includes(period) || !/^\d{4}-\d\d-\d\d$/.test(startDate || '')
+      || (period === 'custom' && (!/^\d{4}-\d\d-\d\d$/.test(endDate || '') || endDate < startDate || rollover))) {
+      error = 'validation_error'; render(); return;
+    }
+    const clientId = Cloud.uuid();
+    const body = { client_id: clientId, name: name, amount_toman: value,
+      category_client_id: categoryClientId || null, period: period,
+      start_date: startDate, end_date: period === 'custom' ? endDate : null, rollover: !!rollover };
+    data.budgets.push({ id: 'local:' + clientId, ...body, category_id: category ? category.id : null });
+    if (Cloud.isConfigured()) data.pending.push({ type: 'budget', body: body });
+    error = '';
+    try { await save(); render(); await sync(); } catch (e) { error = 'financeSaveError'; render(); }
+  }
+  function addLocalTransaction(kind, value, accountClientId, destinationClientId, note, categoryClientId, stableId) {
     if (!['opening','income','expense','transfer'].includes(kind) || !value || !accountByClient(accountClientId)
       || (kind === 'transfer' && (!destinationClientId || destinationClientId === accountClientId || !accountByClient(destinationClientId))))
       throw new Error('validation_error');
     const category = categoryClientId ? categoryByClient(categoryClientId) : null;
     if (categoryClientId && (!category || category.kind !== kind || category.archived)) throw new Error('validation_error');
-    const requestId = Cloud.uuid(), occurredAt = new Date().toISOString();
+    const requestId = stableId || Cloud.uuid(), occurredAt = new Date().toISOString();
     const deltas = [[accountClientId, kind === 'expense' || kind === 'transfer' ? -value : value]];
     if (kind === 'transfer') deltas.push([destinationClientId, value]);
     for (const [id, delta] of deltas) {
@@ -127,24 +183,24 @@ const FinanceDesk = (function () {
     }
     const entries = deltas.map(([id, delta]) => localEntry(id, delta));
     data.transactions.unshift({ id: 'local:' + requestId, request_id: requestId, kind: kind,
-      amount_toman: value, occurred_at: occurredAt, note: note, source_id: '',
+      amount_toman: value, occurred_at: occurredAt, note: note, source_id: stableId || '',
       category_client_id: categoryClientId || null, category_id: category ? category.id : null,
       entries: entries });
     if (Cloud.isConfigured()) data.pending.push({ type: 'transaction', body: {
       request_id: requestId, kind: kind, amount_toman: value, account_client_id: accountClientId,
       destination_client_id: destinationClientId, category_client_id: categoryClientId || null,
-      note: note, occurred_at: occurredAt,
+      note: note, source_id: stableId || '', occurred_at: occurredAt,
     }});
   }
-  async function post(kind, rawAmount, accountClientId, destinationClientId, note, categoryClientId) {
+  async function post(kind, rawAmount, accountClientId, destinationClientId, note, categoryClientId, stableId) {
     if (!data || busy) return;
     const value = amount(rawAmount);
     if (!value) { error = 'invalid_amount'; render(); return; }
     try {
-      addLocalTransaction(kind, value, accountClientId, destinationClientId || null, String(note || '').slice(0, 2000), categoryClientId || null);
+      addLocalTransaction(kind, value, accountClientId, destinationClientId || null, String(note || '').slice(0, 2000), categoryClientId || null, stableId || null);
       error = '';
-      await save(); render(); await sync();
-    } catch (e) { error = ['validation_error','balance_limit'].includes(e.message) ? e.message : 'financeSaveError'; render(); }
+      await save(); render(); await sync(); return true;
+    } catch (e) { error = ['validation_error','balance_limit'].includes(e.message) ? e.message : 'financeSaveError'; render(); return false; }
   }
   async function sync() {
     if (!data || !Cloud.isConfigured() || !Cloud.hasSession()) return;
@@ -175,7 +231,15 @@ const FinanceDesk = (function () {
             await Cloud.financePostTransaction({ request_id: body.request_id, kind: body.kind,
               amount_toman: body.amount_toman, account_id: source.id,
               destination_id: destination ? destination.id : null, category_id: category ? category.id : null, note: body.note,
-              occurred_at: body.occurred_at });
+              occurred_at: body.occurred_at, source_id: body.source_id || '' });
+          } else if (op.type === 'budget') {
+            const category = op.body.category_client_id ? categoryByClient(op.body.category_client_id) : null;
+            if (category && String(category.id).startsWith('local:')) throw new Error('financeCategoryPending');
+            await Cloud.financeCreateBudget({ client_id: op.body.client_id,
+              name: op.body.name, amount_toman: op.body.amount_toman,
+              category_id: category ? category.id : null, period: op.body.period,
+              start_date: op.body.start_date, end_date: op.body.end_date,
+              rollover: op.body.rollover });
           } else throw new Error('invalid_finance_data');
           data.pending.shift();
           await save(); // Crash-safe: every successful request has a stable idempotency key.
@@ -184,6 +248,8 @@ const FinanceDesk = (function () {
         data.accounts = remote.accounts;
         data.categories = remote.categories || [];
         data.transactions = remote.transactions;
+        const budgets = await Cloud.financeBudgets();
+        data.budgets = budgets.budgets || [];
         await save();
         error = '';
       } catch (e) { error = 'financeSyncError'; }
@@ -212,6 +278,29 @@ const FinanceDesk = (function () {
     const categoryOptions = categories.map(c => `<option value="${escapeAttr(c.client_id)}">${c.parent_id || c.parent_client_id ? '↳ ' : ''}${escapeHtml(categoryName(c))}</option>`).join('');
     const parentOptions = categories.filter(c => !c.parent_id && !c.parent_client_id)
       .map(c => `<option value="${escapeAttr(c.client_id)}">${escapeHtml(categoryName(c))}</option>`).join('');
+    const expenseOptions = categories.filter(c => c.kind === 'expense')
+      .map(c => `<option value="${escapeAttr(c.client_id)}">${escapeHtml(categoryName(c))}</option>`).join('');
+    const today = FinanceBudgets.today();
+    const budgetRows = data.budgets.map(b => {
+      const period = b.periods ? b.periods[0] : FinanceBudgets.report(b, data.transactions, data.categories, today, 1)[0];
+      const category = b.category_client_id ? categoryByClient(b.category_client_id) : categoryById(b.category_id);
+      return `<div class="finance-budget"><strong>${escapeHtml(b.name)}</strong><small>${category ? escapeHtml(categoryName(category)) : t('financeAllExpenses')} · ${t('financePeriod'+b.period)}</small>
+        <span>${period ? (period.status === 'total_limit' ? t('budget_total_limit') : `${money(period.spent_toman)} / ${money(period.limit_toman)} · ${t('financeBudget'+period.status)}`) : t('financeBudgetNotStarted')}</span></div>`;
+    }).join('');
+    const sms = smsState();
+    const smsRows = sms?.drafts.map(draft => {
+      const raw = Number(draft.amount), unit = draft.unit;
+      const initial = unit === 'TOMAN' ? raw : unit === 'IRR' && raw % 10 === 0 ? raw / 10 : '';
+      return `<div class="finance-sms-draft" data-sms-id="${escapeAttr(draft.id)}">
+        <strong>${t(draft.direction === 'credit' ? 'financeTypeincome' : 'financeTypeexpense')}</strong>
+        <small>${dig(raw.toLocaleString('en-US'))} ${t(unit === 'IRR' ? 'financeRial' : unit === 'TOMAN' ? 'financeToman' : 'financeUnknownUnit')}
+          ${draft.accountLast4 ? ` · ${t('financeSmsAccount')} ${escapeHtml(draft.accountLast4)}` : ''}</small>
+        <label class="finance-field">${t('financeAmount')}<input class="finance-sms-amount" type="text" inputmode="numeric" value="${initial}"></label>
+        <label class="finance-field">${t('financeAccount')}<select class="finance-sms-account">${options}</select></label>
+        <div class="finance-sms-actions"><button type="button" class="btn btn-primary" data-action="finance-sms-confirm">${t('financeSmsConfirm')}</button>
+          <button type="button" class="btn btn-outline" data-action="finance-sms-dismiss">${t('financeSmsDismiss')}</button></div>
+      </div>`;
+    }).join('') || '';
     return `<section class="finance-desk">
       <div class="finance-summary"><span>${t('financeWallet')}</span><strong>${money(balance)}</strong>
         <button type="button" class="btn btn-outline btn-small" data-action="finance-lock">${t('financeLock')}</button></div>
@@ -233,6 +322,25 @@ const FinanceDesk = (function () {
         <label class="finance-field">${t('financeParentCategory')}<select id="finance-parent-category"><option value="">${t('financeNoParent')}</option>${parentOptions}</select></label>
         <button type="button" class="btn btn-primary" data-action="finance-add-category">${t('financeAddCategory')}</button>
       </div>
+      <div class="section-title">${t('financeBudgets')}</div>
+      ${Cloud.isConfigured() && data.pending.length ? `<p class="finance-hint">${t('financeBudgetPendingHint')}</p>` : ''}
+      ${data.budgets.length ? `<div class="finance-budget-list">${budgetRows}</div>` : `<div class="empty-hint">${t('financeNoBudgets')}</div>`}
+      <div class="finance-form"><strong>${t('financeAddBudget')}</strong>
+        <label class="finance-field">${t('financeName')}<input id="finance-budget-name" maxlength="100"></label>
+        <label class="finance-field">${t('financeAmount')}<input id="finance-budget-amount" type="text" inputmode="numeric"></label>
+        <label class="finance-field">${t('financeCategory')}<select id="finance-budget-category"><option value="">${t('financeAllExpenses')}</option>${expenseOptions}</select></label>
+        <label class="finance-field">${t('financeBudgetPeriod')}<select id="finance-budget-period">${['weekly','monthly','custom'].map(k => `<option value="${k}">${t('financePeriod'+k)}</option>`).join('')}</select></label>
+        <label class="finance-field">${t('financeBudgetStart')}<input id="finance-budget-start" type="date" value="${today}"></label>
+        <label class="finance-field">${t('financeBudgetEnd')}<input id="finance-budget-end" type="date"></label>
+        <label class="finance-field"><input id="finance-budget-rollover" type="checkbox">${t('financeBudgetRollover')}</label>
+        <button type="button" class="btn btn-primary" data-action="finance-add-budget">${t('financeAddBudget')}</button>
+      </div>
+      ${sms ? `<div class="section-title">${t('financeSmsTitle')}</div>
+        <p class="finance-hint">${t('financeSmsPrivacy')}</p>
+        ${sms.status === 'disabled' || sms.status === 'denied' ? `<button type="button" class="btn btn-outline" data-action="finance-sms-enable">${t('financeSmsEnable')}</button>` : ''}
+        ${sms.status === 'enabled' ? `<button type="button" class="btn btn-outline" data-action="finance-sms-disable">${t('financeSmsDisable')}</button>
+          ${smsRows || `<div class="empty-hint">${t('financeSmsNoDrafts')}</div>`}` : ''}
+        ${sms.status === 'other-account' ? `<p class="finance-hint">${t('financeSmsOtherAccount')}</p>` : ''}` : ''}
       ${accounts.length ? `<div class="finance-form"><strong>${t('financeAddTransaction')}</strong>
         <label class="finance-field">${t('financeTransactionKind')}<select id="finance-kind">${['income','expense','transfer'].map(k => `<option value="${k}">${t('financeType'+k)}</option>`).join('')}</select></label>
         <label class="finance-field">${t('financeAmount')}<input id="finance-amount" type="text" inputmode="numeric"></label>
@@ -248,6 +356,8 @@ const FinanceDesk = (function () {
   }
   window.addEventListener('online', () => { if (data) sync(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && data) sync(); });
-  return { renderDesk: renderDesk, unlock: unlock, lock: lock, createAccount: createAccount, createCategory: createCategory,
-    post: post, sync: sync, amount: amount };
+  window.toojibeeFinanceSmsChanged = function () { if (data) render(); };
+  return { renderDesk: renderDesk, unlock: unlock, lock: lock, createAccount: createAccount, createCategory: createCategory, createBudget: createBudget,
+    post: post, sync: sync, amount: amount, smsSetEnabled: smsSetEnabled,
+    smsDismiss: smsDismiss, smsConfirm: smsConfirm };
 })();

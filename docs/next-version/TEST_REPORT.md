@@ -1,5 +1,11 @@
 # گزارش تست و حدود اطمینان
 
+## ۲۰۲۶-۱۱-۲۶ — ثبت میان‌مرحله‌ای
+
+- `node --test tests/finance-budgets.test.js tests/finance-vault.test.js`: 4/4 PASS.
+- `git diff --check`: بدون خطای محتوایی.
+- اجرای `manage.py test apps.finance apps.university` پیش از خروجی تست گیر کرد و متوقف شد؛ نتیجهٔ Django نامشخص است. PHP، Android build/device و مرورگر در این مرحله اجرا نشدند.
+
 ## ۲۰۲۶-۱۱-۲۵ — زیرساخت مالی
 
 - `node --test tests/finance-vault.test.js`: 1/1 PASS؛ `node --check frontend/demo/js/core/finance-vault.js`: PASS.

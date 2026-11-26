@@ -11,8 +11,8 @@ android {
         applicationId = "ir.toojibee.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.4.2"
+        versionCode = 8
+        versionName = "1.5.0"
     }
     buildFeatures { buildConfig = true }
     // The release key (deploy/make-keystore.ps1); kept out of git.
@@ -39,4 +39,12 @@ android {
     lint { checkReleaseBuilds = false }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
+}
+
+tasks.register<JavaExec>("checkBankSmsParser") {
+    dependsOn("compileDebugUnitTestKotlin")
+    classpath(files(layout.buildDirectory.dir("tmp/kotlin-classes/debug"),
+        layout.buildDirectory.dir("tmp/kotlin-classes/debugUnitTest")),
+        configurations.named("debugUnitTestRuntimeClasspath"))
+    mainClass.set("ir.toojibee.app.BankSmsParserChecks")
 }

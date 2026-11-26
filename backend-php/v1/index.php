@@ -25,6 +25,7 @@ require __DIR__ . '/../lib/groups.php';
 require __DIR__ . '/../lib/mcp.php';
 require __DIR__ . '/../lib/stats.php';
 require __DIR__ . '/../lib/finance.php';
+require __DIR__ . '/../lib/university.php';
 
 set_exception_handler(function (Throwable $e) {
     error_log('[toojibee-api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
@@ -37,6 +38,7 @@ $path = preg_replace('#^.*?/api/v1#', '', $path) ?: '/';
 
 $routes = [
     'GET /health'               => function () { tj_db(); tj_json(['ok' => true, 'backend' => 'php']); },
+    'GET /university/state'     => 'tj_university_state',
     'POST /stats'               => 'tj_stats_post',        // anonymous, opt-in counts (lib/stats.php)
     'GET /auth/providers'       => function () { tj_json(['password' => true, 'google' => tj_google_enabled()]); },
     'GET /auth/google/start'    => 'tj_google_start',
@@ -93,6 +95,8 @@ $routes = [
     'GET /finance/state'        => 'tj_finance_state',
     'POST /finance/accounts'    => 'tj_finance_account_create',
     'POST /finance/categories'  => 'tj_finance_category_create',
+    'GET /finance/budgets'      => 'tj_finance_budget_list',
+    'POST /finance/budgets'     => 'tj_finance_budget_create',
     'POST /finance/transactions'=> 'tj_finance_transaction_create',
     // Admin panel (lib/admin.php): 404 unless the X-TJ-Panel header
     // carries the panel's secret address.
@@ -210,6 +214,9 @@ if (preg_match('#^/notifications/subscriptions/([a-f0-9]{32})$#', $path, $m)) {
 if (preg_match('#^/mcp/u/([A-Za-z0-9_-]{8,100})$#', $path, $m)) tj_mcp_handle($m[1]);
 if ($path === '/mcp') tj_mcp_handle();
 
+foreach (TJ_UNIVERSITY_KINDS as $kind) {
+    $routes["POST /university/$kind"] = static fn() => tj_university_save($kind);
+}
 $handler = $routes["$method $path"] ?? null;
 if ($handler === null) {
     $known = array_filter(array_keys($routes), function ($r) use ($path) { return substr($r, strpos($r, ' ') + 1) === $path; });

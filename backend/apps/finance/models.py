@@ -50,6 +50,24 @@ class Category(models.Model):
         constraints = [models.UniqueConstraint(fields=["user_id", "client_id"], name="finance_category_request_once")]
 
 
+class Budget(models.Model):
+    user_id = models.UUIDField()
+    client_id = models.CharField(max_length=80)
+    name = models.CharField(max_length=100)
+    amount_toman = models.BigIntegerField()
+    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.PROTECT)
+    period = models.CharField(max_length=7, choices=[(p, p) for p in ("weekly", "monthly", "custom")])
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    rollover = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user_id", "client_id"], name="finance_budget_request_once"),
+            models.CheckConstraint(condition=Q(amount_toman__gt=0), name="finance_budget_positive_amount"),
+        ]
+
+
 class MoneyTransaction(models.Model):
     user_id = models.UUIDField(db_index=True)
     request_id = models.CharField(max_length=80)
