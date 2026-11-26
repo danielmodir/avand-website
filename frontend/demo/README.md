@@ -61,6 +61,13 @@ demo/
   bridge uses Keystore. Pending account and transaction writes are sealed
   before sending to `/finance/*` and use idempotency keys on retry. The
   general `local-store.js` and `/sync` document do not contain finance data.
+- Finance categories and budgets use the same encrypted queue. Budget periods
+  are calculated from expenses, with optional unused rollover; the Android
+  bridge offers bank SMS drafts only after opt-in and explicit confirmation.
+- The University pane uses `js/core/university.js` and `university-gpa.js`.
+  Academic dossiers, terms, course attempts and links are stored separately
+  per owner for offline use and synced through `/university/*` when available.
+  Class/exam/assignment links point to existing events or tasks.
 - Partials are fetched at runtime, so open the demo over HTTP
   (`npx http-server frontend`), not from `file://`.
 

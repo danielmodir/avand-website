@@ -122,6 +122,7 @@ function deskKeys(){
   if(!state.guest) keys.push('planning');
   if(!state.guest) keys.push('habitsDesktop');
   if(!state.guest) keys.push('financeDesktop');
+  if(!state.guest && typeof UniversityDesk !== 'undefined') keys.push('universityDesktop');
   if(pref('occasionsEnabled')) keys.push('occasionsDesktop');
   if(pref('groupsEnabled') && groupsAvailable()) keys.push('groupsDesktop'); // needs our API and an account
   if(periodViews().length) keys.push('periodDesktop'); // her own cycle and/or ones friends share with this person
@@ -197,22 +198,26 @@ function habitCalendarHtml(h,d,mode){
   </section>`;
 }
 
-const MAIN_DESKS = { planning: 'planning', habits: 'habitsDesktop', finance: 'financeDesktop', occasions: 'occasionsDesktop', groups: 'groupsDesktop', period: 'periodDesktop' };
+const MAIN_DESKS = { planning: 'planning', habits: 'habitsDesktop', finance: 'financeDesktop', university: 'universityDesktop', occasions: 'occasionsDesktop', groups: 'groupsDesktop', period: 'periodDesktop' };
 
 function renderDesktops(d, data){
   const {tasks, habits, events} = data;
   const panes = deskKeys().map(key => {
     if(key === 'occasionsDesktop') return { key, html: renderOccasionsPane(d, events) };
     if(key === 'planning'){
-      const shownEvents = events.filter(e => eventVisibleIn(e, 'planning'));
+      const shownEvents = events.filter(e => eventVisibleIn(e, 'planning')
+        && (typeof UniversityDesk === 'undefined' || UniversityDesk.visibleInPlanning('event', e.id)));
+      const shownTasks = tasks.filter(task => typeof UniversityDesk === 'undefined'
+        || UniversityDesk.visibleInPlanning('task', task.id));
       return { key, html:`
       ${window.innerWidth >= 960 ? renderHomeCalWidget() : ''}
-      ${pref('planningDaySummary') ? renderDayStatsCard(tasks, [], shownEvents, d) : ''}
-      ${renderItemSections(tasks, [], shownEvents, d)}
+      ${pref('planningDaySummary') ? renderDayStatsCard(shownTasks, [], shownEvents, d) : ''}
+      ${renderItemSections(shownTasks, [], shownEvents, d)}
     ` };
     }
     if(key === 'habitsDesktop') return { key, html: renderHabitDesk(d, habits) };
     if(key === 'financeDesktop') return { key, html: FinanceDesk.renderDesk() };
+    if(key === 'universityDesktop') return { key, html: UniversityDesk.renderDesk() };
     if(key === 'groupsDesktop') return { key, html: renderGroupsPane(d) };
     return { key, html: renderPeriodPage('') + renderArticleStrip('app_period') };
   });

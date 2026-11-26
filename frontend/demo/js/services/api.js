@@ -773,6 +773,11 @@
     financeCreateCategory: function (body) { return request('POST', '/finance/categories', body); },
     financeBudgets: function () { return request('GET', '/finance/budgets'); },
     financeCreateBudget: function (body) { return request('POST', '/finance/budgets', body); },
+    universityState: function () { return request('GET', '/university/state'); },
+    universitySave: function (kind, body) {
+      if (!['dossiers','terms','courses','transfers','activities','resources'].includes(kind)) return Promise.reject(new Error('invalid_university_kind'));
+      return request('POST', '/university/' + kind, body);
+    },
     financePostTransaction: function (body) { return request('POST', '/finance/transactions', body); },
     sendSupportMessage: sendSupportMessage, supportMessages: supportMessages, supportUnread: supportUnread, notices: notices, noticesSeen: noticesSeen, savePeriod: savePeriod,
     pushKey: pushKey, pushSubscribe: pushSubscribe, pushUnsubscribe: pushUnsubscribe, pushSchedule: pushSchedule,

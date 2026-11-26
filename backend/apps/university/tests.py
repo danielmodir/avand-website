@@ -9,9 +9,9 @@ class UniversityTests(ApiTestCase):
     def setUp(self):
         self.owner = self.register()
 
-    def save(self, kind, status=200, client=None, **record):
+    def save(self, kind, expected_status=200, client=None, **record):
         response = (client or self.owner).post(f"/api/v1/university/{kind}", record, format="json")
-        self.assertEqual(response.status_code, status, response.content)
+        self.assertEqual(response.status_code, expected_status, response.content)
         return response.json()
 
     def state(self, client=None):

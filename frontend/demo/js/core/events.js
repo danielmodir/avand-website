@@ -141,6 +141,20 @@ document.getElementById('device').addEventListener('click', (e) => {
     FinanceDesk.smsConfirm(draft?.dataset.smsId, draft?.querySelector('.finance-sms-amount')?.value,
       draft?.querySelector('.finance-sms-account')?.value); return;
   }
+  if(action === 'university-add-dossier'){ UniversityDesk.createDossier(); return; }
+  if(action === 'university-add-term'){ UniversityDesk.createTerm(); return; }
+  if(action === 'university-add-course'){ UniversityDesk.createCourse(); return; }
+  if(action === 'university-update-course'){
+    const card = el.closest('.university-course');
+    UniversityDesk.updateCourseGrade(el.dataset.id, card?.querySelector('.university-edit-grade')?.value,
+      card?.querySelector('.university-edit-status')?.value); return;
+  }
+  if(action === 'university-add-resource'){ UniversityDesk.createResource(); return; }
+  if(action === 'university-add-transfer'){ UniversityDesk.createTransfer(); return; }
+  if(action === 'university-add-activity'){ UniversityDesk.createActivity(); return; }
+  if(action === 'university-save-rules'){ UniversityDesk.setRules(); return; }
+  if(action === 'university-select-dossier'){ UniversityDesk.selectDossier(el.dataset.id); return; }
+  if(action === 'university-select-term'){ UniversityDesk.selectTerm(el.dataset.id); return; }
   if(action === 'finance-post'){
     FinanceDesk.post(document.getElementById('finance-kind')?.value,
       document.getElementById('finance-amount')?.value,

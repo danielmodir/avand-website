@@ -33,7 +33,9 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   events.js, i18n.js (all strings), dates.js / calendars.js (Jalali, Hijri,
   Gregorian), occasions.js (calendar rules and reminder plans), groups.js, trackers.js (habit counter/timer),
   habit-goals.js (period goals, calendar periods and streaks), finance.js
-  (wallet pane and sealed pending queue), finance-vault.js (AES-GCM cache),
+  (wallet pane and sealed pending queue), finance-budgets.js (offline budget
+  periods), finance-vault.js (AES-GCM cache), university.js and
+  university-gpa.js (academic desk and offline transcript),
   notify.js (reminders/push), android.js (bridge to Kotlin), local-store.js,
   search.js, include.js (loads component partials), compat.js (old WebViews).
 - App themes: frontend/demo/js/core/themes.js (6 palettes × 2 appearances,
@@ -42,15 +44,16 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
   tests/theme-ui.cjs. Old palette CSS and accent picker removed.
 - Web app components: app-error, articles, auth, banner, birthday, calendar,
   contact, date-picker, day-sheet, groups, items, menu, notices, period,
-  popup, toolbar, tour, workspace. The workspace now includes a separate
-  Habit Tracker pane, still using the existing habit rows and records.
-- PHP lib: auth, sync (the user's synced document), finance (private ledger), social, groups, push,
+  popup, toolbar, tour, workspace, finance, university. The workspace includes
+  separate Habit Tracker, Finance and University panes.
+- PHP lib: auth, sync (the user's synced document), finance (private ledger
+  and budgets), university (academic records), social, groups, push,
   notices, calendar, dates, content, articles, page (SEO page builder), mail,
   support, admin*, bootstrap (config, DB, schema).
 - Django apps: core, calendar_data, planning, period, social,
-  notifications, finance (+ common; finance currently has a private ledger
-  foundation only).
-- Android Kotlin: MainActivity, AppWeb, FinanceCrypto (Keystore vault), WebFiles (offline/OTA files),
+  notifications, finance, university (+ common).
+- Android Kotlin: MainActivity, AppWeb, FinanceCrypto (Keystore vault), BankSms
+  (opt-in private drafts), WebFiles (offline/OTA files),
   Reminders, PhoneActions, Widgets.
 - Deploy scripts (deploy/): build-site-zip.ps1, build-android.ps1,
   make-keystore.ps1, make-logo.js, render-logo.js, make-desk-shots.js,
@@ -63,7 +66,7 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 
 Update these with every change.
 
-- Demo asset version: 2026-11-25.2
+- Demo asset version: 2026-11-26.1
 - Logo cache version: tj7 (transparent mark, site and six app palettes)
 - PHP schema: v32
 - Django latest migrations: core 0012, planning 0012, social 0005,
@@ -73,6 +76,19 @@ Update these with every change.
 - Android source: 1.5.0 (versionCode 8; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-26 — budget/SMS/university integration — added the encrypted
+  offline budget queue and period preview, Android SMS draft review with
+  explicit consent and confirmation, and a university desk for dossiers,
+  terms, course attempts, per-dossier GPA rules, transfer/resource/activity
+  links and planning visibility. Academic records have a separate per-owner
+  offline cache and idempotent API queue. PHP 8.2 lint and SQLite HTTP smoke
+  for budgets and university pass; Django 115/115, Node 69/69 and migration
+  drift checks pass. Browser finance/university flows at 360/1280 px in fa/en
+  and light/dark pass without external requests. Android native code compiled
+  in the earlier checkpoint, but no real-device SMS test or APK release was
+  possible. Debt, savings, recurring dues, full reports, richer university
+  schedule/attachments and end-to-end live sync still need work.
 
 - 2026-11-26 — finance budgets, bank SMS and university foundations —
   checkpointed additive PHP schema v31–v32, Django finance 0006 and
