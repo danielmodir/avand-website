@@ -61,6 +61,11 @@ Packaging, when authorized: deploy/build-site-zip.ps1; Android: deploy/build-and
 - Next-version work: docs/next-version/README.md links the audit, central
   checklist, dependencies, decisions, baseline tests and source-derived
   API/model inventory. This is the management source for the new update.
+- Comprehensive implementation audit snapshot:
+  docs/MISSION_AUDIT_2026-11-26.md covers the current source baseline, updated
+  finance and university foundations, test evidence/limits, remaining work,
+  priorities and the stale Pages release. It is an audit snapshot, not a new
+  product/API specification.
 
 ## Current versions
 
@@ -76,6 +81,18 @@ Update these with every change.
 - Android source: 1.5.0 (versionCode 8; APK not built or published)
 
 ## Log (newest first)
+
+- 2026-11-27 — comprehensive Toojibee audit and demo status — added
+  docs/MISSION_AUDIT_2026-11-26.md based on review HEAD 6939d1e. Re-ran Node
+  69/69, Django 115/115 and Android SMS parser check (JDK 20); the local demo
+  loaded without third-party resources or horizontal overflow at 360/1280.
+  Public Pages/demo and the domain demo return HTTP 200 but still serve asset
+  2026-11-22.6 (recorded deployment ff1de50), so the reviewed branch is not
+  live. PHP CLI and authenticated GitHub workflow dispatch were unavailable;
+  the separate migration-drift check stalled in this environment and was
+  stopped without a result (the earlier 2026-11-26 result remains recorded);
+  no production data, API, deployment configuration or product code changed.
+  Full live auth, PHP, sync/device and production checks remain unverified.
 
 - 2026-11-26 — budget/SMS/university integration — added the encrypted
   offline budget queue and period preview, Android SMS draft review with
